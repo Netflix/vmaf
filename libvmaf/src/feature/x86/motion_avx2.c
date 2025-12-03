@@ -142,7 +142,7 @@ edge_8(const uint8_t *src, int height, int stride, int i, int j)
     uint32_t accum = 0;
 
     // MIRROR | ЯOЯЯIM
-    for (unsigned k = 0; k < filter_width; ++k) {
+    for (unsigned k = 0; k < (unsigned) filter_width; ++k) {
         int i_tap = i - radius + k;
         int j_tap = j;
 
@@ -351,7 +351,7 @@ void y_convolution_8_avx2(void *src, uint16_t *dst, unsigned width,
         for (unsigned j = width_mod_32; j < width; ++j) {
             uint8_t *src_p2 = src_p1;
             uint32_t accum = 0;
-            for (unsigned k = 0; k < filter_width; ++k) {
+            for (unsigned k = 0; k < (unsigned) filter_width; ++k) {
                 accum += filter[k] * (*src_p2);
                 src_p2 += src_stride;
             }
@@ -458,7 +458,7 @@ void y_convolution_16_avx2(void *src, uint16_t *dst, unsigned width,
         for (unsigned j = width_mod_16; j < width; ++j) {
             uint16_t *src_p2 = src_p1;
             uint32_t accum = 0;
-            for (unsigned k = 0; k < filter_width; ++k) {
+            for (unsigned k = 0; k < (unsigned) filter_width; ++k) {
                 accum += filter[k] * (*src_p2);
                 src_p2 += src_stride;
             }

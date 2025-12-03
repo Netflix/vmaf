@@ -2660,7 +2660,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->i4_adm_csf = i4_adm_csf_avx512;
         s->i4_adm_cm = i4_adm_cm_avx512;
         s->adm_decouple = adm_decouple_avx512;
-        s->adm_decouple_s123 = adm_decouple_s123_avx2;
+        s->adm_decouple_s123 = adm_decouple_s123_avx512;
     }
 #endif
 #elif ARCH_AARCH64

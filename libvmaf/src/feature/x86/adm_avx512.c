@@ -820,7 +820,7 @@ void adm_decouple_avx512(AdmBuffer *buf, int w, int h, int stride,
     __m512 inv_64 = _mm512_set1_ps((float)1/64);
 #if CALC_ANGLE1
     __m512 cos_1deg_sq = _mm512_set1_ps(const_cos_1deg_sq);
-#endif    
+#endif
     __m512d cos_1deg_sq_pd = _mm512_set1_pd((float)const_cos_1deg_sq);
 
     for (int i = top; i < bottom; ++i) {
@@ -846,7 +846,7 @@ void adm_decouple_avx512(AdmBuffer *buf, int w, int h, int stride,
 #if CALC_ANGLE1
             __mmask16 gt_0 = _mm512_cmp_ps_mask(ot_dp_ps, _mm512_setzero_ps(), 13);
             __m512 ot_dp_sq = _mm512_mul_ps(ot_dp_ps, ot_dp_ps);
-            __m512 o_mag_sq_t_mag_sq = _mm512_mul_ps(o_mag_sq_ps, t_mag_sq_ps);            
+            __m512 o_mag_sq_t_mag_sq = _mm512_mul_ps(o_mag_sq_ps, t_mag_sq_ps);
             __m512 ot_mag_sq_cos1 = _mm512_mul_ps(o_mag_sq_t_mag_sq, cos_1deg_sq);
             __mmask16 cmp_ot_cosot_mag = _mm512_cmp_ps_mask(ot_dp_sq, ot_mag_sq_cos1, 13);
             __mmask16 angle_flag = _kand_mask16(gt_0, cmp_ot_cosot_mag);
@@ -868,7 +868,7 @@ void adm_decouple_avx512(AdmBuffer *buf, int w, int h, int stride,
             __mmask8 cmp_ot_cosot_mag_hi = _mm512_cmp_pd_mask(ot_dp_sq_hi, ot_mag_sq_cos1_hi, 13);
             __mmask16 angle_flag = _kand_mask16(gt_0, cmp_ot_cosot_mag_lo + (cmp_ot_cosot_mag_hi << 8));
 #endif
-      
+
             __m512i oh_div = _mm512_i32gather_epi32(_mm512_add_epi32(oh, _mm512_set1_epi32(32768)), adm_div_lookup, 4);
             __m512i ov_div = _mm512_i32gather_epi32(_mm512_add_epi32(ov, _mm512_set1_epi32(32768)), adm_div_lookup, 4);
             __m512i od_div = _mm512_i32gather_epi32(_mm512_add_epi32(od, _mm512_set1_epi32(32768)), adm_div_lookup, 4);
@@ -929,7 +929,7 @@ void adm_decouple_avx512(AdmBuffer *buf, int w, int h, int stride,
             __m512 kh_inv_32768 = _mm512_mul_ps(inv_32768, _mm512_cvtepi32_ps(tmp_kh));
             __m512 oh_inv_64 = _mm512_mul_ps(inv_64, _mm512_cvtepi32_ps(oh));
             __m512 rst_h_f = _mm512_mul_ps(kh_inv_32768, oh_inv_64);
-            
+
             __m512 kv_inv_32768 = _mm512_mul_ps(inv_32768, _mm512_cvtepi32_ps(tmp_kv));
             __m512 ov_inv_64 = _mm512_mul_ps(inv_64, _mm512_cvtepi32_ps(ov));
             __m512 rst_v_f = _mm512_mul_ps(kv_inv_32768, ov_inv_64);
@@ -955,11 +955,11 @@ void adm_decouple_avx512(AdmBuffer *buf, int w, int h, int stride,
             __m512d rst_d_gainlo_d = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_d, 0)), adm_gain_d);
             __m512d rst_d_gainhi_d = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_d, 1)), adm_gain_d);
             __m512i rst_d_gain = _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvtpd_epi32(rst_d_gainlo_d)), _mm512_cvtpd_epi32(rst_d_gainhi_d),1);
- 
+
             __m512i h_min = _mm512_min_epi32(rst_h_gain, th);
             __m512i v_min = _mm512_min_epi32(rst_v_gain, tv);
             __m512i d_min = _mm512_min_epi32(rst_d_gain, td);
-            
+
             __m512i h_max = _mm512_max_epi32(rst_h_gain, th);
             __m512i v_max = _mm512_max_epi32(rst_v_gain, tv);
             __m512i d_max = _mm512_max_epi32(rst_d_gain, td);
@@ -1005,7 +1005,7 @@ void adm_decouple_avx512(AdmBuffer *buf, int w, int h, int stride,
             _mm256_storeu_si256((__m256i*)(a->band_h + i * stride + j), _mm512_castsi512_si256(th));
             _mm256_storeu_si256((__m256i*)(a->band_v + i * stride + j), _mm512_castsi512_si256(tv));
             _mm256_storeu_si256((__m256i*)(a->band_d + i * stride + j), _mm512_castsi512_si256(td));
-        }  
+        }
 
         for (int j = right_mod16; j < right; j++)
         {
@@ -1094,9 +1094,9 @@ void adm_decouple_avx512(AdmBuffer *buf, int w, int h, int stride,
             a->band_h[i * stride + j] = th - rst_h;
             a->band_v[i * stride + j] = tv - rst_v;
             a->band_d[i * stride + j] = td - rst_d;
-            
+
         }
-    }        
+    }
 }
 
 static inline uint16_t get_best15_from32(uint32_t temp, int *x)
@@ -1108,11 +1108,11 @@ static inline uint16_t get_best15_from32(uint32_t temp, int *x)
     return temp;
 }
 
-#define calc_angle(ot_dp, o_mag_sq, t_mag_sq, angle_flag, i) \
+#define calc_angle(ot_dp, o_mag_sq, t_mag_sq, angle_flag) \
 { \
-angle_flag += ((((float)ot_dp / 4096.0) >= 0.0f) && \
+angle_flag = ((((float)ot_dp / 4096.0) >= 0.0f) && \
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >= \
-                    cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0))) << i; \
+                    cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0))); \
 } \
 
 void adm_decouple_s123_avx512(AdmBuffer *buf, int w, int h, int stride,
@@ -1124,8 +1124,8 @@ void adm_decouple_s123_avx512(AdmBuffer *buf, int w, int h, int stride,
     const i4_adm_dwt_band_t *dis = &buf->i4_dis_dwt2;
     const i4_adm_dwt_band_t *r = &buf->i4_decouple_r;
     const i4_adm_dwt_band_t *a = &buf->i4_decouple_a;
-    /* The computation of the score is not required for the regions
-    which lie outside the frame borders */
+    // * The computation of the score is not required for the regions
+    // which lie outside the frame borders
     int left = w * ADM_BORDER_FACTOR - 0.5 - 1; // -1 for filter tap
     int top = h * ADM_BORDER_FACTOR - 0.5 - 1;
     int right = w - left + 2; // +2 for filter tap
@@ -1144,361 +1144,313 @@ void adm_decouple_s123_avx512(AdmBuffer *buf, int w, int h, int stride,
         bottom = h;
     }
 
+    int right_mod16 = right - ((right-left) % 16);
     int64_t ot_dp, o_mag_sq, t_mag_sq;
 
-    int right_mod16 = right - (right % 16);
-    
-#if CALC_ANGLE2
-    __m512d inv_4096 = _mm512_set1_pd((float)1/4096);
-#endif
-    __m512i perm_for_mul = _mm512_set_epi32(15, 7, 14, 6, 13, 5,  12, 4, 11, 3, 10, 2, 9, 1, 8, 0);
+    const __m512d const_0_pd = _mm512_set1_pd(0.0);
+    const __m512i const_0_epi64 = _mm512_set1_epi64(0);
+    const __m512i const_1_epi32 = _mm512_set1_epi32(1);
+    const __m512i const_n1_epi32 = _mm512_set1_epi32(-1);
+    const __m512i const_14_epi32 = _mm512_set1_epi32(14);
+    const __m512i const_15_epi32 = _mm512_set1_epi32(15);
+    const __m512i const_16384_epi64 = _mm512_set1_epi64(16384);
+    const __m512i const_32768_epi32 = _mm512_set1_epi32(32768);
+    const __m512i const_32768_epi64 = _mm512_set1_epi64(32768);
 
     for (int i = top; i < bottom; ++i)
     {
-        for (int j = left; j < right_mod16; j+=16)
+        for (int j = left; j < right_mod16; j += 16)
         {
-                __m512i oh = _mm512_loadu_si512((__m512i*)(ref->band_h + i * stride + j));
-                __m512i ov = _mm512_loadu_si512((__m512i*)(ref->band_v + i * stride + j));
-                __m512i od = _mm512_loadu_si512((__m512i*)(ref->band_d + i * stride + j));
-                __m512i th = _mm512_loadu_si512((__m512i*)(dis->band_h + i * stride + j));
-                __m512i tv = _mm512_loadu_si512((__m512i*)(dis->band_v + i * stride + j));
-                __m512i td = _mm512_loadu_si512((__m512i*)(dis->band_d + i * stride + j));
+            // oh, ov, od, th, tv, td as int32 * 16 elements
+            __m512i oh_epi32 = _mm512_loadu_si512((__m512i*)(ref->band_h + i * stride + j));
+            __m512i ov_epi32 = _mm512_loadu_si512((__m512i*)(ref->band_v + i * stride + j));
+            __m512i od_epi32 = _mm512_loadu_si512((__m512i*)(ref->band_d + i * stride + j));
+            __m512i th_epi32 = _mm512_loadu_si512((__m512i*)(dis->band_h + i * stride + j));
+            __m512i tv_epi32 = _mm512_loadu_si512((__m512i*)(dis->band_v + i * stride + j));
+            __m512i td_epi32 = _mm512_loadu_si512((__m512i*)(dis->band_d + i * stride + j));
 
-                __m512i oh_lo = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(oh,0));
-                __m512i oh_hi = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(oh,1));                
-                __m512i ov_lo = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(ov,0));
-                __m512i ov_hi = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(ov,1));
-                __m512i od_lo = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(od,0));
-                __m512i od_hi = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(od,1));
-                __m512i th_lo = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(th,0));
-                __m512i th_hi = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(th,1));
-                __m512i tv_lo = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(tv,0));
-                __m512i tv_hi = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(tv,1));
-                __m512i td_lo = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(td,0));
-                __m512i td_hi = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(td,1));
+			// oh, ov, od, th, tv, td as int64
+            __m512i oh_lo_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(oh_epi32,0));
+            __m512i oh_hi_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(oh_epi32,1));
+            __m512i ov_lo_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(ov_epi32,0));
+            __m512i ov_hi_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(ov_epi32,1));
+            __m512i od_lo_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(od_epi32,0));
+            __m512i od_hi_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(od_epi32,1));
+            __m512i th_lo_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(th_epi32,0));
+            __m512i th_hi_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(th_epi32,1));
+            __m512i tv_lo_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(tv_epi32,0));
+            __m512i tv_hi_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(tv_epi32,1));
+            __m512i td_lo_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(td_epi32,0));
+            __m512i td_hi_epi64 = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(td_epi32,1));
 
-                __m512i oh_th_lo = _mm512_mul_epi32(oh_lo, th_lo);
-                __m512i oh_th_hi = _mm512_mul_epi32(oh_hi, th_hi);
-                __m512i ov_tv_lo = _mm512_mul_epi32(ov_lo, tv_lo);
-                __m512i ov_tv_hi = _mm512_mul_epi32(ov_hi, tv_hi);
-                __m512i oh_oh_lo = _mm512_mul_epi32(oh_lo, oh_lo);
-                __m512i oh_oh_hi = _mm512_mul_epi32(oh_hi, oh_hi);
-                __m512i ov_ov_lo = _mm512_mul_epi32(ov_lo, ov_lo);
-                __m512i ov_ov_hi = _mm512_mul_epi32(ov_hi, ov_hi);
-                __m512i th_th_lo = _mm512_mul_epi32(th_lo, th_lo);
-                __m512i th_th_hi = _mm512_mul_epi32(th_hi, th_hi);
-                __m512i tv_tv_lo = _mm512_mul_epi32(tv_lo, tv_lo);
-                __m512i tv_tv_hi = _mm512_mul_epi32(tv_hi, tv_hi);
+            // ot_dp, o_mag_sq, t_mag_sq as int64
+            __m512i ot_dp_lo_epi64 = _mm512_add_epi64(_mm512_mul_epi32(oh_lo_epi64, th_lo_epi64),
+                                                      _mm512_mul_epi32(ov_lo_epi64, tv_lo_epi64));
+            __m512i ot_dp_hi_epi64 = _mm512_add_epi64(_mm512_mul_epi32(oh_hi_epi64, th_hi_epi64),
+                                                      _mm512_mul_epi32(ov_hi_epi64, tv_hi_epi64));
+            __m512i o_mag_sq_lo_epi64 = _mm512_add_epi64(_mm512_mul_epi32(oh_lo_epi64, oh_lo_epi64),
+                                                      _mm512_mul_epi32(ov_lo_epi64, ov_lo_epi64));
+            __m512i o_mag_sq_hi_epi64 = _mm512_add_epi64(_mm512_mul_epi32(oh_hi_epi64, oh_hi_epi64),
+                                                      _mm512_mul_epi32(ov_hi_epi64, ov_hi_epi64));
+            __m512i t_mag_sq_lo_epi64 = _mm512_add_epi64(_mm512_mul_epi32(th_lo_epi64, th_lo_epi64),
+                                                      _mm512_mul_epi32(tv_lo_epi64, tv_lo_epi64));
+            __m512i t_mag_sq_hi_epi64 = _mm512_add_epi64(_mm512_mul_epi32(th_hi_epi64, th_hi_epi64),
+                                                      _mm512_mul_epi32(tv_hi_epi64, tv_hi_epi64));
 
-                __m512i ot_dp_lo = _mm512_add_epi64(oh_th_lo, ov_tv_lo);
-                __m512i ot_dp_hi = _mm512_add_epi64(oh_th_hi, ov_tv_hi);
-                __m512i o_mag_sq_lo = _mm512_add_epi64(oh_oh_lo, ov_ov_lo);
-                __m512i o_mag_sq_hi = _mm512_add_epi64(oh_oh_hi, ov_ov_hi);
-                __m512i t_mag_sq_lo = _mm512_add_epi64(th_th_lo, tv_tv_lo);
-                __m512i t_mag_sq_hi = _mm512_add_epi64(th_th_hi, tv_tv_hi);
+            // angle_flag as int64
+            int64_t angle_flag[16];
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo_epi64, 0), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo_epi64, 0), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo_epi64, 0), 0), angle_flag[0]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo_epi64, 0), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo_epi64, 0), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo_epi64, 0), 1), angle_flag[1]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo_epi64, 0), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo_epi64, 0), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo_epi64, 0), 2), angle_flag[2]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo_epi64, 0), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo_epi64, 0), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo_epi64, 0), 3), angle_flag[3]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo_epi64, 1), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo_epi64, 1), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo_epi64, 1), 0), angle_flag[4]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo_epi64, 1), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo_epi64, 1), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo_epi64, 1), 1), angle_flag[5]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo_epi64, 1), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo_epi64, 1), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo_epi64, 1), 2), angle_flag[6]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo_epi64, 1), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo_epi64, 1), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo_epi64, 1), 3), angle_flag[7]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi_epi64, 0), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi_epi64, 0), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi_epi64, 0), 0), angle_flag[8]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi_epi64, 0), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi_epi64, 0), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi_epi64, 0), 1), angle_flag[9]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi_epi64, 0), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi_epi64, 0), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi_epi64, 0), 2), angle_flag[10]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi_epi64, 0), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi_epi64, 0), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi_epi64, 0), 3), angle_flag[11]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi_epi64, 1), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi_epi64, 1), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi_epi64, 1), 0), angle_flag[12]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi_epi64, 1), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi_epi64, 1), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi_epi64, 1), 1), angle_flag[13]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi_epi64, 1), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi_epi64, 1), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi_epi64, 1), 2), angle_flag[14]);
+            calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi_epi64, 1), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi_epi64, 1), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi_epi64, 1), 3), angle_flag[15]);
 
-#if CALC_ANGLE2
-                __m512d ot_dp_pd_lo = _mm512_cvtepi64_pd(ot_dp_lo);
-                __m512d ot_dp_pd_hi = _mm512_cvtepi64_pd(ot_dp_hi);
-                __m512d o_mag_sq_pd_lo = _mm512_cvtepi64_pd(o_mag_sq_lo);
-                __m512d o_mag_sq_pd_hi = _mm512_cvtepi64_pd(o_mag_sq_hi);
-                __m512d t_mag_sq_pd_lo = _mm512_cvtepi64_pd(t_mag_sq_lo);
-                __m512d t_mag_sq_pd_hi = _mm512_cvtepi64_pd(t_mag_sq_hi);
+            __m512i angle_flag_lo_epi64 = _mm512_loadu_si512((__m512i*) (&angle_flag[0]));
+            __m512i angle_flag_hi_epi64 = _mm512_loadu_si512((__m512i*) (&angle_flag[8]));
 
-                ot_dp_pd_lo = _mm512_mul_pd(ot_dp_pd_lo, inv_4096);
-                ot_dp_pd_hi = _mm512_mul_pd(ot_dp_pd_hi, inv_4096);
-                o_mag_sq_pd_lo = _mm512_mul_pd(o_mag_sq_pd_lo, inv_4096);
-                o_mag_sq_pd_hi = _mm512_mul_pd(o_mag_sq_pd_hi, inv_4096);
-                t_mag_sq_pd_lo = _mm512_mul_pd(t_mag_sq_pd_lo, inv_4096);
-                t_mag_sq_pd_hi = _mm512_mul_pd(t_mag_sq_pd_hi, inv_4096);               
+            __m512i abs_oh_epi32 = _mm512_abs_epi32(oh_epi32);
+            __m512i abs_ov_epi32 = _mm512_abs_epi32(ov_epi32);
+            __m512i abs_od_epi32 = _mm512_abs_epi32(od_epi32);
 
-                __mmask8 gt_lo_0 = _mm512_cmp_pd_mask(ot_dp_pd_lo, _mm512_setzero_pd(), 13);
-                __mmask8 gt_hi_0 = _mm512_cmp_pd_mask(ot_dp_pd_hi, _mm512_setzero_pd(), 13);
+            // cmpgt_epi32 returns 1 : 0 if a < b. We really want -1 : 1 to match c code, so we include an or_si256.
+            __m512i kh_sign_epi32 = _mm512_mask_blend_epi32(_mm512_cmplt_epi32_mask(oh_epi32, _mm512_setzero_si512()), const_1_epi32, const_n1_epi32);
+            __m512i kv_sign_epi32 = _mm512_mask_blend_epi32(_mm512_cmplt_epi32_mask(ov_epi32, _mm512_setzero_si512()), const_1_epi32, const_n1_epi32);
+            __m512i kd_sign_epi32 = _mm512_mask_blend_epi32(_mm512_cmplt_epi32_mask(od_epi32, _mm512_setzero_si512()), const_1_epi32, const_n1_epi32);
 
-                __m512d ot_dp_sq_pd_lo = _mm512_mul_pd(ot_dp_pd_lo, ot_dp_pd_lo);
-                __m512d ot_dp_sq_pd_hi = _mm512_mul_pd(ot_dp_pd_hi, ot_dp_pd_hi);
+            __m512i kh_shift_epi32 =  _mm512_sub_epi32(_mm512_set1_epi32(17), _mm512_lzcnt_epi32(abs_oh_epi32));
+            __m512i tmp_kh_msb_epi32 = _mm512_srlv_epi32( _mm512_add_epi32(abs_oh_epi32,
+                                                                           _mm512_sllv_epi32(const_1_epi32,
+                                                                                             _mm512_sub_epi32(kh_shift_epi32, const_1_epi32))), kh_shift_epi32);
+            __mmask16 mask_kh_msb = _mm512_cmp_epi32_mask(abs_oh_epi32,const_32768_epi32,_MM_CMPINT_LT);
+            __m512i kh_msb_epi32 = _mm512_mask_blend_epi32(mask_kh_msb, tmp_kh_msb_epi32, abs_oh_epi32);
 
-                __m512d o_mag_sq_t_mag_sq_lo = _mm512_mul_pd(o_mag_sq_pd_lo, t_mag_sq_pd_lo);
-                __m512d o_mag_sq_t_mag_sq_hi = _mm512_mul_pd(o_mag_sq_pd_hi, t_mag_sq_pd_hi);
-                __m512d ot_mag_sq_cos1_lo = _mm512_mul_pd(o_mag_sq_t_mag_sq_lo, _mm512_set1_pd(cos_1deg_sq));
-                __m512d ot_mag_sq_cos1_hi = _mm512_mul_pd(o_mag_sq_t_mag_sq_hi, _mm512_set1_pd(cos_1deg_sq));
-                __mmask8 cmp_ot_cosot_mag_lo = _mm512_cmp_pd_mask(ot_dp_sq_pd_lo, ot_mag_sq_cos1_lo, 13);
-                __mmask8 cmp_ot_cosot_mag_hi = _mm512_cmp_pd_mask(ot_dp_sq_pd_hi, ot_mag_sq_cos1_hi, 13);
-                
-                __mmask8 angle_flag_lo = _kand_mask8(gt_lo_0, cmp_ot_cosot_mag_lo);
-                __mmask8 angle_flag_hi = _kand_mask8(gt_hi_0, cmp_ot_cosot_mag_hi);
-                
-#else
-                __mmask8 angle_flag_lo = 0;
-                __mmask8 angle_flag_hi = 0;
+            __m512i kv_shift_epi32 =  _mm512_sub_epi32(_mm512_set1_epi32(17), _mm512_lzcnt_epi32(abs_ov_epi32));
+            __m512i tmp_kv_msb_epi32 = _mm512_srlv_epi32( _mm512_add_epi32(abs_ov_epi32,
+                                                                           _mm512_sllv_epi32(const_1_epi32,
+                                                                                             _mm512_sub_epi32(kv_shift_epi32, const_1_epi32))), kv_shift_epi32);
+            __mmask16 mask_kv_msb = _mm512_cmp_epi32_mask(abs_ov_epi32,const_32768_epi32,_MM_CMPINT_LT);
+            __m512i kv_msb_epi32 = _mm512_mask_blend_epi32(mask_kv_msb, tmp_kv_msb_epi32, abs_ov_epi32);
 
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo, 0), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo, 0), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo, 0), 0), angle_flag_lo, 0);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo, 0), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo, 0), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo, 0), 1), angle_flag_lo, 1);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo, 0), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo, 0), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo, 0), 2), angle_flag_lo, 2);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo, 0), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo, 0), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo, 0), 3), angle_flag_lo, 3);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo, 1), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo, 1), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo, 1), 0), angle_flag_lo, 4);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo, 1), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo, 1), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo, 1), 1), angle_flag_lo, 5);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo, 1), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo, 1), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo, 1), 2), angle_flag_lo, 6);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_lo, 1), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_lo, 1), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_lo, 1), 3), angle_flag_lo, 7);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi, 0), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi, 0), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi, 0), 0), angle_flag_hi, 0);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi, 0), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi, 0), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi, 0), 1), angle_flag_hi, 1);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi, 0), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi, 0), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi, 0), 2), angle_flag_hi, 2);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi, 0), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi, 0), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi, 0), 3), angle_flag_hi, 3);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi, 1), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi, 1), 0), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi, 1), 0), angle_flag_hi, 4);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi, 1), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi, 1), 1), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi, 1), 1), angle_flag_hi, 5);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi, 1), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi, 1), 2), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi, 1), 2), angle_flag_hi, 6);
-                calc_angle(_mm256_extract_epi64(_mm512_extracti64x4_epi64(ot_dp_hi, 1), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(o_mag_sq_hi, 1), 3), _mm256_extract_epi64(_mm512_extracti64x4_epi64(t_mag_sq_hi, 1), 3), angle_flag_hi, 7);
+            __m512i kd_shift_epi32 =  _mm512_sub_epi32(_mm512_set1_epi32(17), _mm512_lzcnt_epi32(abs_od_epi32));
+            __m512i tmp_kd_msb_epi32 = _mm512_srlv_epi32( _mm512_add_epi32(abs_od_epi32,
+                                                                           _mm512_sllv_epi32(const_1_epi32,
+                                                                                             _mm512_sub_epi32(kd_shift_epi32, const_1_epi32))), kd_shift_epi32);
+            __mmask16 mask_kd_msb = _mm512_cmp_epi32_mask(abs_od_epi32,const_32768_epi32,_MM_CMPINT_LT);
+            __m512i kd_msb_epi32 = _mm512_mask_blend_epi32(mask_kd_msb, tmp_kd_msb_epi32, abs_od_epi32);
 
-                // int angle_flag3 = angle_flag_lo + (angle_flag_hi << 8);
-#endif
+             // tmp_kh as int64
+             __m512i div_lookup_kh_epi32 = _mm512_i32gather_epi32(_mm512_add_epi32(kh_msb_epi32, const_32768_epi32),adm_div_lookup, 4);
+             __m512i one_kh_shift_epi32 = _mm512_sllv_epi32(const_1_epi32, _mm512_add_epi32(const_14_epi32, kh_shift_epi32));
+             __m512i fifteen_kh_epi32 = _mm512_add_epi32(const_15_epi32, kh_shift_epi32);
+             __m512i tmp_kh_lo_cond2_epi64 = _mm512_mul_epi32(                  _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(div_lookup_kh_epi32,0)),
+                                                               _mm512_mul_epi32(th_lo_epi64,
+                                                                                _mm512_cvtepi32_epi64 (_mm512_extracti32x8_epi32(kh_sign_epi32,0))));
+             tmp_kh_lo_cond2_epi64 = _mm512_srav_epi64(_mm512_add_epi64(tmp_kh_lo_cond2_epi64,
+                                                 _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(one_kh_shift_epi32,0))),
+                                                 _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(fifteen_kh_epi32,0)));
+             __mmask16 mask_kh_lo = _mm512_cmpeq_epi64_mask( oh_lo_epi64, const_0_epi64);
+             __m512i tmp_kh_lo_epi64 = _mm512_mask_blend_epi64(mask_kh_lo, tmp_kh_lo_cond2_epi64, const_32768_epi64);
+             __m512i tmp_kh_hi_cond2_epi64 = _mm512_mul_epi32(                  _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(div_lookup_kh_epi32,1)),
+                                                               _mm512_mul_epi32(th_hi_epi64,
+                                                                                _mm512_cvtepi32_epi64 (_mm512_extracti32x8_epi32(kh_sign_epi32,1))));
+             tmp_kh_hi_cond2_epi64 = _mm512_srav_epi64(_mm512_add_epi64(tmp_kh_hi_cond2_epi64,
+                                                _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(one_kh_shift_epi32,1))),
+                                                _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(fifteen_kh_epi32,1)));
+             __mmask16 mask_kh_hi = _mm512_cmpeq_epi64_mask( oh_hi_epi64, const_0_epi64);
+             __m512i tmp_kh_hi_epi64 = _mm512_mask_blend_epi64(mask_kh_hi, tmp_kh_hi_cond2_epi64, const_32768_epi64);
+              // tmp_kv as int64
+             __m512i div_lookup_kv_epi32 = _mm512_i32gather_epi32(_mm512_add_epi32(kv_msb_epi32, const_32768_epi32),adm_div_lookup, 4);
+             __m512i one_kv_shift_epi32 = _mm512_sllv_epi32(const_1_epi32, _mm512_add_epi32(const_14_epi32, kv_shift_epi32));
+             __m512i fifteen_kv_epi32 = _mm512_add_epi32(const_15_epi32, kv_shift_epi32);
+             __m512i tmp_kv_lo_cond2_epi64 = _mm512_mul_epi32(                  _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(div_lookup_kv_epi32,0)),
+                                                               _mm512_mul_epi32(tv_lo_epi64,
+                                                                                _mm512_cvtepi32_epi64 (_mm512_extracti32x8_epi32(kv_sign_epi32,0))));
+             tmp_kv_lo_cond2_epi64 = _mm512_srav_epi64(_mm512_add_epi64(tmp_kv_lo_cond2_epi64,
+                                                _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(one_kv_shift_epi32,0))),
+                                                _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(fifteen_kv_epi32,0)));
+             __mmask16 mask_kv_lo = _mm512_cmpeq_epi64_mask( ov_lo_epi64, const_0_epi64);
+             __m512i tmp_kv_lo_epi64 = _mm512_mask_blend_epi64(mask_kv_lo, tmp_kv_lo_cond2_epi64, const_32768_epi64);
+             __m512i tmp_kv_hi_cond2_epi64 = _mm512_mul_epi32(                  _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(div_lookup_kv_epi32,1)),
+                                                               _mm512_mul_epi32(tv_hi_epi64,
+                                                                                _mm512_cvtepi32_epi64 (_mm512_extracti32x8_epi32(kv_sign_epi32,1))));
+             tmp_kv_hi_cond2_epi64 = _mm512_srav_epi64(_mm512_add_epi64(tmp_kv_hi_cond2_epi64,
+                                                _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(one_kv_shift_epi32,1))),
+                                                _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(fifteen_kv_epi32,1)));
+             __mmask16 mask_kv_hi = _mm512_cmpeq_epi64_mask( ov_hi_epi64, const_0_epi64);
+             __m512i tmp_kv_hi_epi64 = _mm512_mask_blend_epi64(mask_kv_hi, tmp_kv_hi_cond2_epi64, const_32768_epi64);
+             // tmp_kd as int64
+             __m512i div_lookup_kd_epi32 = _mm512_i32gather_epi32(_mm512_add_epi32(kd_msb_epi32, const_32768_epi32),adm_div_lookup, 4);
+             __m512i one_kd_shift_epi32 = _mm512_sllv_epi32(const_1_epi32, _mm512_add_epi32(const_14_epi32, kd_shift_epi32));
+             __m512i fifteen_kd_epi32 = _mm512_add_epi32(const_15_epi32, kd_shift_epi32);
+             __m512i tmp_kd_lo_cond2_epi64 = _mm512_mul_epi32(                  _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(div_lookup_kd_epi32,0)),
+                                                               _mm512_mul_epi32(td_lo_epi64,
+                                                                                _mm512_cvtepi32_epi64 (_mm512_extracti32x8_epi32(kd_sign_epi32,0))));
+             tmp_kd_lo_cond2_epi64 = _mm512_srav_epi64(_mm512_add_epi64(tmp_kd_lo_cond2_epi64,
+                                                _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(one_kd_shift_epi32,0))),
+                                                _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(fifteen_kd_epi32,0)));
+             __mmask16 mask_kd_lo = _mm512_cmpeq_epi64_mask( od_lo_epi64, const_0_epi64);
+             __m512i tmp_kd_lo_epi64 = _mm512_mask_blend_epi64(mask_kd_lo, tmp_kd_lo_cond2_epi64, const_32768_epi64);
+             __m512i tmp_kd_hi_cond2_epi64 = _mm512_mul_epi32(                  _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(div_lookup_kd_epi32,1)),
+                                                               _mm512_mul_epi32(td_hi_epi64,
+                                                                                _mm512_cvtepi32_epi64 (_mm512_extracti32x8_epi32(kd_sign_epi32,1))));
+             tmp_kd_hi_cond2_epi64 = _mm512_srav_epi64(_mm512_add_epi64(tmp_kd_hi_cond2_epi64,
+                                                _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(one_kd_shift_epi32,1))),
+                                                _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(fifteen_kd_epi32,1)));
+             __mmask16 mask_kd_hi = _mm512_cmpeq_epi64_mask( od_hi_epi64, const_0_epi64);
+             __m512i tmp_kd_hi_epi64 = _mm512_mask_blend_epi64(mask_kd_hi, tmp_kd_hi_cond2_epi64, const_32768_epi64);
 
-                __m512i abs_oh = _mm512_abs_epi32(oh);
-                __m512i abs_ov = _mm512_abs_epi32(ov);
-                __m512i abs_od = _mm512_abs_epi32(od);
+             // kh as int64
+             __m512i kh_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask( tmp_kh_lo_epi64, const_32768_epi64), tmp_kh_lo_epi64, const_32768_epi64 );
+             kh_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask( const_0_epi64, tmp_kh_lo_epi64), kh_lo_epi64, const_0_epi64);
+             __m512i kh_hi_epi64 = _mm512_mask_blend_epi64(_mm512_cmpgt_epi64_mask( tmp_kh_hi_epi64, const_32768_epi64), tmp_kh_hi_epi64, const_32768_epi64);
+             kh_hi_epi64 = _mm512_mask_blend_epi64(_mm512_cmpgt_epi64_mask( const_0_epi64, tmp_kh_hi_epi64), kh_hi_epi64, const_0_epi64);
+             // kv as int64
+             __m512i kv_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask( tmp_kv_lo_epi64, const_32768_epi64), tmp_kv_lo_epi64, const_32768_epi64);
+             kv_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask( const_0_epi64, tmp_kv_lo_epi64), kv_lo_epi64, const_0_epi64);
+             __m512i kv_hi_epi64 = _mm512_mask_blend_epi64(_mm512_cmpgt_epi64_mask( tmp_kv_hi_epi64, const_32768_epi64), tmp_kv_hi_epi64, const_32768_epi64);
+             kv_hi_epi64 = _mm512_mask_blend_epi64(_mm512_cmpgt_epi64_mask( const_0_epi64, tmp_kv_hi_epi64), kv_hi_epi64, const_0_epi64);
+             // kd as int64
+             __m512i kd_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask( tmp_kd_lo_epi64, const_32768_epi64), tmp_kd_lo_epi64, const_32768_epi64);
+             kd_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask( const_0_epi64, tmp_kd_lo_epi64), kd_lo_epi64, const_0_epi64);
+             __m512i kd_hi_epi64 = _mm512_mask_blend_epi64(_mm512_cmpgt_epi64_mask( tmp_kd_hi_epi64, const_32768_epi64), tmp_kd_hi_epi64, const_32768_epi64);
+             kd_hi_epi64 = _mm512_mask_blend_epi64(_mm512_cmpgt_epi64_mask( const_0_epi64, tmp_kd_hi_epi64), kd_hi_epi64, const_0_epi64);
 
-                __mmask16 kh_sign = _mm512_cmp_epi32_mask(oh, _mm512_setzero_si512(), 5);
-                __mmask16 kv_sign = _mm512_cmp_epi32_mask(ov, _mm512_setzero_si512(), 5);
-                __mmask16 kd_sign = _mm512_cmp_epi32_mask(od, _mm512_setzero_si512(), 5);
+             // rst_h (int32_t)
+             __m512i rst_h_lo_epi64 = _mm512_srli_epi64(_mm512_add_epi64(_mm512_mul_epi32(kh_lo_epi64, oh_lo_epi64), const_16384_epi64), 15);
+             __m512i rst_h_hi_epi64 = _mm512_srli_epi64(_mm512_add_epi64(_mm512_mul_epi32(kh_hi_epi64, oh_hi_epi64), const_16384_epi64), 15);
+             __m512i rst_h_epi32 = _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvtepi64_epi32(rst_h_lo_epi64)), _mm512_cvtepi64_epi32(rst_h_hi_epi64), 1);
+             // rst_v (int32_t)
+             __m512i rst_v_lo_epi64 = _mm512_srli_epi64(_mm512_add_epi64(_mm512_mul_epi32(kv_lo_epi64, ov_lo_epi64), const_16384_epi64), 15);
+             __m512i rst_v_hi_epi64 = _mm512_srli_epi64(_mm512_add_epi64(_mm512_mul_epi32(kv_hi_epi64, ov_hi_epi64), const_16384_epi64), 15);
+             __m512i rst_v_epi32 = _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvtepi64_epi32(rst_v_lo_epi64)), _mm512_cvtepi64_epi32(rst_v_hi_epi64), 1);
+             // rst_d (int32_t)
+             __m512i rst_d_lo_epi64 = _mm512_srli_epi64(_mm512_add_epi64(_mm512_mul_epi32(kd_lo_epi64, od_lo_epi64), const_16384_epi64), 15);
+             __m512i rst_d_hi_epi64 = _mm512_srli_epi64(_mm512_add_epi64(_mm512_mul_epi32(kd_hi_epi64, od_hi_epi64), const_16384_epi64), 15);
+             __m512i rst_d_epi32 = _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvtepi64_epi32(rst_d_lo_epi64)), _mm512_cvtepi64_epi32(rst_d_hi_epi64), 1);
 
-                __m512i kh_shift = _mm512_lzcnt_epi32(abs_oh);
-                __m512i kv_shift = _mm512_lzcnt_epi32(abs_ov);
-                __m512i kd_shift = _mm512_lzcnt_epi32(abs_od);
+            __m512 inv_32768_f = _mm512_set1_ps((float)1/32768);
+            __m512 inv_64_f = _mm512_set1_ps((float)1/64);
 
-                kh_shift = _mm512_sub_epi32(_mm512_set1_epi32(17), kh_shift);
-                kv_shift = _mm512_sub_epi32(_mm512_set1_epi32(17), kv_shift);
-                kd_shift = _mm512_sub_epi32(_mm512_set1_epi32(17), kd_shift);
+            // rst_h_f
+            __m512 kh_f = _mm512_insertf32x8( _mm512_castps256_ps512(_mm512_cvtepi64_ps(kh_lo_epi64)), _mm512_cvtepi64_ps(kh_hi_epi64), 1);
+            __m512 rst_h_f = _mm512_mul_ps(_mm512_mul_ps(kh_f, inv_32768_f), _mm512_mul_ps(_mm512_cvtepi32_ps(oh_epi32), inv_64_f));
+            // rst_v_f
+            __m512 kv_f = _mm512_insertf32x8( _mm512_castps256_ps512(_mm512_cvtepi64_ps(kv_lo_epi64)), _mm512_cvtepi64_ps(kv_hi_epi64), 1);
+            __m512 rst_v_f = _mm512_mul_ps(_mm512_mul_ps(kv_f, inv_32768_f), _mm512_mul_ps(_mm512_cvtepi32_ps(ov_epi32), inv_64_f));
+            // rst_d_f
+            __m512 kd_f = _mm512_insertf32x8( _mm512_castps256_ps512(_mm512_cvtepi64_ps(kd_lo_epi64)), _mm512_cvtepi64_ps(kd_hi_epi64), 1);
+            __m512 rst_d_f = _mm512_mul_ps(_mm512_mul_ps(kd_f, inv_32768_f), _mm512_mul_ps(_mm512_cvtepi32_ps(od_epi32), inv_64_f));
 
-                kh_shift = _mm512_max_epi32(kh_shift, _mm512_setzero_si512());
-                kd_shift = _mm512_max_epi32(kd_shift, _mm512_setzero_si512());
-                kv_shift = _mm512_max_epi32(kv_shift, _mm512_setzero_si512());
+	        __m512d adm_gain_d = _mm512_set1_pd(adm_enhn_gain_limit);
 
-                __m512i add_shift_oh = _mm512_sllv_epi32(_mm512_set1_epi32(1), _mm512_sub_epi32(kh_shift, _mm512_set1_epi32(1)));
-                __m512i add_shift_ov = _mm512_sllv_epi32(_mm512_set1_epi32(1), _mm512_sub_epi32(kv_shift, _mm512_set1_epi32(1)));
-                __m512i add_shift_od = _mm512_sllv_epi32(_mm512_set1_epi32(1), _mm512_sub_epi32(kd_shift, _mm512_set1_epi32(1)));
+            // rst_h min/max as int64
+            __m512d rst_h_lo_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_h_epi32,0)), adm_gain_d);
+            __m512d rst_h_hi_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_h_epi32,1)), adm_gain_d);
+            __m512i rst_h_lo_gain_epi64 = _mm512_cvtpd_epi64(rst_h_lo_gain_pd);
+            __m512i rst_h_hi_gain_epi64 = _mm512_cvtpd_epi64(rst_h_hi_gain_pd);
+            __m512i rst_h_min_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(th_lo_epi64, rst_h_lo_gain_epi64), th_lo_epi64, rst_h_lo_gain_epi64);
+            __m512i rst_h_min_hi_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(th_hi_epi64, rst_h_hi_gain_epi64), th_hi_epi64, rst_h_hi_gain_epi64);
+            __m512i rst_h_max_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(rst_h_lo_gain_epi64, th_lo_epi64), th_lo_epi64, rst_h_lo_gain_epi64);
+            __m512i rst_h_max_hi_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(rst_h_hi_gain_epi64, th_hi_epi64), th_hi_epi64, rst_h_hi_gain_epi64);
 
-                __m512i tmp_kh = _mm512_srlv_epi32(_mm512_add_epi32(abs_oh, add_shift_oh), kh_shift);
-                __m512i tmp_kv = _mm512_srlv_epi32(_mm512_add_epi32(abs_ov, add_shift_ov), kv_shift);
-                __m512i tmp_kd = _mm512_srlv_epi32(_mm512_add_epi32(abs_od, add_shift_od), kd_shift);
+            // rst_h as int64 to int32 after conditionals
+            __m512d rst_h_lo_d = _mm512_cvtps_pd(_mm512_extractf32x8_ps(rst_h_f, 0));
+            __m512d rst_h_hi_d = _mm512_cvtps_pd(_mm512_extractf32x8_ps(rst_h_f, 1));
 
-                __mmask16 abs_oh_lt_32k = _mm512_cmp_epi32_mask(abs_oh, _mm512_set1_epi32(32768), 1);
-                __mmask16 abs_ov_lt_32k = _mm512_cmp_epi32_mask(abs_ov, _mm512_set1_epi32(32768), 1);
-                __mmask16 abs_od_lt_32k = _mm512_cmp_epi32_mask(abs_od, _mm512_set1_epi32(32768), 1); 
+            __mmask8 mask_gt_h_lo = _mm512_cmp_epi64_mask(angle_flag_lo_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_h_lo_d, const_0_pd, _CMP_GT_OS);
+            __mmask8 mask_gt_h_hi = _mm512_cmp_epi64_mask(angle_flag_hi_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_h_hi_d, const_0_pd, _CMP_GT_OS);
+            __mmask8 mask_lt_h_lo = _mm512_cmp_epi64_mask(angle_flag_lo_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_h_lo_d, const_0_pd, _CMP_LT_OS);
+            __mmask8 mask_lt_h_hi = _mm512_cmp_epi64_mask(angle_flag_hi_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_h_hi_d, const_0_pd, _CMP_LT_OS);
 
-                __m512i kh_msb = _mm512_mask_blend_epi32(abs_oh_lt_32k, tmp_kh, abs_oh);
-                __m512i kv_msb = _mm512_mask_blend_epi32(abs_ov_lt_32k, tmp_kv, abs_ov);
-                __m512i kd_msb = _mm512_mask_blend_epi32(abs_od_lt_32k, tmp_kd, abs_od);
+            rst_h_lo_epi64 = _mm512_mask_blend_epi64(mask_gt_h_lo, rst_h_lo_epi64, rst_h_min_lo_epi64);
+            rst_h_hi_epi64 = _mm512_mask_blend_epi64(mask_gt_h_hi, rst_h_hi_epi64, rst_h_min_hi_epi64);
+            rst_h_lo_epi64 = _mm512_mask_blend_epi64(mask_lt_h_lo, rst_h_lo_epi64, rst_h_max_lo_epi64);
+            rst_h_hi_epi64 = _mm512_mask_blend_epi64(mask_lt_h_hi, rst_h_hi_epi64, rst_h_max_hi_epi64);
 
-                kh_msb = _mm512_permutexvar_epi32(perm_for_mul, kh_msb);
-                kv_msb = _mm512_permutexvar_epi32(perm_for_mul, kv_msb);
-                kd_msb = _mm512_permutexvar_epi32(perm_for_mul, kd_msb);
+            rst_h_epi32 = _mm512_inserti32x8( _mm512_castsi256_si512(_mm512_cvtepi64_epi32(rst_h_lo_epi64)), _mm512_cvtepi64_epi32(rst_h_hi_epi64), 1);
 
-                __m512i th_mul = _mm512_mullo_epi32(th, _mm512_set1_epi32(-1));
-                __m512i tv_mul = _mm512_mullo_epi32(tv, _mm512_set1_epi32(-1));
-                __m512i td_mul = _mm512_mullo_epi32(td, _mm512_set1_epi32(-1));
+            // rst_v min/max as int64
+            __m512d rst_v_lo_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_v_epi32,0)), adm_gain_d);
+            __m512d rst_v_hi_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_v_epi32,1)), adm_gain_d);
+            __m512i rst_v_lo_gain_epi64 = _mm512_cvtpd_epi64(rst_v_lo_gain_pd);
+            __m512i rst_v_hi_gain_epi64 = _mm512_cvtpd_epi64(rst_v_hi_gain_pd);
+            __m512i rst_v_min_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(tv_lo_epi64, rst_v_lo_gain_epi64), tv_lo_epi64, rst_v_lo_gain_epi64);
+            __m512i rst_v_min_hi_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(tv_hi_epi64, rst_v_hi_gain_epi64), tv_hi_epi64, rst_v_hi_gain_epi64);
+            __m512i rst_v_max_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(rst_v_lo_gain_epi64, tv_lo_epi64), tv_lo_epi64, rst_v_lo_gain_epi64);
+            __m512i rst_v_max_hi_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(rst_v_hi_gain_epi64, tv_hi_epi64), tv_hi_epi64, rst_v_hi_gain_epi64);
 
-                th_mul = _mm512_mask_blend_epi32(kh_sign, th_mul, th);
-                tv_mul = _mm512_mask_blend_epi32(kv_sign, tv_mul, tv);
-                td_mul = _mm512_mask_blend_epi32(kd_sign, td_mul, td);
+            // rst_v as int64 to int32 after conditionals
+            __m512d rst_v_lo_d = _mm512_cvtps_pd(_mm512_extractf32x8_ps(rst_v_f, 0));
+            __m512d rst_v_hi_d = _mm512_cvtps_pd(_mm512_extractf32x8_ps(rst_v_f, 1));
 
-                th_mul = _mm512_permutexvar_epi32(perm_for_mul, th_mul);
-                tv_mul = _mm512_permutexvar_epi32(perm_for_mul, tv_mul);
-                td_mul = _mm512_permutexvar_epi32(perm_for_mul, td_mul);
+            __mmask8 mask_gt_v_lo = _mm512_cmp_epi64_mask(angle_flag_lo_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_v_lo_d, const_0_pd, _CMP_GT_OS);
+            __mmask8 mask_gt_v_hi = _mm512_cmp_epi64_mask(angle_flag_hi_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_v_hi_d, const_0_pd, _CMP_GT_OS);
+            __mmask8 mask_lt_v_lo = _mm512_cmp_epi64_mask(angle_flag_lo_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_v_lo_d, const_0_pd, _CMP_LT_OS);
+            __mmask8 mask_lt_v_hi = _mm512_cmp_epi64_mask(angle_flag_hi_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_v_hi_d, const_0_pd, _CMP_LT_OS);
 
-                __m512i oh_div = _mm512_i32gather_epi32(_mm512_add_epi32(kh_msb, _mm512_set1_epi32(32768)), adm_div_lookup, 4);
-                __m512i ov_div = _mm512_i32gather_epi32(_mm512_add_epi32(kv_msb, _mm512_set1_epi32(32768)), adm_div_lookup, 4);
-                __m512i od_div = _mm512_i32gather_epi32(_mm512_add_epi32(kd_msb, _mm512_set1_epi32(32768)), adm_div_lookup, 4);
+            rst_v_lo_epi64 = _mm512_mask_blend_epi64(mask_gt_v_lo, rst_v_lo_epi64, rst_v_min_lo_epi64);
+            rst_v_hi_epi64 = _mm512_mask_blend_epi64(mask_gt_v_hi, rst_v_hi_epi64, rst_v_min_hi_epi64);
+            rst_v_lo_epi64 = _mm512_mask_blend_epi64(mask_lt_v_lo, rst_v_lo_epi64, rst_v_max_lo_epi64);
+            rst_v_hi_epi64 = _mm512_mask_blend_epi64(mask_lt_v_hi, rst_v_hi_epi64, rst_v_max_hi_epi64);
 
-                __m512i kh_shift_lo = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(kh_shift, 0));
-                __m512i kh_shift_hi = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(kh_shift, 1));
-                __m512i kv_shift_lo = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(kv_shift, 0));
-                __m512i kv_shift_hi = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(kv_shift, 1));
-                __m512i kd_shift_lo = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(kd_shift, 0));
-                __m512i kd_shift_hi = _mm512_cvtepi32_epi64(_mm512_extracti32x8_epi32(kd_shift, 1));
+            rst_v_epi32 = _mm512_inserti32x8( _mm512_castsi256_si512(_mm512_cvtepi64_epi32(rst_v_lo_epi64)), _mm512_cvtepi64_epi32(rst_v_hi_epi64), 1);
 
-                __m512i add_kh_lo = _mm512_sllv_epi64(_mm512_set1_epi64(1), _mm512_add_epi64(kh_shift_lo, _mm512_set1_epi64(14)));
-                __m512i add_kh_hi = _mm512_sllv_epi64(_mm512_set1_epi64(1), _mm512_add_epi64(kh_shift_hi, _mm512_set1_epi64(14)));
-                __m512i add_kv_lo = _mm512_sllv_epi64(_mm512_set1_epi64(1), _mm512_add_epi64(kv_shift_lo, _mm512_set1_epi64(14)));
-                __m512i add_kv_hi = _mm512_sllv_epi64(_mm512_set1_epi64(1), _mm512_add_epi64(kv_shift_hi, _mm512_set1_epi64(14)));
-                __m512i add_kd_lo = _mm512_sllv_epi64(_mm512_set1_epi64(1), _mm512_add_epi64(kd_shift_lo, _mm512_set1_epi64(14)));
-                __m512i add_kd_hi = _mm512_sllv_epi64(_mm512_set1_epi64(1), _mm512_add_epi64(kd_shift_hi, _mm512_set1_epi64(14)));
+            // rst_d min/max as int64
+            __m512d rst_d_lo_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_d_epi32,0)), adm_gain_d);
+            __m512d rst_d_hi_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_d_epi32,1)), adm_gain_d);
+            __m512i rst_d_lo_gain_epi64 = _mm512_cvtpd_epi64(rst_d_lo_gain_pd);
+            __m512i rst_d_hi_gain_epi64 = _mm512_cvtpd_epi64(rst_d_hi_gain_pd);
+            __m512i rst_d_min_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(td_lo_epi64, rst_d_lo_gain_epi64), td_lo_epi64, rst_d_lo_gain_epi64);
+            __m512i rst_d_min_hi_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(td_hi_epi64, rst_d_hi_gain_epi64), td_hi_epi64, rst_d_hi_gain_epi64);
+            __m512i rst_d_max_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(rst_d_lo_gain_epi64, td_lo_epi64), td_lo_epi64, rst_d_lo_gain_epi64);
+            __m512i rst_d_max_hi_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(rst_d_hi_gain_epi64, td_hi_epi64), td_hi_epi64, rst_d_hi_gain_epi64);
 
-                __m512i oh_div_th_lo = _mm512_add_epi64(_mm512_mul_epi32(oh_div, th_mul), add_kh_lo);
-                __m512i oh_div_th_hi = _mm512_add_epi64(_mm512_mul_epi32(_mm512_srli_epi64(oh_div, 32), _mm512_srli_epi64(th_mul, 32)), add_kh_hi);
-                __m512i ov_div_th_lo = _mm512_add_epi64(_mm512_mul_epi32(ov_div, tv_mul), add_kv_lo);
-                __m512i ov_div_th_hi = _mm512_add_epi64(_mm512_mul_epi32(_mm512_srli_epi64(ov_div, 32), _mm512_srli_epi64(tv_mul, 32)), add_kv_hi);
-                __m512i od_div_th_lo = _mm512_add_epi64(_mm512_mul_epi32(od_div, td_mul), add_kd_lo);
-                __m512i od_div_th_hi = _mm512_add_epi64(_mm512_mul_epi32(_mm512_srli_epi64(od_div, 32), _mm512_srli_epi64(td_mul, 32)), add_kd_hi);
+            // rst_d as int64 to int32 after conditionals
+            __m512d rst_d_lo_d = _mm512_cvtps_pd(_mm512_extractf32x8_ps(rst_d_f, 0));
+            __m512d rst_d_hi_d = _mm512_cvtps_pd(_mm512_extractf32x8_ps(rst_d_f, 1));
 
-                __m512i kh_shift_lo_p_15 = _mm512_add_epi64(kh_shift_lo, _mm512_set1_epi64(15));
-                __m512i kh_shift_hi_p_15 = _mm512_add_epi64(kh_shift_hi, _mm512_set1_epi64(15));
-                __m512i kv_shift_lo_p_15 = _mm512_add_epi64(kv_shift_lo, _mm512_set1_epi64(15));
-                __m512i kv_shift_hi_p_15 = _mm512_add_epi64(kv_shift_hi, _mm512_set1_epi64(15));
-                __m512i kd_shift_lo_p_15 = _mm512_add_epi64(kd_shift_lo, _mm512_set1_epi64(15));
-                __m512i kd_shift_hi_p_15 = _mm512_add_epi64(kd_shift_hi, _mm512_set1_epi64(15));
+            __mmask8 mask_gt_d_lo = _mm512_cmp_epi64_mask(angle_flag_lo_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_d_lo_d, const_0_pd, _CMP_GT_OS);
+            __mmask8 mask_gt_d_hi = _mm512_cmp_epi64_mask(angle_flag_hi_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_d_hi_d, const_0_pd, _CMP_GT_OS);
+            __mmask8 mask_lt_d_lo = _mm512_cmp_epi64_mask(angle_flag_lo_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_d_lo_d, const_0_pd, _CMP_LT_OS);
+            __mmask8 mask_lt_d_hi = _mm512_cmp_epi64_mask(angle_flag_hi_epi64, const_0_epi64, _MM_CMPINT_NE) & _mm512_cmp_pd_mask(rst_d_hi_d, const_0_pd, _CMP_LT_OS);
 
-                __mmask8 kh_sign_lo = _mm512_cmp_epi64_mask(oh_div_th_lo, _mm512_setzero_si512(), 5);
-                __mmask8 kh_sign_hi = _mm512_cmp_epi64_mask(oh_div_th_hi, _mm512_setzero_si512(), 5);
-                __mmask8 kv_sign_lo = _mm512_cmp_epi64_mask(ov_div_th_lo, _mm512_setzero_si512(), 5);
-                __mmask8 kv_sign_hi = _mm512_cmp_epi64_mask(ov_div_th_hi, _mm512_setzero_si512(), 5);
-                __mmask8 kd_sign_lo = _mm512_cmp_epi64_mask(od_div_th_lo, _mm512_setzero_si512(), 5);
-                __mmask8 kd_sign_hi = _mm512_cmp_epi64_mask(od_div_th_hi, _mm512_setzero_si512(), 5);
-                
-                oh_div_th_lo = _mm512_srlv_epi64(oh_div_th_lo, kh_shift_lo_p_15);
-                oh_div_th_hi = _mm512_srlv_epi64(oh_div_th_hi, kh_shift_hi_p_15);
-                ov_div_th_lo = _mm512_srlv_epi64(ov_div_th_lo, kv_shift_lo_p_15);
-                ov_div_th_hi = _mm512_srlv_epi64(ov_div_th_hi, kv_shift_hi_p_15);
-                od_div_th_lo = _mm512_srlv_epi64(od_div_th_lo, kd_shift_lo_p_15);
-                od_div_th_hi = _mm512_srlv_epi64(od_div_th_hi, kd_shift_hi_p_15);    
+            rst_d_lo_epi64 = _mm512_mask_blend_epi64(mask_gt_d_lo, rst_d_lo_epi64, rst_d_min_lo_epi64);
+            rst_d_hi_epi64 = _mm512_mask_blend_epi64(mask_gt_d_hi, rst_d_hi_epi64, rst_d_min_hi_epi64);
+            rst_d_lo_epi64 = _mm512_mask_blend_epi64(mask_lt_d_lo, rst_d_lo_epi64, rst_d_max_lo_epi64);
+            rst_d_hi_epi64 = _mm512_mask_blend_epi64(mask_lt_d_hi, rst_d_hi_epi64, rst_d_max_hi_epi64);
 
-                __m512i msb_kh_lo = _mm512_andnot_si512(_mm512_srlv_epi64(_mm512_set1_epi64(0xFFFFFFFFFFFFFFFF), kh_shift_lo_p_15), _mm512_set1_epi64(0xFFFFFFFFFFFFFFFF));
-                __m512i msb_kh_hi = _mm512_andnot_si512(_mm512_srlv_epi64(_mm512_set1_epi64(0xFFFFFFFFFFFFFFFF), kh_shift_hi_p_15), _mm512_set1_epi64(0xFFFFFFFFFFFFFFFF));
-                __m512i msb_kv_lo = _mm512_andnot_si512(_mm512_srlv_epi64(_mm512_set1_epi64(0xFFFFFFFFFFFFFFFF), kv_shift_lo_p_15), _mm512_set1_epi64(0xFFFFFFFFFFFFFFFF));
-                __m512i msb_kv_hi = _mm512_andnot_si512(_mm512_srlv_epi64(_mm512_set1_epi64(0xFFFFFFFFFFFFFFFF), kv_shift_hi_p_15), _mm512_set1_epi64(0xFFFFFFFFFFFFFFFF));
-                __m512i msb_kd_lo = _mm512_andnot_si512(_mm512_srlv_epi64(_mm512_set1_epi64(0xFFFFFFFFFFFFFFFF), kd_shift_lo_p_15), _mm512_set1_epi64(0xFFFFFFFFFFFFFFFF));
-                __m512i msb_kd_hi = _mm512_andnot_si512(_mm512_srlv_epi64(_mm512_set1_epi64(0xFFFFFFFFFFFFFFFF), kd_shift_hi_p_15), _mm512_set1_epi64(0xFFFFFFFFFFFFFFFF));
+            rst_d_epi32 = _mm512_inserti32x8( _mm512_castsi256_si512(_mm512_cvtepi64_epi32(rst_d_lo_epi64)), _mm512_cvtepi64_epi32(rst_d_hi_epi64), 1);
 
-                oh_div_th_lo = _mm512_or_si512(oh_div_th_lo, _mm512_mask_blend_epi64(kh_sign_lo, msb_kh_lo, _mm512_setzero_si512()));
-                oh_div_th_hi = _mm512_or_si512(oh_div_th_hi, _mm512_mask_blend_epi64(kh_sign_hi, msb_kh_hi, _mm512_setzero_si512()));
-                ov_div_th_lo = _mm512_or_si512(ov_div_th_lo, _mm512_mask_blend_epi64(kv_sign_lo, msb_kv_lo, _mm512_setzero_si512()));
-                ov_div_th_hi = _mm512_or_si512(ov_div_th_hi, _mm512_mask_blend_epi64(kv_sign_hi, msb_kv_hi, _mm512_setzero_si512()));
-                od_div_th_lo = _mm512_or_si512(od_div_th_lo, _mm512_mask_blend_epi64(kd_sign_lo, msb_kd_lo, _mm512_setzero_si512()));
-                od_div_th_hi = _mm512_or_si512(od_div_th_hi, _mm512_mask_blend_epi64(kd_sign_hi, msb_kd_hi, _mm512_setzero_si512()));
 
-                __m512i tmp_kh_lo = _mm512_mask_blend_epi64(_mm512_cmp_epi64_mask(oh_lo, _mm512_setzero_si512(), 0), oh_div_th_lo, _mm512_set1_epi64(32768));
-                __m512i tmp_kh_hi = _mm512_mask_blend_epi64(_mm512_cmp_epi64_mask(oh_hi, _mm512_setzero_si512(), 0), oh_div_th_hi, _mm512_set1_epi64(32768));
-                __m512i tmp_kd_lo = _mm512_mask_blend_epi64(_mm512_cmp_epi64_mask(od_lo, _mm512_setzero_si512(), 0), od_div_th_lo, _mm512_set1_epi64(32768));
-                __m512i tmp_kd_hi = _mm512_mask_blend_epi64(_mm512_cmp_epi64_mask(od_hi, _mm512_setzero_si512(), 0), od_div_th_hi, _mm512_set1_epi64(32768));
-                __m512i tmp_kv_lo = _mm512_mask_blend_epi64(_mm512_cmp_epi64_mask(ov_lo, _mm512_setzero_si512(), 0), ov_div_th_lo, _mm512_set1_epi64(32768));
-                __m512i tmp_kv_hi = _mm512_mask_blend_epi64(_mm512_cmp_epi64_mask(ov_hi, _mm512_setzero_si512(), 0), ov_div_th_hi, _mm512_set1_epi64(32768));
 
-                tmp_kh_lo = _mm512_min_epi64(_mm512_max_epi64(tmp_kh_lo, _mm512_setzero_si512()), _mm512_set1_epi64(32768));
-                tmp_kh_hi = _mm512_min_epi64(_mm512_max_epi64(tmp_kh_hi, _mm512_setzero_si512()), _mm512_set1_epi64(32768));
-                tmp_kd_lo = _mm512_min_epi64(_mm512_max_epi64(tmp_kd_lo, _mm512_setzero_si512()), _mm512_set1_epi64(32768));
-                tmp_kd_hi = _mm512_min_epi64(_mm512_max_epi64(tmp_kd_hi, _mm512_setzero_si512()), _mm512_set1_epi64(32768));
-                tmp_kv_lo = _mm512_min_epi64(_mm512_max_epi64(tmp_kv_lo, _mm512_setzero_si512()), _mm512_set1_epi64(32768));
-                tmp_kv_hi = _mm512_min_epi64(_mm512_max_epi64(tmp_kv_hi, _mm512_setzero_si512()), _mm512_set1_epi64(32768));
 
-                __m512i const_16384_64b = _mm512_set1_epi64(16384);
 
-                __m512i rst_h_lo = _mm512_add_epi64(_mm512_mul_epi32(tmp_kh_lo, oh_lo), const_16384_64b);
-                __m512i rst_h_hi = _mm512_add_epi64(_mm512_mul_epi32(tmp_kh_hi, oh_hi), const_16384_64b);
-                __m512i rst_d_lo = _mm512_add_epi64(_mm512_mul_epi32(tmp_kd_lo, od_lo), const_16384_64b);
-                __m512i rst_d_hi = _mm512_add_epi64(_mm512_mul_epi32(tmp_kd_hi, od_hi), const_16384_64b);
-                __m512i rst_v_lo = _mm512_add_epi64(_mm512_mul_epi32(tmp_kv_lo, ov_lo), const_16384_64b);
-                __m512i rst_v_hi = _mm512_add_epi64(_mm512_mul_epi32(tmp_kv_hi, ov_hi), const_16384_64b);
 
-                shift15_64b_signExt_512(rst_h_lo, rst_h_lo);
-                shift15_64b_signExt_512(rst_h_hi, rst_h_hi);
-                // rst_h_hi = _mm512_srai_epi64(rst_h_hi, 15);
-                shift15_64b_signExt_512(rst_d_lo, rst_d_lo);
-                shift15_64b_signExt_512(rst_d_hi, rst_d_hi);
-                shift15_64b_signExt_512(rst_v_lo, rst_v_lo);
-                shift15_64b_signExt_512(rst_v_hi, rst_v_hi);
+            __m512i th_sub_rst_h_epi32 = _mm512_sub_epi32(th_epi32, rst_h_epi32);
+            __m512i tv_sub_rst_v_epi32 = _mm512_sub_epi32(tv_epi32, rst_v_epi32);
+            __m512i td_sub_rst_d_epi32 = _mm512_sub_epi32(td_epi32, rst_d_epi32);
 
-                __m512d inv_32768 = _mm512_set1_pd((double)1/32768);
-                __m512d inv_64 = _mm512_set1_pd((double)1/64);
-
-                __m512d rst_h_f_lo = _mm512_mul_pd(_mm512_mul_pd(_mm512_cvtepi64_pd(tmp_kh_lo), inv_32768), _mm512_mul_pd(_mm512_cvtepi64_pd(oh_lo), inv_64));
-                __m512d rst_h_f_hi = _mm512_mul_pd(_mm512_mul_pd(_mm512_cvtepi64_pd(tmp_kh_hi), inv_32768), _mm512_mul_pd(_mm512_cvtepi64_pd(oh_hi), inv_64));
-                __m512d rst_d_f_lo = _mm512_mul_pd(_mm512_mul_pd(_mm512_cvtepi64_pd(tmp_kd_lo), inv_32768), _mm512_mul_pd(_mm512_cvtepi64_pd(od_lo), inv_64));
-                __m512d rst_d_f_hi = _mm512_mul_pd(_mm512_mul_pd(_mm512_cvtepi64_pd(tmp_kd_hi), inv_32768), _mm512_mul_pd(_mm512_cvtepi64_pd(od_hi), inv_64));
-                __m512d rst_v_f_lo = _mm512_mul_pd(_mm512_mul_pd(_mm512_cvtepi64_pd(tmp_kv_lo), inv_32768), _mm512_mul_pd(_mm512_cvtepi64_pd(ov_lo), inv_64));
-                __m512d rst_v_f_hi = _mm512_mul_pd(_mm512_mul_pd(_mm512_cvtepi64_pd(tmp_kv_hi), inv_32768), _mm512_mul_pd(_mm512_cvtepi64_pd(ov_hi), inv_64));
-
-                __m512i const_adm_enhn_gain = _mm512_set1_epi64((int)adm_enhn_gain_limit);
-
-                __m512i rst_h_gain_lo = _mm512_mul_epi32(rst_h_lo, const_adm_enhn_gain);
-                __m512i rst_h_gain_hi = _mm512_mul_epi32(rst_h_hi, const_adm_enhn_gain);
-                __m512i rst_v_gain_lo = _mm512_mul_epi32(rst_v_lo, const_adm_enhn_gain);
-                __m512i rst_v_gain_hi = _mm512_mul_epi32(rst_v_hi, const_adm_enhn_gain);
-                __m512i rst_d_gain_lo = _mm512_mul_epi32(rst_d_lo, const_adm_enhn_gain);
-                __m512i rst_d_gain_hi = _mm512_mul_epi32(rst_d_hi, const_adm_enhn_gain);
-
-                __m512i h_min_lo = _mm512_min_epi64(rst_h_gain_lo, th_lo);
-                __m512i h_min_hi = _mm512_min_epi64(rst_h_gain_hi, th_hi);
-                __m512i h_max_lo = _mm512_max_epi64(rst_h_gain_lo, th_lo);
-                __m512i h_max_hi = _mm512_max_epi64(rst_h_gain_hi, th_hi);
-                __m512i v_min_lo = _mm512_min_epi64(rst_v_gain_lo, tv_lo);
-                __m512i v_min_hi = _mm512_min_epi64(rst_v_gain_hi, tv_hi);
-                __m512i v_max_lo = _mm512_max_epi64(rst_v_gain_lo, tv_lo);
-                __m512i v_max_hi = _mm512_max_epi64(rst_v_gain_hi, tv_hi);
-                __m512i d_min_lo = _mm512_min_epi64(rst_d_gain_lo, td_lo);
-                __m512i d_min_hi = _mm512_min_epi64(rst_d_gain_hi, td_hi);
-                __m512i d_max_lo = _mm512_max_epi64(rst_d_gain_lo, td_lo);
-                __m512i d_max_hi = _mm512_max_epi64(rst_d_gain_hi, td_hi);
-
-                __mmask8 gt0_rst_h_f_lo = _mm512_cmp_pd_mask(rst_h_f_lo, _mm512_setzero_pd(), 14);
-                __mmask8 gt0_rst_h_f_hi = _mm512_cmp_pd_mask(rst_h_f_hi, _mm512_setzero_pd(), 14);
-                __mmask8 lt0_rst_h_f_lo = _mm512_cmp_pd_mask(rst_h_f_lo, _mm512_setzero_pd(), 1);
-                __mmask8 lt0_rst_h_f_hi = _mm512_cmp_pd_mask(rst_h_f_hi, _mm512_setzero_pd(), 1);
-                
-                __mmask8 gt0_rst_v_f_lo = _mm512_cmp_pd_mask(rst_v_f_lo, _mm512_setzero_pd(), 14);
-                __mmask8 gt0_rst_v_f_hi = _mm512_cmp_pd_mask(rst_v_f_hi, _mm512_setzero_pd(), 14);
-                __mmask8 lt0_rst_v_f_lo = _mm512_cmp_pd_mask(rst_v_f_lo, _mm512_setzero_pd(), 1);
-                __mmask8 lt0_rst_v_f_hi = _mm512_cmp_pd_mask(rst_v_f_hi, _mm512_setzero_pd(), 1);
-
-                __mmask8 gt0_rst_d_f_lo = _mm512_cmp_pd_mask(rst_d_f_lo, _mm512_setzero_pd(), 14);
-                __mmask8 gt0_rst_d_f_hi = _mm512_cmp_pd_mask(rst_d_f_hi, _mm512_setzero_pd(), 14);
-                __mmask8 lt0_rst_d_f_lo = _mm512_cmp_pd_mask(rst_d_f_lo, _mm512_setzero_pd(), 1);
-                __mmask8 lt0_rst_d_f_hi = _mm512_cmp_pd_mask(rst_d_f_hi, _mm512_setzero_pd(), 1);
-
-                h_min_lo = _mm512_mask_blend_epi64(gt0_rst_h_f_lo, _mm512_setzero_epi32(), h_min_lo);
-                h_min_hi = _mm512_mask_blend_epi64(gt0_rst_h_f_hi, _mm512_setzero_epi32(), h_min_hi);
-                h_max_lo = _mm512_mask_blend_epi64(lt0_rst_h_f_lo, _mm512_setzero_epi32(), h_max_lo);
-                h_max_hi = _mm512_mask_blend_epi64(lt0_rst_h_f_hi, _mm512_setzero_epi32(), h_max_hi);
-                v_min_lo = _mm512_mask_blend_epi64(gt0_rst_v_f_lo, _mm512_setzero_epi32(), v_min_lo);
-                v_min_hi = _mm512_mask_blend_epi64(gt0_rst_v_f_hi, _mm512_setzero_epi32(), v_min_hi);
-                v_max_lo = _mm512_mask_blend_epi64(lt0_rst_v_f_lo, _mm512_setzero_epi32(), v_max_lo);
-                v_max_hi = _mm512_mask_blend_epi64(lt0_rst_v_f_hi, _mm512_setzero_epi32(), v_max_hi);
-                d_min_lo = _mm512_mask_blend_epi64(gt0_rst_d_f_lo, _mm512_setzero_epi32(), d_min_lo);
-                d_min_hi = _mm512_mask_blend_epi64(gt0_rst_d_f_hi, _mm512_setzero_epi32(), d_min_hi);
-                d_max_lo = _mm512_mask_blend_epi64(lt0_rst_d_f_lo, _mm512_setzero_epi32(), d_max_lo);
-                d_max_hi = _mm512_mask_blend_epi64(lt0_rst_d_f_hi, _mm512_setzero_epi32(), d_max_hi);
-
-                __mmask8 mask_min_max_h_lo = _kor_mask8(gt0_rst_h_f_lo, lt0_rst_h_f_lo);
-                __mmask8 mask_min_max_h_hi = _kor_mask8(gt0_rst_h_f_hi, lt0_rst_h_f_hi);
-                __mmask8 mask_min_max_v_lo = _kor_mask8(gt0_rst_v_f_lo, lt0_rst_v_f_lo);
-                __mmask8 mask_min_max_v_hi = _kor_mask8(gt0_rst_v_f_hi, lt0_rst_v_f_hi);
-                __mmask8 mask_min_max_d_lo = _kor_mask8(gt0_rst_d_f_lo, lt0_rst_d_f_lo);
-                __mmask8 mask_min_max_d_hi = _kor_mask8(gt0_rst_d_f_hi, lt0_rst_d_f_hi);
-            
-                __m512i h_min_max_lo = _mm512_or_si512(h_min_lo, h_max_lo);
-                __m512i h_min_max_hi = _mm512_or_si512(h_min_hi, h_max_hi);
-                __m512i v_min_max_lo = _mm512_or_si512(v_min_lo, v_max_lo);
-                __m512i v_min_max_hi = _mm512_or_si512(v_min_hi, v_max_hi);
-                __m512i d_min_max_lo = _mm512_or_si512(d_min_lo, d_max_lo);
-                __m512i d_min_max_hi = _mm512_or_si512(d_min_hi, d_max_hi);
-                
-                h_min_max_lo = _mm512_mask_blend_epi64(mask_min_max_h_lo, rst_h_lo, h_min_max_lo);
-                h_min_max_hi = _mm512_mask_blend_epi64(mask_min_max_h_hi, rst_h_hi, h_min_max_hi);
-                v_min_max_lo = _mm512_mask_blend_epi64(mask_min_max_v_lo, rst_v_lo, v_min_max_lo);
-                v_min_max_hi = _mm512_mask_blend_epi64(mask_min_max_v_hi, rst_v_hi, v_min_max_hi);
-                d_min_max_lo = _mm512_mask_blend_epi64(mask_min_max_d_lo, rst_d_lo, d_min_max_lo);
-                d_min_max_hi = _mm512_mask_blend_epi64(mask_min_max_d_hi, rst_d_hi, d_min_max_hi);
-
-                rst_h_lo = _mm512_mask_blend_epi64(angle_flag_lo, rst_h_lo, h_min_max_lo);
-                rst_h_hi = _mm512_mask_blend_epi64(angle_flag_hi, rst_h_hi, h_min_max_hi);
-                rst_v_lo = _mm512_mask_blend_epi64(angle_flag_lo, rst_v_lo, v_min_max_lo);
-                rst_v_hi = _mm512_mask_blend_epi64(angle_flag_hi, rst_v_hi, v_min_max_hi);
-                rst_d_lo = _mm512_mask_blend_epi64(angle_flag_lo, rst_d_lo, d_min_max_lo);
-                rst_d_hi = _mm512_mask_blend_epi64(angle_flag_hi, rst_d_hi, d_min_max_hi);
-
-                th_lo = _mm512_sub_epi64(th_lo, rst_h_lo);
-                th_hi = _mm512_sub_epi64(th_hi, rst_h_hi);
-                tv_lo = _mm512_sub_epi64(tv_lo, rst_v_lo);
-                tv_hi = _mm512_sub_epi64(tv_hi, rst_v_hi);
-                td_lo = _mm512_sub_epi64(td_lo, rst_d_lo);
-                td_hi = _mm512_sub_epi64(td_hi, rst_d_hi);
-
-                _mm512_storeu_si512((__m512i*)(r->band_h + i * stride + j), _mm512_permutex2var_epi32(rst_h_lo, _mm512_set_epi32(30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0) , rst_h_hi));
-                _mm512_storeu_si512((__m512i*)(r->band_v + i * stride + j), _mm512_permutex2var_epi32(rst_v_lo, _mm512_set_epi32(30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0) , rst_v_hi));
-                _mm512_storeu_si512((__m512i*)(r->band_d + i * stride + j), _mm512_permutex2var_epi32(rst_d_lo, _mm512_set_epi32(30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0) , rst_d_hi));
-                _mm512_storeu_si512((__m512i*)(a->band_h + i * stride + j), _mm512_permutex2var_epi32(th_lo, _mm512_set_epi32(30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0) , th_hi));
-                _mm512_storeu_si512((__m512i*)(a->band_v + i * stride + j), _mm512_permutex2var_epi32(tv_lo, _mm512_set_epi32(30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0) , tv_hi));
-                _mm512_storeu_si512((__m512i*)(a->band_d + i * stride + j), _mm512_permutex2var_epi32(td_lo, _mm512_set_epi32(30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0) , td_hi));
+            // store
+            _mm512_storeu_si512((__m512i*)(r->band_h + i * stride + j), rst_h_epi32);
+            _mm512_storeu_si512((__m512i*)(r->band_v + i * stride + j), rst_v_epi32);
+            _mm512_storeu_si512((__m512i*)(r->band_d + i * stride + j), rst_d_epi32);
+            _mm512_storeu_si512((__m512i*)(a->band_h + i * stride + j), th_sub_rst_h_epi32);
+            _mm512_storeu_si512((__m512i*)(a->band_v + i * stride + j), tv_sub_rst_v_epi32);
+            _mm512_storeu_si512((__m512i*)(a->band_d + i * stride + j), td_sub_rst_d_epi32);
         }
 
-        for(int j = right_mod16; j < right; j++)
+        for (int j = right_mod16; j < right; ++j)
         {
             int32_t oh = ref->band_h[i * stride + j];
             int32_t ov = ref->band_v[i * stride + j];
@@ -1508,52 +1460,22 @@ void adm_decouple_s123_avx512(AdmBuffer *buf, int w, int h, int stride,
             int32_t td = dis->band_d[i * stride + j];
             int32_t rst_h, rst_v, rst_d;
 
-            /* Determine if angle between (oh,ov) and (th,tv) is less than 1 degree.
-             * Given that u is the angle (oh,ov) and v is the angle (th,tv), this can
-             * be done by testing the inequvality.
-             *
-             * { (u.v.) >= 0 } AND { (u.v)^2 >= cos(1deg)^2 * ||u||^2 * ||v||^2 }
-             *
-             * Proof:
-             *
-             * cos(theta) = (u.v) / (||u|| * ||v||)
-             *
-             * IF u.v >= 0 THEN
-             *   cos(theta)^2 = (u.v)^2 / (||u||^2 * ||v||^2)
-             *   (u.v)^2 = cos(theta)^2 * ||u||^2 * ||v||^2
-             *
-             *   IF |theta| < 1deg THEN
-             *     (u.v)^2 >= cos(1deg)^2 * ||u||^2 * ||v||^2
-             *   END
-             * ELSE
-             *   |theta| > 90deg
-             * END
-             */
             ot_dp = (int64_t)oh * th + (int64_t)ov * tv;
             o_mag_sq = (int64_t)oh * oh + (int64_t)ov * ov;
             t_mag_sq = (int64_t)th * th + (int64_t)tv * tv;
 
+// cast to float changes the precision of the convertion, it can change the value of angle_flag
+#if 1
             int angle_flag = (((float)ot_dp / 4096.0) >= 0.0f) &&
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
+#else
+            int angle_flag = (((double)ot_dp / 4096.0) >= 0.0f) &&
+                (((double)ot_dp / 4096.0) * ((double)ot_dp / 4096.0) >=
+                    cos_1deg_sq * ((double)o_mag_sq / 4096.0) * ((double)t_mag_sq / 4096.0));
+#endif
 
-            /**
-             * Division th/oh is carried using lookup table and converted to multiplication
-             * int64 / int32 is converted to multiplication using following method
-             * num /den :
-             * DenAbs = Abs(den)
-             * MSBDen = MSB(DenAbs)     (gives position of first 1 bit form msb side)
-             * If (DenAbs < (1 << 15))
-             *      Round = (1<<14)
-             *      Score = (num *  div_lookup[den] + Round ) >> 15
-             * else
-             *      RoundD  = (1<< (16 - MSBDen))
-             *      Round   = (1<< (14 + (17 - MSBDen))
-             *      Score   = (num * div_lookup[(DenAbs + RoundD )>>(17 - MSBDen)]*sign(Denominator) + Round)
-             *                  >> ((15 + (17 - MSBDen))
-             */
-
-            int32_t kh_shift = 0;
+             int32_t kh_shift = 0;
             int32_t kv_shift = 0;
             int32_t kd_shift = 0;
 
@@ -1583,10 +1505,16 @@ void adm_decouple_s123_avx512(AdmBuffer *buf, int w, int h, int stride,
             rst_h = ((kh * oh) + 16384) >> 15;
             rst_v = ((kv * ov) + 16384) >> 15;
             rst_d = ((kd * od) + 16384) >> 15;
-
+#if 1
             const float rst_h_f = ((float)kh / 32768) * ((float)oh / 64);
             const float rst_v_f = ((float)kv / 32768) * ((float)ov / 64);
             const float rst_d_f = ((float)kd / 32768) * ((float)od / 64);
+#else
+            const double rst_h_f = ((double)kh / 32768) * ((double)oh / 64);
+            const double rst_v_f = ((double)kv / 32768) * ((double)ov / 64);
+            const double rst_d_f = ((double)kd / 32768) * ((double)od / 64);
+
+#endif
 
             if (angle_flag && (rst_h_f > 0.)) rst_h = MIN((rst_h * adm_enhn_gain_limit), th);
             if (angle_flag && (rst_h_f < 0.)) rst_h = MAX((rst_h * adm_enhn_gain_limit), th);
@@ -1600,13 +1528,15 @@ void adm_decouple_s123_avx512(AdmBuffer *buf, int w, int h, int stride,
             r->band_h[i * stride + j] = rst_h;
             r->band_v[i * stride + j] = rst_v;
             r->band_d[i * stride + j] = rst_d;
-
             a->band_h[i * stride + j] = th - rst_h;
             a->band_v[i * stride + j] = tv - rst_v;
             a->band_d[i * stride + j] = td - rst_d;
         }
     }
 }
+
+
+
 
 /*
  * lambda = 0 (finest scale), 1, 2, 3 (coarsest scale);
@@ -1786,7 +1716,7 @@ float adm_cm_avx512(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
     {
         __m512i i_rfactor0 = _mm512_maskz_set1_epi32(0x3FFF, i_rfactor[0]);
         __m512i i_rfactor1 = _mm512_maskz_set1_epi32(0x3FFF, i_rfactor[1]);
-        __m512i i_rfactor2 = _mm512_maskz_set1_epi32(0x3FFF, i_rfactor[2]);  
+        __m512i i_rfactor2 = _mm512_maskz_set1_epi32(0x3FFF, i_rfactor[2]);
         for (i = start_row; i < end_row; ++i) {
             accum_inner_h = 0;
             accum_inner_v = 0;
@@ -1812,7 +1742,7 @@ float adm_cm_avx512(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
                                 add_shift_xvcub, shift_xvcub, accum_inner_v_lo_512, accum_inner_v_hi_512);
                 ADM_CM_ACCUM_ROUND_avx512(xd_512, thr_512, shift_xdsub, xd_sq, add_shift_xdsq, shift_xdsq, val,
                                 add_shift_xdcub, shift_xdcub, accum_inner_d_lo_512, accum_inner_d_hi_512);
-            }            
+            }
             accum_inner_h_lo_512 = _mm512_add_epi64(accum_inner_h_lo_512, accum_inner_h_hi_512);
             __m256i r4_h = _mm256_add_epi64(_mm512_castsi512_si256(accum_inner_h_lo_512), _mm512_extracti64x4_epi64(accum_inner_h_lo_512, 1));
             __m128i r2_h = _mm_add_epi64(_mm256_castsi256_si128(r4_h), _mm256_extracti128_si256(r4_h, 1));
@@ -1822,7 +1752,7 @@ float adm_cm_avx512(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
             __m256i r4_v = _mm256_add_epi64(_mm512_castsi512_si256(accum_inner_v_lo_512), _mm512_extracti64x4_epi64(accum_inner_v_lo_512, 1));
             __m128i r2_v = _mm_add_epi64(_mm256_castsi256_si128(r4_v), _mm256_extracti128_si256(r4_v, 1));
             int64_t res_v = r2_v[0] + r2_v[1];
-            
+
             accum_inner_d_lo_512 = _mm512_add_epi64(accum_inner_d_lo_512, accum_inner_d_hi_512);
             __m256i r4_d = _mm256_add_epi64(_mm512_castsi512_si256(accum_inner_d_lo_512), _mm512_extracti64x4_epi64(accum_inner_d_lo_512, 1));
             __m128i r2_d = _mm_add_epi64(_mm256_castsi256_si128(r4_d), _mm256_extracti128_si256(r4_d, 1));
@@ -1836,10 +1766,10 @@ float adm_cm_avx512(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
                 ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_a_stride, &thr, w, h, i, j);
                 ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
                                    add_shift_xhcub, shift_xhcub, accum_inner_h);
-                
+
                 ADM_CM_ACCUM_ROUND(xv, thr, shift_xvsub, xv_sq, add_shift_xvsq, shift_xvsq, val,
                                    add_shift_xvcub, shift_xvcub, accum_inner_v);
-                    
+
                 ADM_CM_ACCUM_ROUND(xd, thr, shift_xdsub, xd_sq, add_shift_xdsq, shift_xdsq, val,
                                    add_shift_xdcub, shift_xdcub, accum_inner_d);
             }
@@ -1847,7 +1777,7 @@ float adm_cm_avx512(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
             accum_h += (accum_inner_h + res_h + add_shift_inner_accum) >> shift_inner_accum;
             accum_v += (accum_inner_v + res_v + add_shift_inner_accum) >> shift_inner_accum;
             accum_d += (accum_inner_d + res_d + add_shift_inner_accum) >> shift_inner_accum;
-        }        
+        }
     }
     else if ((left <= 0) && (right <= (w - 1))) /* Right border within frame, left outside */
     {
@@ -2203,7 +2133,7 @@ float i4_adm_cm_avx512(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_s
             accum_inner_h = 0;
             accum_inner_v = 0;
             accum_inner_d = 0;
-            
+
             accum_inner_h_512 = _mm512_setzero_si512();
             accum_inner_v_512 = _mm512_setzero_si512();
             accum_inner_d_512 = _mm512_setzero_si512();
@@ -2213,7 +2143,7 @@ float i4_adm_cm_avx512(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_s
                 xh_512 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(src->band_h + i * src_stride + j)));
                 xv_512 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(src->band_v + i * src_stride + j)));
                 xd_512 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(src->band_d + i * src_stride + j)));
-                
+
                 __m512i rfactor0 = _mm512_maskz_set1_epi64(0x3F, rfactor[0]);
                 __m512i rfactor1 = _mm512_maskz_set1_epi64(0x3F, rfactor[1]);
                 __m512i rfactor2 = _mm512_maskz_set1_epi64(0x3F, rfactor[2]);
@@ -2222,13 +2152,13 @@ float i4_adm_cm_avx512(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_s
                 xh_512 = _mm512_srai_epi64(_mm512_add_epi64(_mm512_mul_epi32(xh_512, rfactor0), add_shift), shift_dst[scale - 1]);
                 xv_512 = _mm512_srai_epi64(_mm512_add_epi64(_mm512_mul_epi32(xv_512, rfactor1), add_shift), shift_dst[scale - 1]);
                 xd_512 = _mm512_srai_epi64(_mm512_add_epi64(_mm512_mul_epi32(xd_512, rfactor2), add_shift), shift_dst[scale - 1]);
-                
+
                 I4_ADM_CM_THRESH_S_I_J_avx512(angles, flt_angles, csf_a_stride, &thr, w, h, i, j,
                                                 add_bef_shift_flt[scale - 1], shift_flt[scale - 1], &thr_512);
 
                 I4_ADM_CM_ACCUM_ROUND_avx512(xh_512, thr_512, shift_sub, xh_sq, add_shift_sq, shift_sq, val,
                                       add_shift_cub, shift_cub, accum_inner_h_512);
-                
+
                 I4_ADM_CM_ACCUM_ROUND_avx512(xv_512, thr_512, shift_sub, xv_sq, add_shift_sq, shift_sq, val,
                                       add_shift_cub, shift_cub, accum_inner_v_512);
 
@@ -2243,7 +2173,7 @@ float i4_adm_cm_avx512(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_s
             __m256i r4_v = _mm256_add_epi64(_mm512_castsi512_si256(accum_inner_v_512), _mm512_extracti64x4_epi64(accum_inner_v_512, 1));
             __m128i r2_v = _mm_add_epi64(_mm256_castsi256_si128(r4_v), _mm256_extracti128_si256(r4_v, 1));
             int64_t res_v = r2_v[0] + r2_v[1];
-            
+
             __m256i r4_d = _mm256_add_epi64(_mm512_castsi512_si256(accum_inner_d_512), _mm512_extracti64x4_epi64(accum_inner_d_512, 1));
             __m128i r2_d = _mm_add_epi64(_mm256_castsi256_si128(r4_d), _mm256_extracti128_si256(r4_d, 1));
             int64_t res_d = r2_d[0] + r2_d[1];
@@ -2563,13 +2493,13 @@ void adm_dwt2_s123_combined_avx512(const int32_t *i4_ref_scale, const int32_t *i
     __m512i add_bef_shift_round_VP_512 = _mm512_set1_epi64(add_bef_shift_round_VP[scale - 1]);
     __m512i add_bef_shift_round_HP_512 = _mm512_set1_epi64(add_bef_shift_round_HP[scale - 1]);
 
-    
+
     int w_mod8 = (w  - (w  % 8));
     int half_w_mod8 = ((w + 1) / 2) - ((((w + 1) / 2) - 1) % 8);
-    
+
     for (int i = 0; i < (h + 1) / 2; ++i)
     {
-        /* Vertical pass. */       
+        /* Vertical pass. */
         for (int j = 0; j < w_mod8; j+=8)
         {
             __m512i ref10_512 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(i4_ref_scale + (ind_y[0][i] * ref_stride) + j)));
@@ -2580,7 +2510,7 @@ void adm_dwt2_s123_combined_avx512(const int32_t *i4_ref_scale, const int32_t *i
             __m512i dis10_512 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(i4_curr_dis + (ind_y[0][i] * dis_stride) + j)));
             __m512i dis11_512 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(i4_curr_dis + (ind_y[1][i] * dis_stride) + j)));
             __m512i dis12_512 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(i4_curr_dis + (ind_y[2][i] * dis_stride) + j)));
-            __m512i dis13_512 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(i4_curr_dis + (ind_y[3][i] * dis_stride) + j)));            
+            __m512i dis13_512 = _mm512_cvtepi32_epi64(_mm256_loadu_si256((__m256i*)(i4_curr_dis + (ind_y[3][i] * dis_stride) + j)));
 
             __m512i ref10_lo = _mm512_mul_epi32(ref10_512, f0_lo);
             __m512i ref11_lo = _mm512_mul_epi32(ref11_512, f1_lo);
@@ -2630,7 +2560,7 @@ void adm_dwt2_s123_combined_avx512(const int32_t *i4_ref_scale, const int32_t *i
         }
 
         for (int j = w_mod8; j < w; ++j)
-        {            
+        {
             s10 = i4_ref_scale[ind_y[0][i] * ref_stride + j];
             s11 = i4_ref_scale[ind_y[1][i] * ref_stride + j];
             s12 = i4_ref_scale[ind_y[2][i] * ref_stride + j];
@@ -2658,7 +2588,7 @@ void adm_dwt2_s123_combined_avx512(const int32_t *i4_ref_scale, const int32_t *i
             accum_ref += (int64_t)filter_lo[2] * s12;
             accum_ref += (int64_t)filter_lo[3] * s13;
             tmplo_dis[j] = (int32_t)((accum_ref + add_bef_shift_VP) >> shift_VP);
-            
+
             accum_ref = 0;
             accum_ref += (int64_t)filter_hi[0] * s10;
             accum_ref += (int64_t)filter_hi[1] * s11;
@@ -2666,7 +2596,7 @@ void adm_dwt2_s123_combined_avx512(const int32_t *i4_ref_scale, const int32_t *i
             accum_ref += (int64_t)filter_hi[3] * s13;
             tmphi_dis[j] = (int32_t)((accum_ref + add_bef_shift_VP) >> shift_VP);
         }
-    
+
         // j == 0
         {
             int j = 0;
@@ -2752,7 +2682,7 @@ void adm_dwt2_s123_combined_avx512(const int32_t *i4_ref_scale, const int32_t *i
             i4_dis_dwt2->band_d[i * dst_stride + j] = (int32_t)((accum_ref + add_bef_shift_HP) >> shift_HP);
         }
 
-        /* Horizontal pass (lo and hi). */        
+        /* Horizontal pass (lo and hi). */
         for (int j = 1; j < half_w_mod8; j+=8)
         {
             int j0 = ind_x[0][j];
@@ -3077,7 +3007,7 @@ void adm_dwt2_16_avx512(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffe
         }
 
         /* Horizontal pass (lo and hi). */
-        for (int j = 0; j < 1; ++j) {            
+        for (int j = 0; j < 1; ++j) {
             int j0 = ind_x[0][j];
             int j1 = ind_x[1][j];
             int j2 = ind_x[2][j];
@@ -3121,8 +3051,8 @@ void adm_dwt2_16_avx512(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffe
             accum += (int32_t)filter_hi[3] * s3;
             dst->band_d[i * dst_stride + j] = (accum + add_shift_HP) >> shift_HP;
         }
-            
-        for (int j = 1; j < half_w_mod64; j += 32) {            
+
+        for (int j = 1; j < half_w_mod64; j += 32) {
             int j0 = ind_x[0][j];
             int j2 = ind_x[2][j];
             int j16 = ind_x[0][j + 16];
@@ -3140,7 +3070,7 @@ void adm_dwt2_16_avx512(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffe
             accum0_hi = _mm512_add_epi32(accum0_hi, _mm512_madd_epi16(s0_32, f01_lo));
             accum0_lo = _mm512_add_epi32(accum0_lo, _mm512_madd_epi16(s2, f23_lo));
             accum0_hi = _mm512_add_epi32(accum0_hi, _mm512_madd_epi16(s2_32, f23_lo));
-            
+
             accum0_lo = _mm512_add_epi32(accum0_lo, _mm512_set1_epi32(add_shift_HP));
             accum0_hi = _mm512_add_epi32(accum0_hi, _mm512_set1_epi32(add_shift_HP));
             accum0_lo = _mm512_srai_epi32(accum0_lo, shift_HP);
@@ -3157,7 +3087,7 @@ void adm_dwt2_16_avx512(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffe
             accum0_hi = _mm512_add_epi32(accum0_hi, _mm512_madd_epi16(s0_32, f01_hi));
             accum0_lo = _mm512_add_epi32(accum0_lo, _mm512_madd_epi16(s2, f23_hi));
             accum0_hi = _mm512_add_epi32(accum0_hi, _mm512_madd_epi16(s2_32, f23_hi));
-     
+
             accum0_lo = _mm512_add_epi32(accum0_lo, _mm512_set1_epi32(add_shift_HP));
             accum0_hi = _mm512_add_epi32(accum0_hi, _mm512_set1_epi32(add_shift_HP));
             accum0_lo = _mm512_srai_epi32(accum0_lo, shift_HP);
@@ -3245,7 +3175,7 @@ void adm_dwt2_16_avx512(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffe
             accum += (int32_t)filter_hi[3] * s3;
             dst->band_d[i * dst_stride + j] = (accum + add_shift_HP) >> shift_HP;
         }
-        
+
     }
 }
 
@@ -3325,12 +3255,12 @@ void adm_dwt2_8_avx512(const uint8_t *src, const adm_dwt_band_t *dst,
             accum_mu2_lo = _mm512_srli_epi32(accum_mu2_lo, 0x08);
             accum_mu2_hi = _mm512_add_epi32(accum_mu2_hi, add_shift_VP_vex);
             accum_mu2_hi = _mm512_srli_epi32(accum_mu2_hi, 0x08);
-            
+
             accum_mu2_lo = _mm512_mask_blend_epi16(0xAAAAAAAA, accum_mu2_lo, pad_register);
             accum_mu2_hi = _mm512_mask_blend_epi16(0xAAAAAAAA, accum_mu2_hi, pad_register);
 
             accum_mu2_hi = _mm512_packus_epi32(accum_mu2_lo, accum_mu2_hi);
-            
+
             _mm512_storeu_si512((__m512i *)(tmplo + j), accum_mu2_hi);
 
             accum_mu1_lo =
@@ -3350,7 +3280,7 @@ void adm_dwt2_8_avx512(const uint8_t *src, const adm_dwt_band_t *dst,
             accum_mu1_lo = _mm512_mask_blend_epi16(0xAAAAAAAA, accum_mu1_lo, pad_register);
             accum_mu1_hi = _mm512_mask_blend_epi16(0xAAAAAAAA, accum_mu1_hi, pad_register);
             accum_mu1_hi = _mm512_packus_epi32(accum_mu1_lo, accum_mu1_hi);
-            _mm512_storeu_si512((__m512i *)(tmphi + j), accum_mu1_hi);            
+            _mm512_storeu_si512((__m512i *)(tmphi + j), accum_mu1_hi);
         }
 
         for (int j = w_mod_32; j < w; ++j) {
@@ -3381,7 +3311,7 @@ void adm_dwt2_8_avx512(const uint8_t *src, const adm_dwt_band_t *dst,
 
             tmphi[j] = (accum + add_shift_VP) >> shift_VP;
         }
-        
+
         int j0 = ind_x[0][0];
         int j1 = ind_x[1][0];
         int j2 = ind_x[2][0];
@@ -3551,7 +3481,7 @@ void adm_dwt2_8_avx512(const uint8_t *src, const adm_dwt_band_t *dst,
             accum += (int32_t)filter_lo[1] * s1;
             accum += (int32_t)filter_lo[2] * s2;
             accum += (int32_t)filter_lo[3] * s3;
- 
+
             dst->band_a[i * dst_stride + j] = (accum + add_shift_HP) >> shift_HP;
 
             accum = 0;
@@ -3671,7 +3601,7 @@ void adm_csf_avx512(AdmBuffer *buf, int w, int h, int stride,
             _mm256_storeu_si256((__m256i*)(dst_angles[0] + dst_offset + j), _mm512_cvtepi32_epi16(i16_dst_val0));
             __m512i flt0 = _mm512_mullo_epi32(_mm512_set1_epi32(FIX_ONE_BY_30), _mm512_abs_epi32(i16_dst_val0));
             flt0 = _mm512_srli_epi32(_mm512_add_epi32(flt0, _mm512_set1_epi32(2048)), 12);
-            _mm256_storeu_si256((__m256i*)(flt_angles[0] + dst_offset + j), _mm512_cvtepi32_epi16(flt0));            
+            _mm256_storeu_si256((__m256i*)(flt_angles[0] + dst_offset + j), _mm512_cvtepi32_epi16(flt0));
 
             __m512i src1 = _mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(src_angles[1] + src_offset + j)));
             __m512i r_factor1 = _mm512_set1_epi32(i_rfactor[1]);
@@ -3691,9 +3621,9 @@ void adm_csf_avx512(AdmBuffer *buf, int w, int h, int stride,
             flt2 = _mm512_srli_epi32(_mm512_add_epi32(flt2, _mm512_set1_epi32(2048)), 12);
             _mm256_storeu_si256((__m256i*)(flt_angles[2] + dst_offset + j), _mm512_cvtepi32_epi16(flt2));
         }
-        
+
         for (int j = right_mod_16; j < right; ++j) {
-            
+
             int32_t dst_val0 = i_rfactor[0] * (int32_t)src_angles[0][src_offset + j];
             int16_t i16_dst_val0 = ((int16_t)((dst_val0 + i_shiftsadd[0]) >> i_shifts[0]));
             dst_angles[0][dst_offset + j] = i16_dst_val0;
@@ -3792,7 +3722,7 @@ void i4_adm_csf_avx512(AdmBuffer *buf, int scale, int w, int h, int stride,
             __m512i flt0_lo = _mm512_mul_epi32(_mm512_set1_epi32(FIX_ONE_BY_30), _mm512_abs_epi32(dst_val0_lo));
             __m512i flt0_hi = _mm512_mul_epi32(_mm512_set1_epi32(FIX_ONE_BY_30), _mm512_srli_epi64(_mm512_abs_epi32(dst_val0_lo), 32));
 
-            flt0_lo = _mm512_srli_epi64(_mm512_add_epi64(flt0_lo, _mm512_set1_epi64(add_bef_shift_flt[scale - 1])), shift_flt[scale - 1]); 
+            flt0_lo = _mm512_srli_epi64(_mm512_add_epi64(flt0_lo, _mm512_set1_epi64(add_bef_shift_flt[scale - 1])), shift_flt[scale - 1]);
             flt0_hi = _mm512_srli_epi64(_mm512_add_epi64(flt0_hi, _mm512_set1_epi64(add_bef_shift_flt[scale - 1])), shift_flt[scale - 1]);
 
             flt0_lo = _mm512_permutex2var_epi32(flt0_lo, _mm512_setr_epi32(0, 16, 2, 18, 4, 20, 6, 22, 8, 24, 10, 26, 12, 28, 14, 30), flt0_hi);
@@ -3929,7 +3859,7 @@ float adm_csf_den_scale_avx512(const adm_dwt_band_t *src, int w, int h,
         __m256i h_r4 = _mm256_add_epi64(_mm512_castsi512_si256(accum_inner_h_lo), _mm512_extracti64x4_epi64(accum_inner_h_lo, 1));
         __m128i h_r2 = _mm_add_epi64(_mm256_castsi256_si128(h_r4), _mm256_extracti64x2_epi64(h_r4, 1));
         uint64_t h_r1 = h_r2[0] + h_r2[1];
-        
+
         accum_inner_v_lo = _mm512_add_epi64(accum_inner_v_lo, accum_inner_v_hi);
         __m256i v_r4 = _mm256_add_epi64(_mm512_castsi512_si256(accum_inner_v_lo), _mm512_extracti64x4_epi64(accum_inner_v_lo, 1));
         __m128i v_r2 = _mm_add_epi64(_mm256_castsi256_si128(v_r4), _mm256_extracti64x2_epi64(v_r4, 1));
