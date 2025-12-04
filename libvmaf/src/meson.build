@@ -708,6 +708,7 @@ pkg_mod.generate(libraries: libvmaf,
     name: 'libvmaf',
     filebase: 'libvmaf',
     description: 'VMAF, Video Multimethod Assessment Fusion',
-    subdirs: [ '.', 'libvmaf'],
+    # FIXME: We should remove libvmaf, but FFmpeg relies on it for now.
+    subdirs: [ '.', 'libvmaf']
     libraries_private: cc.get_id() == 'msvc' ? [thread_lib] : [],
 )

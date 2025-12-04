@@ -19,7 +19,7 @@
 #ifndef __VMAF_CUDA_H__
 #define __VMAF_CUDA_H__
 
-#include "libvmaf/libvmaf.h"
+#include <libvmaf/libvmaf.h>
 
 #ifdef __cplusplus
 extern "C" {

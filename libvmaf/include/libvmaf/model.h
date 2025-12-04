@@ -21,7 +21,7 @@
 
 #include <stdint.h>
 
-#include "feature.h"
+#include <libvmaf/feature.h>
 
 #ifdef __cplusplus
 extern "C" {
