@@ -1,0 +1,66 @@
+option('enable_tests',
+    type: 'boolean',
+    value: true,
+    description: 'Build libvmaf tests')
+
+option('enable_docs',
+    type: 'boolean',
+    value: true,
+    description: 'Build libvmaf documentation')
+
+option('enable_tools',
+    type: 'boolean',
+    value: true,
+    description: 'Build libvmaf tools')
+
+option('enable_asm',
+    type: 'boolean',
+    value: true,
+    description: 'Build asm files, if available')
+
+option('enable_avx512',
+    type: 'boolean',
+    value: true,
+    description: 'Build AVX-512 asm files, requires nasm 2.14')
+
+option('built_in_models',
+    type: 'boolean',
+    value: true,
+    description: 'Compile default vmaf models into the library')
+
+option('enable_float',
+    type: 'boolean',
+    value: false,
+    description: 'Compile floating-point feature extractors into the library')
+
+option('enable_cuda',
+    type: 'boolean',
+    value: false,
+    description: 'Enable CUDA support')
+
+option('enable_nvtx',
+    type: 'boolean',
+    value: false,
+    description: 'Enable NVTX range support')
+
+option('enable_nvcc',
+    type: 'boolean',
+    value: true,
+    description: 'Use clang to compile CUDA code.')
+
+option('enable_checkasm',
+    type: 'boolean',
+    value: false,
+    description: 'Build the checkasm SIMD correctness/benchmark test suite ' +
+                 '(fetches the checkasm subproject)')
+
+option('bundled_winpthreads',
+    type: 'boolean',
+    value: true,
+    description: 'Use the bundled pthread-win32 implementation (MSVC only). Set to false to use an external pthreads library.')
+
+option('enable_zimg',
+    type: 'boolean',
+    value: false,
+    description: 'Enable zimg-based picture colorspace conversion ' +
+                 '(requires zimg to be installed, e.g. via pkg-config)')

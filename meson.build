@@ -8,10 +8,8 @@ project('libvmaf', ['c', 'cpp'],
                       ],
     meson_version: '>= 0.56.1')
 
-warning('Please run meson in top source directory instead of libvmaf/ subdir.')
-
-subdir('include')
-subdir('src')
-subdir('tools')
-subdir('doc')
-subdir('test')
+subdir('libvmaf/include')
+subdir('libvmaf/src')
+subdir('libvmaf/tools')
+subdir('libvmaf/doc')
+subdir('libvmaf/test')

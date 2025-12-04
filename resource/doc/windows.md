@@ -52,8 +52,8 @@ The Python components are platform-independent and follow the same setup process
    cd <vmaf project root>
    mkdir C:\vmaf-install
 
-   meson setup libvmaf libvmaf\build --buildtype release --default-library static --prefix C:/vmaf-install
-   meson install -C libvmaf\build
+   meson setup builddir --buildtype release --default-library static --prefix C:/vmaf-install
+   meson install -C builddir
    ```
 
    **Using an external pthreads library:**
@@ -62,8 +62,8 @@ The Python components are platform-independent and follow the same setup process
    cd <vmaf project root>
    mkdir C:\vmaf-install
 
-   meson setup libvmaf libvmaf\build --buildtype release --default-library static --prefix C:/vmaf-install -Dbundled_winpthreads=false
-   meson install -C libvmaf\build
+   meson setup builddir --buildtype release --default-library static --prefix C:/vmaf-install -Dbundled_winpthreads=false
+   meson install -C builddir
    ```
 
    Make sure the external library and its headers are discoverable (via `PATH`, `INCLUDE`, `LIB`, or pkg-config).
@@ -87,7 +87,7 @@ Link consumers against `vmaf.lib` (or set `INCLUDE` / `LIB` / `PKG_CONFIG_PATH` 
 Run the C test suite from the same VS prompt:
 
 ```cmd
-meson test -C libvmaf\build
+meson test -C builddir
 ```
 
 ---
@@ -112,8 +112,8 @@ meson test -C libvmaf\build
 cd <vmaf project root>
 mkdir C:/vmaf-install
 
-meson setup libvmaf libvmaf/build --buildtype release --default-library static --prefix C:/vmaf-install
-meson install -C libvmaf/build
+meson setup builddir --buildtype release --default-library static --prefix C:/vmaf-install
+meson install -C builddir
 ```
 
 This produces a MinGW-compiled version of `libvmaf` compatible with MSYS2 environments.

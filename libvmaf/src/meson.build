@@ -1,4 +1,160 @@
-vmaf_soversion = vmaf_api_version_major
+cc = meson.get_compiler('c')
+
+# Arguments in test_args will be used even on feature tests
+test_args = []
+if host_machine.system() == 'linux' or host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
+    test_args += '-D_GNU_SOURCE'
+    add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
+elif host_machine.system() == 'darwin'
+    test_args += '-D_DARWIN_C_SOURCE'
+    add_project_arguments('-D_DARWIN_C_SOURCE', language: ['c', 'cpp'])
+endif
+
+# M_PI, M_E, etc are only defined in math.h if _USE_MATH_DEFINES is defined before including math.h
+if cc.get_id() == 'msvc'
+	add_project_arguments('-D_USE_MATH_DEFINES', language: ['c', 'cpp'])
+endif
+
+# Header checks
+if cc.has_header('malloc.h', args: test_args)
+    add_project_arguments('-DHAVE_MALLOC_H', language: ['c', 'cpp'])
+endif
+if cc.has_header('alloca.h', args: test_args)
+    add_project_arguments('-DHAVE_ALLOCA_H', language: ['c', 'cpp'])
+endif
+
+stdatomic_dependency = []
+if not cc.check_header('stdatomic.h')
+    if cc.get_id() == 'msvc'
+        # we have a custom replacement for MSVC
+        stdatomic_dependency = declare_dependency(
+            include_directories : include_directories('compat/msvc'),
+        )
+    elif cc.compiles('''int main() { int v = 0; return __atomic_fetch_add(&v, 1, __ATOMIC_SEQ_CST); }''',
+                     name : 'GCC-style atomics', args : test_args)
+        stdatomic_dependency = declare_dependency(
+            include_directories : include_directories('compat/gcc'),
+        )
+    else
+        error('Atomics not supported')
+    endif
+endif
+
+builtin_clz_dependency = []
+if cc.get_id() == 'msvc'
+    builtin_clz_dependency = declare_dependency(
+        include_directories : include_directories('compat/msvc'),
+        compile_args : ['-DHAVE_BUILTIN_CLZ_COMPAT'],
+    )
+endif
+
+if cc.has_function('getopt_long', prefix : '#include <getopt.h>', args : test_args)
+    getopt_dependency = declare_dependency(compile_args : '-DHAVE_GETOPT_H')
+else
+    getopt_dependency = declare_dependency(
+        compile_args : '-DHAVE_GETOPT_H',
+        sources: ['compat/getopt/getopt.c'],
+        include_directories : include_directories('compat/getopt'),
+    )
+endif
+
+pthreadwin32_inc = []
+pthreadwin32_lib = []
+thread_lib = []
+
+if cc.get_id() == 'msvc'
+    if get_option('bundled_winpthreads')
+        # Bundled GerHobbelt/pthread-win32 via CMake subproject
+        cmake = import('cmake')
+
+        pthreadwin32_opts = cmake.subproject_options()
+        pthreadwin32_opts.add_cmake_defines({
+            'BUILD_SHARED_LIBS': false,
+        })
+        pthreadwin32_proj = cmake.subproject('pthread-win32', options: pthreadwin32_opts)
+
+        # Meson usually exposes shared-style CMake targets (pthreadVC3), not libpthreadVC3.
+        _pw_targets = pthreadwin32_proj.target_list()
+        if 'libpthreadVC3' in _pw_targets
+            pthreadwin32_lib = pthreadwin32_proj.dependency('libpthreadVC3')
+            _ptw32_static = true
+        elif 'pthreadVC3' in _pw_targets
+            pthreadwin32_lib = pthreadwin32_proj.dependency('pthreadVC3')
+            _ptw32_static = false
+        else
+            error('pthread-win32 subproject: neither libpthreadVC3 nor pthreadVC3 found.\n' +
+                  'Available targets: ' + ', '.join(_pw_targets))
+        endif
+
+        pthreadwin32_inc = include_directories('./subprojects/pthread-win32')
+    else
+        # External pthreads (system / vcpkg / custom prefix)
+        external_pthread = dependency('pthread', required: false)
+        _ptw32_static = true
+
+        if not external_pthread.found()
+            # MSVC DEBUG_POSTFIX "d": Debug installs libpthreadVC3d.lib / pthreadVC3d.lib
+            _pthread_names = []
+            if get_option('buildtype') == 'debug'
+                _pthread_names += [
+                    'libpthreadVC3d', 'pthreadVC3d',
+                    'libpthreadVCE3d', 'pthreadVCE3d',
+                    'libpthreadVSE3d', 'pthreadVSE3d',
+                ]
+            endif
+            _pthread_names += [
+                'libpthreadVC3', 'pthreadVC3',
+                'libpthreadVC2', 'pthreadVC2',
+                'libpthreadVC',  'pthreadVC',
+                'libpthreadVCE3', 'pthreadVCE3',
+                'libpthreadVSE3', 'pthreadVSE3',
+                'pthread', 'libpthread', 'pthreads',
+            ]
+
+            foreach name : _pthread_names
+                external_pthread = cc.find_library(name, required: false)
+                if external_pthread.found()
+                    # Heuristic: names with 'libpthread' are static archives
+                    if name.startswith('libpthread')
+                        _ptw32_static = true
+                    else
+                        _ptw32_static = false
+                    endif
+                    break
+                endif
+            endforeach
+        endif
+
+        if not external_pthread.found()
+            error('MSVC build requested with -Dbundled_winpthreads=false, ' +
+                  'but no external pthreads library was found.\n' +
+                  'Please install a Windows pthreads implementation and make sure ' +
+                  'the library is discoverable, or use the bundled one (default).')
+        endif
+
+        if not cc.check_header('pthread.h', required: false)
+            error('External pthreads library was found, but <pthread.h> could not be located.\n' +
+                  'Please make sure the include directory is available (e.g. via INCLUDE ' +
+                  'environment variable or -I flags).')
+        endif
+
+        pthreadwin32_lib = external_pthread
+    endif
+
+    # Match pthreads4w VC cleanup; STATIC only when linking a static archive
+    _ptw32_args = ['-D__PTW32_CLEANUP_C']
+    if _ptw32_static
+        _ptw32_args += ['-D__PTW32_STATIC_LIB']
+    endif
+
+    thread_lib = declare_dependency(
+        dependencies: [pthreadwin32_lib],
+        include_directories: pthreadwin32_inc,
+        compile_args: _ptw32_args,
+    )
+else
+    thread_lib = dependency('threads')
+endif
 
 # Build libvmaf
 feature_src_dir = './feature/'
@@ -119,7 +275,7 @@ if is_asm_enabled
             depfile: '@BASENAME@.obj.ndep',
             arguments: [
                 '-f', nasm_format,
-                '-I', '@0@/src/'.format(libvmaf_src_root),
+                '-I', '@0@/'.format(meson.current_source_dir()),
                 '-I', '@0@/'.format(meson.current_build_dir()),
                 '-MQ', '@OUTPUT@', '-MF', '@DEPFILE@',
                 '@EXTRA_ARGS@',
@@ -449,8 +605,8 @@ if is_cuda_enabled
                 '-I', './src',
                 '-I', '../src',
                 '-I', '../include',
-                '-I', '../src/feature',
-                '-I', '../src/' + cuda_dir,
+                '-I', '../feature',
+                '-I', '../' + cuda_dir,
                 '-DDEVICE_CODE',
                 '-D_USE_MATH_DEFINES',
             ] + cuda_flags + (
@@ -489,7 +645,7 @@ if is_cuda_enabled
             vmaf_base_include,
             cuda_dir,
             feature_src_dir,
-            include_directories('../src/cuda/'),
+            include_directories('../cuda/'),
             cuda_inc,
         ],
         dependencies : [thread_lib, stdatomic_dependency],
@@ -622,6 +778,7 @@ if is_zimg_enabled
     vmaf_cflags_common += '-DHAVE_ZIMG'
 endif
 
+vmaf_soname_version = meson.project_version()
 if host_machine.system() == 'windows'
     vmaf_soversion = ''
 else
@@ -709,6 +866,6 @@ pkg_mod.generate(libraries: libvmaf,
     filebase: 'libvmaf',
     description: 'VMAF, Video Multimethod Assessment Fusion',
     # FIXME: We should remove libvmaf, but FFmpeg relies on it for now.
-    subdirs: [ '.', 'libvmaf']
+    subdirs: [ '.', 'libvmaf'],
     libraries_private: cc.get_id() == 'msvc' ? [thread_lib] : [],
 )
