@@ -8,4 +8,8 @@ project('libvmaf', ['c', 'cpp'],
                       ],
     meson_version: '>= 0.56.1')
 
-subdir('libvmaf')
+subdir('libvmaf/include')
+subdir('libvmaf/src')
+subdir('libvmaf/tools')
+subdir('libvmaf/doc')
+subdir('libvmaf/test')

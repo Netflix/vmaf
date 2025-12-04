@@ -1,3 +1,4 @@
+vmaf_soname_version = vmaf_api_version_major + '.0.0'
 vmaf_soversion = vmaf_api_version_major
 
 # Build libvmaf
@@ -7,6 +8,36 @@ model_dir = '../../model/'
 cuda_dir = './cuda/'
 
 vmaf_base_include = include_directories('./', './feature/common')
+
+cc = meson.get_compiler('c')
+
+# Arguments in test_args will be used even on feature tests
+test_args = []
+if host_machine.system() == 'linux' or host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
+    test_args += '-D_GNU_SOURCE'
+    add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
+elif host_machine.system() == 'darwin'
+    test_args += '-D_DARWIN_C_SOURCE'
+    add_project_arguments('-D_DARWIN_C_SOURCE', language: ['c', 'cpp'])
+endif
+
+# Header checks
+stdatomic_dependency = []
+if not cc.check_header('stdatomic.h')
+    if cc.get_id() == 'msvc'
+        # we have a custom replacement for MSVC
+        stdatomic_dependency = declare_dependency(
+            include_directories : include_directories('src/compat/msvc'),
+        )
+    elif cc.compiles('''int main() { int v = 0; return __atomic_fetch_add(&v, 1, __ATOMIC_SEQ_CST); }''',
+                     name : 'GCC-style atomics', args : test_args)
+        stdatomic_dependency = declare_dependency(
+            include_directories : include_directories('src/compat/gcc'),
+        )
+    else
+        error('Atomics not supported')
+    endif
+endif
 
 if cc.get_id() != 'msvc'
     vmaf_cflags_common = [
@@ -111,7 +142,7 @@ if is_asm_enabled
             depfile: '@BASENAME@.obj.ndep',
             arguments: [
                 '-f', nasm_format,
-                '-I', '@0@/src/'.format(libvmaf_src_root),
+                '-I', '@0@/'.format(meson.current_source_dir()),
                 '-I', '@0@/'.format(meson.current_build_dir()),
                 '-MQ', '@OUTPUT@', '-MF', '@DEPFILE@',
                 '@EXTRA_ARGS@',
@@ -561,7 +592,7 @@ libvmaf = library(
         libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
         libsvm_static_lib.extract_all_objects(recursive: true),
     ],
-    version : vmaf_soname_version,
+    version: vmaf_soname_version,
     soversion : vmaf_soversion,
     install: true,
 )

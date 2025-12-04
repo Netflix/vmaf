@@ -1,5 +1,5 @@
 # Revision file (vcs_version.h) generation
-vmaf_git_dir = join_paths(libvmaf_src_root + '/../', '.git')
+vmaf_git_dir = meson.project_source_root() / '.git'
 rev_target = vcs_tag(command: [
         'git', '--git-dir', vmaf_git_dir,
         'describe', '--tags', '--long',
@@ -8,5 +8,7 @@ rev_target = vcs_tag(command: [
     input: 'vcs_version.h.in',
     output: 'vcs_version.h'
 )
+
+libvmaf_inc = include_directories('.')
 
 subdir('libvmaf')
