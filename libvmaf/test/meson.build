@@ -45,7 +45,7 @@ test_model = executable('test_model',
     ['test.c', 'test_model.c', '../src/dict.c', '../src/pdjson.c', '../src/read_json_model.c', '../src/log.c', json_model_c_sources],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    c_args : [vmaf_cflags_common, '-DJSON_MODEL_PATH="'+join_paths(meson.project_source_root(), '../model/')+'"'],
+    c_args : [vmaf_cflags_common, '-DJSON_MODEL_PATH="'  + source_root + '/model/"'],
     dependencies : [thread_lib, cuda_dependency, stdatomic_dependency],
     objects : libsvm_static_lib.extract_all_objects(recursive: true),
 )
@@ -289,7 +289,7 @@ test_colorspace = executable('test_colorspace',
 test('test_colorspace', test_colorspace)
 endif
 
-test_read_pictures_convert_args = ['-DJSON_MODEL_PATH="'+join_paths(meson.project_source_root(), '../model/')+'"']
+test_read_pictures_convert_args = ['-DJSON_MODEL_PATH="' + source_root + '/model/"']
 if get_option('enable_zimg')
     test_read_pictures_convert_args += ['-DHAVE_ZIMG=1']
 endif
