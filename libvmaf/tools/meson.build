@@ -1,3 +1,7 @@
+if not get_option('enable_tools')
+    subdir_done()
+endif
+
 compat_cflags = []
 if cc.has_function('strsep')
   compat_cflags += '-DHAVE_STRSEP'
