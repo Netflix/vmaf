@@ -1,7 +1,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#if defined(_WIN32) || defined(_WIN64)
+#include <io.h>
+#ifndef isatty
+#define isatty _isatty
+#endif
+#ifndef fileno
+#define fileno _fileno
+#endif
+#else
 #include <unistd.h>
+#endif
 
 #include "cli_parse.h"
 #include "spinner.h"
@@ -271,11 +281,24 @@ int main(int argc, char *argv[])
     VmafModelCollection **model_collection;
     const size_t model_collection_sz =
         sizeof(*model_collection) * c.model_cnt;
-    model_collection = malloc(model_sz);
+    model_collection = malloc(model_collection_sz);
+    if (!model_collection) {
+        fprintf(stderr, "memory allocation error\n");
+        return -1;
+    }
     memset(model_collection, 0, model_collection_sz);
 
-    const char *model_collection_label[c.model_cnt];
+    const char **model_collection_label = NULL;
     unsigned model_collection_cnt = 0;
+    if (c.model_cnt) {
+        model_collection_label = malloc(sizeof(*model_collection_label) * c.model_cnt);
+        if (!model_collection_label) {
+            fprintf(stderr, "memory allocation error\n");
+            free(model_collection);
+            free(model);
+            return -1;
+        }
+    }
 
     for (unsigned i = 0; i < c.model_cnt; i++) {
         if (c.model_config[i].version) {
@@ -501,6 +524,8 @@ int main(int argc, char *argv[])
     for (unsigned i = 0; i < model_collection_cnt; i++)
         vmaf_model_collection_destroy(model_collection[i]);
     free(model_collection);
+    if (model_collection_label)
+        free((void*)model_collection_label);
 
     video_input_close(&vid_ref);
     video_input_close(&vid_dist);

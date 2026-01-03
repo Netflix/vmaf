@@ -493,15 +493,19 @@ static int model_collection_parse(json_stream *s, VmafModel **model,
     if (!c.name) return -ENOMEM;
 
     const size_t cfg_name_sz = strlen(name) + 5 + 1;
-    char cfg_name[cfg_name_sz];
+    char *cfg_name = malloc(cfg_name_sz);
+    if (!cfg_name) { free((char*)name); return -ENOMEM; }
 
     const size_t generated_key_sz = 4 + 1;
-    char generated_key[generated_key_sz];
+    char *generated_key = malloc(generated_key_sz);
+    if (!generated_key) { free(cfg_name); free((char*)name); return -ENOMEM; }
 
     unsigned i = 0;
     while (json_peek(s) != JSON_OBJECT_END && !json_get_error(s)) {
-        if (json_next(s) != JSON_STRING)
-            return -EINVAL;
+        if (json_next(s) != JSON_STRING) {
+            err = -EINVAL;
+            goto cleanup;
+        }
 
         const char *key = json_get_string(s, NULL);
         snprintf(generated_key, generated_key_sz, "%d", i);
@@ -509,24 +513,26 @@ static int model_collection_parse(json_stream *s, VmafModel **model,
         if (!strcmp(key, generated_key)) {
             VmafModel *m;
             err = vmaf_read_json_model(&m, &c, s);
-            if (err) return err;
+            if (err) { free(generated_key); free(cfg_name); free((char*)name); return err; }
 
             if (i == 0) {
                 *model = m;
                 c.name = cfg_name;
             } else {
                 err = vmaf_model_collection_append(model_collection, m);
-                if (err) return err;
+                if (err) { free(generated_key); free(cfg_name); free((char*)name); return err; }
             }
 
             sprintf((char*)c.name, "%s_%04d", name, ++i);
-            continue;
         }
 
         json_skip(s);
     }
 
+    cleanup:
     free((char*)name);
+    free(generated_key);
+    free(cfg_name);
     if (!(*model_collection)) return -EINVAL;
     return err;
 }
