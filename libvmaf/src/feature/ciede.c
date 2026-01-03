@@ -52,6 +52,11 @@ SOFTWARE.
 #include "mem.h"
 #include "opt.h"
 
+#ifndef M_PI
+/* There are a lot of M_PI definitions but none generic to be included */
+#define M_PI 3.14159265358979323846264338327
+#endif // M_PI
+
 typedef struct CiedeState {
     VmafPicture ref;
     VmafPicture dist;

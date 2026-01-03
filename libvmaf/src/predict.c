@@ -358,7 +358,9 @@ static int vmaf_bootstrap_predict_score_at_index(
                                         VmafModelCollectionScore *score)
 {
     int err = 0;
-    double scores[model_collection->cnt];
+    /* Use heap allocation to avoid large stack arrays on MSVC */
+    double *scores = malloc(sizeof(double) * model_collection->cnt);
+    if (!scores) return -ENOMEM;
 
     for (unsigned i = 0; i < model_collection->cnt; i++) {
         // mean, stddev, etc. are calculated on untransformed/unclipped scores
@@ -370,7 +372,7 @@ static int vmaf_bootstrap_predict_score_at_index(
                                           feature_collector, index,
                                           &scores[i], false,
                                           false, flags);
-        if (err) return err;
+        if (err) { free(scores); return err; }
 
         // do not override the model's transform/clip behavior
         // write the scores to the feature collector
@@ -378,7 +380,7 @@ static int vmaf_bootstrap_predict_score_at_index(
         err = vmaf_predict_score_at_index(model_collection->model[i],
                                           feature_collector, index,
                                           &score, true, false, 0);
-        if (err) return err;
+        if (err) { free(scores); return err; }
     }
 
     score->type = VMAF_MODEL_COLLECTION_SCORE_BOOTSTRAP;
@@ -424,7 +426,8 @@ static int vmaf_bootstrap_predict_score_at_index(
     const char *suffix_stddev = "_stddev";
     const size_t name_sz =
         strlen(model_collection->name) + strlen(suffix_lo) + 1;
-    char name[name_sz];
+    char *name = malloc(name_sz);
+    if (!name) { free(scores); return -ENOMEM; }
     memset(name, 0, name_sz);
 
     snprintf(name, name_sz, "%s%s", model_collection->name, suffix_bagging);
@@ -443,6 +446,8 @@ static int vmaf_bootstrap_predict_score_at_index(
     err |= vmaf_feature_collector_append(feature_collector, name,
                                          score->bootstrap.ci.p95.hi,
                                          index);
+    free(name);
+    free(scores);
     return err;
 }
 
