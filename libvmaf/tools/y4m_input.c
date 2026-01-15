@@ -611,6 +611,15 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
     _y4m->convert=y4m_convert_null;
   }
+  else if(strcmp(_y4m->chroma_type,"420p12")==0){
+    _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=2;
+    _y4m->dst_buf_read_sz=(_y4m->pic_w*_y4m->pic_h
+                           +2*((_y4m->pic_w+1)/2)*((_y4m->pic_h+1)/2))*2;
+    _y4m->depth=12;
+    /*Natively supported: no conversion required.*/
+    _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
+    _y4m->convert=y4m_convert_null;
+  }
   else if (strcmp(_y4m->chroma_type,"422p10")==0) {
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=2;
     _y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
@@ -620,10 +629,27 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
     _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
     _y4m->convert = y4m_convert_null;
   }
+  else if (strcmp(_y4m->chroma_type,"422p12")==0) {
+    _y4m->src_c_dec_h=_y4m->dst_c_dec_h=2;
+    _y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
+    _y4m->depth = 12;
+    _y4m->dst_buf_read_sz = 2*(_y4m->pic_w*_y4m->pic_h
+		    +2*((_y4m->pic_w+1)/2)*_y4m->pic_h);
+    _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
+    _y4m->convert = y4m_convert_null;
+  }
   else if(strcmp(_y4m->chroma_type,"444p10")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
     _y4m->dst_buf_read_sz=_y4m->pic_w*_y4m->pic_h*3*2;
     _y4m->depth=10;
+    /*Natively supported: no conversion required.*/
+    _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
+    _y4m->convert=y4m_convert_null;
+  }
+  else if(strcmp(_y4m->chroma_type,"444p12")==0){
+    _y4m->src_c_dec_h=_y4m->dst_c_dec_h=_y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
+    _y4m->dst_buf_read_sz=_y4m->pic_w*_y4m->pic_h*3*2;
+    _y4m->depth=12;
     /*Natively supported: no conversion required.*/
     _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
     _y4m->convert=y4m_convert_null;
