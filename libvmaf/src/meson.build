@@ -574,3 +574,9 @@ pkg_mod.generate(libraries: libvmaf,
     description: 'VMAF, Video Multimethod Assessment Fusion',
     subdirs: [ '.', 'libvmaf']
 )
+
+libvmaf_dep = declare_dependency(
+    link_with: libvmaf,
+    include_directories: [libvmaf_inc]
+)
+meson.override_dependency('libvmaf', libvmaf_dep)
