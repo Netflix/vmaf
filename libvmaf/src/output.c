@@ -22,6 +22,7 @@
 
 #include "feature/alias.h"
 #include "feature/feature_collector.h"
+#include "thread_locale.h"
 
 #include "libvmaf/libvmaf.h"
 
@@ -71,6 +72,8 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
     if (!vmaf) return -EINVAL;
     if (!fc) return -EINVAL;
     if (!outfile) return -EINVAL;
+
+    VmafThreadLocaleState* locale_state = vmaf_thread_locale_push_c();
 
     fprintf(outfile, "<VMAF version=\"%s\">\n", vmaf_version());
     fprintf(outfile, "  <params qualityWidth=\"%d\" qualityHeight=\"%d\" />\n",
@@ -154,6 +157,8 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
 
     fprintf(outfile, "</VMAF>\n");
 
+    vmaf_thread_locale_pop(locale_state);
+
     return 0;
 }
 
@@ -161,6 +166,8 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
                            FILE *outfile, unsigned subsample, double fps,
                            unsigned pic_cnt)
 {
+    VmafThreadLocaleState* locale_state = vmaf_thread_locale_push_c();
+
     int leading_zeros_count;
     fprintf(outfile, "{\n");
     fprintf(outfile, "  \"version\": \"%s\",\n", vmaf_version());
@@ -299,12 +306,16 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
     fprintf(outfile, "\n  }\n");
     fprintf(outfile, "}\n");
 
+    vmaf_thread_locale_pop(locale_state);
+
     return 0;
 }
 
 int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
                            unsigned subsample)
 {
+    VmafThreadLocaleState* locale_state = vmaf_thread_locale_push_c();
+
     int leading_zeros_count;
     fprintf(outfile, "Frame,");
     for (unsigned i = 0; i < fc->cnt; i++) {
@@ -342,12 +353,16 @@ int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
         fprintf(outfile, "\n");
     }
 
+    vmaf_thread_locale_pop(locale_state);
+
     return 0;
 }
 
 int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
                           unsigned subsample)
 {
+    VmafThreadLocaleState* locale_state = vmaf_thread_locale_push_c();
+
     int leading_zeros_count;
     for (unsigned i = 0 ; i < max_capacity(fc); i++) {
         if ((subsample > 1) && (i % subsample))
@@ -380,6 +395,8 @@ int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
         }
         fprintf(outfile, "\n");
     }
+
+    vmaf_thread_locale_pop(locale_state);
 
     return 0;
 }
