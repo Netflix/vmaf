@@ -50,12 +50,12 @@ jobs:
         run: echo "name=CCACHE_DIR::$PWD/.ccache" >> $GITHUB_ENV
 
       - name: Configure vmaf
-        run: meson setup libvmaf libvmaf/build --buildtype release --default-library static --prefix "$MINGW_PREFIX"
+        run: meson setup builddir --buildtype release --default-library static --prefix "$MINGW_PREFIX"
       - name: Build vmaf
-        run: meson install -C libvmaf/build
+        run: meson install -C builddir
 
       - name: Test vmaf
-        run: meson test -C libvmaf/build --num-processes $(nproc)
+        run: meson test -C builddir --num-processes $(nproc)
 
       - name: Get binary path & Current Release
         id: get_info

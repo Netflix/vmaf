@@ -44,8 +44,8 @@ jobs:
       - uses: actions/checkout@v6
       - name: Build vmaf
         run: |
-          meson setup libvmaf libvmaf/build --buildtype release
-          sudo ninja -vC libvmaf/build install
+          meson setup builddir --buildtype release
+          sudo ninja -vC builddir install
       - name: Prepare FFmpeg
         run: |
           git clone -q --branch master --depth=1 "https://github.com/FFmpeg/FFmpeg" ffmpeg
