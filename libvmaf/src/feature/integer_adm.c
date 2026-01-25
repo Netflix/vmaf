@@ -31,6 +31,26 @@
 #include <arm_neon.h>
 #endif
 
+#ifdef _MSC_VER
+#include <intrin.h>
+
+/* Provide small fallbacks for GCC builtins used upstream. These are only
+ * defined for MSVC to avoid interfering with other compilers. */
+static inline int __builtin_clz(unsigned x) {
+    if (x == 0) return 32;
+    unsigned long index;
+    _BitScanReverse(&index, x);
+    return 31 - (int)index;
+}
+
+static inline int __builtin_clzll(unsigned long long x) {
+    if (x == 0) return 64;
+    unsigned long index;
+    _BitScanReverse64(&index, x);
+    return 63 - (int)index;
+}
+#endif
+
 typedef struct AdmState {
     size_t integer_stride;
     AdmBuffer buf;
