@@ -1,6 +1,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#ifdef HAVE_MALLOC_H
+#include <malloc.h> // alloca()
+#endif
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 #include <unistd.h>
 
 #include "cli_parse.h"
@@ -274,7 +280,7 @@ int main(int argc, char *argv[])
     model_collection = malloc(model_sz);
     memset(model_collection, 0, model_collection_sz);
 
-    const char *model_collection_label[c.model_cnt];
+    const char **model_collection_label = alloca(c.model_cnt * sizeof(*model_collection_label));
     unsigned model_collection_cnt = 0;
 
     for (unsigned i = 0; i < c.model_cnt; i++) {

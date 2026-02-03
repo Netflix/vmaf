@@ -22,6 +22,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 #include <string.h>
 #include <time.h>
 
@@ -894,7 +900,7 @@ int vmaf_score_pooled_model_collection(VmafContext *vmaf,
     const char *suffix_stddev = "_stddev";
     const size_t name_sz =
         strlen(model_collection->name) + strlen(suffix_lo) + 1;
-    char name[name_sz];
+    char *name = alloca(name_sz);
     memset(name, 0, name_sz);
 
     snprintf(name, name_sz, "%s%s", model_collection->name, suffix_bagging);
