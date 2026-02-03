@@ -15,12 +15,15 @@
  *     limitations under the License.
  *
  */
-
-#include <getopt.h>
-
 #include "test.h"
 
 #include "cli_parse.h"
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#else
+#error "Meson target is missing getopt_dependency"
+#endif
 
 static int cli_free_dicts(CLISettings *settings) {
     for (unsigned i = 0; i < settings->feature_cnt; i++) {
