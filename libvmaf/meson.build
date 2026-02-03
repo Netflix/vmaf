@@ -29,6 +29,16 @@ elif host_machine.system() == 'darwin'
 endif
 
 # Header checks
+if cc.has_header('unistd.h', args: test_args)
+    add_project_arguments('-DHAVE_UNISTD_H', language: ['c', 'cpp'])
+endif
+if cc.has_header('direct.h', args: test_args)
+    add_project_arguments('-DHAVE_DIRECT_H', language: ['c', 'cpp'])
+endif
+if cc.has_header('corecrt_io.h', args: test_args)
+    add_project_arguments('-DHAVE_CORECRT_IO_H', language: ['c', 'cpp'])
+endif
+
 stdatomic_dependency = []
 if not cc.check_header('stdatomic.h')
     if cc.get_id() == 'msvc'
@@ -44,6 +54,15 @@ if not cc.check_header('stdatomic.h')
     else
         error('Atomics not supported')
     endif
+endif
+
+# Type checks
+if cc.has_type('struct timespec', prefix: '#include <time.h>')
+    # Used by pthreads-win32 <pthread.h>
+    add_project_arguments('-DHAVE_STRUCT_TIMESPEC', language: ['c', 'cpp'])
+endif
+if cc.has_type('mode_t', prefix: '#include <sys/types.h>')
+    add_project_arguments('-DHAVE_MODE_T', language: ['c', 'cpp'])
 endif
 
 subdir('include')

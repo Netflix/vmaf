@@ -19,7 +19,12 @@
 #include "libvmaf/libvmaf.h"
 
 #include <stdarg.h>
+#ifdef HAVE_CORECRT_IO_H
+#include <corecrt_io.h> // isatty()
+#endif
+#if HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 static enum VmafLogLevel vmaf_log_level = VMAF_LOG_LEVEL_INFO;
 static int istty = 0;
