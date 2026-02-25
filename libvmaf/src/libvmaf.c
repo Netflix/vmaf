@@ -90,6 +90,7 @@ typedef struct VmafContext {
     } pic_params;
     unsigned pic_cnt;
     bool flushed;
+    VmafPicture prev_ref; // previous ref pic for PREV_REF extractors (in-order only)
 } VmafContext;
 
 #ifdef VMAF_BATCH_THREADING
@@ -348,6 +349,8 @@ int vmaf_close(VmafContext *vmaf)
     if (!vmaf) return -EINVAL;
 
     vmaf_thread_pool_wait(vmaf->thread_pool);
+    if (vmaf->prev_ref.ref)
+        vmaf_picture_unref(&vmaf->prev_ref);
     vmaf_framesync_destroy(vmaf->framesync);
     feature_extractor_vector_destroy(&(vmaf->registered_feature_extractors));
     vmaf_feature_collector_destroy(vmaf->feature_collector);
@@ -483,7 +486,7 @@ int vmaf_use_features_from_model_collection(VmafContext *vmaf,
 
 struct ThreadData {
     VmafFeatureExtractorContext *fex_ctx;
-    VmafPicture ref, dist;
+    VmafPicture ref, dist, prev_ref;
     unsigned index;
     VmafFeatureCollector *feature_collector;
     VmafFeatureExtractorContextPool *fex_ctx_pool;
@@ -494,9 +497,19 @@ static void threaded_extract_func(void *e, void **thread_data)
 {
     (void) thread_data;
     struct ThreadData *f = e;
+
+    if (f->prev_ref.ref)
+        f->fex_ctx->fex->prev_ref = f->prev_ref;
+
     f->err = vmaf_feature_extractor_context_extract(f->fex_ctx, &f->ref, NULL,
                                                     &f->dist, NULL, f->index,
                                                     f->feature_collector);
+
+    if (f->prev_ref.ref) {
+        memset(&f->fex_ctx->fex->prev_ref, 0, sizeof(f->fex_ctx->fex->prev_ref));
+        vmaf_picture_unref(&f->prev_ref);
+    }
+
     f->err = vmaf_fex_ctx_pool_release(f->fex_ctx_pool, f->fex_ctx);
     vmaf_picture_unref(&f->ref);
     vmaf_picture_unref(&f->dist);
@@ -504,7 +517,7 @@ static void threaded_extract_func(void *e, void **thread_data)
 
 #ifdef VMAF_BATCH_THREADING
 struct ThreadDataBatch {
-    VmafPicture ref, dist;
+    VmafPicture ref, dist, prev_ref;
     unsigned index;
     VmafFeatureCollector *feature_collector;
     RegisteredFeatureExtractors *registered_fex;
@@ -551,11 +564,21 @@ static void threaded_extract_batch_func(void *e, void **thread_data)
             if (err) { f->err = err; break; }
         }
 
+        if (fex->flags & VMAF_FEATURE_EXTRACTOR_PREV_REF) {
+            if (f->prev_ref.ref)
+                td->fex_ctx[i]->fex->prev_ref = f->prev_ref;
+        }
+
         int err = vmaf_feature_extractor_context_extract(td->fex_ctx[i],
                                                          &f->ref, NULL,
                                                          &f->dist, NULL,
                                                          f->index,
                                                          f->feature_collector);
+
+        if (fex->flags & VMAF_FEATURE_EXTRACTOR_PREV_REF)
+            memset(&td->fex_ctx[i]->fex->prev_ref, 0,
+                   sizeof(td->fex_ctx[i]->fex->prev_ref));
+
         if (err) {
             f->err = err;
             break;
@@ -563,6 +586,8 @@ static void threaded_extract_batch_func(void *e, void **thread_data)
     }
 
 unref:
+    if (f->prev_ref.ref)
+        vmaf_picture_unref(&f->prev_ref);
     vmaf_picture_unref(&f->ref);
     vmaf_picture_unref(&f->dist);
 }
@@ -597,14 +622,21 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
                                        &fex_ctx);
         if (err) return err;
 
-        VmafPicture pic_a, pic_b;
+        VmafPicture pic_a, pic_b, prev_ref = { 0 };
         vmaf_picture_ref(&pic_a, ref);
         vmaf_picture_ref(&pic_b, dist);
+
+        if ((fex->flags & VMAF_FEATURE_EXTRACTOR_PREV_REF) &&
+            vmaf->prev_ref.ref)
+        {
+            vmaf_picture_ref(&prev_ref, &vmaf->prev_ref);
+        }
 
         struct ThreadData data = {
             .fex_ctx = fex_ctx,
             .ref = pic_a,
             .dist = pic_b,
+            .prev_ref = prev_ref,
             .index = index,
             .feature_collector = vmaf->feature_collector,
             .fex_ctx_pool = vmaf->fex_ctx_pool,
@@ -616,9 +648,14 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
         if (err) {
             vmaf_picture_unref(&pic_a);
             vmaf_picture_unref(&pic_b);
+            if (prev_ref.ref) vmaf_picture_unref(&prev_ref);
             return err;
         }
     }
+
+    if (vmaf->prev_ref.ref)
+        vmaf_picture_unref(&vmaf->prev_ref);
+    vmaf_picture_ref(&vmaf->prev_ref, ref);
 
     return vmaf_picture_unref(ref) | vmaf_picture_unref(dist);
 }
@@ -633,13 +670,17 @@ static int threaded_read_pictures_batch(VmafContext *vmaf, VmafPicture *ref,
 
     int err = 0;
 
-    VmafPicture pic_a, pic_b;
+    VmafPicture pic_a, pic_b, prev_ref = { 0 };
     vmaf_picture_ref(&pic_a, ref);
     vmaf_picture_ref(&pic_b, dist);
+
+    if (vmaf->prev_ref.ref)
+        vmaf_picture_ref(&prev_ref, &vmaf->prev_ref);
 
     struct ThreadDataBatch data = {
         .ref = pic_a,
         .dist = pic_b,
+        .prev_ref = prev_ref,
         .index = index,
         .feature_collector = vmaf->feature_collector,
         .registered_fex = &vmaf->registered_feature_extractors,
@@ -652,8 +693,13 @@ static int threaded_read_pictures_batch(VmafContext *vmaf, VmafPicture *ref,
     if (err) {
         vmaf_picture_unref(&pic_a);
         vmaf_picture_unref(&pic_b);
+        if (prev_ref.ref) vmaf_picture_unref(&prev_ref);
         return err;
     }
+
+    if (vmaf->prev_ref.ref)
+        vmaf_picture_unref(&vmaf->prev_ref);
+    vmaf_picture_ref(&vmaf->prev_ref, ref);
 
     return vmaf_picture_unref(ref) | vmaf_picture_unref(dist);
 }
@@ -918,9 +964,19 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
             &dist_device : &dist_host;
 #endif
 
+        if ((fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_PREV_REF) &&
+            vmaf->prev_ref.ref)
+        {
+            fex_ctx->fex->prev_ref = vmaf->prev_ref;
+        }
+
         err = vmaf_feature_extractor_context_extract(fex_ctx, ref, NULL, dist,
                                                      NULL, index,
                                                      vmaf->feature_collector);
+
+        if (fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_PREV_REF)
+            memset(&fex_ctx->fex->prev_ref, 0, sizeof(fex_ctx->fex->prev_ref));
+
         if (err) return err;
     }
 
@@ -938,6 +994,10 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
         return threaded_read_pictures(vmaf, ref, dist, index);
 #endif
     }
+
+    if (vmaf->prev_ref.ref)
+        vmaf_picture_unref(&vmaf->prev_ref);
+    vmaf_picture_ref(&vmaf->prev_ref, ref);
 #ifdef HAVE_CUDA
     if (ref_host.priv)
         err |= vmaf_picture_unref(&ref_host);
