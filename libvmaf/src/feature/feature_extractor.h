@@ -38,6 +38,7 @@ enum VmafFeatureExtractorFlags {
     VMAF_FEATURE_EXTRACTOR_TEMPORAL = 1 << 0,
     VMAF_FEATURE_EXTRACTOR_CUDA = 1 << 1,
     VMAF_FEATURE_FRAME_SYNC = 1 << 2,
+    VMAF_FEATURE_EXTRACTOR_PREV_REF = 1 << 3,
 };
 
 typedef struct VmafFeatureExtractor {
@@ -97,6 +98,7 @@ typedef struct VmafFeatureExtractor {
     #endif
 
     VmafFrameSyncContext *framesync;
+    VmafPicture prev_ref; ///< Previous reference picture, set by framework.
 
 } VmafFeatureExtractor;
 

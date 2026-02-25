@@ -239,6 +239,7 @@ if is_asm_enabled
       x86_avx2_sources = [
           feature_src_dir + 'common/convolution_avx.c',
           feature_src_dir + 'x86/motion_avx2.c',
+          feature_src_dir + 'x86/motion_v2_avx2.c',
           feature_src_dir + 'x86/vif_avx2.c',
           feature_src_dir + 'x86/adm_avx2.c',
           feature_src_dir + 'x86/cambi_avx2.c',
@@ -256,6 +257,7 @@ if is_asm_enabled
       if is_avx512_enabled and is_avx512_supported
         x86_avx512_sources = [
             feature_src_dir + 'x86/motion_avx512.c',
+            feature_src_dir + 'x86/motion_v2_avx512.c',
             feature_src_dir + 'x86/vif_avx512.c',
             feature_src_dir + 'x86/adm_avx512.c',
         ]
@@ -440,6 +442,7 @@ libvmaf_feature_sources = [
     feature_src_dir + 'integer_adm.c',
     feature_src_dir + 'feature_collector.c',
     feature_src_dir + 'integer_motion.c',
+    feature_src_dir + 'integer_motion_v2.c',
     feature_src_dir + 'integer_vif.c',
     feature_src_dir + 'ciede.c',
     feature_src_dir + 'common/alignment.c',
