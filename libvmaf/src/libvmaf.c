@@ -752,6 +752,22 @@ static int flush_context_threaded(VmafContext *vmaf)
     err |= vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
 #endif
 
+    {
+        RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
+        for (unsigned i = 0; i < rfe.cnt; i++) {
+            VmafFeatureExtractor *fex = rfe.fex_ctx[i]->fex;
+            if (fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL)
+                continue;
+            if (fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA)
+                continue;
+            if (!fex->flush)
+                continue;
+            int flush_err = 0;
+            while (!(flush_err = fex->flush(fex, vmaf->feature_collector)));
+            if (flush_err < 0) err |= flush_err;
+        }
+    }
+
     if (!err) vmaf->flushed = true;
     return err;
 }
