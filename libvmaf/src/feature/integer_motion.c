@@ -158,27 +158,6 @@ y_convolution_16(void *src, uint16_t *dst, unsigned width,
     }
 }
 
-static inline uint32_t
-edge_8(const uint8_t *src, int height, int stride, int i, int j)
-{
-    int radius = filter_width / 2;
-    uint32_t accum = 0;
-
-    // MIRROR | ЯOЯЯIM
-    for (int k = 0; k < filter_width; ++k) {
-        int i_tap = i - radius + k;
-        int j_tap = j;
-
-        if (i_tap < 0)
-            i_tap = -i_tap;
-        else if (i_tap >= height)
-            i_tap = height - (i_tap - height + 1);
-
-        accum += filter[k] * src[i_tap * stride + j_tap];
-    }
-    return accum;
-}
-
 static inline void
 y_convolution_8(void *src, uint16_t *dst, unsigned width,
                 unsigned height, ptrdiff_t src_stride, ptrdiff_t dst_stride,
@@ -320,6 +299,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 #if ARCH_X86
     unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+        s->y_convolution = bpc == 8 ? y_convolution_8_avx2 : y_convolution_16_avx2;
         s->x_convolution = x_convolution_16_avx2;
         s->sad = sad_avx2_wrapper;
     }

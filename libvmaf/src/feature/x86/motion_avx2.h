@@ -25,6 +25,14 @@ void x_convolution_16_avx2(const uint16_t *src, uint16_t *dst, unsigned width,
                            unsigned height, ptrdiff_t src_stride,
                            ptrdiff_t dst_stride);
 
+void y_convolution_16_avx2(void *src, uint16_t *dst, unsigned width,
+                           unsigned height, ptrdiff_t src_stride,
+                           ptrdiff_t dst_stride, unsigned inp_size_bits);
+
+void y_convolution_8_avx2(void *src, uint16_t *dst, unsigned width,
+                          unsigned height, ptrdiff_t src_stride,
+                          ptrdiff_t dst_stride, unsigned inp_size_bits);
+
 void sad_avx2(const uint16_t *a, const uint16_t *b, unsigned w, unsigned h,
               ptrdiff_t stride_a, ptrdiff_t stride_b, uint64_t *sad);
 
