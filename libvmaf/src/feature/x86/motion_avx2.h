@@ -25,4 +25,7 @@ void x_convolution_16_avx2(const uint16_t *src, uint16_t *dst, unsigned width,
                            unsigned height, ptrdiff_t src_stride,
                            ptrdiff_t dst_stride);
 
+void sad_avx2(const uint16_t *a, const uint16_t *b, unsigned w, unsigned h,
+              ptrdiff_t stride_a, ptrdiff_t stride_b, uint64_t *sad);
+
 #endif /* X86_AVX2_MOTION_H_ */

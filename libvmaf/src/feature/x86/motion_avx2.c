@@ -19,6 +19,7 @@
 #include <immintrin.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "feature/integer_motion.h"
 #include "feature/common/alignment.h"
@@ -131,4 +132,48 @@ void x_convolution_16_avx2(const uint16_t *src, uint16_t *dst, unsigned width,
                  shift_add_round) >> 16;
         }
     }
+}
+
+void sad_avx2(const uint16_t *a, const uint16_t *b, unsigned w, unsigned h,
+              ptrdiff_t stride_a, ptrdiff_t stride_b, uint64_t *sad)
+{
+    uint64_t total_sad = 0;
+    const __m256i zero = _mm256_setzero_si256();
+
+    for (unsigned i = 0; i < h; i++) {
+        __m256i row_sad = _mm256_setzero_si256();
+        unsigned j = 0;
+
+        for (; j + 16 <= w; j += 16) {
+            __m256i va = _mm256_loadu_si256((const __m256i *)(a + j));
+            __m256i vb = _mm256_loadu_si256((const __m256i *)(b + j));
+            __m256i mx = _mm256_max_epu16(va, vb);
+            __m256i mn = _mm256_min_epu16(va, vb);
+            __m256i diff = _mm256_sub_epi16(mx, mn);
+            /* Zero-extend 16-bit diffs to 32-bit and accumulate */
+            __m256i diff_lo = _mm256_unpacklo_epi16(diff, zero);
+            __m256i diff_hi = _mm256_unpackhi_epi16(diff, zero);
+            row_sad = _mm256_add_epi32(row_sad, diff_lo);
+            row_sad = _mm256_add_epi32(row_sad, diff_hi);
+        }
+
+        __m128i lo = _mm256_castsi256_si128(row_sad);
+        __m128i hi = _mm256_extracti128_si256(row_sad, 1);
+        __m128i sum128 = _mm_add_epi32(lo, hi);
+        sum128 = _mm_add_epi32(sum128,
+                               _mm_shuffle_epi32(sum128, _MM_SHUFFLE(1,0,3,2)));
+        sum128 = _mm_add_epi32(sum128,
+                               _mm_shuffle_epi32(sum128, _MM_SHUFFLE(0,1,0,1)));
+        uint32_t row_total = (uint32_t)_mm_cvtsi128_si32(sum128);
+
+        for (; j < w; j++) {
+            row_total += abs(a[j] - b[j]);
+        }
+
+        total_sad += row_total;
+        a += stride_a;
+        b += stride_b;
+    }
+
+    *sad = total_sad;
 }
