@@ -35,6 +35,7 @@ typedef struct SsimState {
     bool enable_db;
     bool clip_db;
     double max_db;
+    int scale;
 } SsimState;
 
 static const VmafOption options[] = {
@@ -58,6 +59,15 @@ static const VmafOption options[] = {
         .offset = offsetof(SsimState, clip_db),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
+    },
+    {
+        .name = "scale",
+        .help = "decimation scale factor (0=auto, 1=no downscaling, 2-10=explicit)",
+        .offset = offsetof(SsimState, scale),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = 0,
+        .min = 0,
+        .max = 10,
     },
     { 0 }
 };
@@ -115,7 +125,7 @@ static int extract(VmafFeatureExtractor *fex,
     double score, l_score, c_score, s_score;
     err = compute_ssim(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0],
                        s->float_stride, s->float_stride,
-                       &score, &l_score, &c_score, &s_score);
+                       &score, &l_score, &c_score, &s_score, s->scale);
     if (err) return err;
 
     if (s->enable_db)
