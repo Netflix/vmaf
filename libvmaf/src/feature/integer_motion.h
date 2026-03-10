@@ -53,4 +53,25 @@ edge_16(bool horizontal, const uint16_t *src, int width,
     return accum;
 }
 
+static inline uint32_t
+edge_8(const uint8_t *src, int height, int stride, int i, int j)
+{
+    int radius = filter_width / 2;
+    uint32_t accum = 0;
+
+    // MIRROR | ЯOЯЯIM
+    for (int k = 0; k < filter_width; ++k) {
+        int i_tap = i - radius + k;
+        int j_tap = j;
+
+        if (i_tap < 0)
+            i_tap = -i_tap;
+        else if (i_tap >= height)
+            i_tap = height - (i_tap - height + 1);
+
+        accum += filter[k] * src[i_tap * stride + j_tap];
+    }
+    return accum;
+}
+
 #endif /* _FEATURE_MOTION_H_ */

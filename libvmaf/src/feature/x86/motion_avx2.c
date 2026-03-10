@@ -19,6 +19,7 @@
 #include <immintrin.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "feature/integer_motion.h"
 #include "feature/common/alignment.h"
@@ -131,4 +132,251 @@ void x_convolution_16_avx2(const uint16_t *src, uint16_t *dst, unsigned width,
                  shift_add_round) >> 16;
         }
     }
+}
+
+void y_convolution_16_avx2(void *src_v, uint16_t *dst, unsigned width,
+                           unsigned height, ptrdiff_t src_stride,
+                           ptrdiff_t dst_stride, unsigned inp_size_bits)
+{
+    const unsigned radius = filter_width / 2;
+    const unsigned top_edge = vmaf_ceiln(radius, 1);
+    const unsigned bottom_edge = vmaf_floorn(height - (filter_width - radius), 1);
+    const unsigned add_before_shift = 1u << (inp_size_bits - 1);
+    const unsigned shift_var = inp_size_bits;
+    const uint16_t *src = (const uint16_t *)src_v;
+
+    /* Top edge rows: use scalar mirror-boundary code */
+    for (unsigned i = 0; i < top_edge; i++) {
+        for (unsigned j = 0; j < width; ++j) {
+            dst[i * dst_stride + j] =
+                (edge_16(false, src, width, height, src_stride, i, j) +
+                 add_before_shift) >> shift_var;
+        }
+    }
+
+    /* Pre-broadcast filter coefficients */
+    const __m256i k0 = _mm256_set1_epi16(filter[0]); /* 3571 */
+    const __m256i k1 = _mm256_set1_epi16(filter[1]); /* 16004 */
+    const __m256i k2 = _mm256_set1_epi16(filter[2]); /* 26386 */
+    const __m256i addnum = _mm256_set1_epi32(add_before_shift);
+
+    /* Interior rows: AVX2 vertical convolution */
+    const uint16_t *src_base = src + (top_edge - radius) * src_stride;
+    for (unsigned i = top_edge; i < bottom_edge; i++) {
+        const uint16_t *row0 = src_base;
+        const uint16_t *row1 = row0 + src_stride;
+        const uint16_t *row2 = row1 + src_stride;
+        const uint16_t *row3 = row2 + src_stride;
+        const uint16_t *row4 = row3 + src_stride;
+        unsigned j = 0;
+
+        /* Process 16 pixels per iteration */
+        for (; j + 16 <= width; j += 16) {
+            __m256i r0 = _mm256_loadu_si256((const __m256i *)(row0 + j));
+            __m256i r1 = _mm256_loadu_si256((const __m256i *)(row1 + j));
+            __m256i r2 = _mm256_loadu_si256((const __m256i *)(row2 + j));
+            __m256i r3 = _mm256_loadu_si256((const __m256i *)(row3 + j));
+            __m256i r4 = _mm256_loadu_si256((const __m256i *)(row4 + j));
+
+            /* Exploit symmetry: filter[0]==filter[4], filter[1]==filter[3] */
+            __m256i s04 = _mm256_add_epi16(r0, r4);
+            __m256i s13 = _mm256_add_epi16(r1, r3);
+
+            /* Compute 32-bit products for tap 0+4 (k0 * s04) */
+            __m256i p04_lo = _mm256_mullo_epi16(s04, k0);
+            __m256i p04_hi = _mm256_mulhi_epu16(s04, k0);
+            __m256i acc_lo = _mm256_unpacklo_epi16(p04_lo, p04_hi);
+            __m256i acc_hi = _mm256_unpackhi_epi16(p04_lo, p04_hi);
+
+            /* Add tap 1+3 (k1 * s13) */
+            __m256i p13_lo = _mm256_mullo_epi16(s13, k1);
+            __m256i p13_hi = _mm256_mulhi_epu16(s13, k1);
+            acc_lo = _mm256_add_epi32(acc_lo, _mm256_unpacklo_epi16(p13_lo, p13_hi));
+            acc_hi = _mm256_add_epi32(acc_hi, _mm256_unpackhi_epi16(p13_lo, p13_hi));
+
+            /* Add tap 2 (k2 * r2) */
+            __m256i p2_lo = _mm256_mullo_epi16(r2, k2);
+            __m256i p2_hi = _mm256_mulhi_epu16(r2, k2);
+            acc_lo = _mm256_add_epi32(acc_lo, _mm256_unpacklo_epi16(p2_lo, p2_hi));
+            acc_hi = _mm256_add_epi32(acc_hi, _mm256_unpackhi_epi16(p2_lo, p2_hi));
+
+            /* Add rounding and shift */
+            acc_lo = _mm256_add_epi32(acc_lo, addnum);
+            acc_hi = _mm256_add_epi32(acc_hi, addnum);
+            acc_lo = _mm256_srli_epi32(acc_lo, shift_var);
+            acc_hi = _mm256_srli_epi32(acc_hi, shift_var);
+
+            /* Pack 32-bit back to 16-bit */
+            __m256i result = _mm256_packus_epi32(acc_lo, acc_hi);
+            _mm256_storeu_si256((__m256i *)(dst + i * dst_stride + j), result);
+        }
+
+        /* Scalar remainder */
+        for (; j < width; ++j) {
+            uint32_t accum = 0;
+            accum += filter[0] * row0[j];
+            accum += filter[1] * row1[j];
+            accum += filter[2] * row2[j];
+            accum += filter[3] * row3[j];
+            accum += filter[4] * row4[j];
+            dst[i * dst_stride + j] = (accum + add_before_shift) >> shift_var;
+        }
+
+        src_base += src_stride;
+    }
+
+    /* Bottom edge rows: use scalar mirror-boundary code */
+    for (unsigned i = bottom_edge; i < height; i++) {
+        for (unsigned j = 0; j < width; ++j) {
+            dst[i * dst_stride + j] =
+                (edge_16(false, src, width, height, src_stride, i, j) +
+                 add_before_shift) >> shift_var;
+        }
+    }
+}
+
+void y_convolution_8_avx2(void *src_v, uint16_t *dst, unsigned width,
+                           unsigned height, ptrdiff_t src_stride,
+                           ptrdiff_t dst_stride, unsigned inp_size_bits)
+{
+    (void) inp_size_bits;
+    const unsigned radius = filter_width / 2;
+    const unsigned top_edge = vmaf_ceiln(radius, 1);
+    const unsigned bottom_edge = vmaf_floorn(height - (filter_width - radius), 1);
+    const unsigned shift_var = 8;
+    const unsigned add_before_shift = 1u << (shift_var - 1);
+    const uint8_t *src = (const uint8_t *)src_v;
+
+    /* Top edge rows: use scalar mirror-boundary code */
+    for (unsigned i = 0; i < top_edge; i++) {
+        for (unsigned j = 0; j < width; ++j) {
+            dst[i * dst_stride + j] =
+                (edge_8(src, height, src_stride, i, j) +
+                 add_before_shift) >> shift_var;
+        }
+    }
+
+    /* Pre-broadcast filter coefficients */
+    const __m256i k0 = _mm256_set1_epi16(filter[0]); /* 3571 */
+    const __m256i k1 = _mm256_set1_epi16(filter[1]); /* 16004 */
+    const __m256i k2 = _mm256_set1_epi16(filter[2]); /* 26386 */
+    const __m256i addnum = _mm256_set1_epi32(add_before_shift);
+
+    /* Interior rows: AVX2 vertical convolution */
+    const uint8_t *src_base = src + (top_edge - radius) * src_stride;
+    for (unsigned i = top_edge; i < bottom_edge; i++) {
+        const uint8_t *row0 = src_base;
+        const uint8_t *row1 = row0 + src_stride;
+        const uint8_t *row2 = row1 + src_stride;
+        const uint8_t *row3 = row2 + src_stride;
+        const uint8_t *row4 = row3 + src_stride;
+        unsigned j = 0;
+
+        /* Process 16 pixels per iteration: load 8-bit, zero-extend to 16-bit */
+        for (; j + 16 <= width; j += 16) {
+            __m256i r0 = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i *)(row0 + j)));
+            __m256i r1 = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i *)(row1 + j)));
+            __m256i r2 = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i *)(row2 + j)));
+            __m256i r3 = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i *)(row3 + j)));
+            __m256i r4 = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i *)(row4 + j)));
+
+            /* Exploit symmetry: filter[0]==filter[4], filter[1]==filter[3] */
+            __m256i s04 = _mm256_add_epi16(r0, r4);
+            __m256i s13 = _mm256_add_epi16(r1, r3);
+
+            /* Compute 32-bit products for tap 0+4 (k0 * s04) */
+            __m256i p04_lo = _mm256_mullo_epi16(s04, k0);
+            __m256i p04_hi = _mm256_mulhi_epu16(s04, k0);
+            __m256i acc_lo = _mm256_unpacklo_epi16(p04_lo, p04_hi);
+            __m256i acc_hi = _mm256_unpackhi_epi16(p04_lo, p04_hi);
+
+            /* Add tap 1+3 (k1 * s13) */
+            __m256i p13_lo = _mm256_mullo_epi16(s13, k1);
+            __m256i p13_hi = _mm256_mulhi_epu16(s13, k1);
+            acc_lo = _mm256_add_epi32(acc_lo, _mm256_unpacklo_epi16(p13_lo, p13_hi));
+            acc_hi = _mm256_add_epi32(acc_hi, _mm256_unpackhi_epi16(p13_lo, p13_hi));
+
+            /* Add tap 2 (k2 * r2) */
+            __m256i p2_lo = _mm256_mullo_epi16(r2, k2);
+            __m256i p2_hi = _mm256_mulhi_epu16(r2, k2);
+            acc_lo = _mm256_add_epi32(acc_lo, _mm256_unpacklo_epi16(p2_lo, p2_hi));
+            acc_hi = _mm256_add_epi32(acc_hi, _mm256_unpackhi_epi16(p2_lo, p2_hi));
+
+            /* Add rounding and shift */
+            acc_lo = _mm256_add_epi32(acc_lo, addnum);
+            acc_hi = _mm256_add_epi32(acc_hi, addnum);
+            acc_lo = _mm256_srli_epi32(acc_lo, shift_var);
+            acc_hi = _mm256_srli_epi32(acc_hi, shift_var);
+
+            /* Pack 32-bit back to 16-bit */
+            __m256i result = _mm256_packus_epi32(acc_lo, acc_hi);
+            _mm256_storeu_si256((__m256i *)(dst + i * dst_stride + j), result);
+        }
+
+        /* Scalar remainder */
+        for (; j < width; ++j) {
+            uint32_t accum = 0;
+            accum += filter[0] * row0[j];
+            accum += filter[1] * row1[j];
+            accum += filter[2] * row2[j];
+            accum += filter[3] * row3[j];
+            accum += filter[4] * row4[j];
+            dst[i * dst_stride + j] = (accum + add_before_shift) >> shift_var;
+        }
+
+        src_base += src_stride;
+    }
+
+    /* Bottom edge rows: use scalar mirror-boundary code */
+    for (unsigned i = bottom_edge; i < height; i++) {
+        for (unsigned j = 0; j < width; ++j) {
+            dst[i * dst_stride + j] =
+                (edge_8(src, height, src_stride, i, j) +
+                 add_before_shift) >> shift_var;
+        }
+    }
+}
+
+void sad_avx2(const uint16_t *a, const uint16_t *b, unsigned w, unsigned h,
+              ptrdiff_t stride_a, ptrdiff_t stride_b, uint64_t *sad)
+{
+    uint64_t total_sad = 0;
+    const __m256i zero = _mm256_setzero_si256();
+
+    for (unsigned i = 0; i < h; i++) {
+        __m256i row_sad = _mm256_setzero_si256();
+        unsigned j = 0;
+
+        for (; j + 16 <= w; j += 16) {
+            __m256i va = _mm256_loadu_si256((const __m256i *)(a + j));
+            __m256i vb = _mm256_loadu_si256((const __m256i *)(b + j));
+            __m256i mx = _mm256_max_epu16(va, vb);
+            __m256i mn = _mm256_min_epu16(va, vb);
+            __m256i diff = _mm256_sub_epi16(mx, mn);
+            /* Zero-extend 16-bit diffs to 32-bit and accumulate */
+            __m256i diff_lo = _mm256_unpacklo_epi16(diff, zero);
+            __m256i diff_hi = _mm256_unpackhi_epi16(diff, zero);
+            row_sad = _mm256_add_epi32(row_sad, diff_lo);
+            row_sad = _mm256_add_epi32(row_sad, diff_hi);
+        }
+
+        __m128i lo = _mm256_castsi256_si128(row_sad);
+        __m128i hi = _mm256_extracti128_si256(row_sad, 1);
+        __m128i sum128 = _mm_add_epi32(lo, hi);
+        sum128 = _mm_add_epi32(sum128,
+                               _mm_shuffle_epi32(sum128, _MM_SHUFFLE(1,0,3,2)));
+        sum128 = _mm_add_epi32(sum128,
+                               _mm_shuffle_epi32(sum128, _MM_SHUFFLE(0,1,0,1)));
+        uint32_t row_total = (uint32_t)_mm_cvtsi128_si32(sum128);
+
+        for (; j < w; j++) {
+            row_total += abs(a[j] - b[j]);
+        }
+
+        total_sad += row_total;
+        a += stride_a;
+        b += stride_b;
+    }
+
+    *sad = total_sad;
 }
