@@ -23,9 +23,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cpu.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "opt.h"
+
+#if ARCH_X86
+#include "x86/psnr_avx2.h"
+#endif
 
 typedef struct PsnrState {
     bool enable_chroma;
@@ -35,6 +40,10 @@ typedef struct PsnrState {
     uint32_t peak;
     double psnr_max[3];
     double min_sse;
+    void (*compute_sse_8)(const uint8_t *ref, const uint8_t *dis,
+                          unsigned w, unsigned h,
+                          ptrdiff_t stride_ref, ptrdiff_t stride_dis,
+                          uint64_t *sse);
     struct {
         uint64_t sse[3];
         uint64_t n_pixels[3];
@@ -83,6 +92,25 @@ static const VmafOption options[] = {
 };
 
 
+static void psnr_sse_8_c(const uint8_t *ref, const uint8_t *dis,
+                         unsigned w, unsigned h,
+                         ptrdiff_t stride_ref, ptrdiff_t stride_dis,
+                         uint64_t *sse)
+{
+    uint64_t total_sse = 0;
+    for (unsigned i = 0; i < h; i++) {
+        uint32_t sse_inner = 0;
+        for (unsigned j = 0; j < w; j++) {
+            const int16_t e = ref[j] - dis[j];
+            sse_inner += e * e;
+        }
+        total_sse += sse_inner;
+        ref += stride_ref;
+        dis += stride_dis;
+    }
+    *sse = total_sse;
+}
+
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
@@ -92,11 +120,18 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (pix_fmt == VMAF_PIX_FMT_YUV400P)
         s->enable_chroma = false;
 
+    s->compute_sse_8 = psnr_sse_8_c;
+#if ARCH_X86
+    unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2)
+        s->compute_sse_8 = psnr_sse_8_avx2;
+#endif
+
     for (unsigned i = 0; i < 3; i++) {
         if (s->min_sse != 0.0) {
             const int ss_hor = pix_fmt != VMAF_PIX_FMT_YUV444P;
             const int ss_ver = pix_fmt == VMAF_PIX_FMT_YUV420P;
-            const double mse = s->min_sse / 
+            const double mse = s->min_sse /
                 (((i && ss_hor) ? w / 2 : w) * ((i && ss_ver) ? h / 2 : h));
             s->psnr_max[i] = ceil(10. * log10(s->peak * s->peak / mse));
         } else {
@@ -123,20 +158,11 @@ static int psnr(VmafPicture *ref_pic, VmafPicture *dist_pic,
     int err = 0;
 
     for (unsigned p = 0; p < n; p++) {
-        uint8_t *ref = ref_pic->data[p];
-        uint8_t *dis = dist_pic->data[p];
-
         uint64_t sse = 0;
-        for (unsigned i = 0; i < ref_pic->h[p]; i++) {
-            uint32_t sse_inner = 0;
-            for (unsigned j = 0; j < ref_pic->w[p]; j++) {
-                const int16_t e = ref[j] - dis[j];
-                sse_inner += e * e;
-            }
-            sse += sse_inner;
-            ref += ref_pic->stride[p];
-            dis += dist_pic->stride[p];
-        }
+        s->compute_sse_8(ref_pic->data[p], dist_pic->data[p],
+                         ref_pic->w[p], ref_pic->h[p],
+                         ref_pic->stride[p], dist_pic->stride[p],
+                         &sse);
 
         if (s->enable_apsnr) {
             s->apsnr.sse[p] += sse;

@@ -177,3 +177,12 @@ test('test_cli_parse', test_cli_parse)
 test('test_psnr', test_psnr)
 test('test_framesync', test_framesync)
 test('test_propagate_metadata', test_propagate_metadata)
+
+test_perf_optimizations = executable('test_perf_optimizations',
+    ['test.c', 'test_perf_optimizations.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/'), include_directories('../src/feature/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
+)
+
+test('test_perf_optimizations', test_perf_optimizations)

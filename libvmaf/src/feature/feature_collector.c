@@ -152,7 +152,7 @@ static int feature_vector_init(FeatureVector **const feature_vector,
     fv->name = malloc(strlen(name) + 1);
     if (!fv->name) goto free_fv;
     strcpy(fv->name, name);
-    fv->capacity = 8;
+    fv->capacity = 512;
     fv->score = malloc(sizeof(fv->score[0]) * fv->capacity);
     if (!fv->score) goto free_name;
     memset(fv->score, 0, sizeof(fv->score[0]) * fv->capacity);

@@ -19,6 +19,7 @@
 #include <immintrin.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "feature/integer_motion.h"
 #include "feature/common/alignment.h"
@@ -131,4 +132,58 @@ void x_convolution_16_avx2(const uint16_t *src, uint16_t *dst, unsigned width,
                  shift_add_round) >> 16;
         }
     }
+}
+
+void sad_16_avx2(const uint16_t *a, const uint16_t *b,
+                 unsigned w, unsigned h,
+                 ptrdiff_t stride_a, ptrdiff_t stride_b,
+                 uint64_t *sad)
+{
+    __m256i acc = _mm256_setzero_si256();
+    uint64_t total_sad = 0;
+
+    for (unsigned i = 0; i < h; i++) {
+        unsigned j = 0;
+        __m256i row_acc = _mm256_setzero_si256();
+
+        /* Process 16 uint16_t elements at a time */
+        for (; j + 16 <= w; j += 16) {
+            __m256i va = _mm256_loadu_si256((const __m256i *)(a + j));
+            __m256i vb = _mm256_loadu_si256((const __m256i *)(b + j));
+            /* Compute absolute difference: max(a-b, b-a) for unsigned */
+            __m256i diff1 = _mm256_subs_epu16(va, vb);
+            __m256i diff2 = _mm256_subs_epu16(vb, va);
+            __m256i absdiff = _mm256_or_si256(diff1, diff2);
+            /* Widen to 32-bit and accumulate */
+            __m256i lo = _mm256_unpacklo_epi16(absdiff, _mm256_setzero_si256());
+            __m256i hi = _mm256_unpackhi_epi16(absdiff, _mm256_setzero_si256());
+            row_acc = _mm256_add_epi32(row_acc, lo);
+            row_acc = _mm256_add_epi32(row_acc, hi);
+        }
+
+        /* Reduce row_acc to scalar (collapse 8x32-bit to 64-bit) */
+        __m256i row_acc_lo = _mm256_unpacklo_epi32(row_acc, _mm256_setzero_si256());
+        __m256i row_acc_hi = _mm256_unpackhi_epi32(row_acc, _mm256_setzero_si256());
+        acc = _mm256_add_epi64(acc, row_acc_lo);
+        acc = _mm256_add_epi64(acc, row_acc_hi);
+
+        /* Scalar tail */
+        uint32_t inner_sad = 0;
+        for (; j < w; j++) {
+            inner_sad += abs(a[j] - b[j]);
+        }
+        total_sad += inner_sad;
+
+        a += stride_a;
+        b += stride_b;
+    }
+
+    /* Horizontal sum of acc (4x64-bit) */
+    __m128i lo128 = _mm256_castsi256_si128(acc);
+    __m128i hi128 = _mm256_extracti128_si256(acc, 1);
+    __m128i sum128 = _mm_add_epi64(lo128, hi128);
+    __m128i sum64 = _mm_add_epi64(sum128, _mm_srli_si128(sum128, 8));
+    total_sad += (uint64_t)_mm_extract_epi64(sum64, 0);
+
+    *sad = total_sad;
 }

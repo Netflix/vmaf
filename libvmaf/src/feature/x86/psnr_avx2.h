@@ -16,18 +16,15 @@
  *
  */
 
-#ifndef X86_AVX2_MOTION_H_
-#define X86_AVX2_MOTION_H_
+#ifndef PSNR_AVX2_H_
+#define PSNR_AVX2_H_
 
+#include <stddef.h>
 #include <stdint.h>
 
-void x_convolution_16_avx2(const uint16_t *src, uint16_t *dst, unsigned width,
-                           unsigned height, ptrdiff_t src_stride,
-                           ptrdiff_t dst_stride);
+void psnr_sse_8_avx2(const uint8_t *ref, const uint8_t *dis,
+                     unsigned w, unsigned h,
+                     ptrdiff_t stride_ref, ptrdiff_t stride_dis,
+                     uint64_t *sse);
 
-void sad_16_avx2(const uint16_t *a, const uint16_t *b,
-                 unsigned w, unsigned h,
-                 ptrdiff_t stride_a, ptrdiff_t stride_b,
-                 uint64_t *sad);
-
-#endif /* X86_AVX2_MOTION_H_ */
+#endif /* PSNR_AVX2_H_ */

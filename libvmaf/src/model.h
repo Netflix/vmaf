@@ -41,6 +41,7 @@ typedef struct {
     char *name;
     double slope, intercept;
     VmafDictionary *opts_dict;
+    char *name_with_opt; /* cached feature name with options, lazily populated */
 } VmafModelFeature;
 
 typedef struct {

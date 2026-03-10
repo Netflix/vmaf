@@ -32,20 +32,24 @@ void convolution_x_c_s(const float *filter, int filter_width, const float *src, 
 	int borders_right = vmaf_floorn(width - (filter_width - radius), step);
 
 	for (int i = 0; i < height; ++i) {
+		const float *src_row = src + i * src_stride;
+		float *dst_row = dst + i * dst_stride;
+
 		for (int j = 0; j < borders_left; j += step) {
-			dst[i * dst_stride + j / step] = convolution_edge_s(true, filter, filter_width, src, width, height, src_stride, i, j);
+			dst_row[j / step] = convolution_edge_s(true, filter, filter_width, src, width, height, src_stride, i, j);
 		}
 
 		for (int j = borders_left; j < borders_right; j += step) {
+			const float *src_ptr = src_row + j - radius;
 			float accum = 0;
 			for (int k = 0; k < filter_width; ++k) {
-				accum += filter[k] * src[i * src_stride + j - radius + k];
+				accum += filter[k] * src_ptr[k];
 			}
-			dst[i * dst_stride + j / step] = accum;
+			dst_row[j / step] = accum;
 		}
 
 		for (int j = borders_right; j < width; j += step) {
-			dst[i * dst_stride + j / step] = convolution_edge_s(true, filter, filter_width, src, width, height, src_stride, i, j);
+			dst_row[j / step] = convolution_edge_s(true, filter, filter_width, src, width, height, src_stride, i, j);
 		}
 	}
 }
@@ -62,12 +66,13 @@ void convolution_y_c_s(const float *filter, int filter_width, const float *src, 
 		}
 	}
 	for (int i = borders_top; i < borders_bottom; i += step) {
+		float *dst_row = dst + (i / step) * dst_stride;
 		for (int j = 0; j < width; ++j) {
 			float accum = 0;
 			for (int k = 0; k < filter_width; ++k) {
 				accum += filter[k] * src[(i - radius + k) * src_stride + j];
 			}
-			dst[(i / step) * dst_stride + j] = accum;
+			dst_row[j] = accum;
 		}
 	}
 	for (int i = borders_bottom; i < height; i += step) {

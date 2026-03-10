@@ -191,6 +191,7 @@ void vmaf_model_destroy(VmafModel *model)
     svm_free_and_destroy_model(&(model->svm));
     for (unsigned i = 0; i < model->n_features; i++) {
         free(model->feature[i].name);
+        free(model->feature[i].name_with_opt);
         vmaf_dictionary_free(&model->feature[i].opts_dict);
     }
     free(model->feature);

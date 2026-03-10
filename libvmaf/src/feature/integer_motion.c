@@ -122,7 +122,7 @@ y_convolution_16(void *src, uint16_t *dst, unsigned width,
     const unsigned radius = filter_width / 2;
     const unsigned top_edge = vmaf_ceiln(radius, 1);
     const unsigned bottom_edge = vmaf_floorn(height - (filter_width - radius), 1);
-    const unsigned add_before_shift = (int) pow(2, (inp_size_bits - 1));
+    const unsigned add_before_shift = 1u << (inp_size_bits - 1);
     const unsigned shift_var = inp_size_bits;
 
     uint16_t *src_p = (uint16_t*) src + (top_edge - radius) * src_stride;
@@ -189,7 +189,7 @@ y_convolution_8(void *src, uint16_t *dst, unsigned width,
     const unsigned top_edge = vmaf_ceiln(radius, 1);
     const unsigned bottom_edge = vmaf_floorn(height - (filter_width - radius), 1);
     const unsigned shift_var = 8;
-    const unsigned add_before_shift = (int) pow(2, (shift_var - 1));
+    const unsigned add_before_shift = 1u << (shift_var - 1);
 
     for (unsigned i = 0; i < top_edge; i++) {
         for (unsigned j = 0; j < width; ++j) {
@@ -240,6 +240,16 @@ static void sad_c(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad)
         b += (pic_b->stride[0] / 2);
     }
 }
+
+#if ARCH_X86
+static void sad_avx2_wrapper(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad)
+{
+    sad_16_avx2(pic_a->data[0], pic_b->data[0],
+                pic_a->w[0], pic_a->h[0],
+                pic_a->stride[0] / 2, pic_b->stride[0] / 2,
+                sad);
+}
+#endif
 
 static int extract_force_zero(VmafFeatureExtractor *fex,
                               VmafPicture *ref_pic, VmafPicture *ref_pic_90,
@@ -304,18 +314,19 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     s->y_convolution = bpc == 8 ? y_convolution_8 : y_convolution_16;
     s->x_convolution = x_convolution_16;
+    s->sad = sad_c;
 
 #if ARCH_X86
     unsigned flags = vmaf_get_cpu_flags();
-    if (flags & VMAF_X86_CPU_FLAG_AVX2)
+    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
         s->x_convolution = x_convolution_16_avx2;
+        s->sad = sad_avx2_wrapper;
+    }
 #if HAVE_AVX512
     if (flags & VMAF_X86_CPU_FLAG_AVX512)
         s->x_convolution = x_convolution_16_avx512;
 #endif
 #endif
-
-    s->sad = sad_c;
     s->score = 0.;
 
     return 0;

@@ -723,12 +723,13 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
             t_mag_sq = (int64_t)th * th + (int64_t)tv * tv;
 
             /**
-             * angle_flag is calculated in floating-point by converting fixed-point variables back to
-             * floating-point
+             * angle_flag is calculated using fixed-point arithmetic.
+             * The 4096.0 divisors cancel out in the squared comparison,
+             * so we can compare directly in the integer domain.
              */
-            int angle_flag = (((float)ot_dp / 4096.0) >= 0.0f) &&
-                (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
-                    cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
+            int angle_flag = (ot_dp >= 0) &&
+                ((double)ot_dp * ot_dp >=
+                    cos_1deg_sq * (double)o_mag_sq * t_mag_sq);
 
             /**
              * Division th/oh is carried using lookup table and converted to multiplication
@@ -753,18 +754,16 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
             rst_v = ((kv * ov) + 16384) >> 15;
             rst_d = ((kd * od) + 16384) >> 15;
 
-            const float rst_h_f = ((float)kh / 32768) * ((float)oh / 64);
-            const float rst_v_f = ((float)kv / 32768) * ((float)ov / 64);
-            const float rst_d_f = ((float)kd / 32768) * ((float)od / 64);
+            /* Sign of rst_*_f = sign(k) * sign(o), but k is clamped >= 0,
+             * so the sign is determined solely by oh/ov/od. */
+            if (angle_flag && (kh > 0) && (oh > 0)) rst_h = MIN((rst_h * adm_enhn_gain_limit), th);
+            if (angle_flag && (kh > 0) && (oh < 0)) rst_h = MAX((rst_h * adm_enhn_gain_limit), th);
 
-            if (angle_flag && (rst_h_f > 0.)) rst_h = MIN((rst_h * adm_enhn_gain_limit), th);
-            if (angle_flag && (rst_h_f < 0.)) rst_h = MAX((rst_h * adm_enhn_gain_limit), th);
+            if (angle_flag && (kv > 0) && (ov > 0)) rst_v = MIN(rst_v * adm_enhn_gain_limit, tv);
+            if (angle_flag && (kv > 0) && (ov < 0)) rst_v = MAX(rst_v * adm_enhn_gain_limit, tv);
 
-            if (angle_flag && (rst_v_f > 0.)) rst_v = MIN(rst_v * adm_enhn_gain_limit, tv);
-            if (angle_flag && (rst_v_f < 0.)) rst_v = MAX(rst_v * adm_enhn_gain_limit, tv);
-
-            if (angle_flag && (rst_d_f > 0.)) rst_d = MIN(rst_d * adm_enhn_gain_limit, td);
-            if (angle_flag && (rst_d_f < 0.)) rst_d = MAX(rst_d * adm_enhn_gain_limit, td);
+            if (angle_flag && (kd > 0) && (od > 0)) rst_d = MIN(rst_d * adm_enhn_gain_limit, td);
+            if (angle_flag && (kd > 0) && (od < 0)) rst_d = MAX(rst_d * adm_enhn_gain_limit, td);
 
             r->band_h[i * stride + j] = rst_h;
             r->band_v[i * stride + j] = rst_v;
@@ -854,9 +853,9 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
             o_mag_sq = (int64_t)oh * oh + (int64_t)ov * ov;
             t_mag_sq = (int64_t)th * th + (int64_t)tv * tv;
 
-            int angle_flag = (((float)ot_dp / 4096.0) >= 0.0f) &&
-                (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
-                    cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
+            int angle_flag = (ot_dp >= 0) &&
+                ((double)ot_dp * ot_dp >=
+                    cos_1deg_sq * (double)o_mag_sq * t_mag_sq);
 
             /**
              * Division th/oh is carried using lookup table and converted to multiplication
@@ -905,18 +904,16 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
             rst_v = ((kv * ov) + 16384) >> 15;
             rst_d = ((kd * od) + 16384) >> 15;
 
-            const float rst_h_f = ((float)kh / 32768) * ((float)oh / 64);
-            const float rst_v_f = ((float)kv / 32768) * ((float)ov / 64);
-            const float rst_d_f = ((float)kd / 32768) * ((float)od / 64);
+            /* Sign of rst_*_f = sign(k) * sign(o), but k is clamped >= 0,
+             * so the sign is determined solely by oh/ov/od. */
+            if (angle_flag && (kh > 0) && (oh > 0)) rst_h = MIN((rst_h * adm_enhn_gain_limit), th);
+            if (angle_flag && (kh > 0) && (oh < 0)) rst_h = MAX((rst_h * adm_enhn_gain_limit), th);
 
-            if (angle_flag && (rst_h_f > 0.)) rst_h = MIN((rst_h * adm_enhn_gain_limit), th);
-            if (angle_flag && (rst_h_f < 0.)) rst_h = MAX((rst_h * adm_enhn_gain_limit), th);
+            if (angle_flag && (kv > 0) && (ov > 0)) rst_v = MIN(rst_v * adm_enhn_gain_limit, tv);
+            if (angle_flag && (kv > 0) && (ov < 0)) rst_v = MAX(rst_v * adm_enhn_gain_limit, tv);
 
-            if (angle_flag && (rst_v_f > 0.)) rst_v = MIN(rst_v * adm_enhn_gain_limit, tv);
-            if (angle_flag && (rst_v_f < 0.)) rst_v = MAX(rst_v * adm_enhn_gain_limit, tv);
-
-            if (angle_flag && (rst_d_f > 0.)) rst_d = MIN(rst_d * adm_enhn_gain_limit, td);
-            if (angle_flag && (rst_d_f < 0.)) rst_d = MAX(rst_d * adm_enhn_gain_limit, td);
+            if (angle_flag && (kd > 0) && (od > 0)) rst_d = MIN(rst_d * adm_enhn_gain_limit, td);
+            if (angle_flag && (kd > 0) && (od < 0)) rst_d = MAX(rst_d * adm_enhn_gain_limit, td);
 
             r->band_h[i * stride + j] = rst_h;
             r->band_v[i * stride + j] = rst_v;
@@ -961,8 +958,8 @@ static void adm_csf(AdmBuffer *buf, int w, int h, int stride,
         i_rfactor[2] = 49417;
     }
     else {
-        const double pow2_21 = pow(2, 21);
-        const double pow2_23 = pow(2, 23);
+        const double pow2_21 = 2097152.0; /* 2^21 */
+        const double pow2_23 = 8388608.0; /* 2^23 */
         i_rfactor[0] = (uint16_t) (rfactor1[0] * pow2_21);
         i_rfactor[1] = (uint16_t) (rfactor1[1] * pow2_21);
         i_rfactor[2] = (uint16_t) (rfactor1[2] * pow2_23);
@@ -1039,7 +1036,7 @@ static void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride,
     const float rfactor1[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
 
     //i_rfactor in fixed-point
-    const double pow2_32 = pow(2, 32);
+    const double pow2_32 = 4294967296.0; /* 2^32 */
     const uint32_t i_rfactor[3] = { (uint32_t)(rfactor1[0] * pow2_32),
                                     (uint32_t)(rfactor1[1] * pow2_32),
                                     (uint32_t)(rfactor1[2] * pow2_32) };
@@ -1167,10 +1164,13 @@ static float adm_csf_den_scale(const adm_dwt_band_t *src, int w, int h,
      * after cubing 18bits are to shifted
      * Hence final shift is 18-shift_accum
      */
-    double shift_csf = pow(2, (18 - shift_accum));
-    double csf_h = (double)(accum_h / shift_csf) * pow(rfactor[0], 3);
-    double csf_v = (double)(accum_v / shift_csf) * pow(rfactor[1], 3);
-    double csf_d = (double)(accum_d / shift_csf) * pow(rfactor[2], 3);
+    double shift_csf = ldexp(1.0, (int)(18 - shift_accum));
+    double rfactor0_cubed = (double)rfactor[0] * rfactor[0] * rfactor[0];
+    double rfactor1_cubed = (double)rfactor[1] * rfactor[1] * rfactor[1];
+    double rfactor2_cubed = (double)rfactor[2] * rfactor[2] * rfactor[2];
+    double csf_h = (double)(accum_h / shift_csf) * rfactor0_cubed;
+    double csf_v = (double)(accum_v / shift_csf) * rfactor1_cubed;
+    double csf_d = (double)(accum_d / shift_csf) * rfactor2_cubed;
 
     float powf_add = powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
     float den_scale_h = powf(csf_h, 1.0f / 3.0f) + powf_add;
@@ -1206,9 +1206,9 @@ static float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, in
     const int bottom = h - top;
 
     uint32_t shift_cub = (uint32_t)ceil(log2(right - left));
-    uint32_t add_shift_cub = (uint32_t)pow(2, (shift_cub - 1));
+    uint32_t add_shift_cub = 1u << (shift_cub - 1);
     uint32_t shift_accum = (uint32_t)ceil(log2(bottom - top));
-    uint32_t add_shift_accum = (uint32_t)pow(2, (shift_accum - 1));
+    uint32_t add_shift_accum = 1u << (shift_accum - 1);
 
     int32_t *src_h = src->band_h + top * src_stride;
     int32_t *src_v = src->band_v + top * src_stride;
@@ -1250,10 +1250,13 @@ static float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, in
      * All the results are converted to floating-point to calculate the scores
      * For all scales the final shift is 3*shifts from dwt - total shifts done here
      */
-    double shift_csf = pow(2, (accum_convert_float[scale - 1] - shift_accum - shift_cub));
-    double csf_h = (double)(accum_h / shift_csf) * pow(rfactor[0], 3);
-    double csf_v = (double)(accum_v / shift_csf) * pow(rfactor[1], 3);
-    double csf_d = (double)(accum_d / shift_csf) * pow(rfactor[2], 3);
+    double shift_csf = ldexp(1.0, (int)(accum_convert_float[scale - 1] - shift_accum - shift_cub));
+    double rfactor0_cubed = (double)rfactor[0] * rfactor[0] * rfactor[0];
+    double rfactor1_cubed = (double)rfactor[1] * rfactor[1] * rfactor[1];
+    double rfactor2_cubed = (double)rfactor[2] * rfactor[2] * rfactor[2];
+    double csf_h = (double)(accum_h / shift_csf) * rfactor0_cubed;
+    double csf_v = (double)(accum_v / shift_csf) * rfactor1_cubed;
+    double csf_d = (double)(accum_d / shift_csf) * rfactor2_cubed;
 
     float powf_add = powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
     float den_scale_h = powf(csf_h, 1.0f / 3.0f) + powf_add;
@@ -1291,8 +1294,8 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
         i_rfactor[2] = 49417;
     }
     else {
-        const double pow2_21 = pow(2, 21);
-        const double pow2_23 = pow(2, 23);
+        const double pow2_21 = 2097152.0; /* 2^21 */
+        const double pow2_23 = 8388608.0; /* 2^23 */
         i_rfactor[0] = (uint16_t) (rfactor1[0] * pow2_21);
         i_rfactor[1] = (uint16_t) (rfactor1[1] * pow2_21);
         i_rfactor[2] = (uint16_t) (rfactor1[2] * pow2_23);
@@ -1306,16 +1309,16 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
     const int32_t add_shift_xdsq = 536870912;
 
     const uint32_t shift_xhcub = (uint32_t)ceil(log2(w) - 4);
-    const uint32_t add_shift_xhcub = (uint32_t)pow(2, (shift_xhcub - 1));
+    const uint32_t add_shift_xhcub = 1u << (shift_xhcub - 1);
 
     const uint32_t shift_xvcub = (uint32_t)ceil(log2(w) - 4);
-    const uint32_t add_shift_xvcub = (uint32_t)pow(2, (shift_xvcub - 1));
+    const uint32_t add_shift_xvcub = 1u << (shift_xvcub - 1);
 
     const uint32_t shift_xdcub = (uint32_t)ceil(log2(w) - 3);
-    const uint32_t add_shift_xdcub = (uint32_t)pow(2, (shift_xdcub - 1));
+    const uint32_t add_shift_xdcub = 1u << (shift_xdcub - 1);
 
     const uint32_t shift_inner_accum = (uint32_t)ceil(log2(h));
-    const uint32_t add_shift_inner_accum = (uint32_t)pow(2, (shift_inner_accum - 1));
+    const uint32_t add_shift_inner_accum = 1u << (shift_inner_accum - 1);
 
     const int32_t shift_xhsub = 10;
     const int32_t shift_xvsub = 10;
@@ -1630,9 +1633,9 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
      * => after cubing (6+23)*3=87 after squaring shifted by 30
      * hence pending is 57-shift's done based on width and height
      */
-    float f_accum_h = (float)(accum_h / pow(2, (52 - shift_xhcub - shift_inner_accum)));
-    float f_accum_v = (float)(accum_v / pow(2, (52 - shift_xvcub - shift_inner_accum)));
-    float f_accum_d = (float)(accum_d / pow(2, (57 - shift_xdcub - shift_inner_accum)));
+    float f_accum_h = (float)(accum_h / ldexp(1.0, (int)(52 - shift_xhcub - shift_inner_accum)));
+    float f_accum_v = (float)(accum_v / ldexp(1.0, (int)(52 - shift_xvcub - shift_inner_accum)));
+    float f_accum_d = (float)(accum_d / ldexp(1.0, (int)(57 - shift_xdcub - shift_inner_accum)));
 
     float num_scale_h = powf(f_accum_h, 1.0f / 3.0f) + powf((bottom - top) *
                         (right - left) / 32.0f, 1.0f / 3.0f);
@@ -1657,9 +1660,9 @@ static float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_s
     float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
     float rfactor1[3] = { 1.0f / factor1, 1.0f / factor1, 1.0f / factor2 };
 
-    const uint32_t rfactor[3] = { (uint32_t)(rfactor1[0] * pow(2, 32)),
-                                  (uint32_t)(rfactor1[1] * pow(2, 32)),
-                                  (uint32_t)(rfactor1[2] * pow(2, 32)) };
+    const uint32_t rfactor[3] = { (uint32_t)(rfactor1[0] * 4294967296.0),
+                                  (uint32_t)(rfactor1[1] * 4294967296.0),
+                                  (uint32_t)(rfactor1[2] * 4294967296.0) };
 
     const uint32_t shift_dst[3] = { 28, 28, 28 };
     const uint32_t shift_flt[3] = { 32, 32, 32 };
@@ -1672,14 +1675,14 @@ static float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_s
     }
 
     uint32_t shift_cub = (uint32_t)ceil(log2(w));
-    uint32_t add_shift_cub = (uint32_t)pow(2, (shift_cub - 1));
+    uint32_t add_shift_cub = 1u << (shift_cub - 1);
 
     uint32_t shift_inner_accum = (uint32_t)ceil(log2(h));
-    uint32_t add_shift_inner_accum = (uint32_t)pow(2, (shift_inner_accum - 1));
+    uint32_t add_shift_inner_accum = 1u << (shift_inner_accum - 1);
 
-    float final_shift[3] = { pow(2,(45 - shift_cub - shift_inner_accum)),
-                             pow(2,(39 - shift_cub - shift_inner_accum)),
-                             pow(2,(36 - shift_cub - shift_inner_accum)) };
+    float final_shift[3] = { ldexp(1.0f, (int)(45 - shift_cub - shift_inner_accum)),
+                             ldexp(1.0f, (int)(39 - shift_cub - shift_inner_accum)),
+                             ldexp(1.0f, (int)(36 - shift_cub - shift_inner_accum)) };
 
     const int32_t shift_sq = 30;
     const int32_t add_shift_sq = 536870912; //2^29
