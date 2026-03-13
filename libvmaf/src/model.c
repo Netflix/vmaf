@@ -36,6 +36,8 @@ extern const char src_vmaf_b_v0_6_3_json[];
 extern const int src_vmaf_b_v0_6_3_json_len;
 extern const char src_vmaf_v0_6_1neg_json[];
 extern const int src_vmaf_v0_6_1neg_json_len;
+extern const char src_vmaf_v0_6_1still_json[];
+extern const int src_vmaf_v0_6_1still_json_len;
 extern const char src_vmaf_4k_v0_6_1_json[];
 extern const int src_vmaf_4k_v0_6_1_json_len;
 extern const char src_vmaf_4k_v0_6_1neg_json[];
@@ -80,6 +82,11 @@ static const VmafBuiltInModel built_in_models[] = {
         .version = "vmaf_v0.6.1neg",
         .data = src_vmaf_v0_6_1neg_json,
         .data_len = &src_vmaf_v0_6_1neg_json_len,
+    },
+    {
+        .version = "vmaf_v0.6.1still",
+        .data = src_vmaf_v0_6_1still_json,
+        .data_len = &src_vmaf_v0_6_1still_json_len,
     },
     {
         .version = "vmaf_4k_v0.6.1",
@@ -321,4 +328,3 @@ exit:
     err |= vmaf_model_feature_overload(model, feature_name, opts_dict);
     return err;
 }
-
