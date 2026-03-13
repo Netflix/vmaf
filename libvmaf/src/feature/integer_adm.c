@@ -723,10 +723,11 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
             t_mag_sq = (int64_t)th * th + (int64_t)tv * tv;
 
             /**
-             * angle_flag is calculated in floating-point by converting fixed-point variables back to
-             * floating-point
+             * angle_flag: first check (dot product sign) is equivalent to
+             * integer comparison since sign is preserved through float cast.
+             * Second check stays in float to match original rounding behavior.
              */
-            int angle_flag = (((float)ot_dp / 4096.0) >= 0.0f) &&
+            int angle_flag = (ot_dp >= 0) &&
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
 
@@ -854,7 +855,7 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
             o_mag_sq = (int64_t)oh * oh + (int64_t)ov * ov;
             t_mag_sq = (int64_t)th * th + (int64_t)tv * tv;
 
-            int angle_flag = (((float)ot_dp / 4096.0) >= 0.0f) &&
+            int angle_flag = (ot_dp >= 0) &&
                 (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
 
