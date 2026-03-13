@@ -8,6 +8,11 @@ option('enable_docs',
     value: true,
     description: 'Build libvmaf documentation')
 
+option('enable_tools',
+    type: 'boolean',
+    value: true,
+    description: 'Build libvmaf tools')
+
 option('enable_asm',
     type: 'boolean',
     value: true,
