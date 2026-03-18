@@ -485,8 +485,8 @@ void sad_avx2(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad)
     uint16_t *a = pic_a->data[0];
     uint16_t *b = pic_b->data[0];
     
-    __uint32_t height = pic_a->h[0];
-    __uint32_t width = pic_a->w[0];
+    uint32_t height = pic_a->h[0];
+    uint32_t width = pic_a->w[0];
 
     __m256i final_accum = _mm256_setzero_si256();
 
@@ -534,7 +534,7 @@ void sad_avx2(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad)
         a += (pic_a->stride[0] / 2);
         b += (pic_b->stride[0] / 2);
     }
-    __uint64_t r1 = final_accum[0] + final_accum[1] + final_accum[2] + final_accum[3];
+    uint64_t r1 = final_accum[0] + final_accum[1] + final_accum[2] + final_accum[3];
     
     *sad += r1;
 }
