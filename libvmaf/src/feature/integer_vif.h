@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
+#include "cpu.h"
 
 /* Enhancement gain imposed on vif, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #ifndef DEFAULT_VIF_ENHN_GAIN_LIMIT

@@ -26,6 +26,9 @@
 
 #if ARCH_X86
 #include "x86/adm_avx2.h"
+#if HAVE_AVX512
+#include "x86/adm_avx512.h"
+#endif
 #elif ARCH_AARCH64
 #include "arm64/adm_neon.h"
 #include <arm_neon.h>
@@ -41,6 +44,31 @@ typedef struct AdmState {
     void (*dwt2_8)(const uint8_t *src, const adm_dwt_band_t *dst,
                    AdmBuffer *buf, int w, int h, int src_stride,
                    int dst_stride);
+    void (*dwt2_16)(const uint16_t *src, const adm_dwt_band_t *dst,
+                    AdmBuffer *buf, int w, int h, int src_stride,
+                    int dst_stride, int inp_size_bits);
+    void (*adm_decouple)(AdmBuffer *buf, int w, int h, int stride,
+                         double adm_enhn_gain_limit, int32_t* adm_div_lookup);
+    void (*adm_decouple_s123)(AdmBuffer *buf, int w, int h, int stride,
+                              double adm_enhn_gain_limit, int32_t* adm_div_lookup);
+    float (*adm_csf_den_scale)(const adm_dwt_band_t *src, int w, int h,
+                               int src_stride, double adm_norm_view_dist, 
+                               int adm_ref_display_height);
+    void (*adm_csf)(AdmBuffer *buf, int w, int h, int stride,
+                    double adm_norm_view_dist, int adm_ref_display_height);
+    float (*adm_cm)(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
+                    double adm_norm_view_dist, int adm_ref_display_height);
+    void (*adm_dwt2_s123_combined)(const int32_t *i4_ref_scale, const int32_t *i4_curr_dis,
+                                   AdmBuffer *buf, int w, int h, int ref_stride,
+                                   int dis_stride, int dst_stride, int scale);
+    float (*adm_csf_den_s123)(const i4_adm_dwt_band_t *src, int scale, int w, int h,
+                              int src_stride, double adm_norm_view_dist,
+                              int adm_ref_display_height);
+    void (*i4_adm_csf)(AdmBuffer *buf, int scale, int w, int h, int stride,
+                       double adm_norm_view_dist, int adm_ref_display_height);
+    float (*i4_adm_cm)(AdmBuffer *buf, int w, int h, int src_stride,
+                        int csf_a_stride, int scale, double adm_norm_view_dist,
+                        int adm_ref_display_height);
     VmafDictionary *feature_name_dict;
 } AdmState;
 
@@ -657,8 +685,8 @@ static void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
-                         double adm_enhn_gain_limit)
+static inline void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
+                         double adm_enhn_gain_limit, int32_t* adm_div_lookup)
 {
     const float cos_1deg_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
 
@@ -684,7 +712,6 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
     if (bottom > h) {
         bottom = h;
     }
-
     int64_t ot_dp, o_mag_sq, t_mag_sq;
 
     for (int i = top; i < bottom; ++i) {
@@ -722,6 +749,7 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
             o_mag_sq = (int64_t)oh * oh + (int64_t)ov * ov;
             t_mag_sq = (int64_t)th * th + (int64_t)tv * tv;
 
+
             /**
              * angle_flag is calculated in floating-point by converting fixed-point variables back to
              * floating-point
@@ -735,15 +763,16 @@ static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
              */
 
             int32_t tmp_kh = (oh == 0) ?
-                32768 : (((int64_t)div_lookup[oh + 32768] * th) + 16384) >> 15;
+                32768 : (((int64_t)adm_div_lookup[oh + 32768] * th) + 16384) >> 15;
             int32_t tmp_kv = (ov == 0) ?
-                32768 : (((int64_t)div_lookup[ov + 32768] * tv) + 16384) >> 15;
+                32768 : (((int64_t)adm_div_lookup[ov + 32768] * tv) + 16384) >> 15;
             int32_t tmp_kd = (od == 0) ?
-                32768 : (((int64_t)div_lookup[od + 32768] * td) + 16384) >> 15;
+                32768 : (((int64_t)adm_div_lookup[od + 32768] * td) + 16384) >> 15;
 
             int32_t kh = tmp_kh < 0 ? 0 : (tmp_kh > 32768 ? 32768 : tmp_kh);
             int32_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
             int32_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
+
 
             /**
              * kh,kv,kd are in Q15 type and oh,ov,od are in Q16 type hence shifted by
@@ -787,7 +816,7 @@ static inline uint16_t get_best15_from32(uint32_t temp, int *x)
 }
 
 static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
-                              double adm_enhn_gain_limit)
+                              double adm_enhn_gain_limit, int32_t* adm_div_lookup)
 {
     const float cos_1deg_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
 
@@ -890,11 +919,11 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
             uint16_t kv_msb = (abs_ov < (32768) ? abs_ov : get_best15_from32(abs_ov, &kv_shift));
             uint16_t kd_msb = (abs_od < (32768) ? abs_od : get_best15_from32(abs_od, &kd_shift));
 
-            int64_t tmp_kh = (oh == 0) ? 32768 : (((int64_t)div_lookup[kh_msb + 32768] * th)*(kh_sign) +
+            int64_t tmp_kh = (oh == 0) ? 32768 : (((int64_t)adm_div_lookup[kh_msb + 32768] * th)*(kh_sign) +
                 (1 << (14 + kh_shift))) >> (15 + kh_shift);
-            int64_t tmp_kv = (ov == 0) ? 32768 : (((int64_t)div_lookup[kv_msb + 32768] * tv)*(kv_sign) +
+            int64_t tmp_kv = (ov == 0) ? 32768 : (((int64_t)adm_div_lookup[kv_msb + 32768] * tv)*(kv_sign) +
                 (1 << (14 + kv_shift))) >> (15 + kv_shift);
-            int64_t tmp_kd = (od == 0) ? 32768 : (((int64_t)div_lookup[kd_msb + 32768] * td)*(kd_sign) +
+            int64_t tmp_kd = (od == 0) ? 32768 : (((int64_t)adm_div_lookup[kd_msb + 32768] * td)*(kd_sign) +
                 (1 << (14 + kd_shift))) >> (15 + kd_shift);
 
             int64_t kh = tmp_kh < 0 ? 0 : (tmp_kh > 32768 ? 32768 : tmp_kh);
@@ -903,12 +932,12 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
 
             rst_h = ((kh * oh) + 16384) >> 15;
             rst_v = ((kv * ov) + 16384) >> 15;
-            rst_d = ((kd * od) + 16384) >> 15;
+            rst_d = ((kd * od) + 16384) >> 15; 
 
             const float rst_h_f = ((float)kh / 32768) * ((float)oh / 64);
             const float rst_v_f = ((float)kv / 32768) * ((float)ov / 64);
             const float rst_d_f = ((float)kd / 32768) * ((float)od / 64);
-
+            
             if (angle_flag && (rst_h_f > 0.)) rst_h = MIN((rst_h * adm_enhn_gain_limit), th);
             if (angle_flag && (rst_h_f < 0.)) rst_h = MAX((rst_h * adm_enhn_gain_limit), th);
 
@@ -1416,6 +1445,7 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
             accum_inner_h = 0;
             accum_inner_v = 0;
             accum_inner_d = 0;
+            
             for (j = start_col; j < end_col; ++j) {
                 xh = src->band_h[i * src_stride + j] * i_rfactor[0];
                 xv = src->band_v[i * src_stride + j] * i_rfactor[1];
@@ -2429,7 +2459,6 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
 {
     int w = ref_pic->w[0];
     int h = ref_pic->h[0];
-
     const double numden_limit = 1e-10 * (w * h) / (1920.0 * 1080.0);
 
     size_t curr_ref_stride;
@@ -2463,9 +2492,9 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
                           curr_dis_stride, buf_stride);
             }
             else {
-                adm_dwt2_16(ref_pic->data[0], &buf->ref_dwt2, buf, w, h,
+                s->dwt2_16(ref_pic->data[0], &buf->ref_dwt2, buf, w, h,
                             curr_ref_stride, buf_stride, ref_pic->bpc);
-                adm_dwt2_16(dis_pic->data[0], &buf->dis_dwt2, buf, w, h,
+                s->dwt2_16(dis_pic->data[0], &buf->dis_dwt2, buf, w, h,
                             curr_dis_stride, buf_stride, dis_pic->bpc);
             }
 
@@ -2474,35 +2503,35 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
 
 			w = (w + 1) / 2;
 			h = (h + 1) / 2;
+            s->adm_decouple(buf, w, h, buf_stride, adm_enhn_gain_limit, div_lookup);
 
-			adm_decouple(buf, w, h, buf_stride, adm_enhn_gain_limit);
-
-			den_scale = adm_csf_den_scale(&buf->ref_dwt2, w, h, buf_stride,
+			den_scale = s->adm_csf_den_scale(&buf->ref_dwt2, w, h, buf_stride,
                                  adm_norm_view_dist, adm_ref_display_height);
 
-			adm_csf(buf, w, h, buf_stride, adm_norm_view_dist, adm_ref_display_height);
+            s->adm_csf(buf, w, h, buf_stride, adm_norm_view_dist, adm_ref_display_height);
 
-			num_scale = adm_cm(buf, w, h, buf_stride, buf_stride,
+    		num_scale = s->adm_cm(buf, w, h, buf_stride, buf_stride,
                                adm_norm_view_dist, adm_ref_display_height);
 		}
 		else {
-            adm_dwt2_s123_combined(i4_curr_ref_scale, i4_curr_dis_scale, buf, w, h, curr_ref_stride,
-                                   curr_dis_stride, buf_stride, scale);
+            s->adm_dwt2_s123_combined(i4_curr_ref_scale, i4_curr_dis_scale, buf, w, h, curr_ref_stride,
+                                    curr_dis_stride, buf_stride, scale);     
 
 			w = (w + 1) / 2;
 			h = (h + 1) / 2;
 
-			adm_decouple_s123(buf, w, h, buf_stride, adm_enhn_gain_limit);
+            s->adm_decouple_s123(buf, w, h, buf_stride, adm_enhn_gain_limit, div_lookup);
 
-			den_scale = adm_csf_den_s123(
+            den_scale = s->adm_csf_den_s123(
 			        &buf->i4_ref_dwt2, scale, w, h, buf_stride,
 			        adm_norm_view_dist, adm_ref_display_height);
+     
+			s->i4_adm_csf(buf, scale, w, h, buf_stride,
+                        adm_norm_view_dist, adm_ref_display_height);
 
-			i4_adm_csf(buf, scale, w, h, buf_stride,
-              adm_norm_view_dist, adm_ref_display_height);
+			num_scale = s->i4_adm_cm(buf, w, h, buf_stride, buf_stride, scale,
+                         adm_norm_view_dist, adm_ref_display_height);		    
 
-			num_scale = i4_adm_cm(buf, w, h, buf_stride, buf_stride, scale,
-                         adm_norm_view_dist, adm_ref_display_height);
 		}
 
 		num += num_scale;
@@ -2593,12 +2622,47 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     }
 
     s->dwt2_8 = adm_dwt2_8;
+    s->dwt2_16 = adm_dwt2_16;
+    s->adm_csf_den_scale = adm_csf_den_scale;
+    s->adm_csf = adm_csf;
+    s->adm_cm = adm_cm;
+    s->adm_dwt2_s123_combined = adm_dwt2_s123_combined;
+    s->adm_csf_den_s123 = adm_csf_den_s123;
+    s->i4_adm_csf = i4_adm_csf;
+    s->i4_adm_cm = i4_adm_cm;
+    s->adm_decouple = adm_decouple;
+    s->adm_decouple_s123 = adm_decouple_s123;
 
 #if ARCH_X86
     unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {
         if (!(w % 8)) s->dwt2_8 = adm_dwt2_8_avx2;
+        s->dwt2_16 = adm_dwt2_16_avx2;
+        s->adm_csf_den_scale = adm_csf_den_scale_avx2;
+        s->adm_csf = adm_csf_avx2;
+        s->adm_cm = adm_cm_avx2;
+        s->adm_csf_den_s123 = adm_csf_den_s123_avx2;
+        s->adm_dwt2_s123_combined = adm_dwt2_s123_combined_avx2;
+        s->i4_adm_csf = i4_adm_csf_avx2;
+        s->i4_adm_cm = i4_adm_cm_avx2;
+        s->adm_decouple = adm_decouple_avx2;
+        s->adm_decouple_s123 = adm_decouple_s123_avx2;
     }
+#if HAVE_AVX512
+    if (flags & VMAF_X86_CPU_FLAG_AVX512) {
+        s->dwt2_8 = adm_dwt2_8_avx512;
+        s->dwt2_16 = adm_dwt2_16_avx512;
+        s->adm_csf_den_scale = adm_csf_den_scale_avx512;
+        s->adm_csf = adm_csf_avx512;
+        s->adm_cm = adm_cm_avx512;
+        s->adm_csf_den_s123 = adm_csf_den_s123_avx512;
+        s->adm_dwt2_s123_combined = adm_dwt2_s123_combined_avx512;
+        s->i4_adm_csf = i4_adm_csf_avx512;
+        s->i4_adm_cm = i4_adm_cm_avx512;
+        s->adm_decouple = adm_decouple_avx512;
+        s->adm_decouple_s123 = adm_decouple_s123_avx512;
+    }
+#endif
 #elif ARCH_AARCH64
     unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_ARM_CPU_FLAG_NEON) {

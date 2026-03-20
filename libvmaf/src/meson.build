@@ -6,7 +6,7 @@ src_dir = './'
 model_dir = '../../model/'
 cuda_dir = './cuda/'
 
-vmaf_base_include = include_directories('./', './feature/common')
+vmaf_base_include = include_directories('./', './feature/common', '../include')
 
 if cc.get_id() != 'msvc'
     vmaf_cflags_common = [
@@ -257,6 +257,7 @@ if is_asm_enabled
         x86_avx512_sources = [
             feature_src_dir + 'x86/motion_avx512.c',
             feature_src_dir + 'x86/vif_avx512.c',
+            feature_src_dir + 'x86/adm_avx512.c',
         ]
 
         x86_avx512_static_lib = static_library(
