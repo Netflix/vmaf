@@ -1,3 +1,8 @@
+vmaf_api_version_array    = meson.project_version().split('.')
+vmaf_api_version_major    = vmaf_api_version_array[0]
+vmaf_api_version_minor    = vmaf_api_version_array[1]
+vmaf_api_version_revision = vmaf_api_version_array[2]
+
 # installed version.h header generation
 version_h_data = configuration_data()
 version_h_data.set('VMAF_API_VERSION_MAJOR', vmaf_api_version_major)
