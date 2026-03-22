@@ -6,7 +6,15 @@
 // MIT licensed
 //
 
-#include <unistd.h>
+#ifdef _MSC_VER
+# include <io.h>
+# include <direct.h> /* _mkdir, _wmkdir */
+# ifndef strdup
+#  define strdup _strdup
+# endif
+#else
+# include <unistd.h>
+#endif
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,12 +72,18 @@ mkdirp(const char *path, mode_t mode) {
   free(parent);
 
   // make this one if parent has been made
-  #ifdef _WIN32
-    // http://msdn.microsoft.com/en-us/library/2fkk4dzw.aspx
-    int rc = mkdir(pathname);
-  #else
-    int rc = mkdir(pathname, mode);
-  #endif
+#ifdef _MSC_VER
+  /* On MSVC use _mkdir which takes only a path.
+   * Microsoft docs: _mkdir and _wmkdir create a new directory and return 0
+   * on success or -1 on error, setting errno accordingly. See CRT docs:
+   * https://learn.microsoft.com/en-us/c-runtime-library/reference/mkdir-wmkdir
+   *
+   * The CRT documents that _mkdir/_wmkdir behave like mkdir but accept only
+   * a path (no mode) and set errno on failure (EEXIST, ENOENT, ...). */
+  int rc = _mkdir(pathname);
+#else
+  int rc = mkdir(pathname, mode);
+#endif
 
   free(pathname);
 

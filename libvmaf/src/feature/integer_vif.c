@@ -630,23 +630,27 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (!data) return -ENOMEM;
     memset(data, 0, data_sz);
 
-    s->public.buf.data = data; data += pad_size;
-    s->public.buf.ref = data; data += frame_size + pad_size + pad_size;
-    s->public.buf.dis = data; data += frame_size + pad_size;
-    s->public.buf.mu1 = data; data += h * s->public.buf.stride_16;
-    s->public.buf.mu2 = data; data += h * s->public.buf.stride_16;
-    s->public.buf.mu1_32 = data; data += s->public.buf.stride_32;
-    s->public.buf.mu2_32 = data; data += s->public.buf.stride_32;
-    s->public.buf.ref_sq = data; data += s->public.buf.stride_32;
-    s->public.buf.dis_sq = data; data += s->public.buf.stride_32;
-    s->public.buf.ref_dis = data; data += s->public.buf.stride_32;
-    s->public.buf.tmp.mu1 = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.mu2 = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.ref = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.dis = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.ref_dis = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.ref_convol = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.dis_convol = data;
+    /* Keep original layout but perform offset arithmetic on a byte pointer.
+    * This avoids undefined behavior on some compilers when doing pointer
+    * arithmetic with non-char pointer types (MSVC is strict about this). */
+    s->public.buf.data = data;
+    unsigned char *d = (unsigned char *)data + pad_size;
+    s->public.buf.ref = (void *)d; d += frame_size + pad_size + pad_size;
+    s->public.buf.dis = (void *)d; d += frame_size + pad_size;
+    s->public.buf.mu1 = (void *)d; d += h * s->public.buf.stride_16;
+    s->public.buf.mu2 = (void *)d; d += h * s->public.buf.stride_16;
+    s->public.buf.mu1_32 = (void *)d; d += s->public.buf.stride_32;
+    s->public.buf.mu2_32 = (void *)d; d += s->public.buf.stride_32;
+    s->public.buf.ref_sq = (void *)d; d += s->public.buf.stride_32;
+    s->public.buf.dis_sq = (void *)d; d += s->public.buf.stride_32;
+    s->public.buf.ref_dis = (void *)d; d += s->public.buf.stride_32;
+    s->public.buf.tmp.mu1 = (void *)d; d += s->public.buf.stride_tmp;
+    s->public.buf.tmp.mu2 = (void *)d; d += s->public.buf.stride_tmp;
+    s->public.buf.tmp.ref = (void *)d; d += s->public.buf.stride_tmp;
+    s->public.buf.tmp.dis = (void *)d; d += s->public.buf.stride_tmp;
+    s->public.buf.tmp.ref_dis = (void *)d; d += s->public.buf.stride_tmp;
+    s->public.buf.tmp.ref_convol = (void *)d; d += s->public.buf.stride_tmp;
+    s->public.buf.tmp.dis_convol = (void *)d;
 
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features,
