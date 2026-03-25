@@ -819,12 +819,12 @@ void adm_decouple_avx2(AdmBuffer *buf, int w, int h, int stride,
             __m256 od_inv_64 = _mm256_mul_ps(inv_64, _mm256_cvtepi32_ps(od));
             __m256 rst_d_f = _mm256_mul_ps(kd_inv_32768, od_inv_64);
 
-            __m256i gt0_rst_h_f = (__m256i)(_mm256_cmp_ps(rst_h_f, _mm256_setzero_ps(), 14));
-            __m256i lt0_rst_h_f = (__m256i)(_mm256_cmp_ps(rst_h_f, _mm256_setzero_ps(), 1));
-            __m256i gt0_rst_v_f = (__m256i)(_mm256_cmp_ps(rst_v_f, _mm256_setzero_ps(), 14));
-            __m256i lt0_rst_v_f = (__m256i)(_mm256_cmp_ps(rst_v_f, _mm256_setzero_ps(), 1));
-            __m256i gt0_rst_d_f = (__m256i)(_mm256_cmp_ps(rst_d_f, _mm256_setzero_ps(), 14));
-            __m256i lt0_rst_d_f = (__m256i)(_mm256_cmp_ps(rst_d_f, _mm256_setzero_ps(), 1));
+            __m256i gt0_rst_h_f = _mm256_castps_si256(_mm256_cmp_ps(rst_h_f, _mm256_setzero_ps(), 14));
+            __m256i lt0_rst_h_f = _mm256_castps_si256(_mm256_cmp_ps(rst_h_f, _mm256_setzero_ps(), 1));
+            __m256i gt0_rst_v_f = _mm256_castps_si256(_mm256_cmp_ps(rst_v_f, _mm256_setzero_ps(), 14));
+            __m256i lt0_rst_v_f = _mm256_castps_si256(_mm256_cmp_ps(rst_v_f, _mm256_setzero_ps(), 1));
+            __m256i gt0_rst_d_f = _mm256_castps_si256(_mm256_cmp_ps(rst_d_f, _mm256_setzero_ps(), 14));
+            __m256i lt0_rst_d_f = _mm256_castps_si256(_mm256_cmp_ps(rst_d_f, _mm256_setzero_ps(), 1));
 
             __m256i mask_min_max_h = _mm256_or_si256(gt0_rst_h_f, lt0_rst_h_f);
             __m256i mask_min_max_v = _mm256_or_si256(gt0_rst_v_f, lt0_rst_v_f);
