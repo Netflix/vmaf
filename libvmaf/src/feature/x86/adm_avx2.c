@@ -2088,15 +2088,15 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
             }
             accum_inner_h_lo_256 = _mm256_add_epi64(accum_inner_h_lo_256, accum_inner_h_hi_256);
             __m128i r2_h = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_h_lo_256), _mm256_extracti128_si256(accum_inner_h_lo_256, 1));
-            int64_t res_h = r2_h[0] + r2_h[1];
+            int64_t res_h = _mm_extract_epi64(r2_h, 0) + _mm_extract_epi64(r2_h, 1);
 
             accum_inner_v_lo_256 = _mm256_add_epi64(accum_inner_v_lo_256, accum_inner_v_hi_256);
             __m128i r2_v = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_v_lo_256), _mm256_extracti128_si256(accum_inner_v_lo_256, 1));
-            int64_t res_v = r2_v[0] + r2_v[1];
+            int64_t res_v = _mm_extract_epi64(r2_v, 0) + _mm_extract_epi64(r2_v, 1);
 
             accum_inner_d_lo_256 = _mm256_add_epi64(accum_inner_d_lo_256, accum_inner_d_hi_256);
             __m128i r2_d = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_d_lo_256), _mm256_extracti128_si256(accum_inner_d_lo_256, 1));
-            int64_t res_d = r2_d[0] + r2_d[1];
+            int64_t res_d = _mm_extract_epi64(r2_d, 0) + _mm_extract_epi64(r2_d, 1);
 
             for (j = end_col_mod6; j < end_col; ++j) {
                 xh = src->band_h[i * src_stride + j] * i_rfactor[0];
@@ -2521,13 +2521,13 @@ float i4_adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_str
             }
 
             __m128i r2_h = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_h_256), _mm256_extracti128_si256(accum_inner_h_256, 1));
-            int64_t res_h = r2_h[0] + r2_h[1];
+            int64_t res_h = _mm_extract_epi64(r2_h, 0) + _mm_extract_epi64(r2_h, 1);
 
             __m128i r2_v = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_v_256), _mm256_extracti128_si256(accum_inner_v_256, 1));
-            int64_t res_v = r2_v[0] + r2_v[1];
+            int64_t res_v = _mm_extract_epi64(r2_v, 0) + _mm_extract_epi64(r2_v, 1);
 
             __m128i r2_d = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_d_256), _mm256_extracti128_si256(accum_inner_d_256, 1));
-            int64_t res_d = r2_d[0] + r2_d[1];
+            int64_t res_d = _mm_extract_epi64(r2_d, 0) + _mm_extract_epi64(r2_d, 1);
 
             for (j = end_col_mod2; j < end_col; ++j)
             {
@@ -3586,15 +3586,15 @@ float adm_csf_den_scale_avx2(const adm_dwt_band_t *src, int w, int h,
 
         accum_inner_h_lo = _mm256_add_epi64(accum_inner_h_lo, accum_inner_h_hi);
         __m128i h_r2 = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_h_lo), _mm256_extracti128_si256(accum_inner_h_lo, 1));
-        uint64_t h_r1 = h_r2[0] + h_r2[1];
+        uint64_t h_r1 = _mm_extract_epi64(h_r2, 0) + _mm_extract_epi64(h_r2, 1);
 
         accum_inner_v_lo = _mm256_add_epi64(accum_inner_v_lo, accum_inner_v_hi);
         __m128i v_r2 = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_v_lo), _mm256_extracti128_si256(accum_inner_v_lo, 1));
-        uint64_t v_r1 = v_r2[0] + v_r2[1];
+        uint64_t v_r1 = _mm_extract_epi64(v_r2, 0) + _mm_extract_epi64(v_r2, 1);
 
         accum_inner_d_lo = _mm256_add_epi64(accum_inner_d_lo, accum_inner_d_hi);
         __m128i d_r2 = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_d_lo), _mm256_extracti128_si256(accum_inner_d_lo, 1));
-        uint64_t d_r1 = d_r2[0] + d_r2[1];
+        uint64_t d_r1 = _mm_extract_epi64(d_r2, 0) + _mm_extract_epi64(d_r2, 1);
 
         for (int j = right_mod_8; j < right; ++j) {
             uint16_t h = (uint16_t)abs(src_h[j]);
@@ -3992,13 +3992,13 @@ float adm_csf_den_s123_avx2(const i4_adm_dwt_band_t *src, int scale, int w, int 
             accum_inner_d_256 = _mm256_add_epi64(accum_inner_d_256, d_cu);
         }
         __m128i h_r2 = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_h_256), _mm256_extracti128_si256(accum_inner_h_256, 1));
-        uint64_t h_r1 = h_r2[0] + h_r2[1];
+        uint64_t h_r1 = _mm_extract_epi64(h_r2, 0) + _mm_extract_epi64(h_r2, 1);
 
         __m128i d_r2 = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_d_256), _mm256_extracti128_si256(accum_inner_d_256, 1));
-        uint64_t d_r1 = d_r2[0] + d_r2[1];
+        uint64_t d_r1 = _mm_extract_epi64(d_r2, 0) + _mm_extract_epi64(d_r2, 1);
 
         __m128i v_r2 = _mm_add_epi64(_mm256_castsi256_si128(accum_inner_v_256), _mm256_extracti128_si256(accum_inner_v_256, 1));
-        uint64_t v_r1 = v_r2[0] + v_r2[1];
+        uint64_t v_r1 = _mm_extract_epi64(v_r2, 0) + _mm_extract_epi64(v_r2, 1);
 
         for (int j = right_mod_4; j < right; ++j)
         {

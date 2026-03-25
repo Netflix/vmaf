@@ -450,7 +450,7 @@ void sad_avx512(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad)
     }
     __m256i r4 = _mm256_add_epi64(_mm512_castsi512_si256(final_accum), _mm512_extracti64x4_epi64(final_accum, 1));
     __m128i r2 = _mm_add_epi64(_mm256_castsi256_si128(r4), _mm256_extracti64x2_epi64(r4, 1));
-    uint64_t r1 = r2[0] + r2[1];
+    uint64_t r1 = _mm_extract_epi64(r2, 0) + _mm_extract_epi64(r2, 1);
     
     *sad += r1;
 
