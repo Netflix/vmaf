@@ -53,3 +53,8 @@ option('enable_checkasm',
     value: false,
     description: 'Build the checkasm SIMD correctness/benchmark test suite ' +
                  '(fetches the checkasm subproject)')
+
+option('bundled_winpthreads',
+    type: 'boolean',
+    value: true,
+    description: 'Use the bundled pthread-win32 implementation (MSVC only). Set to false to use an external pthreads library.')
