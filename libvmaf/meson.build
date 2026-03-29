@@ -63,6 +63,19 @@ else
     )
 endif
 
+pthreadwin32_inc = []
+if cc.get_id() == 'msvc'
+    cmake = import('cmake')
+
+    pthreadwin32_opts = cmake.subproject_options()
+    pthreadwin32_opts.add_cmake_defines({
+        'BUILD_SHARED_LIBS': false,
+    })
+    pthreadwin32_proj = cmake.subproject('pthread-win32', options: pthreadwin32_opts)
+    pthreadwin32_lib = pthreadwin32_proj.dependency('pthreadVC3')
+    pthreadwin32_inc = include_directories('./subprojects/pthread-win32')
+endif
+
 subdir('include')
 subdir('src')
 subdir('tools')
