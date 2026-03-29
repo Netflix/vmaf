@@ -17,7 +17,7 @@ else
     vmaf_cflags_common = [
       '-wd4028', # parameter different from declaration
       '-wd4996', # use of POSIX functions
-      '-DOC_NEW_STYLE_INCLUDES',
+	  '-DOC_NEW_STYLE_INCLUDES',
     ]
 endif
 
