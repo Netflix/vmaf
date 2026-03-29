@@ -63,6 +63,104 @@ else
     )
 endif
 
+pthreadwin32_inc = []
+pthreadwin32_lib = []
+thread_lib = []
+
+if cc.get_id() == 'msvc'
+    if get_option('bundled_winpthreads')
+        # Bundled GerHobbelt/pthread-win32 via CMake subproject
+        cmake = import('cmake')
+
+        pthreadwin32_opts = cmake.subproject_options()
+        pthreadwin32_opts.add_cmake_defines({
+            'BUILD_SHARED_LIBS': false,
+        })
+        pthreadwin32_proj = cmake.subproject('pthread-win32', options: pthreadwin32_opts)
+
+        # Meson usually exposes shared-style CMake targets (pthreadVC3), not libpthreadVC3.
+        _pw_targets = pthreadwin32_proj.target_list()
+        if 'libpthreadVC3' in _pw_targets
+            pthreadwin32_lib = pthreadwin32_proj.dependency('libpthreadVC3')
+            _ptw32_static = true
+        elif 'pthreadVC3' in _pw_targets
+            pthreadwin32_lib = pthreadwin32_proj.dependency('pthreadVC3')
+            _ptw32_static = false
+        else
+            error('pthread-win32 subproject: neither libpthreadVC3 nor pthreadVC3 found.\n' +
+                  'Available targets: ' + ', '.join(_pw_targets))
+        endif
+
+        pthreadwin32_inc = include_directories('./subprojects/pthread-win32')
+    else
+        # External pthreads (system / vcpkg / custom prefix)
+        external_pthread = dependency('pthread', required: false)
+        _ptw32_static = true
+
+        if not external_pthread.found()
+            # MSVC DEBUG_POSTFIX "d": Debug installs libpthreadVC3d.lib / pthreadVC3d.lib
+            _pthread_names = []
+            if get_option('buildtype') == 'debug'
+                _pthread_names += [
+                    'libpthreadVC3d', 'pthreadVC3d',
+                    'libpthreadVCE3d', 'pthreadVCE3d',
+                    'libpthreadVSE3d', 'pthreadVSE3d',
+                ]
+            endif
+            _pthread_names += [
+                'libpthreadVC3', 'pthreadVC3',
+                'libpthreadVC2', 'pthreadVC2',
+                'libpthreadVC',  'pthreadVC',
+                'libpthreadVCE3', 'pthreadVCE3',
+                'libpthreadVSE3', 'pthreadVSE3',
+                'pthread', 'libpthread', 'pthreads',
+            ]
+
+            foreach name : _pthread_names
+                external_pthread = cc.find_library(name, required: false)
+                if external_pthread.found()
+                    # Heuristic: names with 'libpthread' are static archives
+                    if name.startswith('libpthread')
+                        _ptw32_static = true
+                    else
+                        _ptw32_static = false
+                    endif
+                    break
+                endif
+            endforeach
+        endif
+
+        if not external_pthread.found()
+            error('MSVC build requested with -Dbundled_winpthreads=false, ' +
+                  'but no external pthreads library was found.\n' +
+                  'Please install a Windows pthreads implementation and make sure ' +
+                  'the library is discoverable, or use the bundled one (default).')
+        endif
+
+        if not cc.check_header('pthread.h', required: false)
+            error('External pthreads library was found, but <pthread.h> could not be located.\n' +
+                  'Please make sure the include directory is available (e.g. via INCLUDE ' +
+                  'environment variable or -I flags).')
+        endif
+
+        pthreadwin32_lib = external_pthread
+    endif
+
+    # Match pthreads4w VC cleanup; STATIC only when linking a static archive
+    _ptw32_args = ['-D__PTW32_CLEANUP_C']
+    if _ptw32_static
+        _ptw32_args += ['-D__PTW32_STATIC_LIB']
+    endif
+
+    thread_lib = declare_dependency(
+        dependencies: [pthreadwin32_lib],
+        include_directories: pthreadwin32_inc,
+        compile_args: _ptw32_args,
+    )
+else
+    thread_lib = dependency('threads')
+endif
+
 subdir('include')
 subdir('src')
 subdir('tools')

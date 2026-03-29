@@ -264,6 +264,7 @@ libvmaf_cpu_static_lib = static_library(
     'libvmaf_cpu',
     libvmaf_cpu_sources,
     include_directories : [libvmaf_include],
+    dependencies: [thread_lib],
 )
 
 platform_specific_cpu_objects = []
@@ -473,7 +474,6 @@ if is_cuda_enabled
     common_cuda_objects += cuda_static_lib.extract_all_objects()
 endif
 
-thread_lib = dependency('threads')
 math_lib = cc.find_library('m', required : false)
 
 vmaf_include = include_directories(
@@ -548,7 +548,7 @@ libvmaf_feature_static_lib = static_library(
     'libvmaf_feature',
     libvmaf_feature_sources,
     include_directories : [libvmaf_include, vmaf_include, cuda_dir],
-    dependencies: [stdatomic_dependency, cuda_dependency],
+    dependencies: [thread_lib, stdatomic_dependency, cuda_dependency],
     objects: common_cuda_objects
 )
 
@@ -627,5 +627,6 @@ pkg_mod.generate(libraries: libvmaf,
     name: 'libvmaf',
     filebase: 'libvmaf',
     description: 'VMAF, Video Multimethod Assessment Fusion',
-    subdirs: [ '.', 'libvmaf']
+    subdirs: [ '.', 'libvmaf'],
+	libraries_private: cc.get_id() == 'msvc' ? [thread_lib] : [],
 )
