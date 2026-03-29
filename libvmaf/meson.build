@@ -28,6 +28,11 @@ elif host_machine.system() == 'darwin'
     add_project_arguments('-D_DARWIN_C_SOURCE', language: ['c', 'cpp'])
 endif
 
+# M_PI, M_E, etc are only defined in math.h if _USE_MATH_DEFINES is defined before including math.h
+if cc.get_id() == 'msvc'
+	add_project_arguments('-D_USE_MATH_DEFINES', language: ['c', 'cpp'])
+endif
+
 # Header checks
 if cc.has_header('malloc.h', args: test_args)
     add_project_arguments('-DHAVE_MALLOC_H', language: ['c', 'cpp'])

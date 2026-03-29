@@ -4,10 +4,6 @@
 #include "mem.h"
 #include "stdio.h"
 #include <errno.h>
-#ifdef _MSC_VER
-// MSVC needs this to get M_PI defined in math.h
-#define _USE_MATH_DEFINES
-#endif
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -124,10 +120,6 @@ float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, int h,
                         int adm_ref_display_height, int adm_csf_mode,
                         double adm_csf_scale, double adm_csf_diag_scale,
                         double adm_noise_weight);
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338327
-#endif // M_PI
 
 /* Enhancement gain imposed on adm, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #ifndef DEFAULT_ADM_ENHN_GAIN_LIMIT
