@@ -7,7 +7,13 @@
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
+#ifdef _MSC_VER
+#include <io.h>
+#define isatty _isatty
+#define fileno _fileno
+#else
 #include <unistd.h>
+#endif
 
 #include "cli_parse.h"
 #include "spinner.h"
