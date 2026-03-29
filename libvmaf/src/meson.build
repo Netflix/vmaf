@@ -268,6 +268,7 @@ if is_asm_enabled
           x86_avx2_sources,
           include_directories : vmaf_base_include,
           c_args : avx2_cflags + vmaf_cflags_common,
+          dependencies: [builtin_clz_dependency],
       )
 
       platform_specific_cpu_objects += x86_avx2_static_lib.extract_all_objects(recursive: true)
@@ -290,6 +291,7 @@ if is_asm_enabled
             x86_avx512_sources,
             include_directories : vmaf_base_include,
             c_args : avx512_cflags + vmaf_cflags_common,
+            dependencies: [builtin_clz_dependency],
         )
 
         platform_specific_cpu_objects += x86_avx512_static_lib.extract_all_objects(recursive: true)
@@ -518,7 +520,7 @@ libvmaf_feature_static_lib = static_library(
     'libvmaf_feature',
     libvmaf_feature_sources,
     include_directories : [libvmaf_include, vmaf_include, cuda_dir],
-    dependencies: [thread_lib, stdatomic_dependency, cuda_dependency],
+    dependencies: [thread_lib, stdatomic_dependency, cuda_dependency, builtin_clz_dependency],
     objects: common_cuda_objects
 )
 
@@ -577,6 +579,7 @@ libvmaf = library(
       math_lib,
       stdatomic_dependency,
       cuda_dependency,
+      builtin_clz_dependency,
     ],
     objects : [
         platform_specific_cpu_objects,

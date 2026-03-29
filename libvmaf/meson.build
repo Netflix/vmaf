@@ -53,6 +53,14 @@ if not cc.check_header('stdatomic.h')
     endif
 endif
 
+builtin_clz_dependency = []
+if cc.get_id() == 'msvc'
+    builtin_clz_dependency = declare_dependency(
+        include_directories : include_directories('src/compat/msvc'),
+        compile_args : ['-DHAVE_BUILTIN_CLZ_COMPAT'],
+    )
+endif
+
 if cc.check_header('getopt.h', args: test_args)
     getopt_dependency = declare_dependency(compile_args : '-DHAVE_GETOPT_H')
 else
