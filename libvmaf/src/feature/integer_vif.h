@@ -24,6 +24,10 @@
 #include <assert.h>
 #include "cpu.h"
 
+#ifdef HAVE_BUILTIN_CLZ_COMPAT
+#include "builtin_clz.h"
+#endif
+
 /* Enhancement gain imposed on vif, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #ifndef DEFAULT_VIF_ENHN_GAIN_LIMIT
 #define DEFAULT_VIF_ENHN_GAIN_LIMIT (100.0)
@@ -126,20 +130,6 @@ void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned
  */
 VifResiduals vif_compute_line_residuals(VifPublicState *s, unsigned from,
                                         unsigned to, int scale);
-
-
-#ifdef _MSC_VER
-#include <intrin.h>
-
-static inline int __builtin_clz(unsigned x) {
-    return (int)__lzcnt(x);
-}
-
-static inline int __builtin_clzll(unsigned long long x) {
-    return (int)__lzcnt64(x);
-}
-
-#endif
 
 static inline int32_t log2_32(const uint16_t *log2_table, uint32_t temp)
 {

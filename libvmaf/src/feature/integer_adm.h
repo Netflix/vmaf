@@ -8,6 +8,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#ifdef HAVE_BUILTIN_CLZ_COMPAT
+#include "builtin_clz.h"
+#endif
+
 static int32_t div_lookup[65537];
 static const int32_t div_Q_factor = 1073741824; // 2^30
 
