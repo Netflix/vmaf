@@ -258,11 +258,16 @@ if is_asm_enabled
           feature_src_dir + 'x86/cambi_avx2.c',
       ]
 
+      if cc.get_id() == 'msvc'
+          avx2_cflags = ['/arch:AVX2']
+      else
+          avx2_cflags = ['-mavx2', '-mavx']
+      endif
       x86_avx2_static_lib = static_library(
           'x86_avx2',
           x86_avx2_sources,
           include_directories : vmaf_base_include,
-          c_args : ['-mavx', '-mavx2'] + vmaf_cflags_common,
+          c_args : avx2_cflags + vmaf_cflags_common,
       )
 
       platform_specific_cpu_objects += x86_avx2_static_lib.extract_all_objects(recursive: true)
@@ -274,13 +279,17 @@ if is_asm_enabled
             feature_src_dir + 'x86/adm_avx512.c',
         ]
 
+        if cc.get_id() == 'msvc'
+            avx512_cflags = ['/arch:AVX512']
+        else
+            avx512_cflags = ['-mavx512f', '-mavx512dq', '-mavx512bw', '-mavx512cd', '-mavx512dq',
+                            '-mavx512vbmi', '-mavx512vl']
+        endif
         x86_avx512_static_lib = static_library(
             'x86_avx512',
             x86_avx512_sources,
             include_directories : vmaf_base_include,
-            c_args : ['-mavx512f', '-mavx512dq', '-mavx512bw', '-mavx512cd', '-mavx512dq',
-                      '-mavx512vbmi', '-mavx512vl'] +
-                     vmaf_cflags_common,
+            c_args : avx512_cflags + vmaf_cflags_common,
         )
 
         platform_specific_cpu_objects += x86_avx512_static_lib.extract_all_objects(recursive: true)
