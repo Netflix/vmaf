@@ -19,7 +19,7 @@
 #ifndef __VMAF_SRC_PROPAGATE_METADATA_H__
 #define __VMAF_SRC_PROPAGATE_METADATA_H__
 
-#include "libvmaf/libvmaf.h"
+#include "metadata.h"
 
 typedef struct VmafCallbackItem {
     VmafMetadataConfiguration metadata_cfg;
