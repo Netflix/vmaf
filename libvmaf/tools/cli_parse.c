@@ -102,9 +102,23 @@ static void usage(const char *const app, const char *const reason, ...) {
 
 #define CHECKED_APPEND(arr, cnt, val, app, desc) do {                   \
     if ((cnt) == CLI_SETTINGS_STATIC_ARRAY_LEN)                         \
-        usage((app), "A maximum of %d " desc " are supported\n",        \
-              CLI_SETTINGS_STATIC_ARRAY_LEN);                           \
+        usage((app), "A maximum of %d %s are supported\n",              \
+              CLI_SETTINGS_STATIC_ARRAY_LEN, (desc));                   \
     (arr)[(cnt)++] = (val);                                             \
+} while (0)
+
+#define CHECKED_REPLACE(arr, cnt, val, app, desc) do {                  \
+    CLIFeatureConfig _val = (val);                                      \
+    unsigned _i;                                                        \
+    for (_i = 0; _i < (cnt); _i++)                                      \
+        if (!strcmp((arr)[_i].name, _val.name)) {                       \
+            free((arr)[_i].buf);                                        \
+            vmaf_feature_dictionary_free(&(arr)[_i].opts_dict);         \
+            (arr)[_i] = _val;                                           \
+            break;                                                      \
+        }                                                               \
+    if (_i == (cnt))                                                    \
+        CHECKED_APPEND((arr), (cnt), _val, (app), (desc));              \
 } while (0)
 
 static void error(const char *const app, const char *const optarg,
