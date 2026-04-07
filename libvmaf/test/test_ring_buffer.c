@@ -120,8 +120,9 @@ typedef struct MyThreadPoolData {
     VmafCudaCookie my_cookie;
 } MyThreadPoolData;
 
-static void request_picture(void *data)
+static void request_picture(void *data, void **thread_data)
 {
+    (void) thread_data;
     MyThreadPoolData *my_thread_pool_data = data;
     VmafRingBuffer *ring_buffer = my_thread_pool_data->ring_buffer;
 
@@ -174,7 +175,8 @@ static char *test_ring_buffer_threaded()
 
     VmafThreadPool *thread_pool;
     const unsigned n_threads = 4;
-    err = vmaf_thread_pool_create(&thread_pool, n_threads);
+    VmafThreadPoolConfig tpool_cfg = { .n_threads = n_threads };
+    err = vmaf_thread_pool_create(&thread_pool, tpool_cfg);
     mu_assert("problem during vmaf_thread_pool_init", !err);
 
     const unsigned n = n_threads * 8;

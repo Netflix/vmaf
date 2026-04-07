@@ -39,8 +39,9 @@ typedef struct ThreadData {
     int err;
 } ThreadData;
 
-static void my_worker(void *data)
+static void my_worker(void *data, void **tpool_thread_data)
 {
+    (void) tpool_thread_data;
     int ctr;
     struct ThreadData *thread_data = data;
     uint8_t *shared_buf;
@@ -97,7 +98,8 @@ static char *test_framesync_create_process_and_destroy()
     VmafFrameSyncContext *fs_ctx;
     unsigned n_threads = 2;
 
-    err = vmaf_thread_pool_create(&pool, n_threads);
+    VmafThreadPoolConfig tpool_cfg = { .n_threads = n_threads };
+    err = vmaf_thread_pool_create(&pool, tpool_cfg);
     mu_assert("problem during vmaf_thread_pool_init", !err);
 
     err = vmaf_framesync_init(&fs_ctx);

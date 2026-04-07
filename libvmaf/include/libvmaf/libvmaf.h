@@ -322,6 +322,47 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
                               unsigned index_low, unsigned index_high);
 
 /**
+ * Picture Pool Configuration
+ */
+typedef struct VmafPictureConfiguration {
+    struct {
+        unsigned w, h;
+        unsigned bpc;
+        enum VmafPixelFormat pix_fmt;
+    } pic_params;
+    unsigned pic_cnt;
+} VmafPictureConfiguration;
+
+/**
+ * Preallocate pictures for use with multi-threaded feature extraction.
+ * Pictures are allocated once and automatically returned to the pool when
+ * fully unref'd, avoiding repeated allocation/deallocation overhead.
+ *
+ * @param vmaf VMAF context allocated with `vmaf_init()`.
+ *
+ * @param cfg  Picture configuration including dimensions and pool size.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_preallocate_pictures(VmafContext *vmaf,
+                              VmafPictureConfiguration cfg);
+
+/**
+ * Fetch a preallocated picture from the picture pool.
+ * The picture must be returned to the pool via vmaf_picture_unref() when done.
+ * Pictures automatically return to the pool when their reference count reaches zero.
+ *
+ * @param vmaf VMAF context initialized with `vmaf_preallocate_pictures()`.
+ *
+ * @param pic  Output picture from the pool.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_fetch_preallocated_picture(VmafContext *vmaf, VmafPicture *pic);
+
+/**
  * Close a VMAF instance and free all associated memory.
  *
  * @param vmaf The VMAF instance to close.

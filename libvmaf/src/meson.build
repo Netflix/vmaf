@@ -532,6 +532,11 @@ libvmaf_sources = [
     src_dir + 'metadata_handler.c',
 ]
 
+# picture pool - only compiled with -DVMAF_PICTURE_POOL
+if '-DVMAF_PICTURE_POOL' in get_option('c_args')
+    libvmaf_sources += [src_dir + 'picture_pool.c']
+endif
+
 if is_cuda_enabled
     vmaf_cflags_common += '-DHAVE_CUDA'
 endif
