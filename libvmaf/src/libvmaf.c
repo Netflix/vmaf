@@ -51,6 +51,10 @@
 #include "cuda/ring_buffer.h"
 #endif
 
+#ifdef VMAF_PICTURE_POOL
+#include "picture_pool.h"
+#endif
+
 typedef struct VmafContext {
     VmafConfiguration cfg;
     VmafFeatureCollector *feature_collector;
@@ -58,6 +62,9 @@ typedef struct VmafContext {
     VmafFeatureExtractorContextPool *fex_ctx_pool;
     VmafThreadPool *thread_pool;
     VmafFrameSyncContext *framesync;
+#ifdef VMAF_PICTURE_POOL
+    VmafPicturePool *picture_pool;
+#endif
 #ifdef HAVE_CUDA
     struct {
         struct {
@@ -85,6 +92,25 @@ typedef struct VmafContext {
     bool flushed;
 } VmafContext;
 
+#ifdef VMAF_BATCH_THREADING
+typedef struct BatchThreadData {
+    VmafFeatureExtractorContext **fex_ctx;
+    unsigned cnt;
+} BatchThreadData;
+
+static void batch_thread_data_free(void *data)
+{
+    BatchThreadData *td = data;
+    for (unsigned i = 0; i < td->cnt; i++) {
+        if (td->fex_ctx[i]) {
+            vmaf_feature_extractor_context_close(td->fex_ctx[i]);
+            vmaf_feature_extractor_context_destroy(td->fex_ctx[i]);
+        }
+    }
+    free(td->fex_ctx);
+    free(td);
+}
+#endif
 
 int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
 {
@@ -109,7 +135,13 @@ int vmaf_init(VmafContext **vmaf, VmafConfiguration cfg)
     if (err) goto free_feature_collector;
 
     if (v->cfg.n_threads > 0) {
-        err = vmaf_thread_pool_create(&v->thread_pool, v->cfg.n_threads);
+        VmafThreadPoolConfig tpool_cfg = {
+            .n_threads = v->cfg.n_threads,
+#ifdef VMAF_BATCH_THREADING
+            .thread_data_free = batch_thread_data_free,
+#endif
+        };
+        err = vmaf_thread_pool_create(&v->thread_pool, tpool_cfg);
         if (err) goto free_feature_extractor_vector;
         err = vmaf_fex_ctx_pool_create(&v->fex_ctx_pool, v->cfg.n_threads);
         if (err) goto free_thread_pool;
@@ -241,6 +273,68 @@ static int set_fex_cuda_state(VmafFeatureExtractorContext *fex_ctx,
 
 #endif
 
+#ifdef VMAF_PICTURE_POOL
+static int prepare_picture_pool(VmafContext *vmaf, unsigned pic_cnt,
+                                unsigned w, unsigned h,
+                                enum VmafPixelFormat pix_fmt, unsigned bpc)
+{
+    if (!vmaf) return -EINVAL;
+    if (!w || !h) return -EINVAL;
+    if (!pic_cnt) return -EINVAL;
+
+    VmafPicturePoolConfig cfg = {
+        .pic_cnt = pic_cnt,
+        .w = w,
+        .h = h,
+        .pix_fmt = pix_fmt,
+        .bpc = bpc,
+    };
+
+    return vmaf_picture_pool_init(&vmaf->picture_pool, cfg);
+}
+
+static int check_picture_pool(VmafContext *vmaf)
+{
+    if (!vmaf->thread_pool) return 0;
+    if (vmaf->picture_pool) return 0;
+
+    // Default to 2x thread count if not explicitly preallocated
+    const unsigned pic_cnt = vmaf->cfg.n_threads * 2;
+
+    int err = prepare_picture_pool(vmaf, pic_cnt,
+                                   vmaf->pic_params.w,
+                                   vmaf->pic_params.h,
+                                   vmaf->pic_params.pix_fmt,
+                                   vmaf->pic_params.bpc);
+    if (err) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "problem during prepare_picture_pool\n");
+        return -EINVAL;
+    }
+
+    return 0;
+}
+
+int vmaf_preallocate_pictures(VmafContext *vmaf,
+                                   VmafPictureConfiguration cfg)
+{
+    if (!vmaf) return -EINVAL;
+
+    return prepare_picture_pool(vmaf, cfg.pic_cnt,
+                                cfg.pic_params.w, cfg.pic_params.h,
+                                cfg.pic_params.pix_fmt, cfg.pic_params.bpc);
+}
+
+int vmaf_fetch_preallocated_picture(VmafContext *vmaf, VmafPicture *pic)
+{
+    if (!vmaf) return -EINVAL;
+    if (!pic) return -EINVAL;
+    if (!vmaf->picture_pool) return -EINVAL;
+
+    return vmaf_picture_pool_fetch(vmaf->picture_pool, pic);
+}
+#endif
+
 static int set_fex_framesync(VmafFeatureExtractorContext *fex_ctx,
                               VmafContext *vmaf)
 {
@@ -259,6 +353,10 @@ int vmaf_close(VmafContext *vmaf)
     vmaf_feature_collector_destroy(vmaf->feature_collector);
     vmaf_thread_pool_destroy(vmaf->thread_pool);
     vmaf_fex_ctx_pool_destroy(vmaf->fex_ctx_pool);
+#ifdef VMAF_PICTURE_POOL
+    if (vmaf->picture_pool)
+        vmaf_picture_pool_close(vmaf->picture_pool);
+#endif
 #ifdef HAVE_CUDA
     if (vmaf->cuda.ring_buffer)
         vmaf_ring_buffer_close(vmaf->cuda.ring_buffer);
@@ -392,8 +490,9 @@ struct ThreadData {
     int err;
 };
 
-static void threaded_extract_func(void *e)
+static void threaded_extract_func(void *e, void **thread_data)
 {
+    (void) thread_data;
     struct ThreadData *f = e;
     f->err = vmaf_feature_extractor_context_extract(f->fex_ctx, &f->ref, NULL,
                                                     &f->dist, NULL, f->index,
@@ -402,6 +501,72 @@ static void threaded_extract_func(void *e)
     vmaf_picture_unref(&f->ref);
     vmaf_picture_unref(&f->dist);
 }
+
+#ifdef VMAF_BATCH_THREADING
+struct ThreadDataBatch {
+    VmafPicture ref, dist;
+    unsigned index;
+    VmafFeatureCollector *feature_collector;
+    RegisteredFeatureExtractors *registered_fex;
+    unsigned n_subsample;
+    int err;
+};
+
+static void threaded_extract_batch_func(void *e, void **thread_data)
+{
+    struct ThreadDataBatch *f = e;
+    f->err = 0;
+
+    BatchThreadData *td = *thread_data;
+    if (!td) {
+        td = malloc(sizeof(*td));
+        if (!td) { f->err = -ENOMEM; goto unref; }
+        td->cnt = f->registered_fex->cnt;
+        td->fex_ctx = calloc(td->cnt, sizeof(*td->fex_ctx));
+        if (!td->fex_ctx) { free(td); f->err = -ENOMEM; goto unref; }
+        *thread_data = td;
+    }
+
+    for (unsigned i = 0; i < f->registered_fex->cnt; i++) {
+        VmafFeatureExtractor *fex = f->registered_fex->fex_ctx[i]->fex;
+
+        if (fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA)
+            continue;
+
+        if (fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL)
+            continue;
+
+        if ((f->n_subsample > 1) && (f->index % f->n_subsample))
+            continue;
+
+        if (!td->fex_ctx[i]) {
+            VmafDictionary *opts_dict = f->registered_fex->fex_ctx[i]->opts_dict;
+            VmafDictionary *d = NULL;
+            if (opts_dict) {
+                int err = vmaf_dictionary_copy(&opts_dict, &d);
+                if (err) { f->err = err; break; }
+            }
+            int err = vmaf_feature_extractor_context_create(&td->fex_ctx[i],
+                                                             fex, d);
+            if (err) { f->err = err; break; }
+        }
+
+        int err = vmaf_feature_extractor_context_extract(td->fex_ctx[i],
+                                                         &f->ref, NULL,
+                                                         &f->dist, NULL,
+                                                         f->index,
+                                                         f->feature_collector);
+        if (err) {
+            f->err = err;
+            break;
+        }
+    }
+
+unref:
+    vmaf_picture_unref(&f->ref);
+    vmaf_picture_unref(&f->dist);
+}
+#endif // VMAF_BATCH_THREADING
 
 static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
                                   VmafPicture *dist, unsigned index)
@@ -458,6 +623,42 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
     return vmaf_picture_unref(ref) | vmaf_picture_unref(dist);
 }
 
+#ifdef VMAF_BATCH_THREADING
+static int threaded_read_pictures_batch(VmafContext *vmaf, VmafPicture *ref,
+                                        VmafPicture *dist, unsigned index)
+{
+    if (!vmaf) return -EINVAL;
+    if (!ref) return -EINVAL;
+    if (!dist) return -EINVAL;
+
+    int err = 0;
+
+    VmafPicture pic_a, pic_b;
+    vmaf_picture_ref(&pic_a, ref);
+    vmaf_picture_ref(&pic_b, dist);
+
+    struct ThreadDataBatch data = {
+        .ref = pic_a,
+        .dist = pic_b,
+        .index = index,
+        .feature_collector = vmaf->feature_collector,
+        .registered_fex = &vmaf->registered_feature_extractors,
+        .n_subsample = vmaf->cfg.n_subsample,
+        .err = 0,
+    };
+
+    err = vmaf_thread_pool_enqueue(vmaf->thread_pool, threaded_extract_batch_func,
+                                   &data, sizeof(data));
+    if (err) {
+        vmaf_picture_unref(&pic_a);
+        vmaf_picture_unref(&pic_b);
+        return err;
+    }
+
+    return vmaf_picture_unref(ref) | vmaf_picture_unref(dist);
+}
+#endif // VMAF_BATCH_THREADING
+
 static int validate_pic_params(VmafContext *vmaf, VmafPicture *ref,
                                VmafPicture *dist)
 {
@@ -493,7 +694,17 @@ static int flush_context_threaded(VmafContext *vmaf)
 {
     int err = 0;
     err |= vmaf_thread_pool_wait(vmaf->thread_pool);
+#ifdef VMAF_BATCH_THREADING
+    RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
+    for (unsigned i = 0; i < rfe.cnt; i++) {
+        if (!(rfe.fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL))
+            continue;
+        err |= vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
+                                                    vmaf->feature_collector);
+    }
+#else
     err |= vmaf_fex_ctx_pool_flush(vmaf->fex_ctx_pool, vmaf->feature_collector);
+#endif
 
     if (!err) vmaf->flushed = true;
     return err;
@@ -665,6 +876,11 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     err = validate_pic_params(vmaf, ref, dist);
     if (err) return err;
 
+#ifdef VMAF_PICTURE_POOL
+    err = check_picture_pool(vmaf);
+    if (err) return err;
+#endif
+
 #ifdef HAVE_CUDA
     err = check_ring_buffer(vmaf);
     if (err) return err;
@@ -690,6 +906,9 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
         }
 
         if (!(fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA) && vmaf->thread_pool) {
+#ifdef VMAF_BATCH_THREADING
+            if (!(fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL))
+#endif
             continue;
         }
 #ifdef HAVE_CUDA
@@ -713,7 +932,11 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     //multithreading for GPU does not yield performance benefits
     //disabled for now
     if (vmaf->thread_pool){
+#ifdef VMAF_BATCH_THREADING
+        return threaded_read_pictures_batch(vmaf, ref, dist, index);
+#else
         return threaded_read_pictures(vmaf, ref, dist, index);
+#endif
     }
 #ifdef HAVE_CUDA
     if (ref_host.priv)
