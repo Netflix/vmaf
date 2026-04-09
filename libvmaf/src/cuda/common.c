@@ -64,7 +64,9 @@ static int init_with_primary_context(VmafCudaState *cu_state)
 
     int low, high;
     CHECK_CUDA(cu_state->f, cuCtxGetStreamPriorityRange(&low, &high));
-    const int prio = 0;
+    // Use highest priority for VMAF compute to preempt lower-priority
+    // work (e.g., NVENC/NVDEC) when sharing the GPU
+    const int prio = high;
     const int prio2 = MAX(low, MIN(high, prio));
     CHECK_CUDA(cu_state->f, cuStreamCreateWithPriority(&cu_state->str,
                                           CU_STREAM_NON_BLOCKING, prio2));

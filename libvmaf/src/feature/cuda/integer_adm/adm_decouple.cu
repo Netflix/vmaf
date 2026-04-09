@@ -32,13 +32,15 @@ __device__ __forceinline__ uint16_t get_best15_from32(uint32_t temp, int *x) {
     return temp;
 }
 
+// cos(pi/180)^2 precomputed — avoids per-thread cosf() calls
+static constexpr float COS_1DEG_SQ = 0.99969541f; // cosf(M_PI/180)^2
+
 extern "C" {
 
 __global__ void adm_decouple_kernel(AdmBufferCuda buf, int top, int bottom,
         int left, int right, int stride,
         double adm_enhn_gain_limit) {
-    const float cos_1deg_sq =
-        cosf(1.0f * float(M_PI) / 180.0f) * cosf(1.0f * float(M_PI) / 180.0f);
+    const float cos_1deg_sq = COS_1DEG_SQ;
     const float div_Q_factor = 1073741824; // 2^30
 
     const cuda_adm_dwt_band_t *ref = &buf.ref_dwt2;
@@ -129,7 +131,7 @@ __global__ void adm_decouple_kernel(AdmBufferCuda buf, int top, int bottom,
 __global__ void adm_decouple_s123_kernel(AdmBufferCuda buf, int top, int bottom,
         int left, int right, int stride,
         double adm_enhn_gain_limit) {
-    const float cos_1deg_sq = cosf(1.0f * float(M_PI) / 180.0f) * cosf(1.0f * float(M_PI) / 180.0f);
+    const float cos_1deg_sq = COS_1DEG_SQ;
     const int32_t div_Q_factor = 1073741824; // 2^30
 
     const cuda_i4_adm_dwt_band_t *ref = &buf.i4_ref_dwt2;
