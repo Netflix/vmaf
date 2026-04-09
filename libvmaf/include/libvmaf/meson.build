@@ -8,11 +8,16 @@ version_h_target = configure_file(input: 'version.h.in',
                                   configuration: version_h_data)
 
 is_cuda_enabled = get_option('enable_cuda') == true
+is_sycl_enabled = get_option('enable_sycl') == true
 
 platform_specific_headers = []
 
 if is_cuda_enabled
   platform_specific_headers += 'libvmaf_cuda.h'
+endif
+
+if is_sycl_enabled
+  platform_specific_headers += 'libvmaf_sycl.h'
 endif
 
 # install headers

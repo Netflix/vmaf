@@ -74,6 +74,10 @@ typedef struct VmafModel {
         bool out_lte_in, out_gte_in;
     } score_transform;
     struct svm_model *svm;
+    // Pre-allocated prediction state (populated lazily, reused per frame)
+    struct svm_node *predict_nodes;  // n_features + 1 entries
+    char **predict_feature_names;    // n_features cached name strings
+    void **predict_feature_vectors;  // cached FeatureVector* pointers (opaque)
 } VmafModel;
 
 typedef struct VmafModelCollection {

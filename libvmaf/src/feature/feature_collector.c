@@ -304,6 +304,17 @@ static FeatureVector *find_feature_vector(VmafFeatureCollector *fc,
     return feature_vector;
 }
 
+FeatureVector *vmaf_feature_collector_find(VmafFeatureCollector *fc,
+                                           const char *feature_name)
+{
+    if (!fc || !feature_name) return NULL;
+
+    pthread_mutex_lock(&fc->lock);
+    FeatureVector *fv = find_feature_vector(fc, feature_name);
+    pthread_mutex_unlock(&fc->lock);
+    return fv;
+}
+
 int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
                                   const char *feature_name, double score,
                                   unsigned picture_index)

@@ -20,12 +20,61 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "mem.h"
 #include "picture.h"
 #include "ref.h"
 
-#define DATA_ALIGN 32
+#define DATA_ALIGN 64
+
+// Picture buffer pool: reuses freed pixel buffers to avoid mmap/munmap
+// syscalls on each frame. Buffers are matched by exact size (LIFO stack).
+// Thread-safe: vmaf_picture_unref can be called from worker threads.
+#define PIC_POOL_MAX 8
+
+static struct {
+    struct { void *data; size_t size; } entries[PIC_POOL_MAX];
+    unsigned count;
+    pthread_mutex_t lock;
+} pic_pool = { .lock = PTHREAD_MUTEX_INITIALIZER };
+
+static void *pic_pool_acquire(size_t size)
+{
+    void *data = NULL;
+    pthread_mutex_lock(&pic_pool.lock);
+    for (unsigned i = pic_pool.count; i > 0; i--) {
+        if (pic_pool.entries[i - 1].size == size) {
+            data = pic_pool.entries[i - 1].data;
+            pic_pool.entries[i - 1] = pic_pool.entries[--pic_pool.count];
+            break;
+        }
+    }
+    pthread_mutex_unlock(&pic_pool.lock);
+    return data;
+}
+
+static void pic_pool_release(void *data, size_t size)
+{
+    pthread_mutex_lock(&pic_pool.lock);
+    if (pic_pool.count < PIC_POOL_MAX) {
+        pic_pool.entries[pic_pool.count].data = data;
+        pic_pool.entries[pic_pool.count].size = size;
+        pic_pool.count++;
+        pthread_mutex_unlock(&pic_pool.lock);
+        return;
+    }
+    pthread_mutex_unlock(&pic_pool.lock);
+    aligned_free(data);  // pool full, discard
+}
+
+// Release callback that returns buffer to pool instead of freeing
+static int pool_release_picture(VmafPicture *pic, void *cookie)
+{
+    size_t pic_size = (size_t)(uintptr_t)cookie;
+    pic_pool_release(pic->data[0], pic_size);
+    return 0;
+}
 
 static int default_release_picture(VmafPicture *pic, void *cookie)
 {
@@ -86,9 +135,15 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
     const size_t uv_sz = pic->stride[1] * pic->h[1];
     const size_t pic_size = y_sz + 2 * uv_sz;
 
-    uint8_t *data = aligned_malloc(pic_size, DATA_ALIGN);
-    if (!data) goto fail;
-    memset(data, 0, pic_size);
+    // Try to reuse a buffer from the pool before allocating fresh
+    uint8_t *data = pic_pool_acquire(pic_size);
+    if (data) {
+        memset(data, 0, pic_size);
+    } else {
+        data = aligned_malloc(pic_size, DATA_ALIGN);
+        if (!data) goto fail;
+        memset(data, 0, pic_size);
+    }
     pic->data[0] = data;
     pic->data[1] = data + y_sz;
     pic->data[2] = data + y_sz + uv_sz;
@@ -96,7 +151,8 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
         pic->data[1] = pic->data[2] = NULL;
 
     err |= vmaf_picture_priv_init(pic);
-    err |= vmaf_picture_set_release_callback(pic, NULL, default_release_picture);
+    err |= vmaf_picture_set_release_callback(pic, (void *)(uintptr_t)pic_size,
+                                             pool_release_picture);
     if (err) goto free_data;
 
     err = vmaf_ref_init(&pic->ref);

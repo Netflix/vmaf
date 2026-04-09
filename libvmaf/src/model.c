@@ -195,6 +195,13 @@ void vmaf_model_destroy(VmafModel *model)
     }
     free(model->feature);
     free(model->score_transform.knots.list);
+    free(model->predict_nodes);
+    if (model->predict_feature_names) {
+        for (unsigned i = 0; i < model->n_features; i++)
+            free(model->predict_feature_names[i]);
+        free(model->predict_feature_names);
+    }
+    free(model->predict_feature_vectors);
     free(model);
 }
 
