@@ -1,0 +1,372 @@
+diff --git a/configure b/configure
+index 1759694..521ab22 100755
+--- a/configure
++++ b/configure
+@@ -295,6 +295,7 @@ External library support:
+   --enable-libv4l2         enable libv4l2/v4l-utils [no]
+   --enable-libvidstab      enable video stabilization using vid.stab [no]
+   --enable-libvmaf         enable vmaf filter via libvmaf [no]
++  --enable-libvmaf-sycl    enable SYCL-accelerated vmaf filter via libvmaf [no]
+   --enable-libvo-amrwbenc  enable AMR-WB encoding via libvo-amrwbenc [no]
+   --enable-libvorbis       enable Vorbis en/decoding via libvorbis,
+                            native implementation exists [no]
+@@ -2099,6 +2100,7 @@ EXTERNAL_LIBRARY_LIST="
+     libuavs3d
+     libv4l2
+     libvmaf
++    libvmaf_sycl
+     libvorbis
+     libvpx
+     libvvenc
+@@ -4235,6 +4237,7 @@ vidstabdetect_filter_deps="libvidstab"
+ vidstabtransform_filter_deps="libvidstab"
+ libvmaf_filter_deps="libvmaf"
+ libvmaf_cuda_filter_deps="libvmaf libvmaf_cuda ffnvcodec"
++libvmaf_sycl_filter_deps="libvmaf libvmaf_sycl libvpl"
+ zmq_filter_deps="libzmq"
+ zoompan_filter_deps="swscale"
+ zscale_filter_deps="libzimg const_nan"
+@@ -7390,6 +7393,8 @@ enabled libv4l2           && require_pkg_config libv4l2 libv4l2 libv4l2.h v4l2_i
+ enabled libvidstab        && require_pkg_config libvidstab "vidstab >= 0.98" vid.stab/libvidstab.h vsMotionDetectInit
+ enabled libvmaf           && require_pkg_config libvmaf "libvmaf >= 2.0.0" libvmaf.h vmaf_init
+ enabled libvmaf           && check_pkg_config libvmaf_cuda "libvmaf >= 2.0.0" libvmaf_cuda.h vmaf_cuda_state_init
++enabled libvmaf_sycl      && require_pkg_config libvmaf "libvmaf >= 2.0.0" libvmaf.h vmaf_init &&
++                             check_pkg_config libvmaf_sycl "libvmaf >= 2.0.0" libvmaf_sycl.h vmaf_sycl_state_init
+ enabled libvo_amrwbenc    && { check_pkg_config libvo_amrwbenc vo-amrwbenc vo-amrwbenc/enc_if.h E_IF_init ||
+                                require libvo_amrwbenc vo-amrwbenc/enc_if.h E_IF_init -lvo-amrwbenc; }
+ enabled libvorbis         && require_pkg_config libvorbis vorbis vorbis/codec.h vorbis_info_init &&
+diff --git a/libavfilter/Makefile b/libavfilter/Makefile
+index a530cfa..8a19d30 100644
+--- a/libavfilter/Makefile
++++ b/libavfilter/Makefile
+@@ -376,6 +376,7 @@ OBJS-$(CONFIG_LENSFUN_FILTER)                += vf_lensfun.o
+ OBJS-$(CONFIG_LIBPLACEBO_FILTER)             += vf_libplacebo.o vulkan.o vulkan_filter.o
+ OBJS-$(CONFIG_LIBVMAF_FILTER)                += vf_libvmaf.o framesync.o
+ OBJS-$(CONFIG_LIBVMAF_CUDA_FILTER)           += vf_libvmaf.o framesync.o
++OBJS-$(CONFIG_LIBVMAF_SYCL_FILTER)           += vf_libvmaf.o framesync.o
+ OBJS-$(CONFIG_LIMITDIFF_FILTER)              += vf_limitdiff.o framesync.o
+ OBJS-$(CONFIG_LIMITER_FILTER)                += vf_limiter.o
+ OBJS-$(CONFIG_LOOP_FILTER)                   += f_loop.o
+diff --git a/libavfilter/allfilters.c b/libavfilter/allfilters.c
+index e26859e..9524029 100644
+--- a/libavfilter/allfilters.c
++++ b/libavfilter/allfilters.c
+@@ -350,6 +350,7 @@ extern const FFFilter ff_vf_lensfun;
+ extern const FFFilter ff_vf_libplacebo;
+ extern const FFFilter ff_vf_libvmaf;
+ extern const FFFilter ff_vf_libvmaf_cuda;
++extern const FFFilter ff_vf_libvmaf_sycl;
+ extern const FFFilter ff_vf_limitdiff;
+ extern const FFFilter ff_vf_limiter;
+ extern const FFFilter ff_vf_loop;
+diff --git a/libavfilter/vf_libvmaf.c b/libavfilter/vf_libvmaf.c
+index 3ab67d3..ddcf12c 100644
+--- a/libavfilter/vf_libvmaf.c
++++ b/libavfilter/vf_libvmaf.c
+@@ -46,6 +46,12 @@
+ #include "libavutil/hwcontext_cuda_internal.h"
+ #endif
+ 
++#if CONFIG_LIBVMAF_SYCL_FILTER
++#include <libvmaf_sycl.h>
++#include "libavutil/hwcontext.h"
++#include "libavutil/hwcontext_qsv.h"
++#endif
++
+ typedef struct LIBVMAFContext {
+     const AVClass *class;
+     FFFrameSync fs;
+@@ -64,6 +70,11 @@ typedef struct LIBVMAFContext {
+ #if CONFIG_LIBVMAF_CUDA_FILTER
+     VmafCudaState *cu_state;
+ #endif
++#if CONFIG_LIBVMAF_SYCL_FILTER
++    VmafSyclState *sycl_state;
++    void *va_display;
++    int sycl_gpu_profile;
++#endif
+ } LIBVMAFContext;
+ 
+ #define OFFSET(x) offsetof(LIBVMAFContext, x)
+@@ -826,3 +837,281 @@ const FFFilter ff_vf_libvmaf_cuda = {
+     .flags_internal = FF_FILTER_FLAG_HWFRAME_AWARE,
+ };
+ #endif
++
++#if CONFIG_LIBVMAF_SYCL_FILTER
++
++#define SYCL_FLAGS AV_OPT_FLAG_FILTERING_PARAM|AV_OPT_FLAG_VIDEO_PARAM
++static const AVOption libvmaf_sycl_options[] = {
++    {"log_path",  "Set the file path to be used to write log.",
++                  OFFSET(log_path), AV_OPT_TYPE_STRING, {.str=NULL}, 0, 1, SYCL_FLAGS},
++    {"log_fmt",   "Set the format of the log (csv, json, xml, or sub).",
++                  OFFSET(log_fmt), AV_OPT_TYPE_STRING, {.str="xml"}, 0, 1, SYCL_FLAGS},
++    {"pool",      "Set the pool method to be used for computing vmaf.",
++                  OFFSET(pool), AV_OPT_TYPE_STRING, {.str=NULL}, 0, 1, SYCL_FLAGS},
++    {"n_threads", "Set number of threads to be used when computing vmaf.",
++                  OFFSET(n_threads), AV_OPT_TYPE_INT, {.i64=0}, 0, UINT_MAX, SYCL_FLAGS},
++    {"n_subsample", "Set interval for frame subsampling used when computing vmaf.",
++                    OFFSET(n_subsample), AV_OPT_TYPE_INT, {.i64=1}, 1, UINT_MAX, SYCL_FLAGS},
++    {"model",     "Set the model to be used for computing vmaf.",
++                  OFFSET(model_cfg), AV_OPT_TYPE_STRING, {.str="version=vmaf_v0.6.1"}, 0, 1, SYCL_FLAGS},
++    {"feature",   "Set the feature to be used for computing vmaf.",
++                  OFFSET(feature_cfg), AV_OPT_TYPE_STRING, {.str=NULL}, 0, 1, SYCL_FLAGS},
++    {"gpu_profile", "Print per-kernel GPU timing breakdown at end.",
++                    OFFSET(sycl_gpu_profile), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, SYCL_FLAGS},
++    { NULL }
++};
++#undef SYCL_FLAGS
++FRAMESYNC_DEFINE_CLASS(libvmaf_sycl, LIBVMAFContext, fs);
++
++static int do_vmaf_sycl(FFFrameSync *fs)
++{
++    AVFilterContext *ctx = fs->parent;
++    LIBVMAFContext *s = ctx->priv;
++    AVFrame *ref, *dist;
++    int ret;
++
++    ret = ff_framesync_dualinput_get(fs, &dist, &ref);
++    if (ret < 0)
++        return ret;
++    if (ctx->is_disabled || !ref)
++        return ff_filter_frame(ctx->outputs[0], dist);
++
++    // Wait for previous SYCL compute to finish before overwriting buffers
++    ret = vmaf_sycl_wait_compute(s->vmaf);
++    if (ret) {
++        av_log(ctx, AV_LOG_ERROR,
++               "vmaf_sycl_wait_compute failed: %d\n", ret);
++        return AVERROR_EXTERNAL;
++    }
++
++    // Extract surface handle from QSV frames via oneVPL structures:
++    // data[3] -> mfxFrameSurface1*, Data.MemId -> mfxHDLPair*,
++    // pair->first -> surface handle (unsigned int on Linux)
++    mfxFrameSurface1 *ref_mfx  = (mfxFrameSurface1 *)ref->data[3];
++    mfxFrameSurface1 *dist_mfx = (mfxFrameSurface1 *)dist->data[3];
++    mfxHDLPair *ref_pair  = (mfxHDLPair *)ref_mfx->Data.MemId;
++    mfxHDLPair *dist_pair = (mfxHDLPair *)dist_mfx->Data.MemId;
++    unsigned int ref_surface  = *(unsigned int *)ref_pair->first;
++    unsigned int dist_surface = *(unsigned int *)dist_pair->first;
++
++    // Zero-copy import: VA surface -> DMA-BUF -> Level Zero -> SYCL de-tile
++    ret = vmaf_sycl_import_va_surface(s->sycl_state, s->va_display,
++                                       ref_surface, 1,
++                                       ref->width, ref->height, s->bpc);
++    if (ret) {
++        av_log(ctx, AV_LOG_WARNING,
++               "vmaf_sycl_import_va_surface (ref) failed: %d "
++               "(VA surface may have been freed by decoder) — skipping frame\n", ret);
++        return ff_filter_frame(ctx->outputs[0], dist);
++    }
++
++    ret = vmaf_sycl_import_va_surface(s->sycl_state, s->va_display,
++                                       dist_surface, 0,
++                                       dist->width, dist->height, s->bpc);
++    if (ret) {
++        av_log(ctx, AV_LOG_WARNING,
++               "vmaf_sycl_import_va_surface (dist) failed: %d "
++               "(VA surface may have been freed by decoder) — skipping frame\n", ret);
++        return ff_filter_frame(ctx->outputs[0], dist);
++    }
++
++    // Submit frame for SYCL VMAF compute (non-blocking)
++    ret = vmaf_read_pictures_sycl(s->vmaf, s->frame_cnt++);
++    if (ret) {
++        av_log(ctx, AV_LOG_ERROR,
++               "vmaf_read_pictures_sycl failed: %d\n", ret);
++        return AVERROR_EXTERNAL;
++    }
++
++    return ff_filter_frame(ctx->outputs[0], dist);
++}
++
++static av_cold int init_sycl(AVFilterContext *ctx)
++{
++    LIBVMAFContext *s = ctx->priv;
++    s->fs.on_event = do_vmaf_sycl;
++    return 0;
++}
++
++static av_cold void uninit_sycl(AVFilterContext *ctx)
++{
++    LIBVMAFContext *s = ctx->priv;
++    int err = 0;
++
++    ff_framesync_uninit(&s->fs);
++
++    if (!s->frame_cnt)
++        goto clean_up;
++
++    // Flush the SYCL compute pipeline (NOT vmaf_read_pictures which is CPU-only)
++    err = vmaf_flush_sycl(s->vmaf);
++    if (err)
++        av_log(ctx, AV_LOG_ERROR,
++               "vmaf_flush_sycl failed: %d\n", err);
++
++    for (unsigned i = 0; i < s->model_cnt; i++) {
++        double vmaf_score;
++        err = vmaf_score_pooled(s->vmaf, s->model[i], pool_method_map(s->pool),
++                                &vmaf_score, 0, s->frame_cnt - 1);
++        if (err) {
++            av_log(ctx, AV_LOG_ERROR,
++                   "problem getting pooled vmaf score.\n");
++        }
++
++        av_log(ctx, AV_LOG_INFO, "VMAF score: %f\n", vmaf_score);
++    }
++
++    if (s->vmaf) {
++        if (s->log_path && !err)
++            vmaf_write_output(s->vmaf, s->log_path, log_fmt_map(s->log_fmt));
++    }
++
++    if (s->sycl_gpu_profile && s->sycl_state) {
++        char *prof = NULL;
++        err = vmaf_sycl_profiling_get_string(s->sycl_state, &prof);
++        if (!err && prof) {
++            av_log(ctx, AV_LOG_INFO, "%s", prof);
++            free(prof);
++        }
++    }
++
++clean_up:
++    if (s->model) {
++        for (unsigned i = 0; i < s->model_cnt; i++) {
++            if (s->model[i])
++                vmaf_model_destroy(s->model[i]);
++        }
++        av_free(s->model);
++    }
++
++    if (s->vmaf)
++        vmaf_close(s->vmaf);
++    // Note: vmaf_close() handles sycl_state cleanup internally
++}
++
++static int config_props_sycl(AVFilterLink *outlink)
++{
++    int err;
++    AVFilterContext *ctx = outlink->src;
++    LIBVMAFContext *s = ctx->priv;
++    AVFilterLink *inlink = ctx->inputs[0];
++    FilterLink *inl = ff_filter_link(inlink);
++    AVHWFramesContext *frames_ctx;
++    const AVPixFmtDescriptor *desc;
++
++    if (!inl->hw_frames_ctx) {
++        av_log(ctx, AV_LOG_ERROR,
++               "No QSV hw_frames_ctx on input. Use -hwaccel qsv.\n");
++        return AVERROR(EINVAL);
++    }
++
++    frames_ctx = (AVHWFramesContext *)inl->hw_frames_ctx->data;
++    if (frames_ctx->device_ctx->type != AV_HWDEVICE_TYPE_QSV) {
++        av_log(ctx, AV_LOG_ERROR,
++               "Expected QSV frames, got type %d\n",
++               frames_ctx->device_ctx->type);
++        return AVERROR(EINVAL);
++    }
++
++    // Get display handle from the QSV session via oneVPL
++    {
++        AVQSVDeviceContext *qsv_hwctx = frames_ctx->device_ctx->hwctx;
++        mfxHDL display_handle = NULL;
++        mfxStatus sts = MFXVideoCORE_GetHandle(qsv_hwctx->session,
++                                                MFX_HANDLE_VA_DISPLAY,
++                                                &display_handle);
++        if (sts != MFX_ERR_NONE || !display_handle) {
++            av_log(ctx, AV_LOG_ERROR,
++                   "MFXVideoCORE_GetHandle(VA_DISPLAY) failed: %d\n", sts);
++            return AVERROR_EXTERNAL;
++        }
++        s->va_display = display_handle;
++    }
++
++    desc = av_pix_fmt_desc_get(frames_ctx->sw_format);
++    s->bpc = desc->comp[0].depth;
++
++    av_log(ctx, AV_LOG_INFO,
++           "libvmaf_sycl: sw_format=%s bpc=%u %dx%d\n",
++           desc->name, s->bpc, inlink->w, inlink->h);
++
++    // Initialise SYCL state
++    VmafSyclConfiguration sycl_cfg = {
++        .device_index = -1,
++        .enable_profiling = s->sycl_gpu_profile,
++    };
++
++    VmafConfiguration cfg = {
++        .log_level = log_level_map(av_log_get_level()),
++        .n_subsample = s->n_subsample,
++        .n_threads = s->n_threads,
++    };
++
++    err = vmaf_init(&s->vmaf, cfg);
++    if (err)
++        return AVERROR(EINVAL);
++
++    err = vmaf_sycl_state_init(&s->sycl_state, sycl_cfg);
++    if (err) {
++        av_log(ctx, AV_LOG_ERROR,
++               "vmaf_sycl_state_init failed: %d\n", err);
++        return AVERROR_EXTERNAL;
++    }
++
++    if (s->sycl_gpu_profile) {
++        err = vmaf_sycl_profiling_enable(s->sycl_state);
++        if (err)
++            av_log(ctx, AV_LOG_WARNING,
++                   "SYCL profiling not available\n");
++    }
++
++    err = vmaf_sycl_import_state(s->vmaf, s->sycl_state);
++    if (err) {
++        av_log(ctx, AV_LOG_ERROR,
++               "vmaf_sycl_import_state failed: %d\n", err);
++        return AVERROR_EXTERNAL;
++    }
++
++    // Allocate shared frame buffers for zero-copy
++    err = vmaf_sycl_init_frame_buffers(s->vmaf, inlink->w, inlink->h, s->bpc);
++    if (err) {
++        av_log(ctx, AV_LOG_ERROR,
++               "vmaf_sycl_init_frame_buffers failed: %d\n", err);
++        return AVERROR_EXTERNAL;
++    }
++
++    err = parse_models(ctx);
++    if (err)
++        return err;
++
++    err = parse_features(ctx);
++    if (err)
++        return err;
++
++    return config_output(outlink);
++}
++
++static const AVFilterPad libvmaf_outputs_sycl[] = {
++    {
++        .name         = "default",
++        .type         = AVMEDIA_TYPE_VIDEO,
++        .config_props = config_props_sycl,
++    },
++};
++
++const FFFilter ff_vf_libvmaf_sycl = {
++    .p.name         = "libvmaf_sycl",
++    .p.description  = NULL_IF_CONFIG_SMALL("Calculate the VMAF between two video "
++                                           "streams using SYCL GPU acceleration."),
++    .p.priv_class   = &libvmaf_sycl_class,
++    .preinit        = libvmaf_sycl_framesync_preinit,
++    .init           = init_sycl,
++    .uninit         = uninit_sycl,
++    .activate       = activate,
++    .priv_size      = sizeof(LIBVMAFContext),
++    FILTER_INPUTS(libvmaf_inputs),
++    FILTER_OUTPUTS(libvmaf_outputs_sycl),
++    FILTER_SINGLE_PIXFMT(AV_PIX_FMT_QSV),
++    .flags_internal = FF_FILTER_FLAG_HWFRAME_AWARE,
++};
++#endif
