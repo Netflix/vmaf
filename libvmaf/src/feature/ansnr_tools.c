@@ -17,9 +17,21 @@
  */
 
 #include <stddef.h>
+#include "cpu.h"
 #include "mem.h"
 #include "ansnr_options.h"
 #include "ansnr_tools.h"
+
+#if ARCH_X86
+#include "x86/ansnr_avx2.h"
+#if HAVE_AVX512
+#include "x86/ansnr_avx512.h"
+#endif
+#endif
+
+#if ARCH_AARCH64
+#include "arm64/ansnr_neon.h"
+#endif
 
 #if 1
 const float ansnr_filter1d_ref_s[3] = { 0.250138193, 0.499723613, 0.250138193 };
@@ -58,27 +70,53 @@ void ansnr_mse_s(const float *ref, const float *dis, float *sig, float *noise, i
 {
     int ref_px_stride = ref_stride / sizeof(float);
     int dis_px_stride = dis_stride / sizeof(float);
-    int i, j;
 
-    float ref_val, dis_val;
+    void (*mse_line)(const float *, const float *, float *, float *, int) = NULL;
+
+#if ARCH_X86
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        if (flags & VMAF_X86_CPU_FLAG_AVX2)
+            mse_line = ansnr_mse_line_avx2;
+#if HAVE_AVX512
+        if (flags & VMAF_X86_CPU_FLAG_AVX512)
+            mse_line = ansnr_mse_line_avx512;
+#endif
+    }
+#elif ARCH_AARCH64
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        if (flags & VMAF_ARM_CPU_FLAG_NEON)
+            mse_line = ansnr_mse_line_neon;
+    }
+#endif
 
     float sig_accum = 0;
     float noise_accum = 0;
 
-    for (i = 0; i < h; ++i) {
-        float sig_accum_inner = 0;
-        float noise_accum_inner = 0;
+    if (mse_line) {
+        for (int i = 0; i < h; ++i)
+            mse_line(ref + i * ref_px_stride, dis + i * dis_px_stride,
+                     &sig_accum, &noise_accum, w);
+    } else {
+        int i, j;
+        float ref_val, dis_val;
 
-        for (j = 0; j < w; ++j) {
-            ref_val = ref[i * ref_px_stride + j];
-            dis_val = dis[i * dis_px_stride + j];
+        for (i = 0; i < h; ++i) {
+            float sig_accum_inner = 0;
+            float noise_accum_inner = 0;
 
-            sig_accum_inner   += ref_val * ref_val;
-            noise_accum_inner += (ref_val - dis_val) * (ref_val - dis_val);
+            for (j = 0; j < w; ++j) {
+                ref_val = ref[i * ref_px_stride + j];
+                dis_val = dis[i * dis_px_stride + j];
+
+                sig_accum_inner   += ref_val * ref_val;
+                noise_accum_inner += (ref_val - dis_val) * (ref_val - dis_val);
+            }
+
+            sig_accum   += sig_accum_inner;
+            noise_accum += noise_accum_inner;
         }
-
-        sig_accum   += sig_accum_inner;
-        noise_accum += noise_accum_inner;
     }
 
     if (sig)

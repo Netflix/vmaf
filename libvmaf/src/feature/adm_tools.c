@@ -24,9 +24,21 @@
 #include "config.h"
 #endif
 
+#include "cpu.h"
 #include "mem.h"
 #include "adm_options.h"
 #include "adm_tools.h"
+
+#if ARCH_X86
+#include "x86/float_adm_avx2.h"
+#if HAVE_AVX512
+#include "x86/float_adm_avx512.h"
+#endif
+#endif
+
+#if ARCH_AARCH64
+#include "arm64/float_adm_neon.h"
+#endif
 
 #ifndef M_PI
 #define M_PI 3.1415926535897932384626433832795028841971693993751
@@ -73,6 +85,31 @@ float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_fac
     int top    = h * border_factor - 0.5;
     int right  = w - left;
     int bottom = h - top;
+
+#if ARCH_X86
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        float (*sum_cube_fn)(const float *, int, int, int, int, int, int, int) = NULL;
+        if (flags & VMAF_X86_CPU_FLAG_AVX2)
+            sum_cube_fn = float_adm_sum_cube_avx2;
+#if HAVE_AVX512
+        if (flags & VMAF_X86_CPU_FLAG_AVX512)
+            sum_cube_fn = float_adm_sum_cube_avx512;
+#endif
+        if (sum_cube_fn) {
+            float accum = sum_cube_fn(x, w, h, stride, left, top, right, bottom);
+            return powf(accum, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+        }
+    }
+#elif ARCH_AARCH64
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        if (flags & VMAF_ARM_CPU_FLAG_NEON) {
+            float accum = float_adm_sum_cube_neon(x, w, h, stride, left, top, right, bottom);
+            return powf(accum, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+        }
+    }
+#endif
 
     int i, j;
 
@@ -276,6 +313,35 @@ void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const a
 	int i, j, theta, src_offset, dst_offset;
 	float dst_val;
 
+#if ARCH_X86
+	{
+		unsigned flags = vmaf_get_cpu_flags();
+		void (*csf_fn)(const float *, float *, float *, int, int, int, int, float, float) = NULL;
+		if (flags & VMAF_X86_CPU_FLAG_AVX2)
+			csf_fn = float_adm_csf_avx2;
+#if HAVE_AVX512
+		if (flags & VMAF_X86_CPU_FLAG_AVX512)
+			csf_fn = float_adm_csf_avx512;
+#endif
+		if (csf_fn) {
+			for (theta = 0; theta < 3; ++theta)
+				csf_fn(src_angles[theta], dst_angles[theta], flt_angles[theta],
+				       w, h, src_stride, dst_stride, rfactor[theta], FLOAT_ONE_BY_30);
+			return;
+		}
+	}
+#elif ARCH_AARCH64
+	{
+		unsigned flags = vmaf_get_cpu_flags();
+		if (flags & VMAF_ARM_CPU_FLAG_NEON) {
+			for (theta = 0; theta < 3; ++theta)
+				float_adm_csf_neon(src_angles[theta], dst_angles[theta], flt_angles[theta],
+				                   w, h, src_stride, dst_stride, rfactor[theta], FLOAT_ONE_BY_30);
+			return;
+		}
+	}
+#endif
+
 	for (theta = 0; theta < 3; ++theta) {
 		src_ptr = src_angles[theta];
 		dst_ptr = dst_angles[theta];
@@ -325,6 +391,43 @@ float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale,
 	int top = h * border_factor - 0.5;
 	int right = w - left;
 	int bottom = h - top;
+
+#if ARCH_X86
+	{
+		unsigned flags = vmaf_get_cpu_flags();
+		float (*csf_den_fn)(const float *, int, int, int, int, int, int, int, float) = NULL;
+		if (flags & VMAF_X86_CPU_FLAG_AVX2)
+			csf_den_fn = float_adm_csf_den_scale_avx2;
+#if HAVE_AVX512
+		if (flags & VMAF_X86_CPU_FLAG_AVX512)
+			csf_den_fn = float_adm_csf_den_scale_avx512;
+#endif
+		if (csf_den_fn) {
+			accum_h = csf_den_fn(src_h, w, h, src_stride, left, top, right, bottom, rfactor[0]);
+			accum_v = csf_den_fn(src_v, w, h, src_stride, left, top, right, bottom, rfactor[1]);
+			accum_d = csf_den_fn(src_d, w, h, src_stride, left, top, right, bottom, rfactor[2]);
+			float area_cbrt = powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+			den_scale_h = powf(accum_h, 1.0f / 3.0f) + area_cbrt;
+			den_scale_v = powf(accum_v, 1.0f / 3.0f) + area_cbrt;
+			den_scale_d = powf(accum_d, 1.0f / 3.0f) + area_cbrt;
+			return (den_scale_h + den_scale_v + den_scale_d);
+		}
+	}
+#elif ARCH_AARCH64
+	{
+		unsigned flags = vmaf_get_cpu_flags();
+		if (flags & VMAF_ARM_CPU_FLAG_NEON) {
+			accum_h = float_adm_csf_den_scale_neon(src_h, w, h, src_stride, left, top, right, bottom, rfactor[0]);
+			accum_v = float_adm_csf_den_scale_neon(src_v, w, h, src_stride, left, top, right, bottom, rfactor[1]);
+			accum_d = float_adm_csf_den_scale_neon(src_d, w, h, src_stride, left, top, right, bottom, rfactor[2]);
+			float area_cbrt = powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+			den_scale_h = powf(accum_h, 1.0f / 3.0f) + area_cbrt;
+			den_scale_v = powf(accum_v, 1.0f / 3.0f) + area_cbrt;
+			den_scale_d = powf(accum_d, 1.0f / 3.0f) + area_cbrt;
+			return (den_scale_h + den_scale_v + den_scale_d);
+		}
+	}
+#endif
 
 	int i, j;
 
@@ -852,6 +955,30 @@ void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h)
 
 void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride)
 {
+#if ARCH_X86
+	{
+		unsigned flags = vmaf_get_cpu_flags();
+#if HAVE_AVX512
+		if (flags & VMAF_X86_CPU_FLAG_AVX512) {
+			float_adm_dwt2_avx512(src, dst, ind_y, ind_x, w, h, src_stride, dst_stride);
+			return;
+		}
+#endif
+		if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+			float_adm_dwt2_avx2(src, dst, ind_y, ind_x, w, h, src_stride, dst_stride);
+			return;
+		}
+	}
+#elif ARCH_AARCH64
+	{
+		unsigned flags = vmaf_get_cpu_flags();
+		if (flags & VMAF_ARM_CPU_FLAG_NEON) {
+			float_adm_dwt2_neon(src, dst, ind_y, ind_x, w, h, src_stride, dst_stride);
+			return;
+		}
+	}
+#endif
+
 	const float *filter_lo = dwt2_db2_coeffs_lo_s;
 	const float *filter_hi = dwt2_db2_coeffs_hi_s;
 

@@ -17,14 +17,39 @@
  */
 
 #include <errno.h>
+#include <math.h>
 #include <string.h>
 
+#include "cpu.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
 
 #include "mem.h"
-#include "psnr.h"
 #include "picture_copy.h"
+
+#if ARCH_X86
+#include "x86/float_psnr_avx2.h"
+#if HAVE_AVX512
+#include "x86/float_psnr_avx512.h"
+#endif
+#endif
+
+#if ARCH_AARCH64
+#include "arm64/float_psnr_neon.h"
+#endif
+
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+static double float_psnr_noise_line_c(const float *ref, const float *dis, int w)
+{
+    double accum = 0;
+    for (int j = 0; j < w; j++) {
+        float diff = ref[j] - dis[j];
+        accum += (double)(diff * diff);
+    }
+    return accum;
+}
 
 typedef struct PsnrState {
     size_t float_stride;
@@ -32,6 +57,7 @@ typedef struct PsnrState {
     float *dist;
     double peak;
     double psnr_max;
+    double (*noise_line)(const float *, const float *, int);
 } PsnrState;
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
@@ -62,6 +88,26 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         goto fail;
     }
 
+    s->noise_line = float_psnr_noise_line_c;
+
+#if ARCH_X86
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        if (flags & VMAF_X86_CPU_FLAG_AVX2)
+            s->noise_line = float_psnr_noise_line_avx2;
+#if HAVE_AVX512
+        if (flags & VMAF_X86_CPU_FLAG_AVX512)
+            s->noise_line = float_psnr_noise_line_avx512;
+#endif
+    }
+#elif ARCH_AARCH64
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        if (flags & VMAF_ARM_CPU_FLAG_NEON)
+            s->noise_line = float_psnr_noise_line_neon;
+    }
+#endif
+
     return 0;
 
 free_ref:
@@ -84,12 +130,18 @@ static int extract(VmafFeatureExtractor *fex,
     picture_copy(s->ref, s->float_stride, ref_pic, 0, ref_pic->bpc);
     picture_copy(s->dist, s->float_stride, dist_pic, 0, dist_pic->bpc);
 
-    double score;
-    err = compute_psnr(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0],
-                       s->float_stride, s->float_stride, &score,
-                       s->peak, s->psnr_max);
+    int w = ref_pic->w[0];
+    int h = ref_pic->h[0];
+    int stride = s->float_stride / sizeof(float);
 
-    if (err) return err;
+    double noise_ = 0;
+    for (int i = 0; i < h; i++)
+        noise_ += s->noise_line(s->ref + i * stride, s->dist + i * stride, w);
+    noise_ /= (w * h);
+
+    double eps = 1e-10;
+    double score = MIN(10 * log10(s->peak * s->peak / MAX(noise_, eps)),
+                       s->psnr_max);
     err = vmaf_feature_collector_append(feature_collector, "float_psnr",
                                         score, index);
     if (err) return err;

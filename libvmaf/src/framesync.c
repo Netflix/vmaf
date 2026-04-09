@@ -78,8 +78,10 @@ int vmaf_framesync_acquire_new_buf(VmafFrameSyncContext *fs_ctx, void **data,
     for (unsigned i = 0; i < fs_ctx->buf_cnt; i++) {
         if (buf_que->buf_status == BUF_FREE) {
             buf_que->frame_data = *data = malloc(data_sz);
-            if (!buf_que->frame_data)
+            if (!buf_que->frame_data) {
+                pthread_mutex_unlock(&(fs_ctx->acquire_lock));
                 return -ENOMEM;
+            }
             buf_que->buf_status = BUF_ACQUIRED;
             buf_que->index = index;
             break;
@@ -99,8 +101,10 @@ int vmaf_framesync_acquire_new_buf(VmafFrameSyncContext *fs_ctx, void **data,
         fs_ctx->buf_cnt++;
 
         new_buf_node->frame_data = *data = malloc(data_sz);
-        if (!new_buf_node->frame_data)
+        if (!new_buf_node->frame_data) {
+            pthread_mutex_unlock(&(fs_ctx->acquire_lock));
             return -ENOMEM;
+        }
         new_buf_node->buf_status = BUF_ACQUIRED;
         new_buf_node->index = index;
     }
@@ -121,8 +125,10 @@ int vmaf_framesync_submit_filled_data(VmafFrameSyncContext *fs_ctx, void *data,
     for (unsigned i = 0; i < fs_ctx->buf_cnt; i++) {
         if ((buf_que->index == index) && (buf_que->buf_status == BUF_ACQUIRED)) {
             buf_que->buf_status = BUF_FILLED;
-            if (data != buf_que->frame_data)
+            if (data != buf_que->frame_data) {
+                pthread_mutex_unlock(&(fs_ctx->retrieve_lock));
                 return -1;
+            }
             break;
         }
 
@@ -176,8 +182,10 @@ int vmaf_framesync_release_buf(VmafFrameSyncContext *fs_ctx, void *data,
     // loop until a matching buffer is found
     for (unsigned i = 0; i < fs_ctx->buf_cnt; i++) {
         if ((buf_que->index == index) && (buf_que->buf_status == BUF_RETRIEVED)) {
-            if (data != buf_que->frame_data)
+            if (data != buf_que->frame_data) {
+                pthread_mutex_unlock(&(fs_ctx->acquire_lock));
                 return -1;
+            }
 
             free(buf_que->frame_data);
             buf_que->frame_data = NULL;

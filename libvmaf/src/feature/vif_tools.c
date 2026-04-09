@@ -271,10 +271,30 @@ float vif_sum_s(const float *x, int w, int h, int stride)
     return accum;
 }
 
+void vif_statistic_s_avx2(
+    const float *mu1, const float *mu2,
+    const float *xx_filt, const float *yy_filt, const float *xy_filt,
+    float *num, float *den,
+    int w, int h,
+    int mu1_stride, int mu2_stride,
+    int xx_filt_stride, int yy_filt_stride, int xy_filt_stride,
+    double vif_enhn_gain_limit);
+
 void vif_statistic_s(const float *mu1, const float *mu2, const float *xx_filt, const float *yy_filt, const float *xy_filt, float *num, float *den,
     int w, int h, int mu1_stride, int mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride,
     double vif_enhn_gain_limit)
 {
+#if ARCH_X86
+    const unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+        vif_statistic_s_avx2(mu1, mu2, xx_filt, yy_filt, xy_filt, num, den,
+                              w, h, mu1_stride, mu2_stride,
+                              xx_filt_stride, yy_filt_stride, xy_filt_stride,
+                              vif_enhn_gain_limit);
+        return;
+    }
+#endif
+
     static const float sigma_nsq = 2;
     static const float sigma_max_inv = 4.0 / (255.0*255.0);
 
