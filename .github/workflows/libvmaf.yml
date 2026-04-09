@@ -1,118 +1,287 @@
 name: libvmaf
 on:
   push:
+    branches: [sycl]
   pull_request:
+    branches: [sycl]
+  workflow_dispatch:
 
 env:
   DEBIAN_FRONTEND: noninteractive
 
 jobs:
+  # ===== Linux / macOS / ARM builds =====
   libvmaf-build:
     strategy:
       fail-fast: false
       matrix:
         include:
+          # --- CPU-only builds ---
           - os: ubuntu-latest
             CC: ccache gcc
             CXX: ccache g++
-          - os: ubuntu-latest
-            CC: ccache gcc-9
-            CXX: ccache g++-9
+            name: Ubuntu gcc
           - os: ubuntu-latest
             CC: ccache clang
             CXX: ccache clang++
+            name: Ubuntu clang
           - os: macos-latest
             CC: ccache clang
             CXX: ccache clang++
+            name: macOS clang
             experimental: true
           - os: ubuntu-24.04-arm
             CC: ccache clang
             CXX: ccache clang++
+            name: Ubuntu ARM clang
+
+          # --- Static library builds ---
+          - os: ubuntu-latest
+            CC: ccache gcc
+            CXX: ccache g++
+            meson_extra: --default-library static
+            name: Ubuntu gcc static
+          - os: ubuntu-latest
+            CC: ccache gcc
+            CXX: ccache g++
+            sycl: true
+            meson_extra: --default-library static -Denable_sycl=true
+            name: Ubuntu SYCL static
+          - os: ubuntu-latest
+            CC: ccache gcc
+            CXX: ccache g++
+            cuda: true
+            meson_extra: --default-library static -Denable_cuda=true -Denable_nvcc=true
+            name: Ubuntu CUDA static
+
+          # --- SYCL build (gcc host + icpx for SYCL sources) ---
+          - os: ubuntu-latest
+            CC: ccache gcc
+            CXX: ccache g++
+            sycl: true
+            meson_extra: -Denable_sycl=true
+            name: Ubuntu SYCL
+
+          # --- CUDA build (gcc + nvcc) ---
+          - os: ubuntu-latest
+            CC: ccache gcc
+            CXX: ccache g++
+            cuda: true
+            meson_extra: -Denable_cuda=true -Denable_nvcc=true
+            name: Ubuntu CUDA
+
+          # --- SYCL + CUDA combined ---
+          - os: ubuntu-latest
+            CC: ccache gcc
+            CXX: ccache g++
+            sycl: true
+            cuda: true
+            meson_extra: -Denable_sycl=true -Denable_cuda=true -Denable_nvcc=true
+            name: Ubuntu SYCL+CUDA
+
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
       CXX: ${{ matrix.CXX }}
     steps:
+      - uses: actions/checkout@v6
+
       - name: Setup python
         uses: actions/setup-python@v6
         with:
           python-version: 3.11
+
       - name: Install meson and ninja
         run: |
           python -m pip install --upgrade pip
           pip install meson
 
       - name: Install dependencies (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: startsWith(matrix.os, 'ubuntu') && !matrix.sycl && !matrix.cuda
         run: |
           sudo apt-get update
-          sudo -E apt-get -yq install ccache ninja-build libomp-dev
+          sudo -E apt-get -yq install ccache ninja-build nasm libomp-dev
           case "$CC" in
-          *gcc) sudo -E apt-get -yq install gcc g++ nasm ;;
-          *gcc-9)
-            sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
-            sudo -E apt-get -yq install gcc-9 g++-9 nasm
-            ;;
-          *clang) sudo -E apt-get -yq install clang nasm ;;
+          *gcc)   sudo -E apt-get -yq install gcc g++ ;;
+          *clang) sudo -E apt-get -yq install clang ;;
           esac
-          $CC --version
-          meson --version
-          ccache --version
 
       - name: Install dependencies (mac)
         if: matrix.os == 'macos-latest'
         run: |
           brew install -q ninja nasm ccache llvm
 
-          $CC --version
-          meson --version
-          ccache --version
+      # ---------- Intel oneAPI (SYCL) ----------
+      - name: Install Intel oneAPI
+        if: matrix.sycl
+        run: |
+          sudo apt-get update
+          sudo -E apt-get -yq install ccache ninja-build nasm gcc g++ gpg-agent
+          wget -qO- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+            | sudo gpg --dearmor -o /usr/share/keyrings/oneapi-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
+            | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt-get update
+          sudo -E apt-get -yq install intel-oneapi-compiler-dpcpp-cpp cmake
+          # Level Zero headers + loader library (build from source — not in Ubuntu 24.04 repos)
+          git clone --depth=1 https://github.com/oneapi-src/level-zero.git /tmp/level-zero
+          cmake -S /tmp/level-zero -B /tmp/level-zero/build -DCMAKE_INSTALL_PREFIX=/usr
+          cmake --build /tmp/level-zero/build -j$(nproc)
+          sudo cmake --install /tmp/level-zero/build
+          rm -rf /tmp/level-zero
+          echo "/opt/intel/oneapi/compiler/latest/bin" >> $GITHUB_PATH
+          echo "/opt/intel/oneapi/compiler/latest/lib" | sudo tee /etc/ld.so.conf.d/oneapi.conf
+          sudo ldconfig
 
-      - uses: actions/checkout@v6
-      - name: Run meson
+      # ---------- CUDA toolkit ----------
+      - name: Install CUDA toolkit
+        if: matrix.cuda
+        uses: Jimver/cuda-toolkit@v0.2.35
+        with:
+          cuda: '12.6.0'
+          method: network
+          sub-packages: '["nvcc", "cudart-dev"]'
+
+      - name: Install nv-codec-headers
+        if: matrix.cuda
         run: |
-          meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install -Denable_float=true
-      - name: Run ninja
+          git clone --depth=1 https://code.ffmpeg.org/FFmpeg/nv-codec-headers
+          cd nv-codec-headers && sudo make install && cd .. && rm -rf nv-codec-headers
+
+      - name: Install base deps for CUDA-only builds
+        if: matrix.cuda && !matrix.sycl
         run: |
-          sudo ninja -vC libvmaf/build install
+          sudo apt-get update
+          sudo -E apt-get -yq install ccache ninja-build nasm gcc g++
+
+      # ---------- Build ----------
+      - name: Configure libvmaf
+        run: |
+          meson setup libvmaf libvmaf/build --buildtype release \
+            --prefix $PWD/install \
+            -Denable_float=true \
+            ${{ matrix.meson_extra }}
+
+      - name: Build libvmaf
+        run: sudo ninja -vC libvmaf/build install
+
+      # Verify pkgconfig for static linking
+      - name: Verify static pkgconfig
+        if: contains(matrix.meson_extra, 'static')
+        run: |
+          export PKG_CONFIG_PATH=$PWD/install/lib/pkgconfig:$PWD/install/lib/x86_64-linux-gnu/pkgconfig
+          echo "=== libvmaf.pc ==="
+          cat $PWD/install/lib/pkgconfig/libvmaf.pc || cat $PWD/install/lib/x86_64-linux-gnu/pkgconfig/libvmaf.pc
+          echo ""
+          echo "=== pkg-config --static --libs libvmaf ==="
+          pkg-config --static --libs libvmaf
+          # Static libs must include -lpthread and -lm
+          pkg-config --static --libs libvmaf | grep -q '\-lpthread\|\-pthread'
+          pkg-config --static --libs libvmaf | grep -q '\-lm'
+
+      # CPU-only: full test suite + tox
       - name: Run tests
-        run: |
-          sudo ninja -vC libvmaf/build test
-      - name: Set up tox
+        if: "!matrix.sycl && !matrix.cuda"
+        run: sudo ninja -vC libvmaf/build test
+
+      - name: Run tox tests (ubuntu)
+        if: "startsWith(matrix.os, 'ubuntu') && !matrix.sycl && !matrix.cuda"
         run: |
           mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache
           pip install tox
-      - name: Run tox tests (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
           tox -c python
+
       - name: Run tox tests (mac)
         if: matrix.os == 'macos-latest'
         run: |
+          mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache
+          pip install tox
           PATH=$(brew --prefix)/opt/llvm/bin:$PATH \
           CC=$(brew --prefix)/opt/llvm/bin/clang \
           CXX=$(brew --prefix)/opt/llvm/bin/clang++ \
           tox -c python
 
-      - name: Get binary path & Current Release
-        id: get_info
+      # GPU builds: run tests that don't need hardware
+      - name: Run CPU-only tests (GPU build)
+        if: matrix.sycl || matrix.cuda
         run: |
-          ldd "./install/bin/vmaf" || true
-          echo "path=./install/bin/vmaf" >> $GITHUB_OUTPUT
-          echo "upload_url=$(curl -L https://api.github.com/repos/${{ github.repository }}/releases/tags/$(cut -d/ -f3 <<< ${{ github.ref }}) | jq -r ."upload_url")" >> $GITHUB_OUTPUT
+          cd libvmaf/build
+          for t in test_dict test_ref test_log test_thread_pool test_cpu \
+                   test_feature test_cli_parse test_model test_predict \
+                   test_ciede test_cambi test_psnr test_luminance_tools \
+                   test_feature_collector test_framesync; do
+            echo "=== $t ==="
+            ./test/$t
+          done
 
-      - name: Upload vmaf
-        uses: actions/upload-artifact@v5
+      # ---------- Artifacts ----------
+      - name: Upload vmaf binary
+        if: "!contains(matrix.meson_extra, 'static')"
+        uses: actions/upload-artifact@v6
         with:
-          name: ${{ matrix.os }}-${{ matrix.CC }}-vmaf
-          path: ${{ steps.get_info.outputs.path }}
-      - name: Upload vmaf
-        if: steps.get_info.outputs.upload_url != 'null'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: ${{ matrix.name }}-vmaf
+          path: ./install/bin/vmaf
+
+  # ===== Windows (MSYS2 / MinGW-w64) =====
+  windows:
+    name: Windows MinGW64
+    runs-on: windows-latest
+    env:
+      CC: ccache gcc
+      CXX: ccache g++
+      CFLAGS: -pipe -O3 -mtune=generic -D_FILE_OFFSET_BITS=64 -D_USE_MATH_DEFINES
+      CXXFLAGS: -pipe -O3 -mtune=generic -D_FILE_OFFSET_BITS=64 -D_USE_MATH_DEFINES
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v6
         with:
-          upload_url: ${{ steps.get_info.outputs.upload_url }}
-          asset_path: ${{ steps.get_info.outputs.path }}
-          asset_name: vmaf
-          asset_content_type: application/octet-stream
+          fetch-depth: 0
+
+      - name: Cache ccache files
+        uses: actions/cache@v5
+        with:
+          path: .ccache
+          key: ${{ runner.os }}-mingw64-${{ hashFiles('**/*.c') }}
+          restore-keys: |
+            ${{ runner.os }}-mingw64-
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >-
+            mingw-w64-x86_64-ccache
+            mingw-w64-x86_64-nasm
+            mingw-w64-x86_64-pkg-config
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-meson
+            mingw-w64-x86_64-ninja
+            vim make diffutils
+          update: true
+          path-type: inherit
+
+      - name: Set ccache dir
+        run: echo "CCACHE_DIR=$PWD/.ccache" >> $GITHUB_ENV
+
+      - name: Configure vmaf
+        run: |
+          meson setup libvmaf libvmaf/build --buildtype release \
+            --default-library static --prefix "$MINGW_PREFIX" \
+            -Denable_float=true
+
+      - name: Build vmaf
+        run: meson install -C libvmaf/build
+
+      - name: Test vmaf
+        run: meson test -C libvmaf/build --num-processes $(nproc)
+
+      - name: Find vmaf binary
+        run: echo "VMAF_BIN=$(cygpath -w $MINGW_PREFIX/bin/vmaf.exe)" >> $GITHUB_ENV
+
+      - name: Upload vmaf binary
+        uses: actions/upload-artifact@v6
+        with:
+          name: Windows-MinGW64-vmaf
+          path: ${{ env.VMAF_BIN }}
