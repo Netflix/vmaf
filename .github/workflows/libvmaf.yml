@@ -6,6 +6,9 @@ on:
     branches: [sycl]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   DEBIAN_FRONTEND: noninteractive
 

@@ -6,6 +6,9 @@ on:
     branches: [sycl]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   DEBIAN_FRONTEND: noninteractive
   LD_LIBRARY_PATH: /usr/local/lib/x86_64-linux-gnu
