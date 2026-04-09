@@ -3,11 +3,16 @@ FROM vmaf
 RUN apt-get update && \
     apt-get install -y pkg-config
 
-ARG FFMPEG_TAG=master
+ARG FFMPEG_TAG=n8.1
 ARG NVCC_FLAGS="-gencode arch=compute_75,code=sm_75 -gencode arch=compute_75,code=compute_75 -O2"
 
 # get ffmpeg
 RUN wget https://github.com/FFmpeg/FFmpeg/archive/${FFMPEG_TAG}.zip && unzip ${FFMPEG_TAG}.zip
+
+# apply libvmaf GPU filter patch (SYCL)
+COPY patches/ffmpeg-libvmaf-gpu.patch /tmp/
+RUN cd FFmpeg-${FFMPEG_TAG} && git apply /tmp/ffmpeg-libvmaf-gpu.patch || \
+    patch -p1 < /tmp/ffmpeg-libvmaf-gpu.patch
 
 RUN cd FFmpeg-${FFMPEG_TAG} && ./configure \
     --enable-libnpp \

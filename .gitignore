@@ -14,3 +14,19 @@ build/
 dist/
 vmaf_output.xml
 compile_commands.json
+
+# Large test data (generated via testdata/generate.sh)
+testdata/*_1280x720_*.yuv
+testdata/*_1920x1080_*.yuv
+testdata/*_3840x2160_*.yuv
+testdata/bbb/*.yuv
+
+# Large binary files
+*.mp4
+*.mkv
+
+# Working/scratch directories
+.workingdir/
+
+# Generated benchmark results
+testdata/bbb/results/
