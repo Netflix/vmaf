@@ -12,6 +12,9 @@
 #ifdef HAVE_CUDA
 #include "libvmaf/libvmaf_cuda.h"
 #endif
+#ifdef HAVE_SYCL
+#include "libvmaf/libvmaf_sycl.h"
+#endif
 
 static enum VmafPixelFormat pix_fmt_map(int pf)
 {
@@ -257,10 +260,39 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    // GPU backend initialization: each backend activates only when its
+    // specific flag is passed.  --gpumask enables the preferred backend
+    // (SYCL > CUDA).  --sycl_device selects
+    // that specific backend.  No flag = CPU only.
+#ifdef HAVE_SYCL
+    bool sycl_active = false;
+    VmafSyclState *sycl_state;
+    VmafSyclConfiguration sycl_cfg = {
+        .device_index = c.sycl_device >= 0 ? c.sycl_device : 0,
+    };
+    if ((c.sycl_device >= 0 || c.use_gpumask) && !c.no_sycl) {
+        err = vmaf_sycl_state_init(&sycl_state, sycl_cfg);
+        if (err) {
+            fprintf(stderr, "problem during vmaf_sycl_state_init, using CPU\n");
+        } else {
+            err = vmaf_sycl_import_state(vmaf, sycl_state);
+            if (err) {
+                fprintf(stderr, "problem during vmaf_sycl_import_state\n");
+                return -1;
+            }
+            sycl_active = true;
+        }
+    }
+#endif
 #ifdef HAVE_CUDA
+    bool cuda_active = false;
     VmafCudaState *cu_state;
     VmafCudaConfiguration cuda_cfg = { 0 };
-    if (c.gpumask != ((unsigned)~0)) {
+    if (c.use_gpumask && !c.no_cuda
+#ifdef HAVE_SYCL
+        && !sycl_active
+#endif
+    ) {
         err = vmaf_cuda_state_init(&cu_state, cuda_cfg);
         if (err) {
             fprintf(stderr, "problem during vmaf_cuda_state_init, using CPU\n");
@@ -270,6 +302,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "problem during vmaf_cuda_import_state\n");
                 return -1;
             }
+            cuda_active = true;
         }
     }
 #endif
@@ -543,6 +576,10 @@ int main(int argc, char *argv[])
     video_input_close(&vid_ref);
     video_input_close(&vid_dist);
     vmaf_close(vmaf);
+#ifdef HAVE_SYCL
+    if (sycl_active)
+        vmaf_sycl_state_free(&sycl_state);
+#endif
     cli_free(&c);
     return err;
 }
