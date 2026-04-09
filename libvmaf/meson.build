@@ -5,6 +5,7 @@ project('libvmaf', ['c', 'cpp'],
                        'warning_level=2',
                        'buildtype=release',
                        'default_library=both',
+                       'b_lto=true',
                       ],
     meson_version: '>= 0.56.1')
 
@@ -20,7 +21,7 @@ libvmaf_inc = include_directories(['include'])
 
 # Arguments in test_args will be used even on feature tests
 test_args = []
-if host_machine.system() == 'linux' or host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
+if host_machine.system() == 'linux'
     test_args += '-D_GNU_SOURCE'
     add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
 elif host_machine.system() == 'darwin'
@@ -31,12 +32,7 @@ endif
 # Header checks
 stdatomic_dependency = []
 if not cc.check_header('stdatomic.h')
-    if cc.get_id() == 'msvc'
-        # we have a custom replacement for MSVC
-        stdatomic_dependency = declare_dependency(
-            include_directories : include_directories('src/compat/msvc'),
-        )
-    elif cc.compiles('''int main() { int v = 0; return __atomic_fetch_add(&v, 1, __ATOMIC_SEQ_CST); }''',
+    if cc.compiles('''int main() { int v = 0; return __atomic_fetch_add(&v, 1, __ATOMIC_SEQ_CST); }''',
                      name : 'GCC-style atomics', args : test_args)
         stdatomic_dependency = declare_dependency(
             include_directories : include_directories('src/compat/gcc'),

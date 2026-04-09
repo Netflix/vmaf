@@ -47,3 +47,13 @@ option('enable_nvcc',
     type: 'boolean',
     value: true,
     description: 'Use clang to compile CUDA code.')
+
+option('enable_sycl',
+    type: 'boolean',
+    value: false,
+    description: 'Enable Intel oneAPI SYCL/DPC++ support for GPU-accelerated feature extraction')
+
+option('sycl_compiler',
+    type: 'string',
+    value: 'icpx',
+    description: 'Path or name of the SYCL compiler (Intel icpx from oneAPI)')

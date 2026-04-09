@@ -5,21 +5,14 @@ feature_src_dir = './feature/'
 src_dir = './'
 model_dir = '../../model/'
 cuda_dir = './cuda/'
+sycl_dir = './sycl/'
 
 vmaf_base_include = include_directories('./', './feature/common', '../include')
 
-if cc.get_id() != 'msvc'
-    vmaf_cflags_common = [
-        '-pedantic',
-        '-DOC_NEW_STYLE_INCLUDES',
-    ]
-else
-    vmaf_cflags_common = [
-      '-wd4028', # parameter different from declaration
-      '-wd4996', # use of POSIX functions
-      '-DOC_NEW_STYLE_INCLUDES',
-    ]
-endif
+vmaf_cflags_common = [
+    '-pedantic',
+    '-DOC_NEW_STYLE_INCLUDES',
+]
 
 
 cdata = configuration_data()
@@ -32,14 +25,18 @@ endif
 
 is_asm_enabled = get_option('enable_asm') == true
 is_cuda_enabled = get_option('enable_cuda') == true
+is_sycl_enabled = get_option('enable_sycl') == true
 is_avx512_enabled = get_option('enable_avx512') == true
 is_nvtx_enabled = get_option('enable_nvtx') == true
 
-if is_nvtx_enabled    
+if is_nvtx_enabled
     cdata.set10('HAVE_NVTX', is_nvtx_enabled)
 endif
 if is_cuda_enabled
     cdata.set10('HAVE_CUDA', is_cuda_enabled)
+endif
+if is_sycl_enabled
+    cdata.set10('HAVE_SYCL', is_sycl_enabled)
 endif
 
 if is_asm_enabled
@@ -93,10 +90,10 @@ if is_asm_enabled
         cdata_asm.set10('PIC', true)
         config_asm_target = configure_file(output: 'config.asm', output_format: 'nasm', configuration: cdata_asm)
 
-        if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
-            nasm_format = 'win'
-        elif host_machine.system() == 'darwin'
+        if host_machine.system() == 'darwin'
             nasm_format = 'macho'
+        elif host_machine.system() == 'windows'
+            nasm_format = 'win'
         else
             nasm_format = 'elf'
         endif
@@ -223,6 +220,15 @@ if is_asm_enabled
         arm64_sources = [
           feature_src_dir + 'arm64/vif_neon.c',
           feature_src_dir + 'arm64/adm_neon.c',
+          feature_src_dir + 'arm64/psnr_neon.c',
+          feature_src_dir + 'arm64/ssim_neon.c',
+          feature_src_dir + 'arm64/motion_neon.c',
+          feature_src_dir + 'arm64/cambi_neon.c',
+          feature_src_dir + 'arm64/float_psnr_neon.c',
+          feature_src_dir + 'arm64/float_motion_neon.c',
+          feature_src_dir + 'arm64/ansnr_neon.c',
+          feature_src_dir + 'arm64/float_adm_neon.c',
+          feature_src_dir + 'arm64/ciede_neon.c',
         ]
 
           arm64_static_lib = static_library(
@@ -241,15 +247,23 @@ if is_asm_enabled
           feature_src_dir + 'x86/motion_avx2.c',
           feature_src_dir + 'x86/motion_v2_avx2.c',
           feature_src_dir + 'x86/vif_avx2.c',
+          feature_src_dir + 'x86/vif_statistic_avx2.c',
           feature_src_dir + 'x86/adm_avx2.c',
           feature_src_dir + 'x86/cambi_avx2.c',
+          feature_src_dir + 'x86/psnr_avx2.c',
+          feature_src_dir + 'x86/ssim_avx2.c',
+          feature_src_dir + 'x86/float_psnr_avx2.c',
+          feature_src_dir + 'x86/float_motion_avx2.c',
+          feature_src_dir + 'x86/ansnr_avx2.c',
+          feature_src_dir + 'x86/float_adm_avx2.c',
+          feature_src_dir + 'x86/ciede_avx2.c',
       ]
 
       x86_avx2_static_lib = static_library(
           'x86_avx2',
           x86_avx2_sources,
           include_directories : vmaf_base_include,
-          c_args : ['-mavx', '-mavx2'] + vmaf_cflags_common,
+          c_args : ['-mavx', '-mavx2', '-mfma'] + vmaf_cflags_common,
       )
 
       platform_specific_cpu_objects += x86_avx2_static_lib.extract_all_objects(recursive: true)
@@ -259,14 +273,22 @@ if is_asm_enabled
             feature_src_dir + 'x86/motion_avx512.c',
             feature_src_dir + 'x86/motion_v2_avx512.c',
             feature_src_dir + 'x86/vif_avx512.c',
+            feature_src_dir + 'x86/psnr_avx512.c',
+            feature_src_dir + 'x86/ssim_avx512.c',
             feature_src_dir + 'x86/adm_avx512.c',
+            feature_src_dir + 'x86/cambi_avx512.c',
+            feature_src_dir + 'x86/float_psnr_avx512.c',
+            feature_src_dir + 'x86/float_motion_avx512.c',
+            feature_src_dir + 'x86/ansnr_avx512.c',
+            feature_src_dir + 'x86/float_adm_avx512.c',
+            feature_src_dir + 'x86/ciede_avx512.c',
         ]
 
         x86_avx512_static_lib = static_library(
             'x86_avx512',
             x86_avx512_sources,
             include_directories : vmaf_base_include,
-            c_args : ['-mavx512f', '-mavx512dq', '-mavx512bw', '-mavx512cd', '-mavx512dq',
+            c_args : ['-mavx512f', '-mavx512dq', '-mavx512bw', '-mavx512cd',
                       '-mavx512vbmi', '-mavx512vl'] +
                      vmaf_cflags_common,
         )
@@ -423,6 +445,82 @@ if is_cuda_enabled
     common_cuda_objects += cuda_static_lib.extract_all_objects()
 endif
 
+sycl_dependency = []
+common_sycl_objects = []
+
+if is_sycl_enabled
+    # Find SYCL compiler — defaults to 'icpx' from Intel oneAPI.
+    # Override with -Dsycl_compiler=/path/to/icpx if not in PATH.
+    # This lets the project C/C++ compiler be gcc/clang while SYCL
+    # feature extractors are compiled with icpx -fsycl.
+    icpx = find_program(get_option('sycl_compiler'), required : true)
+    fs = import('fs')
+
+    # Include paths as explicit -I flags (custom_target cannot use
+    # include_directories objects)
+    sycl_inc_flags = [
+        '-I' + meson.current_build_dir(),
+        '-I' + meson.current_source_dir(),
+        '-I' + meson.current_source_dir() / '..' / 'include',
+        '-I' + meson.current_source_dir() / 'feature',
+        '-I' + meson.current_source_dir() / 'feature' / 'common',
+        '-I' + meson.current_source_dir() / 'sycl',
+    ]
+
+    sycl_common_args = vmaf_cflags_common + ['-c', '-fsycl', '-std=c++20', '-fPIC']
+
+    sycl_sources = [
+        sycl_dir + 'common.cpp',
+        sycl_dir + 'picture_sycl.cpp',
+        sycl_dir + 'dmabuf_import.cpp',
+    ]
+
+    sycl_surface_args = []
+    sycl_surface_deps = []
+
+    # Level Zero loader — always required when SYCL is enabled because
+    # common.cpp uses zeMemFree / get_native<ext_oneapi_level_zero>.
+    libze_dep = cc.find_library('ze_loader', required : true)
+
+    # Linux: DMA-BUF + VA-API zero-copy path
+    libva_dep = dependency('libva', required : false)
+    libva_drm_dep = dependency('libva-drm', required : false)
+    have_sycl_dmabuf = libva_dep.found() and libva_drm_dep.found()
+
+    if have_sycl_dmabuf
+        sycl_surface_args += '-DHAVE_SYCL_DMABUF=1'
+        sycl_surface_deps += [libva_dep, libva_drm_dep]
+        message('SYCL DMA-BUF import: enabled (VA-API found)')
+    else
+        message('SYCL DMA-BUF import: disabled (missing VA-API)')
+    endif
+
+    # Compile each SYCL common source with icpx
+    foreach src : sycl_sources
+        name = fs.stem(src)
+        common_sycl_objects += custom_target('sycl_common_' + name,
+            output : name + '.o',
+            input : src,
+            command : [icpx] + sycl_common_args + sycl_inc_flags
+                      + sycl_surface_args + ['@INPUT@', '-o', '@OUTPUT@'],
+        )
+    endforeach
+
+    # Derive the SYCL runtime library directory from the icpx location
+    # so that gcc/g++ can link against libsycl without needing -fsycl.
+    icpx_bindir = fs.parent(icpx.full_path())
+    sycl_lib_dir = fs.parent(icpx_bindir) / 'lib'
+    sycl_lib = cc.find_library('sycl', dirs : [sycl_lib_dir], required : true)
+    # icpx-compiled objects reference Intel runtime symbols (_intel_fast_memcpy,
+    # __svml_*) that gcc/g++ won't find.  Link the Intel runtime libraries
+    # explicitly so a non-Intel host linker can resolve them.
+    svml_lib = cc.find_library('svml', dirs : [sycl_lib_dir], required : true)
+    irc_lib = cc.find_library('irc', dirs : [sycl_lib_dir], required : true)
+    sycl_dependency += declare_dependency(
+        dependencies : [sycl_lib, svml_lib, irc_lib, libze_dep] + sycl_surface_deps,
+    )
+endif
+
 thread_lib = dependency('threads')
 math_lib = cc.find_library('m', required : false)
 
@@ -495,12 +593,38 @@ if is_cuda_enabled
     ]
 endif
 
+# SYCL feature extractors are compiled with icpx -fsycl.
+# They are built separately via custom_target and linked via objects.
+sycl_feature_objects = []
+if is_sycl_enabled
+    sycl_feature_sources = [
+        feature_src_dir + 'sycl/integer_vif_sycl.cpp',
+        feature_src_dir + 'sycl/integer_adm_sycl.cpp',
+        feature_src_dir + 'sycl/integer_motion_sycl.cpp',
+    ]
+
+    sycl_feature_args = vmaf_cflags_common + ['-c', '-fsycl', '-std=c++20', '-fPIC', '-fpermissive']
+    sycl_feature_inc = sycl_inc_flags + [
+        '-I' + meson.current_source_dir() / 'cuda',
+    ]
+
+    foreach src : sycl_feature_sources
+        name = fs.stem(src)
+        sycl_feature_objects += custom_target('sycl_feature_' + name,
+            output : name + '.o',
+            input : src,
+            command : [icpx] + sycl_feature_args + sycl_feature_inc
+                      + ['@INPUT@', '-o', '@OUTPUT@'],
+        )
+    endforeach
+endif
+
 libvmaf_feature_static_lib = static_library(
     'libvmaf_feature',
     libvmaf_feature_sources,
     include_directories : [libvmaf_include, vmaf_include, cuda_dir],
-    dependencies: [stdatomic_dependency, cuda_dependency],
-    objects: common_cuda_objects
+    dependencies: [stdatomic_dependency, cuda_dependency, sycl_dependency],
+    objects: [common_cuda_objects, common_sycl_objects, sycl_feature_objects]
 )
 
 libsvm_cpp_args = vmaf_cflags_common
@@ -546,11 +670,8 @@ endif
 if is_nvtx_enabled
     vmaf_cflags_common += '-DHAVE_NVTX'
 endif
-
-if host_machine.system() == 'windows'
-    vmaf_soversion = ''
-else
-    vmaf_soversion = vmaf_api_version_major
+if is_sycl_enabled
+    vmaf_cflags_common += '-DHAVE_SYCL'
 endif
 
 libvmaf = library(
@@ -563,6 +684,7 @@ libvmaf = library(
       math_lib,
       stdatomic_dependency,
       cuda_dependency,
+      sycl_dependency,
     ],
     objects : [
         platform_specific_cpu_objects,
@@ -576,10 +698,31 @@ libvmaf = library(
 )
 
 pkg_mod = import('pkgconfig')
+
+# Collect private dependencies so that static linking (pkg-config --static)
+# pulls in all transitive libraries the consumer needs.
+# Use requires_private for deps that have .pc files so pkg-config resolves
+# their own transitive deps (e.g. ze_loader -> spdlog -> fmt, etc.).
+# Use libraries_private for deps found via cc.find_library() that lack .pc files.
+libvmaf_private_libs = [thread_lib, math_lib]
+libvmaf_private_reqs = []
+
+if is_sycl_enabled
+    # sycl, svml, irc are Intel compiler runtime libs without .pc files
+    libvmaf_private_libs += [sycl_lib, svml_lib, irc_lib]
+    # ze_loader has a .pc file — use requires_private for transitive resolution
+    libvmaf_private_reqs += 'libze_loader'
+    if have_sycl_dmabuf
+        libvmaf_private_reqs += ['libva', 'libva-drm']
+    endif
+endif
+
 pkg_mod.generate(libraries: libvmaf,
     version: meson.project_version(),
     name: 'libvmaf',
     filebase: 'libvmaf',
     description: 'VMAF, Video Multimethod Assessment Fusion',
-    subdirs: [ '.', 'libvmaf']
+    subdirs: [ '.', 'libvmaf'],
+    requires_private: libvmaf_private_reqs,
+    libraries_private: libvmaf_private_libs,
 )
