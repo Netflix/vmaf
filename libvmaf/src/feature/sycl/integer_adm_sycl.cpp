@@ -116,12 +116,8 @@ struct AdmStateSycl {
     int32_t *d_ref_band[4];   // [0]=a(LL), [1]=h(HL), [2]=v(LH), [3]=d(HH)
     int32_t *d_dis_band[4];
 
-    // Decouple outputs
-    int32_t *d_decouple_r[3]; // h, v, d bands
-
-    // CSF outputs
-    int32_t *d_csf_a[3];     // CSF-scaled 'a' component
-    int32_t *d_csf_f[3];     // |csf_a| / 30
+    // CSF outputs (d_decouple_r and d_csf_a eliminated — recomputed inline in CM kernel)
+    int32_t *d_csf_f[3];     // |csf_a| / 30 — kept for 3×3 neighborhood access
 
     // Integer division LUT
     int32_t *d_div_lookup;    // 65537 entries
@@ -532,10 +528,6 @@ static sycl::event launch_decouple_csf(sycl::queue &q,
                                   const int32_t *ref_d,
                                   const int32_t *dis_h, const int32_t *dis_v,
                                   const int32_t *dis_d,
-                                  int32_t *out_r_h, int32_t *out_r_v,
-                                  int32_t *out_r_d,
-                                  int32_t *csf_a_h, int32_t *csf_a_v,
-                                  int32_t *csf_a_d,
                                   int32_t *csf_f_h, int32_t *csf_f_v,
                                   int32_t *csf_f_d,
                                   const int32_t *div_lookup)
@@ -576,8 +568,6 @@ static sycl::event launch_decouple_csf(sycl::queue &q,
                 // Load all 3 bands for ref and dis
                 int32_t o[3] = { ref_h[idx], ref_v[idx], ref_d[idx] };
                 int32_t t[3] = { dis_h[idx], dis_v[idx], dis_d[idx] };
-                int32_t *r_ptr[3]   = { out_r_h, out_r_v, out_r_d };
-                int32_t *ca_ptr[3]  = { csf_a_h, csf_a_v, csf_a_d };
                 int32_t *cf_ptr[3]  = { csf_f_h, csf_f_v, csf_f_d };
                 uint32_t irf[3] = { i_rfactor_h, i_rfactor_v, i_rfactor_d };
 
@@ -703,18 +693,19 @@ static sycl::event launch_decouple_csf(sycl::queue &q,
                         }
                     }
 
-                    r_ptr[band][idx] = r_val;
+                    // r_val and csf_a_val are recomputed inline in the CM kernel
+                    // — only csf_f needs to be stored (3×3 neighborhood access)
 
                     // a = dis - r (residual)
                     int32_t a_val = th - r_val;
 
                     // --- Fused CSF ---
-                    int32_t csf_a_val, csf_f_val;
+                    int32_t csf_f_val;
                     if (e_scale == 0) {
                         // Scale 0: rfactor * 2^21 (h,v) or 2^23 (d)
                         int shift = (band < 2) ? 15 : 17;
                         int64_t rnd_csf = ((int64_t)1 << (shift - 1));
-                        csf_a_val = (int32_t)(
+                        int32_t csf_a_val = (int32_t)(
                             ((int64_t)irf[band] * a_val + rnd_csf) >> shift);
                         // csf_f = (4369 * |csf_a| + 2048) >> 12
                         int32_t abs_csf = csf_a_val < 0 ?
@@ -723,7 +714,7 @@ static sycl::event launch_decouple_csf(sycl::queue &q,
                             ((int64_t)4369 * abs_csf + 2048) >> 12);
                     } else {
                         // Scales 1-3: rfactor * 2^32
-                        csf_a_val = (int32_t)(
+                        int32_t csf_a_val = (int32_t)(
                             ((int64_t)irf[band] * a_val +
                              (1LL << 27)) >> 28);
                         int32_t abs_csf = csf_a_val < 0 ?
@@ -733,7 +724,6 @@ static sycl::event launch_decouple_csf(sycl::queue &q,
                              (1LL << 31)) >> 32);
                     }
 
-                    ca_ptr[band][idx] = csf_a_val;
                     cf_ptr[band][idx] = csf_f_val;
                 }
             });
@@ -747,10 +737,11 @@ static sycl::event launch_decouple_csf(sycl::queue &q,
 /* ------------------------------------------------------------------ */
 /* SYCL Kernel: CSF Denominator + Contrast Measure — 3 bands fused    */
 /*                                                                     */
-/* Combines csf_den_3band and cm_3band into a single dispatch to save */
-/* kernel launch overhead and improve data locality.  Each work-group  */
-/* processes one row of one band, computing both csf_den (|ref|³) and  */
-/* cm (contrast masking) values, then does two independent reductions. */
+/* Combines csf_den_3band, cm_3band, AND decouple+CSF into a single   */
+/* dispatch.  Decouple+CSF values (r_val, csf_a_val) are recomputed   */
+/* per pixel instead of read from global memory, eliminating           */
+/* d_decouple_r[3] and d_csf_a[3] buffers (~47 MB at 4K).             */
+/* d_csf_f[3] is still read from global memory (3×3 neighborhood).    */
 /* ------------------------------------------------------------------ */
 
 static sycl::event launch_csf_den_cm_3band(sycl::queue &q,
@@ -763,16 +754,16 @@ static sycl::event launch_csf_den_cm_3band(sycl::queue &q,
                         const int32_t *ref_band_d,
                         int64_t *csf_accum_h, int64_t *csf_accum_v,
                         int64_t *csf_accum_d,
-                        // cm inputs
+                        // cm inputs (decouple inlined)
                         uint32_t i_rfactor_h, uint32_t i_rfactor_v,
                         uint32_t i_rfactor_d,
-                        const int32_t *decouple_r_h,
-                        const int32_t *decouple_r_v,
-                        const int32_t *decouple_r_d,
+                        const int32_t *dis_band_h,
+                        const int32_t *dis_band_v,
+                        const int32_t *dis_band_d,
                         const int32_t *csf_f_h, const int32_t *csf_f_v,
                         const int32_t *csf_f_d,
-                        const int32_t *csf_a_h, const int32_t *csf_a_v,
-                        const int32_t *csf_a_d,
+                        const int32_t *div_lookup,
+                        double adm_enhn_gain_limit,
                         int64_t *cm_accum_h, int64_t *cm_accum_v,
                         int64_t *cm_accum_d)
 {
@@ -833,6 +824,9 @@ static sycl::event launch_csf_den_cm_3band(sycl::queue &q,
     auto e_cm_shift_sub0 = cm_shift_sub[0], e_cm_shift_sub2 = cm_shift_sub[2];
     auto e_cm_shift_xsq0 = cm_shift_xsq[0], e_cm_shift_xsq2 = cm_shift_xsq[2];
     auto e_cm_shift_xcub0 = cm_shift_xcub[0], e_cm_shift_xcub2 = cm_shift_xcub[2];
+    // decouple gain limit (Q31 fixed-point, same as in launch_decouple_csf)
+    GainLimitQ31 e_gain_q31 = gain_limit_to_q31(adm_enhn_gain_limit);
+    constexpr float cos_1deg_sq = 0.99969541789740297f;
 
     constexpr int WG_SIZE = 256;
     constexpr int MAX_SUBGROUPS = 32;
@@ -862,9 +856,6 @@ static sycl::event launch_csf_den_cm_3band(sycl::queue &q,
                 int64_t *csf_accum_ptr = (band_idx == 0) ? csf_accum_h :
                                          (band_idx == 1) ? csf_accum_v :
                                                            csf_accum_d;
-                const int32_t *decouple_r = (band_idx == 0) ? decouple_r_h :
-                                            (band_idx == 1) ? decouple_r_v :
-                                                              decouple_r_d;
                 int64_t *cm_accum_ptr = (band_idx == 0) ? cm_accum_h :
                                         (band_idx == 1) ? cm_accum_v :
                                                           cm_accum_d;
@@ -876,7 +867,10 @@ static sycl::event launch_csf_den_cm_3band(sycl::queue &q,
                 auto e_cm_shift_xcub = (band_idx < 2) ? e_cm_shift_xcub0 : e_cm_shift_xcub2;
 
                 const int32_t *cf_ptrs[3] = { csf_f_h, csf_f_v, csf_f_d };
-                const int32_t *ca_ptrs[3] = { csf_a_h, csf_a_v, csf_a_d };
+                // All 3 ref/dis band pointers for inline decouple
+                const int32_t *ref_ptrs[3] = { ref_band_h, ref_band_v, ref_band_d };
+                const int32_t *dis_ptrs[3] = { dis_band_h, dis_band_v, dis_band_d };
+                uint32_t irf_all[3] = { i_rfactor_h, i_rfactor_v, i_rfactor_d };
 
                 // Per-thread accumulators for both reductions
                 int64_t local_csf_sum = 0;
@@ -893,7 +887,6 @@ static sycl::event launch_csf_den_cm_3band(sycl::queue &q,
                     if (e_scale == 0) {
                         t_cub = (int64_t)abs_t * abs_t * abs_t;
                     } else {
-                        // CPU uses 1<<N (biased rounding), not 1<<(N-1)
                         int64_t rnd_sq = ((int64_t)1 << e_csf_shift_sq);
                         int64_t t_sq = ((int64_t)abs_t * abs_t + rnd_sq) >>
                                        e_csf_shift_sq;
@@ -903,7 +896,110 @@ static sycl::event launch_csf_den_cm_3band(sycl::queue &q,
                     }
                     local_csf_sum += t_cub;
 
-                    // ── Contrast measure ──
+                    // ── Inline decouple + CSF for all 3 bands ──
+                    // Load ref/dis for H,V,D bands
+                    int32_t o[3] = { ref_ptrs[0][idx], ref_ptrs[1][idx], ref_ptrs[2][idx] };
+                    int32_t th_all[3] = { dis_ptrs[0][idx], dis_ptrs[1][idx], dis_ptrs[2][idx] };
+
+                    // 2D angle test (uses H,V bands only)
+                    int64_t ot_dp = (int64_t)o[0] * th_all[0] +
+                                    (int64_t)o[1] * th_all[1];
+                    int64_t o_mag_sq = (int64_t)o[0] * o[0] +
+                                       (int64_t)o[1] * o[1];
+                    int64_t t_mag_sq = (int64_t)th_all[0] * th_all[0] +
+                                       (int64_t)th_all[1] * th_all[1];
+                    float ot_f  = (float)ot_dp  / 4096.0f;
+                    float om_f  = (float)o_mag_sq / 4096.0f;
+                    float tm_f  = (float)t_mag_sq / 4096.0f;
+                    bool angle_flag = (ot_f >= 0.0f) &&
+                        (ot_f * ot_f >= cos_1deg_sq * om_f * tm_f);
+
+                    // Decouple + CSF for each band → r_val[band], csf_a_val[band]
+                    int32_t r_vals[3];
+                    int32_t csf_a_vals[3];
+                    for (int b = 0; b < 3; b++) {
+                        int32_t oh = o[b];
+                        int32_t bth = th_all[b];
+                        int32_t r_val = 0;
+                        int32_t k = 0;
+
+                        if (oh == 0) {
+                            k = 32768;
+                            r_val = 0;
+                        } else {
+                            int32_t abs_oh = oh < 0 ? -oh : oh;
+                            int32_t sign_oh = oh < 0 ? -1 : 1;
+                            int32_t div_val;
+                            int kh_shift = 0;
+
+                            if (e_scale == 0) {
+                                div_val = div_lookup[32768 + abs_oh] * sign_oh;
+                            } else {
+                                if (abs_oh < 32768) {
+                                    div_val = div_lookup[32768 + abs_oh] * sign_oh;
+                                } else {
+                                    uint32_t tmp = (uint32_t)abs_oh;
+                                    int n = 0;
+                                    uint32_t v = tmp;
+                                    if (v >= (1u << 16)) { n += 16; v >>= 16; }
+                                    if (v >= (1u << 8))  { n += 8;  v >>= 8;  }
+                                    if (v >= (1u << 4))  { n += 4;  v >>= 4;  }
+                                    if (v >= (1u << 2))  { n += 2;  v >>= 2;  }
+                                    if (v >= (1u << 1))  { n += 1;  v >>= 1;  }
+                                    int clz = 31 - n;
+                                    int ks = 17 - clz;
+                                    uint32_t rounded = (tmp + (1u << (ks - 1))) >> ks;
+                                    kh_shift = ks;
+                                    div_val = div_lookup[32768 + rounded] * sign_oh;
+                                }
+                            }
+
+                            int64_t k64 = (int64_t)div_val * bth;
+                            if (e_scale == 0) {
+                                k = (int32_t)((k64 + (1 << 14)) >> 15);
+                            } else {
+                                int shift = 15 + kh_shift;
+                                k = (int32_t)((k64 + ((int64_t)1 << (shift - 1))) >> shift);
+                            }
+                            if (k < 0) k = 0;
+                            if (k > 32768) k = 32768;
+                            r_val = (int32_t)(((int64_t)k * oh + 16384) >> 15);
+                        }
+
+                        // Enhancement gain limiting
+                        if (angle_flag) {
+                            float rst_f = ((float)k / 32768.0f) * ((float)oh / 64.0f);
+                            int64_t prod_hi = (int64_t)r_val * e_gain_q31.gain_hi;
+                            int64_t prod_lo = (int64_t)r_val * e_gain_q31.gain_lo;
+                            int64_t main_part = prod_hi >> 15;
+                            int64_t rem = ((prod_hi - (main_part << 15)) << 16) + prod_lo;
+                            int64_t gained = main_part + (rem >> 31);
+
+                            if (rst_f > 0.0f) {
+                                int64_t c = (gained < (int64_t)bth) ? gained : (int64_t)bth;
+                                r_val = (int32_t)c;
+                            } else if (rst_f < 0.0f) {
+                                int64_t c = (gained > (int64_t)bth) ? gained : (int64_t)bth;
+                                r_val = (int32_t)c;
+                            }
+                        }
+
+                        r_vals[b] = r_val;
+
+                        // CSF: a = dis - r, csf_a = rfactor * a
+                        int32_t a_val = bth - r_val;
+                        if (e_scale == 0) {
+                            int shift = (b < 2) ? 15 : 17;
+                            int64_t rnd_csf = ((int64_t)1 << (shift - 1));
+                            csf_a_vals[b] = (int32_t)(
+                                ((int64_t)irf_all[b] * a_val + rnd_csf) >> shift);
+                        } else {
+                            csf_a_vals[b] = (int32_t)(
+                                ((int64_t)irf_all[b] * a_val + (1LL << 27)) >> 28);
+                        }
+                    }
+
+                    // ── Contrast measure (uses inline csf_a and r_val) ──
                     int64_t thr = 0;
                     for (int b = 0; b < 3; b++) {
                         for (int dy = -1; dy <= 1; dy++) {
@@ -918,8 +1014,8 @@ static sycl::event launch_csf_den_cm_3band(sycl::queue &q,
                                 thr += cf_ptrs[b][ny * e_stride + nx];
                             }
                         }
-                        int32_t ca = ca_ptrs[b][idx];
-                        int32_t abs_ca = ca < 0 ? -ca : ca;
+                        int32_t abs_ca = csf_a_vals[b] < 0 ?
+                                         -csf_a_vals[b] : csf_a_vals[b];
                         if (e_scale == 0) {
                             thr += ((int64_t)ONE_BY_15 * abs_ca + 2048) >> 12;
                         } else {
@@ -928,7 +1024,7 @@ static sycl::event launch_csf_den_cm_3band(sycl::queue &q,
                         }
                     }
 
-                    int32_t r_val = decouple_r[idx];
+                    int32_t r_val = r_vals[band_idx];
                     int64_t cm;
                     if (e_scale == 0) {
                         cm = (int64_t)i_rfactor * r_val;
@@ -1184,10 +1280,6 @@ static int init_fex_sycl(VmafFeatureExtractor *fex,
     }
 
     for (int i = 0; i < 3; i++) {
-        s->d_decouple_r[i] = static_cast<int32_t *>(
-            vmaf_sycl_malloc_device(state, band_size));
-        s->d_csf_a[i] = static_cast<int32_t *>(
-            vmaf_sycl_malloc_device(state, band_size));
         s->d_csf_f[i] = static_cast<int32_t *>(
             vmaf_sycl_malloc_device(state, band_size));
     }
@@ -1303,7 +1395,7 @@ static void enqueue_adm_work_impl(sycl::queue &q, AdmStateSycl *s,
                         dwt_shifts[scale].h_shift,
                         dwt_shifts[scale].h_add);
 
-        // Decouple + CSF (always uses int64 Q31 gain limiting — no fp64 needed)
+        // Decouple + CSF → writes only d_csf_f (r and csf_a recomputed in CM kernel)
         launch_decouple_csf<false>(q,
                         scale, half_w, half_h, cur_stride,
                         s->adm_enhn_gain_limit,
@@ -1314,13 +1406,10 @@ static void enqueue_adm_work_impl(sycl::queue &q, AdmStateSycl *s,
                         s->d_ref_band[3],
                         s->d_dis_band[1], s->d_dis_band[2],
                         s->d_dis_band[3],
-                        s->d_decouple_r[0], s->d_decouple_r[1],
-                        s->d_decouple_r[2],
-                        s->d_csf_a[0], s->d_csf_a[1], s->d_csf_a[2],
                         s->d_csf_f[0], s->d_csf_f[1], s->d_csf_f[2],
                         s->d_div_lookup);
 
-        // CSF denominator + Contrast measure: fused 3-band kernel
+        // CSF denominator + Contrast measure: fused 3-band kernel with inline decouple
         launch_csf_den_cm_3band(q, scale, half_w, half_h, cur_stride,
                       // csf_den inputs
                       s->d_ref_band[1], s->d_ref_band[2],
@@ -1328,14 +1417,15 @@ static void enqueue_adm_work_impl(sycl::queue &q, AdmStateSycl *s,
                       s->d_csf_den_accum + scale * ADM_NUM_BANDS + 0,
                       s->d_csf_den_accum + scale * ADM_NUM_BANDS + 1,
                       s->d_csf_den_accum + scale * ADM_NUM_BANDS + 2,
-                      // cm inputs
+                      // cm inputs (decouple inlined)
                       s->i_rfactor[scale * 3 + 0],
                       s->i_rfactor[scale * 3 + 1],
                       s->i_rfactor[scale * 3 + 2],
-                      s->d_decouple_r[0], s->d_decouple_r[1],
-                      s->d_decouple_r[2],
+                      s->d_dis_band[1], s->d_dis_band[2],
+                      s->d_dis_band[3],
                       s->d_csf_f[0], s->d_csf_f[1], s->d_csf_f[2],
-                      s->d_csf_a[0], s->d_csf_a[1], s->d_csf_a[2],
+                      s->d_div_lookup,
+                      s->adm_enhn_gain_limit,
                       s->d_cm_accum + scale * ADM_NUM_BANDS + 0,
                       s->d_cm_accum + scale * ADM_NUM_BANDS + 1,
                       s->d_cm_accum + scale * ADM_NUM_BANDS + 2);
@@ -1533,9 +1623,6 @@ static int close_fex_sycl(VmafFeatureExtractor *fex)
             if (s->d_dis_band[i]) vmaf_sycl_free(state, s->d_dis_band[i]);
         }
         for (int i = 0; i < 3; i++) {
-            if (s->d_decouple_r[i])
-                vmaf_sycl_free(state, s->d_decouple_r[i]);
-            if (s->d_csf_a[i]) vmaf_sycl_free(state, s->d_csf_a[i]);
             if (s->d_csf_f[i]) vmaf_sycl_free(state, s->d_csf_f[i]);
         }
 
