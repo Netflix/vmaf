@@ -674,11 +674,19 @@ if is_sycl_enabled
     vmaf_cflags_common += '-DHAVE_SYCL'
 endif
 
+# When SYCL is enabled and icpx is the linker, -fsycl must be passed at
+# link time so that clang-offload-wrapper embeds the SPIR-V device code.
+vmaf_link_args = []
+if is_sycl_enabled
+    vmaf_link_args += ['-fsycl']
+endif
+
 libvmaf = library(
     'vmaf',
     [libvmaf_sources, rev_target, json_model_c_sources],
     include_directories : [libvmaf_inc, vmaf_include],
     c_args : vmaf_cflags_common,
+    link_args : vmaf_link_args,
     dependencies : [
       thread_lib,
       math_lib,
