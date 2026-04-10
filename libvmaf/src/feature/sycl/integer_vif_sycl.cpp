@@ -125,6 +125,11 @@ struct VifStateSycl {
     // Subgroup size selection (auto-detected at init)
     bool use_simd16;
 
+    // Fused V+H kernel mode: uses SLM intermediates, skips tmp buffers.
+    // Saves ~70 MB VRAM at 4K but may be slower on some GPUs due to
+    // SLM pressure and reduced occupancy.
+    bool use_fused;
+
     // Deferred submit/collect state
     unsigned pending_index;
     bool has_pending;
@@ -153,6 +158,14 @@ static const VmafOption options[] = {
         .default_val = {.d = 100.0},
         .min = 1.0,
         .max = 100.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "vif_fused",
+        .help = "use fused V+H kernel (saves VRAM, may be slower on some GPUs)",
+        .offset = offsetof(VifStateSycl, use_fused),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val = {.b = false},
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     { 0 }
@@ -763,7 +776,7 @@ static sycl::event launch_vif_hori_impl(sycl::queue &q,
                         (uint32_t)((h_dis_rd + 32768) >> 16);
                     unsigned rd_x = gx / 2;
                     unsigned rd_y = gy / 2;
-                    unsigned rd_stride = e_w;
+                    unsigned rd_stride = e_w / 2;
                     rd_ref[rd_y * rd_stride + rd_x] =
                         ref_rd_val & 0xFFFF;
                     rd_dis[rd_y * rd_stride + rd_x] =
@@ -1236,8 +1249,8 @@ static sycl::event launch_vif_fused_impl(sycl::queue &q,
                     uint32_t dis_rd_val = (uint32_t)((h_dis_rd + 32768) >> 16);
                     unsigned rd_x = gx / 2;
                     unsigned rd_y = gy / 2;
-                    rd_ref[rd_y * e_w + rd_x] = ref_rd_val & 0xFFFF;
-                    rd_dis[rd_y * e_w + rd_x] = dis_rd_val & 0xFFFF;
+                    rd_ref[rd_y * (e_w / 2) + rd_x] = ref_rd_val & 0xFFFF;
+                    rd_dis[rd_y * (e_w / 2) + rd_x] = dis_rd_val & 0xFFFF;
                 }
                 }
             });
@@ -1309,27 +1322,31 @@ static int init_fex_sycl(VmafFeatureExtractor *fex,
     int err = vmaf_sycl_shared_frame_init(state, w, h, bpc);
     if (err) return err;
 
-    // Allocate all intermediate buffers at full resolution (reused per scale)
+    // Intermediate buffers: only needed for separate V+H pipeline
     size_t tmp_size = (size_t)w * h * sizeof(uint32_t);
 
-    s->d_tmp_mu1       = static_cast<uint32_t *>(
-                             vmaf_sycl_malloc_device(state, tmp_size));
-    s->d_tmp_mu2       = static_cast<uint32_t *>(
-                             vmaf_sycl_malloc_device(state, tmp_size));
-    s->d_tmp_ref       = static_cast<uint32_t *>(
-                             vmaf_sycl_malloc_device(state, tmp_size));
-    s->d_tmp_dis       = static_cast<uint32_t *>(
-                             vmaf_sycl_malloc_device(state, tmp_size));
-    s->d_tmp_ref_dis   = static_cast<uint32_t *>(
-                             vmaf_sycl_malloc_device(state, tmp_size));
-    s->d_tmp_ref_convol = static_cast<uint32_t *>(
-                             vmaf_sycl_malloc_device(state, tmp_size));
-    s->d_tmp_dis_convol = static_cast<uint32_t *>(
-                             vmaf_sycl_malloc_device(state, tmp_size));
+    if (!s->use_fused) {
+        s->d_tmp_mu1       = static_cast<uint32_t *>(
+                                 vmaf_sycl_malloc_device(state, tmp_size));
+        s->d_tmp_mu2       = static_cast<uint32_t *>(
+                                 vmaf_sycl_malloc_device(state, tmp_size));
+        s->d_tmp_ref       = static_cast<uint32_t *>(
+                                 vmaf_sycl_malloc_device(state, tmp_size));
+        s->d_tmp_dis       = static_cast<uint32_t *>(
+                                 vmaf_sycl_malloc_device(state, tmp_size));
+        s->d_tmp_ref_dis   = static_cast<uint32_t *>(
+                                 vmaf_sycl_malloc_device(state, tmp_size));
+        s->d_tmp_ref_convol = static_cast<uint32_t *>(
+                                 vmaf_sycl_malloc_device(state, tmp_size));
+        s->d_tmp_dis_convol = static_cast<uint32_t *>(
+                                 vmaf_sycl_malloc_device(state, tmp_size));
+    }
+    // Downsampled buffers only need quarter-frame: (w/2)*(h/2) elements
+    size_t rd_size = (size_t)(w / 2) * (h / 2) * sizeof(uint32_t);
     s->d_rd_ref        = static_cast<uint32_t *>(
-                             vmaf_sycl_malloc_device(state, tmp_size));
+                             vmaf_sycl_malloc_device(state, rd_size));
     s->d_rd_dis        = static_cast<uint32_t *>(
-                             vmaf_sycl_malloc_device(state, tmp_size));
+                             vmaf_sycl_malloc_device(state, rd_size));
 
     // Accumulators: 4 scales x 7 fields x 8 bytes = 224 bytes
     size_t accum_size = VIF_NUM_SCALES * ACCUM_FIELDS * sizeof(int64_t);
@@ -1343,9 +1360,14 @@ static int init_fex_sycl(VmafFeatureExtractor *fex,
     s->d_log2_lut = static_cast<uint32_t *>(
                         vmaf_sycl_malloc_device(state, lut_size));
 
-    if (!s->d_tmp_mu1 || !s->d_tmp_mu2 || !s->d_tmp_ref || !s->d_tmp_dis ||
-        !s->d_tmp_ref_dis || !s->d_tmp_ref_convol || !s->d_tmp_dis_convol ||
-        !s->d_rd_ref || !s->d_rd_dis || !s->d_accum || !s->h_accum ||
+    if (!s->use_fused &&
+        (!s->d_tmp_mu1 || !s->d_tmp_mu2 || !s->d_tmp_ref || !s->d_tmp_dis ||
+         !s->d_tmp_ref_dis || !s->d_tmp_ref_convol || !s->d_tmp_dis_convol)) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "vif_sycl: tmp buffer allocation failed\n");
+        return -ENOMEM;
+    }
+    if (!s->d_rd_ref || !s->d_rd_dis || !s->d_accum || !s->h_accum ||
         !s->d_log2_lut) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR,
                  "vif_sycl: device memory allocation failed\n");
@@ -1378,6 +1400,9 @@ static int init_fex_sycl(VmafFeatureExtractor *fex,
         vmaf_log(VMAF_LOG_LEVEL_DEBUG,
                  "vif_sycl: auto-selected SIMD-%d subgroup size\n",
                  s->use_simd16 ? 16 : 32);
+        vmaf_log(VMAF_LOG_LEVEL_DEBUG,
+                 "vif_sycl: kernel mode = %s\n",
+                 s->use_fused ? "fused V+H (saves VRAM)" : "separate V+H");
     }
 
     s->feature_name_dict = vmaf_feature_name_dict_from_provided_features(
@@ -1400,11 +1425,6 @@ static int init_fex_sycl(VmafFeatureExtractor *fex,
 static void enqueue_vif_work_impl(sycl::queue &q, VifStateSycl *s,
                               void *shared_ref, void *shared_dis)
 {
-    // Separate vert + hori pipeline (8 kernels = 4 vert + 4 hori).
-    // Profiled faster than fused V+H on Arc A380 with graph mode:
-    //   separate = 34.8 FPS, fused = 31.8 FPS at 4K
-    // because graph mode already amortizes launch overhead, and the
-    // fused kernel's extra SLM barrier + lower occupancy hurts.
     unsigned cur_w = s->width;
     unsigned cur_h = s->height;
 
@@ -1423,37 +1443,55 @@ static void enqueue_vif_work_impl(sycl::queue &q, VifStateSycl *s,
         } else {
             ref_src = s->d_rd_ref;
             dis_src = s->d_rd_dis;
-            src_stride = cur_w * 2;
+            src_stride = cur_w;
         }
 
         int64_t *scale_accum = s->d_accum + scale * ACCUM_FIELDS;
 
-        // Vertical pass: writes to tmp buffers
-        launch_vif_vert(q, ref_src, dis_src,
-                        scale, cur_w, cur_h, src_stride, s->bpc,
-                        s->d_tmp_mu1, s->d_tmp_mu2,
-                        s->d_tmp_ref, s->d_tmp_dis, s->d_tmp_ref_dis,
-                        s->d_tmp_ref_convol, s->d_tmp_dis_convol);
-
-        // Horizontal pass: reads from tmp buffers, computes VIF stats
-        if (s->use_simd16) {
-            launch_vif_hori_v2_sg16(q, scale, cur_w, cur_h,
-                         (float)s->vif_enhn_gain_limit,
-                         s->d_tmp_mu1, s->d_tmp_mu2,
-                         s->d_tmp_ref, s->d_tmp_dis, s->d_tmp_ref_dis,
-                         s->d_tmp_ref_convol, s->d_tmp_dis_convol,
-                         scale_accum,
-                         s->d_rd_ref, s->d_rd_dis,
-                         s->d_log2_lut);
+        if (s->use_fused) {
+            // Fused V+H: single dispatch per scale, no tmp buffers needed.
+            // Uses SLM intermediates. Saves ~70 MB VRAM at 4K.
+            launch_vif_fused(q, ref_src, dis_src,
+                             scale, cur_w, cur_h, src_stride, s->bpc,
+                             s->use_simd16,
+                             (float)s->vif_enhn_gain_limit,
+                             scale_accum,
+                             s->d_rd_ref, s->d_rd_dis,
+                             s->d_log2_lut);
         } else {
-            launch_vif_hori_v2(q, scale, cur_w, cur_h,
-                         (float)s->vif_enhn_gain_limit,
-                         s->d_tmp_mu1, s->d_tmp_mu2,
-                         s->d_tmp_ref, s->d_tmp_dis, s->d_tmp_ref_dis,
-                         s->d_tmp_ref_convol, s->d_tmp_dis_convol,
-                         scale_accum,
-                         s->d_rd_ref, s->d_rd_dis,
-                         s->d_log2_lut);
+            // Separate vert + hori pipeline (8 kernels = 4 vert + 4 hori).
+            // Profiled faster than fused V+H on Arc A380 with graph mode:
+            //   separate = 34.8 FPS, fused = 31.8 FPS at 4K
+            // because graph mode already amortizes launch overhead, and the
+            // fused kernel's extra SLM barrier + lower occupancy hurts.
+
+            // Vertical pass: writes to tmp buffers
+            launch_vif_vert(q, ref_src, dis_src,
+                            scale, cur_w, cur_h, src_stride, s->bpc,
+                            s->d_tmp_mu1, s->d_tmp_mu2,
+                            s->d_tmp_ref, s->d_tmp_dis, s->d_tmp_ref_dis,
+                            s->d_tmp_ref_convol, s->d_tmp_dis_convol);
+
+            // Horizontal pass: reads from tmp buffers, computes VIF stats
+            if (s->use_simd16) {
+                launch_vif_hori_v2_sg16(q, scale, cur_w, cur_h,
+                             (float)s->vif_enhn_gain_limit,
+                             s->d_tmp_mu1, s->d_tmp_mu2,
+                             s->d_tmp_ref, s->d_tmp_dis, s->d_tmp_ref_dis,
+                             s->d_tmp_ref_convol, s->d_tmp_dis_convol,
+                             scale_accum,
+                             s->d_rd_ref, s->d_rd_dis,
+                             s->d_log2_lut);
+            } else {
+                launch_vif_hori_v2(q, scale, cur_w, cur_h,
+                             (float)s->vif_enhn_gain_limit,
+                             s->d_tmp_mu1, s->d_tmp_mu2,
+                             s->d_tmp_ref, s->d_tmp_dis, s->d_tmp_ref_dis,
+                             s->d_tmp_ref_convol, s->d_tmp_dis_convol,
+                             scale_accum,
+                             s->d_rd_ref, s->d_rd_dis,
+                             s->d_log2_lut);
+            }
         }
 
         // Next scale: half dimensions
