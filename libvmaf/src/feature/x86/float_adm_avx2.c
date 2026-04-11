@@ -214,56 +214,43 @@ float float_adm_csf_den_scale_avx2(const float *src, int w, int h,
     __m256 abs_mask = _mm256_broadcast_ss((const float *)&FLOAT_ABS_MASK_I);
     __m256 vfactor = _mm256_set1_ps(factor);
 
-    float accum = 0;
+    double accum = 0;
 
     for (int i = top; i < bottom; ++i) {
         const float *row = src + i * src_px_stride;
-        __m256 sum0 = _mm256_setzero_ps();
-        __m256 sum1 = _mm256_setzero_ps();
+        __m256d dsum0 = _mm256_setzero_pd();
+        __m256d dsum1 = _mm256_setzero_pd();
         int j = left;
 
-        /* Process 16 floats per iteration with dual accumulators. */
-        for (; j + 16 <= right; j += 16) {
-            __m256 s0 = _mm256_loadu_ps(row + j);
-            __m256 s1 = _mm256_loadu_ps(row + j + 8);
-
-            __m256 v0 = _mm256_and_ps(_mm256_mul_ps(vfactor, s0), abs_mask);
-            __m256 v1 = _mm256_and_ps(_mm256_mul_ps(vfactor, s1), abs_mask);
-
-            /* val * val * val */
-            __m256 v0sq = _mm256_mul_ps(v0, v0);
-            __m256 v1sq = _mm256_mul_ps(v1, v1);
-            sum0 = _mm256_add_ps(sum0, _mm256_mul_ps(v0sq, v0));
-            sum1 = _mm256_add_ps(sum1, _mm256_mul_ps(v1sq, v1));
-        }
-
-        /* Process 8 floats. */
+        /* Process 8 floats per iteration: cube in float, accumulate in double. */
         for (; j + 8 <= right; j += 8) {
             __m256 s = _mm256_loadu_ps(row + j);
             __m256 v = _mm256_and_ps(_mm256_mul_ps(vfactor, s), abs_mask);
             __m256 vsq = _mm256_mul_ps(v, v);
-            sum0 = _mm256_add_ps(sum0, _mm256_mul_ps(vsq, v));
+            __m256 vcube = _mm256_mul_ps(vsq, v);
+
+            dsum0 = _mm256_add_pd(dsum0, _mm256_cvtps_pd(_mm256_castps256_ps128(vcube)));
+            dsum1 = _mm256_add_pd(dsum1, _mm256_cvtps_pd(_mm256_extractf128_ps(vcube, 1)));
         }
 
-        /* Horizontal reduction of sum0 + sum1. */
-        __m256 total = _mm256_add_ps(sum0, sum1);
-        __m128 lo128 = _mm256_castps256_ps128(total);
-        __m128 hi128 = _mm256_extractf128_ps(total, 1);
-        __m128 s128 = _mm_add_ps(lo128, hi128);
-        s128 = _mm_add_ps(s128, _mm_movehl_ps(s128, s128));
-        s128 = _mm_add_ss(s128, _mm_shuffle_ps(s128, s128, 1));
-        float row_accum = _mm_cvtss_f32(s128);
+        /* Horizontal reduction in double. */
+        __m256d dtotal = _mm256_add_pd(dsum0, dsum1);
+        __m128d dlo = _mm256_castpd256_pd128(dtotal);
+        __m128d dhi = _mm256_extractf128_pd(dtotal, 1);
+        __m128d ds = _mm_add_pd(dlo, dhi);
+        ds = _mm_add_sd(ds, _mm_unpackhi_pd(ds, ds));
+        double row_accum = _mm_cvtsd_f64(ds);
 
         /* Scalar tail. */
         for (; j < right; ++j) {
             float val = fabsf(factor * row[j]);
-            row_accum += val * val * val;
+            row_accum += (double)(val * val * val);
         }
 
         accum += row_accum;
     }
 
-    return accum;
+    return (float)accum;
 }
 
 float float_adm_sum_cube_avx2(const float *x, int w, int h, int stride,
@@ -274,49 +261,40 @@ float float_adm_sum_cube_avx2(const float *x, int w, int h, int stride,
 
     __m256 abs_mask = _mm256_broadcast_ss((const float *)&FLOAT_ABS_MASK_I);
 
-    float accum = 0;
+    double accum = 0;
 
     for (int i = top; i < bottom; ++i) {
         const float *row = x + i * px_stride;
-        __m256 sum0 = _mm256_setzero_ps();
-        __m256 sum1 = _mm256_setzero_ps();
+        __m256d dsum0 = _mm256_setzero_pd();
+        __m256d dsum1 = _mm256_setzero_pd();
         int j = left;
 
-        /* Process 16 floats per iteration with dual accumulators. */
-        for (; j + 16 <= right; j += 16) {
-            __m256 v0 = _mm256_and_ps(_mm256_loadu_ps(row + j), abs_mask);
-            __m256 v1 = _mm256_and_ps(_mm256_loadu_ps(row + j + 8), abs_mask);
-
-            __m256 v0sq = _mm256_mul_ps(v0, v0);
-            __m256 v1sq = _mm256_mul_ps(v1, v1);
-            sum0 = _mm256_add_ps(sum0, _mm256_mul_ps(v0sq, v0));
-            sum1 = _mm256_add_ps(sum1, _mm256_mul_ps(v1sq, v1));
-        }
-
-        /* Process 8 floats. */
+        /* Process 8 floats per iteration: cube in float, accumulate in double. */
         for (; j + 8 <= right; j += 8) {
             __m256 v = _mm256_and_ps(_mm256_loadu_ps(row + j), abs_mask);
             __m256 vsq = _mm256_mul_ps(v, v);
-            sum0 = _mm256_add_ps(sum0, _mm256_mul_ps(vsq, v));
+            __m256 vcube = _mm256_mul_ps(vsq, v);
+
+            dsum0 = _mm256_add_pd(dsum0, _mm256_cvtps_pd(_mm256_castps256_ps128(vcube)));
+            dsum1 = _mm256_add_pd(dsum1, _mm256_cvtps_pd(_mm256_extractf128_ps(vcube, 1)));
         }
 
-        /* Horizontal reduction of sum0 + sum1. */
-        __m256 total = _mm256_add_ps(sum0, sum1);
-        __m128 lo128 = _mm256_castps256_ps128(total);
-        __m128 hi128 = _mm256_extractf128_ps(total, 1);
-        __m128 s128 = _mm_add_ps(lo128, hi128);
-        s128 = _mm_add_ps(s128, _mm_movehl_ps(s128, s128));
-        s128 = _mm_add_ss(s128, _mm_shuffle_ps(s128, s128, 1));
-        float row_accum = _mm_cvtss_f32(s128);
+        /* Horizontal reduction in double. */
+        __m256d dtotal = _mm256_add_pd(dsum0, dsum1);
+        __m128d dlo = _mm256_castpd256_pd128(dtotal);
+        __m128d dhi = _mm256_extractf128_pd(dtotal, 1);
+        __m128d ds = _mm_add_pd(dlo, dhi);
+        ds = _mm_add_sd(ds, _mm_unpackhi_pd(ds, ds));
+        double row_accum = _mm_cvtsd_f64(ds);
 
         /* Scalar tail. */
         for (; j < right; ++j) {
             float val = fabsf(row[j]);
-            row_accum += val * val * val;
+            row_accum += (double)(val * val * val);
         }
 
         accum += row_accum;
     }
 
-    return accum;
+    return (float)accum;
 }

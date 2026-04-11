@@ -114,21 +114,21 @@ float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_fac
     int i, j;
 
     float val;
-    float accum = 0;
+    double accum = 0;
 
     for (i = top; i < bottom; ++i) {
-        float accum_inner = 0;
+        double accum_inner = 0;
 
         for (j = left; j < right; ++j) {
             val = fabsf(x[i * px_stride + j]);
 
-            accum_inner += val * val * val;
+            accum_inner += (double)(val * val * val);
         }
 
         accum += accum_inner;
     }
 
-    return powf(accum, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+    return powf((float)accum, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
 }
 
 void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis,
@@ -380,8 +380,8 @@ float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale,
 	factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
 	float rfactor[3] = { factor1, factor1, factor2 };
 
-	float accum_h = 0, accum_v = 0, accum_d = 0;
-	float accum_inner_h, accum_inner_v, accum_inner_d;
+	double accum_h = 0, accum_v = 0, accum_d = 0;
+	double accum_inner_h, accum_inner_v, accum_inner_d;
 	float den_scale_h, den_scale_v, den_scale_d;
 
 	float val;
@@ -444,11 +444,11 @@ float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale,
 			float abs_csf_o_val_d = fabsf(rfactor[2] * src_d[j]);
 
 			val = abs_csf_o_val_h * abs_csf_o_val_h * abs_csf_o_val_h;
-			accum_inner_h += val;
+			accum_inner_h += (double)val;
 			val = abs_csf_o_val_v * abs_csf_o_val_v * abs_csf_o_val_v;
-			accum_inner_v += val;
+			accum_inner_v += (double)val;
 			val = abs_csf_o_val_d * abs_csf_o_val_d * abs_csf_o_val_d;
-			accum_inner_d += val;
+			accum_inner_d += (double)val;
 		}
 
 		accum_h += accum_inner_h;
@@ -457,9 +457,9 @@ float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale,
 
 	}
 
-	den_scale_h = powf(accum_h, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
-	den_scale_v = powf(accum_v, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
-	den_scale_d = powf(accum_d, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+	den_scale_h = powf((float)accum_h, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+	den_scale_v = powf((float)accum_v, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+	den_scale_d = powf((float)accum_d, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
 
 	return(den_scale_h + den_scale_v + den_scale_d);
 

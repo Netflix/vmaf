@@ -273,35 +273,37 @@ float float_adm_csf_den_scale_avx512(const float *src, int w, int h,
     int src_px_stride = src_stride / sizeof(float);
 
     __m512 vfactor = _mm512_set1_ps(factor);
-    __m512 accum_vec = _mm512_setzero_ps();
 
-    float accum = 0.0f;
+    double accum = 0.0;
     int i, j;
 
     for (i = top; i < bottom; ++i) {
         const float *row = src + i * src_px_stride;
-        __m512 accum_inner = _mm512_setzero_ps();
+        __m512d dsum0 = _mm512_setzero_pd();
+        __m512d dsum1 = _mm512_setzero_pd();
 
         for (j = left; j + 16 <= right; j += 16) {
             __m512 sv = _mm512_loadu_ps(row + j);
             __m512 val = avx512_abs_ps(_mm512_mul_ps(vfactor, sv));
             __m512 val2 = _mm512_mul_ps(val, val);
             __m512 val3 = _mm512_mul_ps(val2, val);
-            accum_inner = _mm512_add_ps(accum_inner, val3);
+
+            dsum0 = _mm512_add_pd(dsum0, _mm512_cvtps_pd(_mm512_castps512_ps256(val3)));
+            dsum1 = _mm512_add_pd(dsum1, _mm512_cvtps_pd(_mm512_extractf32x8_ps(val3, 1)));
         }
 
-        accum_vec = _mm512_add_ps(accum_vec, accum_inner);
+        double row_accum = _mm512_reduce_add_pd(_mm512_add_pd(dsum0, dsum1));
 
         /* Scalar tail */
         for (; j < right; ++j) {
             float val = fabsf(factor * row[j]);
-            accum += val * val * val;
+            row_accum += (double)(val * val * val);
         }
+
+        accum += row_accum;
     }
 
-    accum += _mm512_reduce_add_ps(accum_vec);
-
-    return accum;
+    return (float)accum;
 }
 
 float float_adm_sum_cube_avx512(const float *x, int w, int h, int stride,
@@ -310,31 +312,33 @@ float float_adm_sum_cube_avx512(const float *x, int w, int h, int stride,
     (void)w; (void)h;
     int px_stride = stride / sizeof(float);
 
-    __m512 accum_vec = _mm512_setzero_ps();
-    float accum = 0.0f;
+    double accum = 0.0;
     int i, j;
 
     for (i = top; i < bottom; ++i) {
         const float *row = x + i * px_stride;
-        __m512 accum_inner = _mm512_setzero_ps();
+        __m512d dsum0 = _mm512_setzero_pd();
+        __m512d dsum1 = _mm512_setzero_pd();
 
         for (j = left; j + 16 <= right; j += 16) {
             __m512 val = avx512_abs_ps(_mm512_loadu_ps(row + j));
             __m512 val2 = _mm512_mul_ps(val, val);
             __m512 val3 = _mm512_mul_ps(val2, val);
-            accum_inner = _mm512_add_ps(accum_inner, val3);
+
+            dsum0 = _mm512_add_pd(dsum0, _mm512_cvtps_pd(_mm512_castps512_ps256(val3)));
+            dsum1 = _mm512_add_pd(dsum1, _mm512_cvtps_pd(_mm512_extractf32x8_ps(val3, 1)));
         }
 
-        accum_vec = _mm512_add_ps(accum_vec, accum_inner);
+        double row_accum = _mm512_reduce_add_pd(_mm512_add_pd(dsum0, dsum1));
 
         /* Scalar tail */
         for (; j < right; ++j) {
             float val = fabsf(row[j]);
-            accum += val * val * val;
+            row_accum += (double)(val * val * val);
         }
+
+        accum += row_accum;
     }
 
-    accum += _mm512_reduce_add_ps(accum_vec);
-
-    return accum;
+    return (float)accum;
 }
