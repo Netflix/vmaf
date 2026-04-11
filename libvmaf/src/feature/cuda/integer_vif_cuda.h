@@ -60,6 +60,7 @@ typedef struct VifBufferCuda {
     } tmp;
 
     ptrdiff_t stride;
+    ptrdiff_t rd_stride; /* stride (bytes) for half-res ref/dis downsampled buffers */
     ptrdiff_t stride_16;
     ptrdiff_t stride_32;
     ptrdiff_t stride_64;

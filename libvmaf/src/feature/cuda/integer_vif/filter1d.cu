@@ -267,7 +267,7 @@ __device__ __forceinline__ void filter1d_8_horizontal_kernel(VifBufferCuda buf, 
             const int x = x_start + off;
             if (y < h && x < w) {
                 if ((y % 2) == 0 && (off % 2) == 0) {
-                    const ptrdiff_t rd_stride = buf.stride / sizeof(uint16_t);
+                    const ptrdiff_t rd_stride = buf.rd_stride / sizeof(uint16_t);
                     ref[(y / 2) * rd_stride + (x / 2)] =
                         (uint16_t)((accum_ref_rd[off / 2] + 32768) >> 16);
                     dis[(y / 2) * rd_stride + (x / 2)] =
@@ -306,7 +306,8 @@ filter1d_16_vertical_kernel(VifBufferCuda buf, uint16_t* ref_in, uint16_t* dis_i
             uint16_t dis[val_per_thread];
             alignment_type dis_aligned;
         };
-        const ptrdiff_t stride = buf.stride / sizeof(uint16_t);
+        const ptrdiff_t stride = (scale == 0) ? buf.stride / sizeof(uint16_t)
+                                                : buf.rd_stride / sizeof(uint16_t);
         for (int fi = 0; fi < fwidth; ++fi) {
             int ii = y - fwidth / 2;
             int ii_check = abs(ii + fi);
@@ -553,7 +554,7 @@ filter1d_16_horizontal_kernel(VifBufferCuda buf, int w, int h,
                 if ((y % 2) == 0 && (off % 2) == 0) {
                     uint16_t *ref = (uint16_t *)buf.ref;
                     uint16_t *dis = (uint16_t *)buf.dis;
-                    const ptrdiff_t rd_stride = buf.stride / sizeof(uint16_t);
+                    const ptrdiff_t rd_stride = buf.rd_stride / sizeof(uint16_t);
                     ref[(y / 2) * rd_stride + (x / 2)] =
                         (uint16_t)((accum_ref_rd[off / 2] + 32768) >> 16);
                     dis[(y / 2) * rd_stride + (x / 2)] =

@@ -134,13 +134,17 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cu_f, cuDeviceGetAttribute(&tex_alignment, CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT,
                 fex->cu_state->dev));
     s->buf.stride = tex_alignment * (((w * (1 << (int)hbd) + tex_alignment - 1) / tex_alignment));
+    {
+        const int rd_w_bytes = ((w + 1) / 2) * sizeof(uint16_t);
+        s->buf.rd_stride = tex_alignment * ((rd_w_bytes + tex_alignment - 1) / tex_alignment);
+    }
     s->buf.stride_16 = ALIGN_CEIL(w * sizeof(uint16_t));
     s->buf.stride_32 = ALIGN_CEIL(w * sizeof(uint32_t));
     s->buf.stride_64 = ALIGN_CEIL(w * sizeof(uint64_t));
     s->buf.stride_tmp =
         ALIGN_CEIL(w * sizeof(uint32_t));
-    const size_t frame_size = s->buf.stride * h;
-    const size_t data_sz = 2 * frame_size +
+    const size_t rd_size = s->buf.rd_stride * ((h + 1) / 2);
+    const size_t data_sz = 2 * rd_size +
         2 * (h * s->buf.stride_16) + 5 * (h * s->buf.stride_32) + 8 * (s->buf.stride_tmp * h); // intermediater buffers
     int ret = vmaf_cuda_buffer_alloc(fex->cu_state, &s->buf.data, data_sz);
     if (ret) goto free_ref;
@@ -155,8 +159,8 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     ret = vmaf_cuda_buffer_get_dptr(s->buf.data, &data);
     if (ret) goto free_ref;
 
-    s->buf.ref = data; data += frame_size;
-    s->buf.dis = data; data += frame_size;
+    s->buf.ref = data; data += rd_size;
+    s->buf.dis = data; data += rd_size;
     s->buf.mu1 = (uint16_t*)data; data += h * s->buf.stride_16;
     s->buf.mu2 = (uint16_t*)data; data += h * s->buf.stride_16;
     s->buf.mu1_32 = (uint32_t*)data; data += h * s->buf.stride_32;
