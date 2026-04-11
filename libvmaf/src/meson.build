@@ -323,7 +323,6 @@ if is_cuda_enabled
         'adm_cm' : [feature_src_dir + 'cuda/integer_adm/adm_cm.cu'],
         'adm_csf' : [feature_src_dir + 'cuda/integer_adm/adm_csf.cu'],
         'adm_csf_den' : [feature_src_dir + 'cuda/integer_adm/adm_csf_den.cu'],
-        'adm_decouple' : [feature_src_dir + 'cuda/integer_adm/adm_decouple.cu'],
         'filter1d' : [feature_src_dir + 'cuda/integer_vif/filter1d.cu'],
         'motion_score' : [feature_src_dir + 'cuda/integer_motion/motion_score.cu'],
     }

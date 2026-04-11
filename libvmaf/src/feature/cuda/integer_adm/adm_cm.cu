@@ -20,6 +20,7 @@
 #include "cuda/integer_adm_cuda.h"
 #include "common.h"
 #include "cuda_helper.cuh"
+#include "adm_decouple_inline.cuh"
 
 #include <algorithm>
 
@@ -28,28 +29,126 @@
 #include <iostream>
 #endif
 
+/* Inline helper: compute csf_a for a single band at a given pixel position
+ * for scales 1-3 (i4 path). Returns the csf_a value = rfactor * a_val. */
+__device__ __forceinline__ int32_t inline_i4_csf_a(
+        const cuda_i4_adm_dwt_band_t *ref, const cuda_i4_adm_dwt_band_t *dis,
+        int idx, int theta, /* theta 0..2 → band h/v/d */
+        const uint32_t *rfactor, double adm_enhn_gain_limit)
+{
+    const uint32_t shift_dst = 28;
+    const int32_t add_bef_shift_dst = (1u << (shift_dst - 1));
+
+    int32_t oh = ref->band_h[idx];
+    int32_t ov = ref->band_v[idx];
+    int32_t od = ref->band_d[idx];
+    int32_t th = dis->band_h[idx];
+    int32_t tv = dis->band_v[idx];
+    int32_t td = dis->band_d[idx];
+
+    int angle_flag = decouple_angle_flag_s123(oh, ov, th, tv);
+    int32_t r_val = decouple_r_s123(oh, ov, od, th, tv, td,
+            theta, angle_flag, adm_enhn_gain_limit);
+
+    int32_t t_val;
+    if (theta == 0) t_val = th;
+    else if (theta == 1) t_val = tv;
+    else t_val = td;
+
+    int32_t a_val = t_val - r_val;
+
+    /* dst_val = rfactor * a_val — this is csf_a */
+    return (int32_t)(((rfactor[theta] * int64_t(a_val)) + add_bef_shift_dst) >> shift_dst);
+}
+
+/* Inline helper: compute decouple_r for a single band at a given pixel position
+ * for scales 1-3 (i4 path). */
+__device__ __forceinline__ int32_t inline_i4_decouple_r(
+        const cuda_i4_adm_dwt_band_t *ref, const cuda_i4_adm_dwt_band_t *dis,
+        int idx, int band_idx, /* band_idx 0..2 → h/v/d */
+        double adm_enhn_gain_limit)
+{
+    int32_t oh = ref->band_h[idx];
+    int32_t ov = ref->band_v[idx];
+    int32_t od = ref->band_d[idx];
+    int32_t th = dis->band_h[idx];
+    int32_t tv = dis->band_v[idx];
+    int32_t td = dis->band_d[idx];
+
+    int angle_flag = decouple_angle_flag_s123(oh, ov, th, tv);
+    return decouple_r_s123(oh, ov, od, th, tv, td,
+            band_idx, angle_flag, adm_enhn_gain_limit);
+}
+
+/* Inline helper: compute csf_a for scale 0 (int16 path). */
+__device__ __forceinline__ int16_t inline_s0_csf_a(
+        const cuda_adm_dwt_band_t *ref, const cuda_adm_dwt_band_t *dis,
+        int idx, int theta, /* theta 0..2 → band h/v/d */
+        const uint32_t *i_rfactor, double adm_enhn_gain_limit)
+{
+    __constant__ static const uint8_t i_shifts_cm[4] = {0, 15, 15, 17};
+    __constant__ static const uint16_t i_shiftsadd_cm[4] = {0, 16384, 16384, 65535};
+
+    int16_t oh = ref->band_h[idx];
+    int16_t ov = ref->band_v[idx];
+    int16_t od = ref->band_d[idx];
+    int16_t th = dis->band_h[idx];
+    int16_t tv = dis->band_v[idx];
+    int16_t td = dis->band_d[idx];
+
+    int angle_flag = decouple_angle_flag_s0(oh, ov, th, tv);
+    int16_t r_val = decouple_r_s0(oh, ov, od, th, tv, td,
+            theta, angle_flag, adm_enhn_gain_limit);
+
+    int16_t t_val;
+    if (theta == 0) t_val = th;
+    else if (theta == 1) t_val = tv;
+    else t_val = td;
+
+    int16_t a_val = t_val - r_val;
+
+    int band = theta + 1; // band index 1..3
+    int32_t dst_val = i_rfactor[theta] * (uint32_t)a_val;
+    return (dst_val + i_shiftsadd_cm[band]) >> i_shifts_cm[band];
+}
+
+/* Inline helper: compute decouple_r for scale 0 (int16 path). */
+__device__ __forceinline__ int16_t inline_s0_decouple_r(
+        const cuda_adm_dwt_band_t *ref, const cuda_adm_dwt_band_t *dis,
+        int idx, int band_idx, /* band_idx 0..2 → h/v/d */
+        double adm_enhn_gain_limit)
+{
+    int16_t oh = ref->band_h[idx];
+    int16_t ov = ref->band_v[idx];
+    int16_t od = ref->band_d[idx];
+    int16_t th = dis->band_h[idx];
+    int16_t tv = dis->band_v[idx];
+    int16_t td = dis->band_d[idx];
+
+    int angle_flag = decouple_angle_flag_s0(oh, ov, th, tv);
+    return decouple_r_s0(oh, ov, od, th, tv, td,
+            band_idx, angle_flag, adm_enhn_gain_limit);
+}
+
 extern "C" {
     __global__ void i4_adm_cm_line_kernel(
             AdmBufferCuda buf, int h, int w, int top, int bottom, int left, int right,
             int start_row, int end_row, int start_col, int end_col, int src_stride,
             int csf_a_stride, int scale, int buffer_h, int buffer_stride,
             int32_t *accum_per_thread, AdmFixedParametersCuda params) {
-        const cuda_i4_adm_dwt_band_t *src = &buf.i4_decouple_r;
+        const cuda_i4_adm_dwt_band_t *ref = &buf.i4_ref_dwt2;
+        const cuda_i4_adm_dwt_band_t *dis = &buf.i4_dis_dwt2;
         const cuda_i4_adm_dwt_band_t *csf_f = &buf.i4_csf_f;
-        const cuda_i4_adm_dwt_band_t *csf_a = &buf.i4_csf_a;
         const int band = blockIdx.z + 1;
-        int32_t *src_band = src->bands[band];
-        int32_t *const *angles = csf_a->bands + 1;
         int32_t *const *flt_angles = csf_f->bands + 1;
 
-        // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
-        // 1 to 4 (from finest scale to coarsest scale).
         const uint32_t *rfactor = &params.i_rfactor[scale * 3];
+        const double adm_enhn_gain_limit = params.adm_enhn_gain_limit;
 
-        const uint32_t shift_dst = 28;
         const uint32_t shift_flt = 32;
-        const int32_t add_bef_shift_dst = (1u << (shift_dst - 1));
         const int32_t add_bef_shift_flt = (1u << (shift_flt - 1));
+        const uint32_t shift_dst = 28;
+        const int32_t add_bef_shift_dst = (1u << (shift_dst - 1));
 
         uint32_t shift_cub = __float2uint_ru(__log2f(w));
 
@@ -78,25 +177,32 @@ extern "C" {
             int32_t thr = 0;
             for (int theta = 0; theta < 3; ++theta) {
                 int32_t sum = 0;
-                int32_t src = angles[theta][src_stride * (i + offset_i[0] + 1) + j];
-                int32_t *flt_ptr = flt_angles[theta];
-                flt_ptr += (src_stride * (i + offset_i[0]));
-                sum += flt_ptr[j + offset_j[0]];
-                sum += flt_ptr[j];
-                sum += flt_ptr[j + offset_j[1]];
-                flt_ptr += src_stride;
-                sum += flt_ptr[j + offset_j[0]];
-                sum += (int32_t)((((int64_t)I4_ONE_BY_15 * abs((int32_t)src)) +
+                /* Inline csf_a at center pixel [i, j] */
+                int32_t csf_a_val = inline_i4_csf_a(ref, dis,
+                        src_stride * (i + offset_i[0] + 1) + j,
+                        theta, rfactor, adm_enhn_gain_limit);
+
+                int32_t *flt_ptr_line = flt_angles[theta];
+                flt_ptr_line += (src_stride * (i + offset_i[0]));
+                sum += flt_ptr_line[j + offset_j[0]];
+                sum += flt_ptr_line[j];
+                sum += flt_ptr_line[j + offset_j[1]];
+                flt_ptr_line += src_stride;
+                sum += flt_ptr_line[j + offset_j[0]];
+                sum += (int32_t)((((int64_t)I4_ONE_BY_15 * abs(csf_a_val)) +
                             add_bef_shift_flt) >>
                         shift_flt);
-                sum += flt_ptr[j + offset_j[1]];
-                flt_ptr += src_stride * offset_i[1];
-                sum += flt_ptr[j + offset_j[0]];
-                sum += flt_ptr[j];
-                sum += flt_ptr[j + offset_j[1]];
+                sum += flt_ptr_line[j + offset_j[1]];
+                flt_ptr_line += src_stride * offset_i[1];
+                sum += flt_ptr_line[j + offset_j[0]];
+                sum += flt_ptr_line[j];
+                sum += flt_ptr_line[j + offset_j[1]];
                 thr += sum;
             }
-            int32_t x = (int32_t)((((int64_t)src_band[i * src_stride + j] *
+            /* Inline decouple_r at pixel [i, j] */
+            int32_t r_val = inline_i4_decouple_r(ref, dis,
+                    i * src_stride + j, band - 1, adm_enhn_gain_limit);
+            int32_t x = (int32_t)((((int64_t)r_val *
                             rfactor[blockIdx.z]) +
                         add_bef_shift_dst) >>
                     shift_dst);
@@ -140,15 +246,14 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
         // shift global
         const uint32_t shift_inner_accum, const uint32_t add_shift_inner_accum
         ) {
-    const cuda_adm_dwt_band_t *src = &buf.decouple_r;
+    const cuda_adm_dwt_band_t *ref = &buf.ref_dwt2;
+    const cuda_adm_dwt_band_t *dis = &buf.dis_dwt2;
     const cuda_adm_dwt_band_t *csf_f = &buf.csf_f;
-    const cuda_adm_dwt_band_t *csf_a = &buf.csf_a;
     const int band = blockIdx.z + 1;
-    int16_t *src_band = src->bands[band];
-    int16_t *const *angles = csf_a->bands + 1;
     int16_t *const *flt_angles = csf_f->bands + 1;
 
     uint32_t *i_rfactor = params.i_rfactor;
+    const double adm_enhn_gain_limit = params.adm_enhn_gain_limit;
 
     int cta_y = (blockDim.y * blockIdx.y + threadIdx.y) * rows_per_thread;
     int cta_x = blockDim.x * blockIdx.x + threadIdx.x;
@@ -167,17 +272,6 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
 #pragma unroll
         for (int theta = 0; theta < 3; ++theta)
         {
-            // the goal of the algorithm below is to read each row only once.
-            // to achieve this goal iterate over all rows and then sum up the row
-            // to each row accumulator.
-            // the sum is accumulated through the following pattern
-            // flt[0][0] flt[0][1] flt[0][2]
-            // flt[1][0] src[1][1] flt[1][2]
-            // flt[2][0] flt[2][1] flt[2][2]
-            // for each input row we compute the row overlap with the filter
-            // and use the correct summation.
-            // since all loops are unrolled the compiler eliminates all ifs
-            // and generates just the minimal amount of LDG / IADD instructions.
 #pragma unroll
             for (int row = 0; row < total_rows;++row)
             {
@@ -185,7 +279,10 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
                 pos_y = abs(pos_y);
                 pos_y = pos_y - max(0, 2*(y - h)+1);
 
-                int16_t src = angles[theta][pos_y * src_stride + x];
+                /* Inline csf_a at center pixel */
+                int16_t csf_a_val = inline_s0_csf_a(ref, dis,
+                        pos_y * src_stride + x,
+                        theta, i_rfactor, adm_enhn_gain_limit);
                 int16_t *flt_ptr = flt_angles[theta] + pos_y*src_stride;
                 int16_t flt_row[3] = {flt_ptr[pos_x[0]], flt_ptr[pos_x[1]], flt_ptr[pos_x[2]]};
 
@@ -200,7 +297,7 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
                             thr[thread_item] += flt_row[1];
                         }
                         else {
-                            thr[thread_item] += (int16_t)(((ONE_BY_15 * abs((int32_t)src)) + 2048) >> 12);;
+                            thr[thread_item] += (int16_t)(((ONE_BY_15 * abs((int32_t)csf_a_val)) + 2048) >> 12);;
                         }
                     }
                 }
@@ -212,12 +309,14 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
     int32_t shift_sub_block = shift_sub[blockIdx.z];
     int32_t accum_thread_reg[rows_per_thread] = {0};
     for (int row = 0;row < rows_per_thread;++row) {
-        int32_t sb = 0;
+        int16_t sb = 0;
         if ((y + row) < end_row && x < end_col) {
-            sb = src_band[(y + row) * src_stride + x];
+            /* Inline decouple_r at pixel [y + row, x] */
+            sb = inline_s0_decouple_r(ref, dis,
+                    (y + row) * src_stride + x, band - 1, adm_enhn_gain_limit);
         }
-        sb = abs(int32_t(i_rfactor[blockIdx.z] * sb)) - (thr[row] << shift_sub_block);
-        accum_thread_reg[row] = max(0, sb);
+        int32_t val = abs(int32_t(i_rfactor[blockIdx.z] * sb)) - (thr[row] << shift_sub_block);
+        accum_thread_reg[row] = max(0, val);
     }
 
     const int band2 = blockIdx.z;

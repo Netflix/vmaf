@@ -79,16 +79,10 @@ typedef struct AdmBufferCuda {
 
     cuda_adm_dwt_band_t ref_dwt2;
     cuda_adm_dwt_band_t dis_dwt2;
-    cuda_adm_dwt_band_t decouple_r;
-    cuda_adm_dwt_band_t decouple_a;
-    cuda_adm_dwt_band_t csf_a;
     cuda_adm_dwt_band_t csf_f;
 
     cuda_i4_adm_dwt_band_t i4_ref_dwt2;
     cuda_i4_adm_dwt_band_t i4_dis_dwt2;
-    cuda_i4_adm_dwt_band_t i4_decouple_r;
-    cuda_i4_adm_dwt_band_t i4_decouple_a;
-    cuda_i4_adm_dwt_band_t i4_csf_a;
     cuda_i4_adm_dwt_band_t i4_csf_f;
 
     int64_t* adm_cm[4];
@@ -99,7 +93,6 @@ typedef struct AdmBufferCuda {
 extern const unsigned char adm_dwt2_ptx[];
 extern const unsigned char adm_csf_den_ptx[];
 extern const unsigned char adm_csf_ptx[];
-extern const unsigned char adm_decouple_ptx[];
 extern const unsigned char adm_cm_ptx[];
 
 #endif /* _FEATURE_ADM_CUDA_H_ */
