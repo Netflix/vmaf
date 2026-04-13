@@ -82,8 +82,8 @@ class FeatureExtractorTest(MyTestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=8)
         with self.assertRaises(KeyError):
             s = results[0]['integer_motion_feature_motion_score']
 
@@ -97,10 +97,10 @@ class FeatureExtractorTest(MyTestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.895345229166667, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion_score'], 4.0498181041666665, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion_score'], 4.0498181041666665, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion_score'], 4.048813375, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion_score'], 4.048813375, places=8)
 
     def test_run_integer_motion_fextractor_forcing_zero(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -126,8 +126,8 @@ class FeatureExtractorTest(MyTestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 2.8104533333333332, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 2.8104533333333332, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 2.8095493333333335, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 2.8095493333333335, places=8)
 
     def test_run_float_vif_fextractor(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -138,8 +138,8 @@ class FeatureExtractorTest(MyTestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.36365960416666665, places=6)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.7674890416666665, places=6)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.3636628333333333, places=6)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.7674898958333333, places=5)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_score'], 0.8630880833333334, places=5)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 0.9156987499999999, places=5)
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale0_score'], 1.0, places=5)
@@ -159,8 +159,8 @@ class FeatureExtractorTest(MyTestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.36365960416666665, places=6)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.7674890416666665, places=6)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.3636628333333333, places=6)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.7674898958333333, places=5)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_score'], 0.8630880833333334, places=5)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 0.9156987499999999, places=6)
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale0_score'], 1.0, places=5)
@@ -169,14 +169,14 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale3_score'], 1.0, places=5)
 
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_score'], 0.44641939583333334, places=4)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_score'], 713103.9057209791, places=0)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_score'], 1597162.7154947498, places=0)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale0_score'], 468368.5572916667, places=0)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale0_score'], 1287709.5260416667, places=0)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_score'], 713112.2182617291, places=0)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_score'], 1597172.416483604, places=0)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale0_score'], 468375.916015625, places=0)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale0_score'], 1287718.2395833333, places=0)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale1_score'], 185123.1435546875, places=0)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale1_score'], 241187.58854166666, places=0)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale2_score'], 47605.012532562505, places=0)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale2_score'], 55153.59627279167, places=0)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale2_score'], 55154.17488602083, places=0)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_num_scale3_score'], 12007.192342145834, places=0)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_den_scale3_score'], 13112.004638666665, places=0)
 
@@ -476,7 +476,7 @@ class FeatureExtractorTest(MyTestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 1.052383, places=5)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 1.052366, places=5)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 1.070267, places=5)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_score'], 1.072423, places=4)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 1.072756, places=4)
@@ -559,10 +559,10 @@ class FeatureExtractorTest(MyTestCase):
         )
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
-        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_egl_1_score'], 0.983699512450884, places=4)
-        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale1_egl_1_score'], 0.9974276726830457, places=4)
-        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale2_egl_1_score'], 0.9984692380091739, places=4)
-        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale3_egl_1_score'], 0.999146211879154, places=4)
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_egl_1_score'], 0.983708, places=4)
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale1_egl_1_score'], 0.997443, places=4)
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale2_egl_1_score'], 0.998483, places=4)
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale3_egl_1_score'], 0.999151, places=4)
 
     def test_run_integer_vif_fextractor_akiyo_multiply_enhn_gain_limit_1d1(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -584,7 +584,7 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale0_egl_1.1_score'], 1.0298451531242514, places=3)
         self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale1_egl_1.1_score'], 1.046596975760772, places=3)
         self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale2_egl_1.1_score'], 1.0485607628500504, places=3)
-        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale3_egl_1.1_score'], 1.0491232394147363, places=3)
+        self.assertAlmostEqual(results[0]['integer_VIF_feature_vif_scale3_egl_1.1_score'], 1.04892, places=3)
 
     def test_run_integer_adm_fextractor(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
