@@ -54,19 +54,19 @@ class ResultTest(MyTestCase):
         df_ansnr = df.loc[df['scores_key'] == 'VMAF_feature_ansnr_scores']
         df_motion = df.loc[df['scores_key'] == 'VMAF_feature_motion_scores']
         df_adm_den = df.loc[df['scores_key'] == 'VMAF_feature_adm_den_scores']
-        self.assertEqual(len(df), 38)
+        self.assertEqual(len(df), 39)
         self.assertEqual(len(df_vmaf), 1)
         self.assertEqual(len(df_adm), 1)
         self.assertEqual(len(df_vif), 1)
         self.assertEqual(len(df_ansnr), 1)
         self.assertEqual(len(df_motion), 1)
-        self.assertAlmostEqual(np.mean(df_vmaf.iloc[0]['scores']), 40.421899030550769, places=4)
+        self.assertAlmostEqual(np.mean(df_vmaf.iloc[0]['scores']), 40.422179484077304, places=4)
         self.assertAlmostEqual(np.mean(df_adm.iloc[0]['scores']), 0.78533833333333336, places=4)
         self.assertAlmostEqual(np.mean(df_vif.iloc[0]['scores']), 0.156834666667, places=4)
         self.assertAlmostEqual(np.mean(df_ansnr.iloc[0]['scores']), 7.92623066667, places=4)
         self.assertAlmostEqual(np.mean(df_motion.iloc[0]['scores']), 12.5548366667, places=4)
         self.assertAlmostEqual(np.mean(df_adm_den.iloc[0]['scores']), 2773.8912249999998, places=3)
-        self.assertAlmostEqual(np.mean(Result.get_unique_from_dataframe(df, 'VMAF_legacy_scores', 'scores')), 40.421899030550769, places=4)
+        self.assertAlmostEqual(np.mean(Result.get_unique_from_dataframe(df, 'VMAF_legacy_scores', 'scores')), 40.422179484077304, places=4)
         self.assertAlmostEqual(np.mean(Result.get_unique_from_dataframe(df, 'VMAF_feature_adm_scores', 'scores')), 0.78533833333333336, places=4)
         self.assertAlmostEqual(np.mean(Result.get_unique_from_dataframe(df, 'VMAF_feature_vif_scores', 'scores')), 0.156834666667, places=4)
         self.assertAlmostEqual(np.mean(Result.get_unique_from_dataframe(df, 'VMAF_feature_ansnr_scores', 'scores')), 7.92623066667, places=4)
@@ -79,7 +79,7 @@ class ResultTest(MyTestCase):
         self.assertEqual(
             df.iloc[0]['asset'],
             '{"asset_dict": {"height": 1080, "use_path_as_workpath": 1, "use_workpath_as_procpath": 1, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "checkerboard_1920_1080_10_3_1_0.yuv", "ref_path": "checkerboard_1920_1080_10_3_0_0.yuv", "workdir": ""}') # noqa
-        self.assertEqual(df.iloc[0]['executor_id'], 'VMAF_legacy_VF0.2.7-1.1')
+        self.assertEqual(df.iloc[0]['executor_id'], 'VMAF_legacy_VF0.2.10-1.1')
 
         Result._assert_asset_dataframe(df)
 
@@ -90,34 +90,34 @@ class ResultTest(MyTestCase):
         self.assertEqual(recon_result.asset.__class__, Asset)
 
     def test_to_score_str(self):
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 40.421899030550769, places=4)
-        self.assertAlmostEqual(self.result['VMAF_legacy_score'], 40.421899030550769, places=4)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 40.42216084498975, places=4)
+        self.assertAlmostEqual(self.result['VMAF_legacy_score'], 40.42216084498975, places=4)
         self.assertAlmostEqual(self.result.get_result('VMAF_feature_adm_score'), 0.78533833333333336, places=4)
         self.assertAlmostEqual(self.result['VMAF_feature_adm_score'], 0.78533833333333336, places=4)
         self.assertAlmostEqual(self.result['VMAF_feature_vif_score'], 0.15683466666666665, places=4)
         self.assertAlmostEqual(self.result['VMAF_feature_motion_score'], 12.5548366667, places=4)
         self.assertAlmostEqual(self.result['VMAF_feature_ansnr_score'], 7.92623066667, places=4)
         self.result.set_score_aggregate_method(np.min)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 37.573531379639725, places=4)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 37.57374203374743, places=4)
         self.result.set_score_aggregate_method(np.max)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 44.815357234059327, places=4)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 44.81541553088045, places=4)
         self.result.set_score_aggregate_method(np.median)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 38.876808477953254, places=4)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 38.87738088760398, places=4)
         self.result.set_score_aggregate_method(np.mean)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 40.421899030550769, places=4)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 40.422179484077304, places=4)
         self.result.set_score_aggregate_method(np.std)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 3.1518765879212993, places=4)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 3.1517466890090193, places=4)
         self.result.set_score_aggregate_method(np.var)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 9.9343260254864134, places=4)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 9.933564693550688, places=4)
         self.result.set_score_aggregate_method(partial(np.percentile, q=50))
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 38.876808477953254, places=4)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 38.87738088760398, places=4)
         self.result.set_score_aggregate_method(partial(np.percentile, q=80))
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 42.439937731616901, places=4)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 42.4402016735698401, places=4)
         self.result.set_score_aggregate_method(ListStats.total_variation)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 6.5901873052628375, places=4)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 6.589854070204712, places=4)
         self.result.set_score_aggregate_method(partial(ListStats.moving_average, n=2))
         for item in list(self.result.get_result('VMAF_legacy_score')):
-            self.assertAlmostEqual(item, 42.86773029545747, places=6)
+            self.assertAlmostEqual(item, 42.86782739689916, places=9)
 
         with self.assertRaises(KeyError):
             self.result.get_result('VVMAF_legacy_score')
@@ -338,13 +338,13 @@ class ScoreAggregationTest(unittest.TestCase):
 
         self.result.set_score_aggregate_method(np.mean)
         # the following should give same value
-        self.assertAlmostEqual(self.result['VMAF_score'], 35.0661575902223, places=4)
+        self.assertAlmostEqual(self.result['VMAF_score'], 35.070219101439314, places=4)
         # for a 2-D array, first dimension is # models and second is # frames
-        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][0], 35.0661575902223, places=4)
-        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][1], 35.0661575902223, places=4)
-        self.assertAlmostEqual(self.result['VMAF_array_score'][0], 22.97749190550349, places=4)
-        self.assertAlmostEqual(self.result['VMAF_array_score'][1], 44.79653061901706, places=4)
-        self.assertAlmostEqual(self.result['VMAF_array_score'][2], 37.424450246146364, places=4)
+        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][0], 35.070219101439314, places=4)
+        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][1], 35.070219101439314, places=4)
+        self.assertAlmostEqual(self.result['VMAF_array_score'][0], 22.97768506056642, places=4)
+        self.assertAlmostEqual(self.result['VMAF_array_score'][1], 44.802426803455766, places=4)
+        self.assertAlmostEqual(self.result['VMAF_array_score'][2], 37.43054544029577, places=4)
         # check that a 3-D array will throw assertion, score aggregation accepts only up to 2-D
         with self.assertRaises(AssertionError):
             x = self.result['VMAF_3D_array_score']
