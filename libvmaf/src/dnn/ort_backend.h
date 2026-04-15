@@ -23,6 +23,14 @@ int  vmaf_ort_infer(VmafOrtSession *sess,
                     size_t input_rank,
                     float *output, size_t output_capacity,
                     size_t *output_written);
+/**
+ * Fetch the static shape of input 0. @p max_rank caps the number of dims
+ * written; actual rank is returned via @p out_rank. Dimensions marked dynamic
+ * (symbolic) in the model are reported as -1. Returns 0 on success.
+ */
+int  vmaf_ort_input_shape(VmafOrtSession *sess,
+                          int64_t *out_shape, size_t max_rank,
+                          size_t *out_rank);
 void vmaf_ort_close(VmafOrtSession *sess);
 
 #ifdef __cplusplus

@@ -5,8 +5,8 @@
  *  Public `libvmaf/dnn.h` entry points. Thin wrapper that:
  *    1. validates the path + file (size cap, regular-file, sidecar)
  *    2. opens an ORT session via ort_backend.c
- *    3. registers the session with the VmafContext so per-frame extraction
- *       dispatches to the DNN runtime alongside SVM models.
+ *    3. queries the input shape and hands ownership to libvmaf.c via the
+ *       `dnn_ctx` bridge, so per-frame inference runs alongside SVM models.
  *
  *  When built with -Denable_dnn=false, this TU compiles a stub that returns
  *  -ENOSYS from every entry point so consumers degrade gracefully.
@@ -19,6 +19,7 @@
 
 #include "libvmaf/dnn.h"
 
+#include "dnn_ctx.h"
 #include "model_loader.h"
 #include "ort_backend.h"
 
@@ -51,26 +52,45 @@ int vmaf_use_tiny_model(VmafContext *ctx,
     if (rc < 0) return rc;
 
     VmafModelSidecar meta;
+    memset(&meta, 0, sizeof(meta));
+    bool have_meta = false;
     rc = vmaf_dnn_sidecar_load(onnx_path, &meta);
     /* Missing sidecar is not fatal — we only need it for NR/FR disambiguation
      * and pretty-printing. Lack of a sidecar defaults to FR. */
     if (rc < 0 && rc != -ENOENT) {
         return rc;
     }
+    if (rc == 0) have_meta = true;
 
     VmafOrtSession *sess = NULL;
     rc = vmaf_ort_open(&sess, onnx_path, cfg);
     if (rc < 0) {
-        vmaf_dnn_sidecar_free(&meta);
+        if (have_meta) vmaf_dnn_sidecar_free(&meta);
         return rc;
     }
 
-    /* TODO(phase-3k): attach `sess` to `ctx` so the per-frame loop in
-     * libvmaf/src/libvmaf.c invokes vmaf_ort_infer() and publishes the
-     * result as a `tiny_model` JSON block. Until that wiring lands, the
-     * session is opened and closed here to prove the load/validate path. */
-    vmaf_ort_close(sess);
-    vmaf_dnn_sidecar_free(&meta);
+    int64_t in_shape[4] = { 0 };
+    size_t in_rank = 0;
+    rc = vmaf_ort_input_shape(sess, in_shape, 4u, &in_rank);
+    if (rc < 0) {
+        vmaf_ort_close(sess);
+        if (have_meta) vmaf_dnn_sidecar_free(&meta);
+        return rc;
+    }
+
+    const char *feature_name =
+        (have_meta && meta.name && *meta.name) ? meta.name : "vmaf_tiny_model";
+
+    rc = vmaf_ctx_dnn_attach(ctx, sess,
+                             have_meta ? &meta : NULL,
+                             in_shape, in_rank,
+                             feature_name);
+    if (rc < 0) {
+        vmaf_ort_close(sess);
+        if (have_meta) vmaf_dnn_sidecar_free(&meta);
+        return rc;
+    }
+    /* Ownership transferred — do NOT close sess / free meta here. */
     return 0;
 #else
     (void) ctx; (void) onnx_path; (void) cfg;
