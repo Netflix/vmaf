@@ -23,6 +23,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "libvmaf.h"
 
@@ -66,6 +67,37 @@ int vmaf_dnn_available(void);
 int vmaf_use_tiny_model(VmafContext *ctx,
                         const char *onnx_path,
                         const VmafDnnConfig *cfg);
+
+/**
+ * Standalone DNN session for filter-style inference (learned pre-processing,
+ * C3). Unlike vmaf_use_tiny_model() this path does NOT need a VmafContext —
+ * intended for consumers that want luma-in / luma-out without scoring.
+ */
+typedef struct VmafDnnSession VmafDnnSession;
+
+/**
+ * Open a session against @p onnx_path. Applies the same size-cap + allowlist
+ * validation as vmaf_use_tiny_model().
+ */
+int vmaf_dnn_session_open(VmafDnnSession **out,
+                          const char *onnx_path,
+                          const VmafDnnConfig *cfg);
+
+/**
+ * Run one luma-in / luma-out pass. The model's input must be NCHW
+ * [1, 1, H, W] float32. Input luma is normalised to [0,1] (and mean/std
+ * from the sidecar if available); output is denormalised, rounded, and
+ * clamped to [0, 255].
+ *
+ * @return 0 on success, -ENOTSUP if the model shape is not luma-only,
+ *         -ERANGE if @p w/@p h don't match the model's static input shape.
+ */
+int vmaf_dnn_session_run_luma8(VmafDnnSession *sess,
+                               const uint8_t *in,  size_t in_stride,
+                               int w, int h,
+                               uint8_t *out, size_t out_stride);
+
+void vmaf_dnn_session_close(VmafDnnSession *sess);
 
 #ifdef __cplusplus
 }
