@@ -32,7 +32,37 @@ enum {
     ARG_NO_CUDA,
     ARG_NO_SYCL,
     ARG_SYCL_DEVICE,
+    ARG_PRECISION,
 };
+
+#define VMAF_DEFAULT_PRECISION_FMT "%.17g"
+#define VMAF_LEGACY_PRECISION_FMT  "%.6f"
+
+static char precision_fmt_buf[16];
+
+static const char *resolve_precision_fmt(const char *optarg, const char *app,
+                                         CLISettings *s)
+{
+    if (!strcmp(optarg, "max") || !strcmp(optarg, "full")) {
+        s->precision_max = true;
+        return VMAF_DEFAULT_PRECISION_FMT;
+    }
+    if (!strcmp(optarg, "legacy")) {
+        s->precision_legacy = true;
+        return VMAF_LEGACY_PRECISION_FMT;
+    }
+    char *end;
+    long n = strtol(optarg, &end, 10);
+    if (*end || end == optarg || n < 1 || n > 17) {
+        fprintf(stderr, "%s: --precision must be an integer 1..17, "
+                        "or one of: max, full, legacy (got: %s)\n",
+                app, optarg);
+        exit(1);
+    }
+    s->precision_n = (int)n;
+    snprintf(precision_fmt_buf, sizeof precision_fmt_buf, "%%.%ldg", n);
+    return precision_fmt_buf;
+}
 
 static const struct option long_opts[] = {
     { "reference",        1, NULL, 'r' },
@@ -60,6 +90,7 @@ static const struct option long_opts[] = {
     { "no_cuda",          0, NULL, ARG_NO_CUDA },
     { "no_sycl",          0, NULL, ARG_NO_SYCL },
     { "sycl_device",      1, NULL, ARG_SYCL_DEVICE },
+    { "precision",        1, NULL, ARG_PRECISION },
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { "quiet",            0, NULL, 'q' },
@@ -102,6 +133,10 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --no_cuda:                   disable CUDA backend\n"
             " --no_sycl:                    disable SYCL/oneAPI backend\n"
             " --sycl_device $unsigned:      select SYCL GPU by index (default: auto)\n"
+            " --precision $spec:            score output precision\n"
+            "                                  N (1..17) -> printf \"%%.<N>g\"\n"
+            "                                  max|full  -> \"%%.17g\" (default; round-trip lossless)\n"
+            "                                  legacy    -> \"%%.6f\" (pre-fork Netflix output)\n"
             " --quiet/-q:                  disable FPS meter when run in a TTY\n"
             " --no_prediction/-n:          no prediction, extract features only\n"
             " --version/-v:                print version and exit\n"
@@ -462,6 +497,8 @@ void cli_parse(const int argc, char *const *const argv,
 {
     memset(settings, 0, sizeof(*settings));
     settings->sycl_device = -1;    // auto-select by default
+    settings->precision_n = -1;
+    settings->precision_fmt = VMAF_DEFAULT_PRECISION_FMT;
     int o;
 
     while ((o = getopt_long(argc, argv, short_opts, long_opts, NULL)) >= 0) {
@@ -548,6 +585,9 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case ARG_SYCL_DEVICE:
             settings->sycl_device = (int)parse_unsigned(optarg, ARG_SYCL_DEVICE, argv[0]);
+            break;
+        case ARG_PRECISION:
+            settings->precision_fmt = resolve_precision_fmt(optarg, argv[0], settings);
             break;
         case 'n':
             settings->no_prediction = true;

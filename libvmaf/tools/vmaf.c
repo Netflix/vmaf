@@ -529,10 +529,11 @@ int main(int argc, char *argv[])
             }
 
             if (istty && (!c.quiet || !c.output_path)) {
-                fprintf(stderr, "%s: %f\n",
+                fprintf(stderr, "%s: ",
                         c.model_config[i].version ?
-                            c.model_config[i].version : c.model_config[i].path,
-                        vmaf_score);
+                            c.model_config[i].version : c.model_config[i].path);
+                fprintf(stderr, c.precision_fmt, vmaf_score);
+                fprintf(stderr, "\n");
             }
         }
 
@@ -549,11 +550,15 @@ int main(int argc, char *argv[])
             switch (score.type) {
             case VMAF_MODEL_COLLECTION_SCORE_BOOTSTRAP:
                 if (istty && (!c.quiet || !c.output_path)) {
-                    fprintf(stderr, "%s: %f, ci.p95: [%f, %f], stddev: %f\n",
-                            model_collection_label[i],
-                            score.bootstrap.bagging_score, score.bootstrap.ci.p95.lo,
-                            score.bootstrap.ci.p95.hi,
-                            score.bootstrap.stddev);
+                    fprintf(stderr, "%s: ", model_collection_label[i]);
+                    fprintf(stderr, c.precision_fmt, score.bootstrap.bagging_score);
+                    fprintf(stderr, ", ci.p95: [");
+                    fprintf(stderr, c.precision_fmt, score.bootstrap.ci.p95.lo);
+                    fprintf(stderr, ", ");
+                    fprintf(stderr, c.precision_fmt, score.bootstrap.ci.p95.hi);
+                    fprintf(stderr, "], stddev: ");
+                    fprintf(stderr, c.precision_fmt, score.bootstrap.stddev);
+                    fprintf(stderr, "\n");
                 }
                 break;
             default:
@@ -563,7 +568,8 @@ int main(int argc, char *argv[])
     }
 
     if (c.output_path)
-        vmaf_write_output(vmaf, c.output_path, c.output_fmt);
+        vmaf_write_output_with_format(vmaf, c.output_path, c.output_fmt,
+                                      c.precision_fmt);
 
     for (unsigned i = 0; i < c.model_cnt; i++)
         vmaf_model_destroy(model[i]);

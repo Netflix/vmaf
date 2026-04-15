@@ -116,7 +116,7 @@ class BasicResult(object):
                     unit=unit_name, num=tframe_scores[0]) + (
                 ", ".join(
                     list(map(
-                        lambda tscore: "{score_key}:{score:.6f}".format(score_key=tscore[0], score=tscore[1]),
+                        lambda tscore: "{score_key}:{score:.17g}".format(score_key=tscore[0], score=tscore[1]),
                         zip(list_score_key, tframe_scores[1])))
                 )),
                 enumerate(zip(*list_scores))
@@ -129,7 +129,7 @@ class BasicResult(object):
         list_score_key = self.get_ordered_list_score_key()
         str_aggregate = "Aggregate ({}): ".format(self.score_aggregate_method.__name__) + (", ".join(
             list(map(
-                lambda tscore: "{score_key}:{score:.6f}".format(score_key=tscore[0], score=tscore[1]),
+                lambda tscore: "{score_key}:{score:.17g}".format(score_key=tscore[0], score=tscore[1]),
                 zip(
                     list_score_key, list(map(
                         lambda score_key: self[score_key],

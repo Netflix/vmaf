@@ -1,6 +1,6 @@
 /**
  *
- *  Copyright 2016-2020 Netflix, Inc.
+ *  Copyright 2016-2026 Netflix, Inc.
  *
  *     Licensed under the BSD+Patent License (the "License");
  *     you may not use this file except in compliance with the License.
@@ -1529,8 +1529,9 @@ const char *vmaf_version(void)
     return VMAF_VERSION;
 }
 
-int vmaf_write_output(VmafContext *vmaf, const char *output_path,
-                      enum VmafOutputFormat fmt)
+int vmaf_write_output_with_format(VmafContext *vmaf, const char *output_path,
+                                  enum VmafOutputFormat fmt,
+                                  const char *score_format)
 {
     FILE *outfile = fopen(output_path, "w");
     if (!outfile) {
@@ -1548,19 +1549,20 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
         ret = vmaf_write_output_xml(vmaf, vmaf->feature_collector, outfile,
                                     vmaf->cfg.n_subsample,
                                     vmaf->pic_params.w, vmaf->pic_params.h,
-                                    fps, vmaf->pic_cnt);
+                                    fps, vmaf->pic_cnt, score_format);
         break;
     case VMAF_OUTPUT_FORMAT_JSON:
         ret = vmaf_write_output_json(vmaf, vmaf->feature_collector, outfile,
-                                     vmaf->cfg.n_subsample, fps, vmaf->pic_cnt);
+                                     vmaf->cfg.n_subsample, fps, vmaf->pic_cnt,
+                                     score_format);
         break;
     case VMAF_OUTPUT_FORMAT_CSV:
         ret = vmaf_write_output_csv(vmaf->feature_collector, outfile,
-                                    vmaf->cfg.n_subsample);
+                                    vmaf->cfg.n_subsample, score_format);
         break;
     case VMAF_OUTPUT_FORMAT_SUB:
         ret = vmaf_write_output_sub(vmaf->feature_collector, outfile,
-                                    vmaf->cfg.n_subsample);
+                                    vmaf->cfg.n_subsample, score_format);
         break;
     default:
         ret = -EINVAL;
@@ -1569,4 +1571,10 @@ int vmaf_write_output(VmafContext *vmaf, const char *output_path,
 
     fclose(outfile);
     return ret;
+}
+
+int vmaf_write_output(VmafContext *vmaf, const char *output_path,
+                      enum VmafOutputFormat fmt)
+{
+    return vmaf_write_output_with_format(vmaf, output_path, fmt, NULL);
 }

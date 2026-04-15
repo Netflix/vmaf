@@ -1,6 +1,6 @@
 /**
  *
- *  Copyright 2016-2020 Netflix, Inc.
+ *  Copyright 2016-2026 Netflix, Inc.
  *
  *     Licensed under the BSD+Patent License (the "License");
  *     you may not use this file except in compliance with the License.
@@ -21,16 +21,20 @@
 
 int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc, FILE *outfile,
                           unsigned subsample, unsigned width, unsigned height,
-                          double fps, unsigned pic_cnt);
+                          double fps, unsigned pic_cnt,
+                          const char *score_format);
 
 int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
                            FILE *outfile, unsigned subsample, double fps,
-                           unsigned pic_cnt);
+                           unsigned pic_cnt,
+                           const char *score_format);
 
 int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
-                           unsigned subsample);
+                           unsigned subsample,
+                           const char *score_format);
 
 int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
-                          unsigned subsample);
+                          unsigned subsample,
+                          const char *score_format);
 
 #endif /* __VMAF_OUTPUT_H__ */

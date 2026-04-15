@@ -1,6 +1,6 @@
 /**
  *
- *  Copyright 2016-2020 Netflix, Inc.
+ *  Copyright 2016-2026 Netflix, Inc.
  *
  *     Licensed under the BSD+Patent License (the "License");
  *     you may not use this file except in compliance with the License.
@@ -387,6 +387,27 @@ int vmaf_close(VmafContext *vmaf);
  */
 int vmaf_write_output(VmafContext *vmaf, const char *output_path,
                       enum VmafOutputFormat fmt);
+
+/**
+ * Write VMAF stats to an output file with a caller-controlled score format.
+ *
+ * Identical to `vmaf_write_output()`, but lets the caller specify the printf
+ * format string used for every score value emitted to the file (XML / JSON /
+ * CSV / SUB). Pass NULL to use the default format ("%.17g" — shortest IEEE-754
+ * round-trip lossless double). The format string must accept exactly one
+ * `double` argument (e.g. "%.17g", "%.10f", "%.6f") and is not validated; an
+ * invalid format will produce undefined output. The string is read each time
+ * a score is written; callers must keep it valid for the duration of the call.
+ *
+ * The pre-fork Netflix output format (a value-magnitude-dependent
+ * "%.6f" / "%.16f" heuristic) is no longer available — to approximate it,
+ * pass "%.6f".
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_write_output_with_format(VmafContext *vmaf, const char *output_path,
+                                  enum VmafOutputFormat fmt,
+                                  const char *score_format);
 
 /**
  * Get libvmaf version.

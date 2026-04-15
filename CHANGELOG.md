@@ -1,5 +1,49 @@
 # Change Log
 
+> The "Unreleased / lusoris fork" section below tracks fork-specific changes
+> on top of upstream Netflix/vmaf. From here on, release-please generates
+> entries automatically from Conventional Commits.
+
+## [Unreleased] — lusoris fork (3.0.0-lusoris.0)
+
+### Added
+
+- **CLI**: `--precision $spec` flag for score output formatting.
+  - `N` (1..17) → `printf "%.<N>g"`
+  - `max` / `full` → `"%.17g"` (default; round-trip lossless)
+  - `legacy` → `"%.6f"` (pre-fork Netflix behavior, opt-in for compat)
+- **Public API**: `vmaf_write_output_with_format()` accepts a `score_format`
+  string; old `vmaf_write_output()` routes through the new function with
+  `"%.17g"` default.
+- **GPU backends**: SYCL/oneAPI backend (Lusoris + Claude); CUDA backend
+  optimizations (decoupled buffer elimination, VIF rd_stride, ADM inline
+  decouple).
+- **Numerical correctness**: float ADM `sum_cube` and `csf_den_scale` use
+  double-precision accumulation in scalar/AVX2/AVX512 paths to eliminate
+  ~8e-5 drift between scalar and SIMD reductions.
+- **AI-agent scaffolding**: `.claude/` directory with 7 specialized review
+  agents (c-, cuda-, sycl-, vulkan-, simd-, meson-reviewer, perf-profiler),
+  18 task skills, hooks for unsafe-bash blocking and auto-format,
+  `CLAUDE.md` + `AGENTS.md` onboarding, `docs/principles.md` (Power-of-10 +
+  JPL-C-STD + CERT + MISRA).
+- **Quality gates**: GitHub Actions workflows for CI (Netflix golden gate
+  D24, sanitizers, cross-backend ULP), lint (clang-tidy, cppcheck,
+  pre-commit), security (semgrep, CodeQL, gitleaks, dependency-review),
+  supply-chain (SBOM, Sigstore keyless signing, SLSA L3 provenance).
+
+### Changed
+
+- Python diagnostic output (`Result._get_perframe_score_str`) now emits
+  scores at `%.17g` instead of `%.6f` for round-trip reproducibility.
+- Copyright headers across Netflix-authored sources updated `2016-2020` →
+  `2016-2026`.
+
+### Re-attributed
+
+- 11 SYCL files in `libvmaf/{include,src,test}/.../sycl/` from
+  `Netflix, Inc.` to `Lusoris and Claude (Anthropic)` — these files were
+  authored entirely by the fork.
+
 ## (2022-04-11) [v2.3.1]
 
 This is a minor release with some CAMBI extensions and speed-ups and adding it to AOM CTC v3, as well as a few minor fixes/cleanups.

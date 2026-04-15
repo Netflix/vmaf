@@ -55,6 +55,10 @@ typedef struct {
     bool no_cuda;
     bool no_sycl;
     int sycl_device;    // -1 = not requested (default), 0+ = device index
+    const char *precision_fmt;  // resolved printf format, e.g. "%.17g"
+    int precision_n;            // -1 = unset (default %.17g), else user N
+    bool precision_max;
+    bool precision_legacy;
 } CLISettings;
 
 void cli_parse(const int argc, char *const *const argv,
