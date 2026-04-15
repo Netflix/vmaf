@@ -1,0 +1,28 @@
+/**
+ *  Copyright 2026 Lusoris and Claude (Anthropic)
+ *  SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
+ */
+
+#ifndef LIBVMAF_FEATURE_{{NAME_UPPER}}_H_
+#define LIBVMAF_FEATURE_{{NAME_UPPER}}_H_
+
+#include <stddef.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct Vmaf{{NAME_PASCAL}}State Vmaf{{NAME_PASCAL}}State;
+
+int  vmaf_{{NAME}}_init(Vmaf{{NAME_PASCAL}}State **state, int width, int height);
+int  vmaf_{{NAME}}_extract(Vmaf{{NAME_PASCAL}}State *state,
+                           const uint8_t *ref, const uint8_t *dis,
+                           int stride, double *out);
+void vmaf_{{NAME}}_close(Vmaf{{NAME_PASCAL}}State *state);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* LIBVMAF_FEATURE_{{NAME_UPPER}}_H_ */

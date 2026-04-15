@@ -1,0 +1,35 @@
+{
+  "name": "vmaf-dev (Ubuntu 24.04)",
+  "build": {
+    "dockerfile": "../docker/dev/ubuntu-24.04.Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/src",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "mesonbuild.mesonbuild",
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "tamasfe.even-better-toml",
+        "timonwong.shellcheck",
+        "eamodio.gitlens",
+        "github.vscode-pull-request-github"
+      ],
+      "settings": {
+        "C_Cpp.intelliSenseEngine": "disabled",
+        "clangd.arguments": [
+          "--compile-commands-dir=${workspaceFolder}/build",
+          "--background-index",
+          "--clang-tidy",
+          "--header-insertion=iwyu"
+        ]
+      }
+    }
+  },
+  "postCreateCommand": "cd libvmaf && meson setup ../build -Denable_cuda=false -Denable_sycl=false && ln -sf build/compile_commands.json ../compile_commands.json",
+  "remoteUser": "root",
+  "features": {}
+}

@@ -1,0 +1,15 @@
+# Included from libvmaf/src/meson.build when get_option('enable_{{BACKEND}}') is enabled.
+
+{{BACKEND}}_sources = files(
+  '{{BACKEND}}/common.c',
+  '{{BACKEND}}/picture_{{BACKEND}}.c',
+  'feature/{{BACKEND}}/adm_{{BACKEND}}.c',
+  'feature/{{BACKEND}}/vif_{{BACKEND}}.c',
+  'feature/{{BACKEND}}/motion_{{BACKEND}}.c',
+)
+
+{{BACKEND}}_deps = []
+# TODO: add dependency() entries for the {{BACKEND}} runtime (e.g. ROCm, Vulkan, Metal).
+
+libvmaf_sources += {{BACKEND}}_sources
+libvmaf_deps    += {{BACKEND}}_deps

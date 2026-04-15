@@ -1,0 +1,39 @@
+/**
+ *  Copyright 2026 Lusoris and Claude (Anthropic)
+ *  SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
+ */
+
+#include <errno.h>
+#include <stdlib.h>
+
+#include "common.h"
+
+struct Vmaf{{BACKEND_PASCAL}}Context {
+    int device_index;
+    /* TODO: add queue / stream handle, allocator, etc. */
+};
+
+int vmaf_{{BACKEND}}_context_new(Vmaf{{BACKEND_PASCAL}}Context **out,
+                                  int device_index)
+{
+    if (!out) return -EINVAL;
+    Vmaf{{BACKEND_PASCAL}}Context *ctx = calloc(1, sizeof(*ctx));
+    if (!ctx) return -ENOMEM;
+    ctx->device_index = device_index;
+    /* TODO: initialize device/queue */
+    *out = ctx;
+    return 0;
+}
+
+void vmaf_{{BACKEND}}_context_destroy(Vmaf{{BACKEND_PASCAL}}Context *ctx)
+{
+    if (!ctx) return;
+    /* TODO: release device/queue */
+    free(ctx);
+}
+
+int vmaf_{{BACKEND}}_device_count(void)
+{
+    /* TODO: probe {{BACKEND}} runtime */
+    return 0;
+}

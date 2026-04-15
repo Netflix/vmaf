@@ -1,0 +1,21 @@
+{
+  "//": "Drop this into Claude Desktop's mcpServers config (~/Library/Application Support/Claude/claude_desktop_config.json on macOS, %APPDATA%/Claude/claude_desktop_config.json on Windows). Adjust paths for your machine.",
+  "mcpServers": {
+    "vmaf-local": {
+      "command": "vmaf-mcp",
+      "env": {
+        "VMAF_BIN": "/home/you/dev/vmaf/build/tools/vmaf",
+        "VMAF_MCP_ALLOW": "/home/you/yuv-corpus:/home/you/renders"
+      }
+    },
+    "vmaf-docker": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-v", "/home/you/yuv-corpus:/data:ro",
+        "-e", "VMAF_MCP_ALLOW=/data",
+        "ghcr.io/lusoris/vmaf-mcp:latest"
+      ]
+    }
+  }
+}

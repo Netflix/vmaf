@@ -1,0 +1,44 @@
+/**
+ *  Copyright 2026 Lusoris and Claude (Anthropic)
+ *  SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
+ */
+
+#include <errno.h>
+#include <stdlib.h>
+
+#include "{{NAME}}.h"
+
+struct Vmaf{{NAME_PASCAL}}State {
+    int width;
+    int height;
+    /* TODO: feature-specific state */
+};
+
+int vmaf_{{NAME}}_init(Vmaf{{NAME_PASCAL}}State **out, int width, int height)
+{
+    if (!out || width <= 0 || height <= 0) return -EINVAL;
+    Vmaf{{NAME_PASCAL}}State *s = calloc(1, sizeof(*s));
+    if (!s) return -ENOMEM;
+    s->width  = width;
+    s->height = height;
+    *out = s;
+    return 0;
+}
+
+int vmaf_{{NAME}}_extract(Vmaf{{NAME_PASCAL}}State *s,
+                          const uint8_t *ref, const uint8_t *dis,
+                          int stride, double *out)
+{
+    if (!s || !ref || !dis || !out) return -EINVAL;
+    (void) stride;
+    /* TODO: compute {{NAME}} */
+    *out = 0.0;
+    return 0;
+}
+
+void vmaf_{{NAME}}_close(Vmaf{{NAME_PASCAL}}State *s)
+{
+    if (!s) return;
+    /* TODO: release scratch */
+    free(s);
+}
