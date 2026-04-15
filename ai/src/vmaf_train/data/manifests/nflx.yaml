@@ -1,0 +1,4 @@
+name: nflx
+license: "Netflix research"
+description: "Netflix Public Dataset — source for the upstream vmaf_v0.6.1 SVM."
+entries: []

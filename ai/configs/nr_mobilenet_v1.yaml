@@ -1,0 +1,18 @@
+# Tiny NR metric (C2) — frame-only MobileNet-tiny backbone → MOS.
+# Input: 1-channel luma frame, normalized to [0, 1], resized to multiple of 32.
+model: nr_metric
+model_args:
+  in_channels: 1
+  width: 16
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+
+cache: ai/data/konvid_frames_nr.parquet   # feature_dump variant for NR (frame paths + MOS)
+output: runs/nr_mobilenet_v1
+
+epochs: 80
+batch_size: 64
+val_frac: 0.1
+test_frac: 0.1
+seed: 0
+precision: "16-mixed"

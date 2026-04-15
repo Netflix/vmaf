@@ -1,0 +1,18 @@
+# Tiny learned filter (C3) — residual CNN for encoder pre-processing.
+# Pairs: degraded frame → clean frame. Output is clamped to [0, 1] post-residual.
+model: learned_filter
+model_args:
+  channels: 1
+  width: 16
+  num_blocks: 4
+  lr: 1.0e-4
+
+cache: ai/data/bvi_dvc_pairs.parquet
+output: runs/filter_residual_v1
+
+epochs: 200
+batch_size: 32
+val_frac: 0.1
+test_frac: 0.1
+seed: 0
+precision: "16-mixed"

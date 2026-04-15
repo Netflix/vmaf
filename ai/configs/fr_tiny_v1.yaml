@@ -1,0 +1,20 @@
+# Tiny FR regressor (C1) — replaces/augments the upstream SVM.
+# Input: pre-extracted libvmaf feature vector (adm2, vif_scale0..3, motion2 → 6 features).
+model: fr_regressor
+model_args:
+  in_features: 6
+  hidden: 64
+  depth: 2
+  dropout: 0.1
+  lr: 1.0e-3
+  weight_decay: 1.0e-5
+
+cache: ai/data/nflx_features.parquet
+output: runs/fr_tiny_v1
+
+epochs: 100
+batch_size: 256
+val_frac: 0.1
+test_frac: 0.1
+seed: 0
+precision: "32-true"

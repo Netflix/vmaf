@@ -1,0 +1,4 @@
+name: bvi-dvc
+license: "Academic (request from University of Bristol)"
+description: "BVI-DVC — encoder distortion pairs for learned filter training (C3)."
+entries: []
