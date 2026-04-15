@@ -1,9 +1,12 @@
-"""Dataset manifests + download stubs for NFLX / KoNViD / LIVE-VQC / YouTube-UGC / BVI-DVC.
+"""Dataset manifests for NFLX / KoNViD / LIVE-VQC / YouTube-UGC / BVI-DVC.
 
 Manifests (`manifests/<name>.yaml`) declare the authoritative file list with
-SHA-256 pins. Downloaders are intentionally not implemented here — the repo
-does not redistribute the data. Consumers either point `VMAF_DATA_ROOT` at a
-pre-downloaded cache or supply a custom loader.
+SHA-256 pins. The repo does not redistribute the data — consumers point
+`VMAF_DATA_ROOT` at a pre-downloaded cache and populate their manifest with::
+
+    vmaf-train manifest-scan --dataset <name> --root $VMAF_DATA_ROOT/<name>
+
+See `vmaf_train.data.manifest_scan` for the scanner implementation.
 """
 from __future__ import annotations
 
