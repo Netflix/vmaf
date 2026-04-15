@@ -1,6 +1,9 @@
 # Ordered list of patches against FFmpeg master.
-# Uncomment entries once the patches are cut.
+# Applied in order by ffmpeg-patches/test/build-and-run.sh.
 #
-# 0001-vf_libvmaf-expose-precision-option.patch
-# 0002-vf_libvmaf-wire-sycl-backend-selector.patch
-# 0003-vf_libvmaf_tiny-new-filter-for-onnx-runtime.patch
+0001-libvmaf-add-tiny-model-option.patch
+0002-add-vmaf_pre-filter.patch
+#
+# Future patches (uncomment once cut):
+# 0003-vf_libvmaf-expose-precision-option.patch
+# 0004-vf_libvmaf-wire-sycl-backend-selector.patch

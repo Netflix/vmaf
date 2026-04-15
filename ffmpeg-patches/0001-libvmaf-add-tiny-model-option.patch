@@ -1,0 +1,112 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lusoris <lusoris@pm.me>
+Date: Wed, 15 Apr 2026 12:00:00 +0000
+Subject: [PATCH 1/2] avfilter/vf_libvmaf: add tiny_model / tiny_device options
+
+Wires Lusoris libvmaf's tiny-AI surface (vmaf_use_tiny_model) into the
+existing libvmaf filter. When tiny_model is set the filter loads an ONNX
+model via libvmaf's DNN runtime (ONNX Runtime) and emits its scores
+alongside the classic SVM-based VMAF score.
+
+Options added:
+  tiny_model   - path to .onnx model (requires libvmaf built --enable_dnn)
+  tiny_device  - auto | cpu | cuda | openvino | rocm  (default: auto)
+  tiny_threads - CPU EP intra-op threads (default: 0 = ORT default)
+  tiny_fp16    - request fp16 I/O when the device supports it
+
+Status: DRAFT. Needs rebase against upstream master before submission —
+the context here is against libvmaf filter circa FFmpeg 7.1 release.
+
+Signed-off-by: Lusoris <lusoris@pm.me>
+---
+ libavfilter/vf_libvmaf.c | 56 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 55 insertions(+), 1 deletion(-)
+
+diff --git a/libavfilter/vf_libvmaf.c b/libavfilter/vf_libvmaf.c
+index 0000000..1111111 100644
+--- a/libavfilter/vf_libvmaf.c
++++ b/libavfilter/vf_libvmaf.c
+@@ -30,6 +30,7 @@
+ #include <pthread.h>
+ #include <libvmaf.h>
+ #include <libvmaf/model.h>
++#include <libvmaf/dnn.h>
+
+ #include "libavutil/avstring.h"
+ #include "libavutil/file_open.h"
+@@ -60,6 +61,10 @@ typedef struct LIBVMAFContext {
+     int n_threads;
+     int n_subsample;
+     char *feature_cfg;
++    char *tiny_model_path;
++    char *tiny_device;
++    int   tiny_threads;
++    int   tiny_fp16;
+     VmafContext *vmaf;
+     VmafModel **model;
+     const AVPixFmtDescriptor *desc;
+@@ -81,6 +86,10 @@ static const AVOption libvmaf_options[] = {
+     {"n_threads",      "number of threads", OFFSET(n_threads),   AV_OPT_TYPE_INT,    {.i64=0},   0, UINT_MAX, FLAGS},
+     {"n_subsample",    "compute scores every N frames", OFFSET(n_subsample), AV_OPT_TYPE_INT, {.i64=1}, 1, UINT_MAX, FLAGS},
+     {"feature",        "feature to log", OFFSET(feature_cfg), AV_OPT_TYPE_STRING, {.str=NULL}, 0, 0, FLAGS},
++    {"tiny_model",     "path to tiny ONNX model (libvmaf --enable_dnn)", OFFSET(tiny_model_path), AV_OPT_TYPE_STRING, {.str=NULL}, 0, 0, FLAGS},
++    {"tiny_device",    "tiny-model device: auto|cpu|cuda|openvino|rocm", OFFSET(tiny_device), AV_OPT_TYPE_STRING, {.str="auto"}, 0, 0, FLAGS},
++    {"tiny_threads",   "tiny-model CPU EP intra-op threads (0 = ORT default)", OFFSET(tiny_threads), AV_OPT_TYPE_INT, {.i64=0}, 0, INT_MAX, FLAGS},
++    {"tiny_fp16",      "request fp16 I/O when supported", OFFSET(tiny_fp16), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
+     { NULL }
+ };
+
+@@ -390,6 +399,51 @@ static av_cold int init(AVFilterContext *ctx)
+         goto fail;
+     }
+
++    if (s->tiny_model_path && *s->tiny_model_path) {
++        if (!vmaf_dnn_available()) {
++            av_log(ctx, AV_LOG_ERROR,
++                   "tiny_model set but libvmaf was built without "
++                   "-Denable_dnn; rebuild libvmaf with ONNX Runtime.\n");
++            err = AVERROR(ENOSYS);
++            goto fail;
++        }
++
++        VmafDnnConfig dnn_cfg = {
++            .device       = VMAF_DNN_DEVICE_AUTO,
++            .device_index = 0,
++            .threads      = s->tiny_threads,
++            .fp16_io      = !!s->tiny_fp16,
++        };
++        if (s->tiny_device && *s->tiny_device) {
++            if      (!av_strcasecmp(s->tiny_device, "auto"))     dnn_cfg.device = VMAF_DNN_DEVICE_AUTO;
++            else if (!av_strcasecmp(s->tiny_device, "cpu"))      dnn_cfg.device = VMAF_DNN_DEVICE_CPU;
++            else if (!av_strcasecmp(s->tiny_device, "cuda"))     dnn_cfg.device = VMAF_DNN_DEVICE_CUDA;
++            else if (!av_strcasecmp(s->tiny_device, "openvino")) dnn_cfg.device = VMAF_DNN_DEVICE_OPENVINO;
++            else if (!av_strcasecmp(s->tiny_device, "rocm"))     dnn_cfg.device = VMAF_DNN_DEVICE_ROCM;
++            else {
++                av_log(ctx, AV_LOG_ERROR,
++                       "Unknown tiny_device %s (expected auto|cpu|cuda|openvino|rocm).\n",
++                       s->tiny_device);
++                err = AVERROR(EINVAL);
++                goto fail;
++            }
++        }
++
++        err = vmaf_use_tiny_model(s->vmaf, s->tiny_model_path, &dnn_cfg);
++        if (err) {
++            av_log(ctx, AV_LOG_ERROR,
++                   "vmaf_use_tiny_model(%s) failed: %d.\n",
++                   s->tiny_model_path, err);
++            err = AVERROR(EINVAL);
++            goto fail;
++        }
++        av_log(ctx, AV_LOG_INFO,
++               "tiny_model loaded: %s (device=%s threads=%d fp16=%d)\n",
++               s->tiny_model_path,
++               s->tiny_device ? s->tiny_device : "auto",
++               s->tiny_threads, s->tiny_fp16);
++    }
++
+     return 0;
+
+ fail:
+--
+2.45.0

@@ -105,3 +105,62 @@ jobs:
           meson compile -C build
       - name: Run unit tests under sanitizer
         run: meson test -C build --print-errorlogs --suite=unit
+
+  # ===== DNN / tiny-AI gate =====
+  # Builds libvmaf with --enable_dnn (ONNX Runtime C API), runs the dnn
+  # meson suite, and exercises the ai/ Python package's unit tests. Does
+  # NOT require ORT at configure time — stub branch is exercised when the
+  # ubuntu runner doesn't have onnxruntime available via pkg-config.
+  dnn:
+    name: "Tiny AI (dnn suite + ai/ pytests)"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build nasm pkg-config \
+            python3-pip python3-venv
+      - name: Install ONNX Runtime (CPU)
+        env:
+          ORT_VERSION: "1.20.0"
+        run: |
+          curl -sSL \
+            "https://github.com/microsoft/onnxruntime/releases/download/v${ORT_VERSION}/onnxruntime-linux-x64-${ORT_VERSION}.tgz" \
+            | sudo tar -xz -C /opt/
+          sudo ln -sfn "/opt/onnxruntime-linux-x64-${ORT_VERSION}" /opt/onnxruntime
+          # Install a pkg-config file since the tarball ships none.
+          sudo install -d /usr/local/lib/pkgconfig
+          cat <<EOF | sudo tee /usr/local/lib/pkgconfig/libonnxruntime.pc >/dev/null
+          prefix=/opt/onnxruntime
+          exec_prefix=\${prefix}
+          libdir=\${exec_prefix}/lib
+          includedir=\${prefix}/include
+
+          Name: libonnxruntime
+          Description: ONNX Runtime C API
+          Version: ${ORT_VERSION}
+          Libs: -L\${libdir} -lonnxruntime
+          Cflags: -I\${includedir}
+          EOF
+          # Strip the leading YAML indent that `cat <<EOF` preserved.
+          sudo sed -i 's/^          //' /usr/local/lib/pkgconfig/libonnxruntime.pc
+          echo "/opt/onnxruntime/lib" | sudo tee /etc/ld.so.conf.d/onnxruntime.conf
+          sudo ldconfig
+      - name: Build libvmaf (dnn enabled)
+        working-directory: libvmaf
+        run: |
+          meson setup build -Denable_cuda=false -Denable_sycl=false \
+            -Denable_dnn=enabled --buildtype=release
+          meson compile -C build
+      - name: Run meson dnn suite
+        working-directory: libvmaf
+        run: meson test -C build --suite=dnn --print-errorlogs
+      - name: Set up Python + install vmaf-train
+        run: |
+          python3 -m venv /tmp/vmaf-train-venv
+          /tmp/vmaf-train-venv/bin/pip install --upgrade pip
+          /tmp/vmaf-train-venv/bin/pip install -e ai
+      - name: Run ai/ pytests
+        run: /tmp/vmaf-train-venv/bin/pytest ai/tests/ -v
