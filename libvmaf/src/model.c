@@ -96,7 +96,7 @@ static const VmafBuiltInModel built_in_models[] = {
 };
 
 #define BUILT_IN_MODEL_CNT \
-    ((sizeof(built_in_models)) / (sizeof(built_in_models[0]))) - 1
+    (((sizeof(built_in_models)) / (sizeof(built_in_models[0]))) - 1)
 
 int vmaf_model_load(VmafModel **model, VmafModelConfig *cfg,
                     const char *version)
@@ -165,7 +165,7 @@ int vmaf_model_feature_overload(VmafModel *model, const char *feature_name,
         VmafFeatureExtractor *fex =
             vmaf_get_feature_extractor_by_feature_name(model->feature[i].name, 0);
         if (!fex) continue;
-        if (strcmp(feature_name, fex->name)) continue;
+        if (strcmp(feature_name, fex->name) != 0) continue;
         VmafDictionary *d =
             vmaf_dictionary_merge((VmafDictionary**)&model->feature[i].opts_dict,
                                   (VmafDictionary**)&opts_dict, 0);
@@ -194,11 +194,12 @@ void vmaf_model_destroy(VmafModel *model)
     free(model->score_transform.knots.list);
     free(model->predict_nodes);
     if (model->predict_feature_names) {
-        for (unsigned i = 0; i < model->n_features; i++)
+        for (unsigned i = 0; i < model->n_features; i++) {
             free(model->predict_feature_names[i]);
-        free(model->predict_feature_names);
+        }
+        free((void *) model->predict_feature_names);
     }
-    free(model->predict_feature_vectors);
+    free((void *) model->predict_feature_vectors);
     free(model);
 }
 
@@ -215,9 +216,9 @@ int vmaf_model_collection_append(VmafModelCollection **model_collection,
         if (!mc) goto fail;
         memset(mc, 0, sizeof(*mc));
         const size_t initial_sz = 8 * sizeof(*mc->model);
-        mc->model = malloc(initial_sz);
+        mc->model = (VmafModel **) malloc(initial_sz);
         if (!mc->model) goto fail_mc;
-        memset(mc->model, 0, initial_sz);
+        memset((void *) mc->model, 0, initial_sz);
         mc->size = 8;
         mc->type = model->type;
         const size_t name_sz = strlen(model->name) - 5 + 1;
@@ -231,7 +232,7 @@ int vmaf_model_collection_append(VmafModelCollection **model_collection,
 
     if (mc->cnt == mc->size) {
         const size_t sz = mc->size * sizeof(*mc->model) * 2;
-        VmafModel **m = realloc(mc->model, sz);
+        VmafModel **m = (VmafModel **) realloc((void *) mc->model, sz);
         if (!m) goto fail;
         mc->model = m;
         mc->size *= 2;
@@ -241,7 +242,7 @@ int vmaf_model_collection_append(VmafModelCollection **model_collection,
     return 0;
 
 fail_model:
-    free(mc->model);
+    free((void *) mc->model);
 fail_mc:
     free(mc);
 fail:
@@ -252,9 +253,10 @@ fail:
 void vmaf_model_collection_destroy(VmafModelCollection *model_collection)
 {
     if (!model_collection) return;
-    for (unsigned i = 0; i < model_collection->cnt; i++)
+    for (unsigned i = 0; i < model_collection->cnt; i++) {
         vmaf_model_destroy(model_collection->model[i]);
-    free(model_collection->model);
+    }
+    free((void *) model_collection->model);
     free((char*)model_collection->name);
     free(model_collection);
 }

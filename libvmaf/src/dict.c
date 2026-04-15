@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +25,7 @@ VmafDictionaryEntry *vmaf_dictionary_get(VmafDictionary **dict,
     return NULL;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
                         uint64_t flags)
 {
@@ -32,32 +34,36 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
     if (!val) return -EINVAL;
 
     VmafDictionary *d = *dict;
+    char *buf = NULL;
+    const char *val_copy = NULL;
+    const char *key_copy = NULL;
 
     if (!d) {
         d = *dict = malloc(sizeof(*d));
-        if (!d) goto fail;
+        if (!d) return -ENOMEM;
         memset(d, 0, sizeof(*d));
         const size_t initial_sz = 8 * sizeof(*d->entry);
         d->entry = malloc(initial_sz);
         if (!d->entry) {
             free(d);
             *dict = NULL;
-            goto fail;
+            return -ENOMEM;
         }
         memset(d->entry, 0, initial_sz);
         d->size = 8;
     }
 
-    char *buf = NULL;
     if (flags & VMAF_DICT_NORMALIZE_NUMERICAL_VALUES) {
         char *end = NULL;
-        double d = strtof(val, &end);
-        if (!(d == 0 && val == end)) {
+        double dv = strtof(val, &end);
+        if (!(dv == 0 && val == end)) {
             const char *fmt = "%g";
-            const size_t buf_sz = snprintf(NULL, 0, fmt, d) + 1;
+            const int snp = snprintf(NULL, 0, fmt, dv);
+            if (snp < 0) return -EINVAL;
+            const size_t buf_sz = (size_t) snp + 1;
             buf = malloc(buf_sz);
             if (!buf) return -ENOMEM;
-            snprintf(buf, buf_sz, fmt, d);
+            (void) snprintf(buf, buf_sz, fmt, dv);
         }
     }
 
@@ -69,27 +75,32 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
         return ret;
     }
 
+    /* Overwrite path — no realloc, so existing_entry stays valid. */
+    if (existing_entry) {
+        val_copy = strdup(val);
+        if (!val_copy) goto fail;
+        free((char*)existing_entry->val);
+        existing_entry->val = val_copy;
+        free(buf);
+        return 0;
+    }
+
     if (d->cnt == d->size) {
+        assert(d->size > 0);
         const size_t sz = d->size * sizeof(*d->entry) * 2;
-        VmafDictionaryEntry *entry = realloc(d->entry, sz);
+        VmafDictionaryEntry *entry =
+            (VmafDictionaryEntry *) realloc(d->entry, sz);
         if (!entry) goto fail;
         d->entry = entry;
         d->size *= 2;
     }
 
-    const char *val_copy = strdup(val);
+    val_copy = strdup(val);
     if (!val_copy) goto fail;
+    key_copy = strdup(key);
+    if (!key_copy) goto fail;
 
     free(buf);
-
-    if (existing_entry && !(flags & VMAF_DICT_DO_NOT_OVERWRITE)) {
-        free((char*)existing_entry->val);
-        existing_entry->val = val_copy;
-        return 0;
-    }
-
-    const char *key_copy = strdup(key);
-    if (!key_copy) goto free_val_copy;
 
     VmafDictionaryEntry entry = {
         .key = key_copy,
@@ -100,9 +111,10 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
 
     return 0;
 
-free_val_copy:
-    free((char*)val_copy);
 fail:
+    free(buf);
+    free((char*)val_copy);
+    free((char*)key_copy);
     return -ENOMEM;
 }
 
@@ -161,7 +173,7 @@ VmafDictionary *vmaf_dictionary_merge(VmafDictionary **dict_a,
     return d;
 
 fail:
-    err = vmaf_dictionary_free(&d);
+    (void) vmaf_dictionary_free(&d);
     return NULL;
 }
 
@@ -175,7 +187,7 @@ int vmaf_dictionary_compare(VmafDictionary *a, VmafDictionary *b)
         const VmafDictionaryEntry *e =
             vmaf_dictionary_get(&b, a->entry[i].key, 0);
         if (!e) return -EINVAL;
-        if (strcmp(e->val, a->entry[i].val)) return -EINVAL;
+        if (strcmp(e->val, a->entry[i].val) != 0) return -EINVAL;
     }
 
     return 0;
@@ -196,10 +208,11 @@ void vmaf_dictionary_alphabetical_sort(VmafDictionary *dict)
 
 static int isnumeric(const char *str)
 {
-    float ignore;
-    char c;
-    int ret = sscanf(str, "%f %c", &ignore, &c);
-    return ret == 1;
+    char *end = NULL;
+    (void) strtof(str, &end);
+    if (end == str) return 0;
+    while (*end == ' ' || *end == '\t' || *end == '\n') end++;
+    return *end == '\0';
 }
 
 int vmaf_feature_dictionary_set(VmafFeatureDictionary **dict, const char *key,

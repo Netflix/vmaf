@@ -1,3 +1,6 @@
+/* Vendored 3rd-party JSON parser (pdjson). Suppress lint on the whole file. */
+// NOLINTBEGIN
+
 #ifndef _POSIX_C_SOURCE
 #  define _POSIX_C_SOURCE 200112L
 #elif _POSIX_C_SOURCE < 200112L
@@ -963,3 +966,5 @@ void json_close(json_stream *json)
     json->alloc.free(json->stack);
     json->alloc.free(json->data.string);
 }
+
+// NOLINTEND

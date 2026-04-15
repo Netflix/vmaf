@@ -63,6 +63,8 @@ int vmaf_feature_collector_init(VmafFeatureCollector **const feature_collector);
 
 int vmaf_feature_collector_mount_model(VmafFeatureCollector *feature_collector, VmafModel *model);
 
+int vmaf_feature_collector_unmount_model(VmafFeatureCollector *feature_collector, VmafModel *model);
+
 int vmaf_feature_collector_append(VmafFeatureCollector *feature_collector,
                                   const char *feature_name, double score,
                                   unsigned index);

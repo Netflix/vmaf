@@ -16,6 +16,7 @@
  *
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
@@ -395,7 +396,8 @@ get_fex_list_entry(VmafFeatureExtractorContextPool *pool,
     vmaf_dictionary_copy(&opts_dict, &entry.opts_dict);
 
     if (pool->cnt >= pool->capacity) {
-        size_t capacity = pool->capacity * 2;
+        assert(pool->capacity > 0);
+        const size_t capacity = (size_t) pool->capacity * 2;
         struct fex_list_entry *fex_list =
             realloc(pool->fex_list, sizeof(*(pool->fex_list)) * capacity);
         if (!fex_list) goto free_ctx_list;
@@ -412,6 +414,7 @@ fail:
     return NULL;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
                              VmafFeatureExtractor *fex,
                              VmafDictionary *opts_dict,
@@ -439,15 +442,23 @@ int vmaf_fex_ctx_pool_aquire(VmafFeatureExtractorContextPool *pool,
             VmafDictionary *d = NULL;
             if (opts_dict) {
                 err = vmaf_dictionary_copy(&opts_dict, &d);
-                if (err) return err;
+                if (err) {
+                    (void) vmaf_dictionary_free(&d);
+                    goto unlock;
+                }
             }
             err = vmaf_feature_extractor_context_create(&f, entry->fex, d);
-            if (err) goto unlock;
-            if (f->fex->flags & VMAF_FEATURE_FRAME_SYNC)
+            if (err) {
+                (void) vmaf_dictionary_free(&d);
+                goto unlock;
+            }
+            entry->ctx_list[i].fex_ctx = f;
+            if (f->fex->flags & VMAF_FEATURE_FRAME_SYNC) {
                 f->fex->framesync = (fex->framesync);
+            }
         }
         if (!entry->ctx_list[i].in_use) {
-            entry->ctx_list[i].fex_ctx = *fex_ctx = f;
+            *fex_ctx = f;
             entry->ctx_list[i].in_use = true;
             break;
         }

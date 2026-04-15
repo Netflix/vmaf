@@ -206,27 +206,20 @@ int vmaf_framesync_release_buf(VmafFrameSyncContext *fs_ctx, void *data,
 int vmaf_framesync_destroy(VmafFrameSyncContext *fs_ctx)
 {
     VmafFrameSyncBuf *buf_que = fs_ctx->buf_que;
-    VmafFrameSyncBuf *buf_que_tmp;
 
     pthread_mutex_destroy(&(fs_ctx->acquire_lock));
     pthread_mutex_destroy(&(fs_ctx->retrieve_lock));
     pthread_cond_destroy(&(fs_ctx->retrieve));
 
     //check for any data buffers which are not freed
-    for (unsigned i = 0; i < fs_ctx->buf_cnt; i++) {
+    while (buf_que != NULL) {
+        VmafFrameSyncBuf *next = buf_que->next;
         if (NULL != buf_que->frame_data) {
             free(buf_que->frame_data);
             buf_que->frame_data = NULL;
         }
-
-        // move to next node
-        if (NULL != buf_que->next) {
-            buf_que_tmp = buf_que;
-            buf_que = buf_que->next;
-            free(buf_que_tmp);
-        } else {
-            free(buf_que);
-        }
+        free(buf_que);
+        buf_que = next;
     }
 
     free(fs_ctx);

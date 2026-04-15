@@ -105,6 +105,7 @@ int vmaf_picture_priv_init(VmafPicture *pic)
     return 0;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
                        unsigned bpc, unsigned w, unsigned h)
 {
@@ -151,6 +152,9 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
         pic->data[1] = pic->data[2] = NULL;
 
     err |= vmaf_picture_priv_init(pic);
+    /* The callback userdata slot stores pic_size inline as a tagged value,
+     * never dereferenced — standard uintptr_t idiom. */
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
     err |= vmaf_picture_set_release_callback(pic, (void *)(uintptr_t)pic_size,
                                              pool_release_picture);
     if (err) goto free_data;

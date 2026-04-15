@@ -22,6 +22,7 @@
 
 #include "feature/alias.h"
 #include "feature/feature_collector.h"
+#include "output.h"
 
 #include "libvmaf/libvmaf.h"
 
@@ -51,6 +52,10 @@ static inline const char *fmt_or_default(const char *score_format)
     return score_format ? score_format : DEFAULT_SCORE_FORMAT;
 }
 
+/* Writers rely on a final ferror() check to detect I/O failure rather than
+ * propagating per-call errors — there is no recoverable action mid-stream. */
+// NOLINTBEGIN(cert-err33-c)
+/* NOLINTNEXTLINE(readability-function-size) */
 int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
                           FILE *outfile, unsigned subsample, unsigned width,
                           unsigned height, double fps, unsigned pic_cnt,
@@ -129,9 +134,10 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
 
     fprintf(outfile, "</VMAF>\n");
 
-    return 0;
+    return ferror(outfile) ? -EIO : 0;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
                            FILE *outfile, unsigned subsample, double fps,
                            unsigned pic_cnt,
@@ -149,7 +155,9 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
         break;
     case FP_INFINITE:
     case FP_NAN:
+    default:
         fprintf(outfile, "  \"fps\": null,\n");
+        break;
     }
 
     unsigned n_frames = 0;
@@ -190,6 +198,7 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
                 break;
             case FP_INFINITE:
             case FP_NAN:
+            default:
                 fprintf(outfile, "        \"%s\": null%s",
                         vmaf_feature_name_alias(fc->feature_vector[j]->name),
                         cnt2 < cnt ? "," : "");
@@ -223,6 +232,7 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
                     break;
                 case FP_INFINITE:
                 case FP_NAN:
+                default:
                     fprintf(outfile, "      \"%s\": null",
                             pool_method_name[j]);
                     break;
@@ -245,6 +255,7 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
             break;
         case FP_INFINITE:
         case FP_NAN:
+        default:
             fprintf(outfile, "\n    \"%s\": null",
                     fc->aggregate_vector.metric[i].name);
             break;
@@ -254,7 +265,7 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
     fprintf(outfile, "\n  }\n");
     fprintf(outfile, "}\n");
 
-    return 0;
+    return ferror(outfile) ? -EIO : 0;
 }
 
 int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
@@ -295,7 +306,7 @@ int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
         fprintf(outfile, "\n");
     }
 
-    return 0;
+    return ferror(outfile) ? -EIO : 0;
 }
 
 int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
@@ -331,5 +342,6 @@ int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
         fprintf(outfile, "\n");
     }
 
-    return 0;
+    return ferror(outfile) ? -EIO : 0;
 }
+// NOLINTEND(cert-err33-c)

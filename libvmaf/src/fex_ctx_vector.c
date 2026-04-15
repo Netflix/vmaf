@@ -16,6 +16,7 @@
  *
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 
@@ -28,10 +29,10 @@ int feature_extractor_vector_init(RegisteredFeatureExtractors *rfe)
 {
     rfe->cnt = 0;
     rfe->capacity = 8;
-    size_t sz = sizeof(*(rfe->fex_ctx)) * rfe->capacity;
-    rfe->fex_ctx = malloc(sz);
+    const size_t sz = sizeof(*(rfe->fex_ctx)) * rfe->capacity;
+    rfe->fex_ctx = (VmafFeatureExtractorContext **) malloc(sz);
     if (!rfe->fex_ctx) return -ENOMEM;
-    memset(rfe->fex_ctx, 0, sz);
+    memset((void *) rfe->fex_ctx, 0, sz);
     return 0;
 }
 
@@ -60,17 +61,20 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
         free(feature_a);
         free(feature_b);
 
-        if (ret) continue;
+        if (ret != 0) continue;
 
         return vmaf_feature_extractor_context_destroy(fex_ctx);
     }
 
     if (rfe->cnt >= rfe->capacity) {
-        size_t capacity = rfe->capacity * 2;
-        VmafFeatureExtractorContext **fex_ctx =
-            realloc(rfe->fex_ctx, sizeof(*(rfe->fex_ctx)) * capacity);
-        if (!fex_ctx) return -ENOMEM;
-        rfe->fex_ctx = fex_ctx;
+        assert(rfe->capacity > 0);
+        const size_t capacity = (size_t) rfe->capacity * 2;
+        VmafFeatureExtractorContext **fex_ctx_new =
+            (VmafFeatureExtractorContext **) realloc(
+                (void *) rfe->fex_ctx,
+                sizeof(*(rfe->fex_ctx)) * capacity);
+        if (!fex_ctx_new) return -ENOMEM;
+        rfe->fex_ctx = fex_ctx_new;
         rfe->capacity = capacity;
         for (unsigned i = rfe->cnt; i < rfe->capacity; i++)
             rfe->fex_ctx[i] = NULL;
@@ -99,6 +103,5 @@ void feature_extractor_vector_destroy(RegisteredFeatureExtractors *rfe)
         vmaf_feature_extractor_context_close(rfe->fex_ctx[i]);
         vmaf_feature_extractor_context_destroy(rfe->fex_ctx[i]);
     }
-    free(rfe->fex_ctx);
-    return;
+    free((void *) rfe->fex_ctx);
 }

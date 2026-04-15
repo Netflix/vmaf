@@ -79,6 +79,7 @@ static int pooled_picture_release(VmafPicture *pic, void *cookie)
     return 0;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 int vmaf_picture_pool_init(VmafPicturePool **pool,
                            VmafPicturePoolConfig cfg)
 {

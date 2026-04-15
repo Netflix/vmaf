@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <limits.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -40,11 +41,14 @@ static int set_option_int(int *dst, int default_val, const char *val,
     *dst = default_val;
     if (!val) return 0;
 
-    const int n = atoi(val);
-    if (n == 0 && val[0] != '0') return -EINVAL;
-    if (n < min) return -EINVAL;
-    if (n > max) return -EINVAL;
-    *dst = n;
+    char *end = NULL;
+    errno = 0;
+    const long n = strtol(val, &end, 10);
+    if (end == val || *end != '\0') return -EINVAL;
+    if (errno == ERANGE) return -EINVAL;
+    if (n < (long) min) return -EINVAL;
+    if (n > (long) max) return -EINVAL;
+    *dst = (int) n;
     return 0;
 }
 
@@ -54,8 +58,11 @@ static int set_option_double(double *dst, double default_val, const char *val,
     *dst = default_val;
     if (!val) return 0;
 
-    const double n = atof(val);
-    if (n == 0 && val[0] != '0') return -EINVAL;
+    char *end = NULL;
+    errno = 0;
+    const double n = strtod(val, &end);
+    if (end == val || *end != '\0') return -EINVAL;
+    if (errno == ERANGE) return -EINVAL;
     if (n < min) return -EINVAL;
     if (n > max) return -EINVAL;
     *dst = n;
@@ -74,18 +81,19 @@ int vmaf_option_set(const VmafOption *opt, void *obj, const char *val)
     if (!obj) return -EINVAL;
     if (!opt) return -EINVAL;
 
-    void *dst = (uint8_t*)obj + opt->offset;
+    uint8_t *base = (uint8_t *) obj + opt->offset;
 
     switch (opt->type) {
     case VMAF_OPT_TYPE_BOOL:
-        return set_option_bool(dst, opt->default_val.b, val);
+        return set_option_bool((bool *) base, opt->default_val.b, val);
     case VMAF_OPT_TYPE_INT:
-        return set_option_int(dst, opt->default_val.i, val, opt->min, opt->max);
+        return set_option_int((int *) base, opt->default_val.i, val,
+                              opt->min, opt->max);
     case VMAF_OPT_TYPE_DOUBLE:
-        return set_option_double(dst, opt->default_val.d, val, opt->min,
-                                 opt->max);
+        return set_option_double((double *) base, opt->default_val.d, val,
+                                 opt->min, opt->max);
     case VMAF_OPT_TYPE_STRING:
-        return set_option_string(dst, opt->default_val.s, val);
+        return set_option_string((char **) base, opt->default_val.s, val);
     default:
         return -EINVAL;
     }

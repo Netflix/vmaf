@@ -86,13 +86,16 @@ static int find_linear_function_parameters(VmafPoint p1, VmafPoint p2, double *a
     return 0;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 static int piecewise_linear_mapping(double x, VmafPoint *knots, unsigned n_knots, double *y) {
 
     // initialize them to prevent uninitialized variable warnings
-    double slope = 0.0, offset = 0.0;
+    double slope = 0.0;
+    double offset = 0.0;
 
-    if (n_knots <= 1)
+    if (n_knots <= 1) {
         return EINVAL;
+    }
     unsigned n_seg = n_knots - 1;
 
     *y = 0.0;
@@ -166,7 +169,8 @@ static int transform(const VmafModel *model, double *y_in,
     if (flags & VMAF_MODEL_FLAG_DISABLE_TRANSFORM)
         return 0;
 
-    double y_stage, y_out;
+    double y_stage;
+    double y_out;
 
     // polynomial mapping
     y_stage = *y_in;
@@ -224,6 +228,7 @@ static int clip(const VmafModel *model, double *prediction,
     return 0;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 int vmaf_predict_score_at_index(VmafModel *model,
                                 VmafFeatureCollector *feature_collector,
                                 unsigned index, double *vmaf_score,
@@ -240,7 +245,7 @@ int vmaf_predict_score_at_index(VmafModel *model,
     // Lazily build the cached feature name lookup table
     if (!model->predict_feature_names) {
         model->predict_feature_names =
-            calloc(model->n_features, sizeof(char *));
+            (char **) calloc(model->n_features, sizeof(char *));
         if (!model->predict_feature_names) return -ENOMEM;
 
         for (unsigned i = 0; i < model->n_features; i++) {
@@ -288,7 +293,7 @@ int vmaf_predict_score_at_index(VmafModel *model,
     // Lazily cache FeatureVector pointers for direct score access
     if (!model->predict_feature_vectors) {
         model->predict_feature_vectors =
-            calloc(model->n_features, sizeof(void *));
+            (void **) calloc(model->n_features, sizeof(void *));
         if (!model->predict_feature_vectors) return -ENOMEM;
         for (unsigned i = 0; i < model->n_features; i++) {
             model->predict_feature_vectors[i] =
@@ -379,6 +384,7 @@ static double percentile(double *scores, unsigned n_scores, double perc)
         scores[idx_l] * (idx_r - p) + scores[idx_r] * (p - idx_l);
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 static int vmaf_bootstrap_predict_score_at_index(
                                         VmafModelCollection *model_collection,
                                         VmafFeatureCollector *feature_collector,
@@ -394,10 +400,13 @@ static int vmaf_bootstrap_predict_score_at_index(
         // but do not write them to the feature collector
         const unsigned flags =
             VMAF_MODEL_FLAG_DISABLE_CLIP | VMAF_MODEL_FLAG_DISABLE_TRANSFORM;
+        /* Bitmask of VmafModelFlags values is not itself a named enumerator. */
+        // NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
         err = vmaf_predict_score_at_index(model_collection->model[i],
                                           feature_collector, index,
                                           &scores[i], false,
                                           false, flags);
+        // NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
         if (err) return err;
 
         // do not override the model's transform/clip behavior
@@ -412,8 +421,9 @@ static int vmaf_bootstrap_predict_score_at_index(
     score->type = VMAF_MODEL_COLLECTION_SCORE_BOOTSTRAP;
 
     double sum = 0.;
-    for (unsigned i = 0; i < model_collection->cnt; i++)
+    for (unsigned i = 0; i < model_collection->cnt; i++) {
         sum += scores[i];
+    }
     const double mean = sum / model_collection->cnt;
     score->bootstrap.bagging_score = mean;
 
@@ -422,8 +432,9 @@ static int vmaf_bootstrap_predict_score_at_index(
     double score_minus_delta = mean - delta;
 
     double ssd = 0.;
-    for (unsigned i = 0; i < model_collection->cnt; i++)
+    for (unsigned i = 0; i < model_collection->cnt; i++) {
         ssd += pow(scores[i] - mean, 2);
+    }
     score->bootstrap.stddev = sqrt(ssd / model_collection->cnt);
 
     qsort(scores, model_collection->cnt, sizeof(double), score_compare);
@@ -455,19 +466,19 @@ static int vmaf_bootstrap_predict_score_at_index(
     char name[name_sz];
     memset(name, 0, name_sz);
 
-    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_bagging);
-    err = vmaf_feature_collector_append(feature_collector, name,
-                                        score->bootstrap.bagging_score, index);
+    (void) snprintf(name, name_sz, "%s%s", model_collection->name, suffix_bagging);
+    err |= vmaf_feature_collector_append(feature_collector, name,
+                                         score->bootstrap.bagging_score, index);
 
-    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_stddev);
-    err = vmaf_feature_collector_append(feature_collector, name,
-                                        score->bootstrap.stddev, index);
+    (void) snprintf(name, name_sz, "%s%s", model_collection->name, suffix_stddev);
+    err |= vmaf_feature_collector_append(feature_collector, name,
+                                         score->bootstrap.stddev, index);
 
-    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_lo);
+    (void) snprintf(name, name_sz, "%s%s", model_collection->name, suffix_lo);
     err |= vmaf_feature_collector_append(feature_collector, name,
                                          score->bootstrap.ci.p95.lo, index);
 
-    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_hi);
+    (void) snprintf(name, name_sz, "%s%s", model_collection->name, suffix_hi);
     err |= vmaf_feature_collector_append(feature_collector, name,
                                          score->bootstrap.ci.p95.hi,
                                          index);

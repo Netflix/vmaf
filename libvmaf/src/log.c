@@ -17,8 +17,10 @@
  */
 
 #include "libvmaf/libvmaf.h"
+#include "log.h"
 
 #include <stdarg.h>
+#include <stdio.h>
 #include <unistd.h>
 
 static enum VmafLogLevel vmaf_log_level = VMAF_LOG_LEVEL_INFO;
@@ -51,13 +53,14 @@ void vmaf_log(enum VmafLogLevel level, const char *fmt, ...)
     if (level <= VMAF_LOG_LEVEL_NONE) return;
     if (level > vmaf_log_level) return;
 
-    va_list(args);
-    fprintf(stderr, "%slibvmaf%s %s%s%s ",
-            istty ? "\x1B[35m" : "",
-            istty ? "\x1B[0m" : "",
-            istty ? level_str_color[level] : "",
-            level_str[level],
-            istty ? "\x1B[0m" : "");
+    va_list args;
+    (void) fprintf(stderr, "%slibvmaf%s %s%s%s ",
+                   istty ? "\x1B[35m" : "",
+                   istty ? "\x1B[0m" : "",
+                   istty ? level_str_color[level] : "",
+                   level_str[level],
+                   istty ? "\x1B[0m" : "");
     va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
+    (void) vfprintf(stderr, fmt, args);
+    va_end(args);
 }

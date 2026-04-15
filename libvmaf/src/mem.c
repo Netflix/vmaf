@@ -16,6 +16,9 @@
  *
  */
 
+/* _POSIX_C_SOURCE is a standard feature-test macro required by POSIX to expose
+ * posix_memalign — this is not a user identifier. */
+// NOLINTNEXTLINE(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp)
 #define _POSIX_C_SOURCE 200112L
 
 #include <stddef.h>
@@ -24,16 +27,19 @@
 
 void *aligned_malloc(size_t size, size_t alignment)
 {
-	void *ptr;
+    void *ptr = NULL;
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
-    if ((ptr = _aligned_malloc(size, alignment)) == NULL)
+    ptr = _aligned_malloc(size, alignment);
+    if (ptr == NULL) {
+        return NULL;
+    }
 #else
-    if (posix_memalign(&ptr, alignment, size))
+    if (posix_memalign(&ptr, alignment, size) != 0) {
+        return NULL;
+    }
 #endif
-		return 0;
-	else
-		return ptr;
+    return ptr;
 }
 
 void aligned_free(void *ptr)
@@ -41,6 +47,6 @@ void aligned_free(void *ptr)
 #if defined(_MSC_VER) || defined(__MINGW32__)
     _aligned_free(ptr);
 #else
-	free(ptr);
+    free(ptr);
 #endif
 }
