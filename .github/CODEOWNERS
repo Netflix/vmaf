@@ -1,0 +1,50 @@
+# CODEOWNERS — GitHub auto-assigns review based on paths here.
+# Order matters: later patterns override earlier ones.
+
+# Default: everything needs @Lusoris review.
+*                                           @Lusoris
+
+# GPU backends — fork-authored, tight review loop.
+/libvmaf/src/cuda/                          @Lusoris
+/libvmaf/src/sycl/                          @Lusoris
+/libvmaf/src/feature/cuda/                  @Lusoris
+/libvmaf/src/feature/sycl/                  @Lusoris
+/libvmaf/include/libvmaf/libvmaf_sycl.h     @Lusoris
+
+# SIMD paths — numerical-correctness sensitive.
+/libvmaf/src/feature/x86/                   @Lusoris
+/libvmaf/src/feature/arm64/                 @Lusoris
+
+# Public C API surface — breaking changes need explicit sign-off.
+/libvmaf/include/                           @Lusoris
+/libvmaf/src/libvmaf.c                      @Lusoris
+
+# CLI / tools — user-facing, versioning sensitive.
+/libvmaf/tools/                             @Lusoris
+
+# Build system.
+/libvmaf/meson.build                        @Lusoris
+/libvmaf/meson_options.txt                  @Lusoris
+/Makefile                                   @Lusoris
+
+# CI / supply chain / security.
+/.github/workflows/                         @Lusoris
+/.github/dependabot.yml                     @Lusoris
+/release-please-config.json                 @Lusoris
+/.release-please-manifest.json              @Lusoris
+/SECURITY.md                                @Lusoris
+
+# AI-agent framework.
+/.claude/                                   @Lusoris
+/CLAUDE.md                                  @Lusoris
+/AGENTS.md                                  @Lusoris
+/docs/principles.md                         @Lusoris
+
+# Netflix golden assertions — never modify.
+# These paths are watched; any PR touching them triggers a manual review block.
+/python/test/quality_runner_test.py         @Lusoris
+/python/test/feature_extractor_test.py      @Lusoris
+/python/test/vmafexec_test.py               @Lusoris
+/python/test/vmafexec_feature_extractor_test.py @Lusoris
+/python/test/result_test.py                 @Lusoris
+/python/test/resource/yuv/                  @Lusoris

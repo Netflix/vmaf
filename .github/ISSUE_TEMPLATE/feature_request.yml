@@ -1,0 +1,53 @@
+name: Feature request
+description: Propose a new feature, metric, backend, or model.
+title: "[feat] "
+labels: ["enhancement", "triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What's the gap you're hitting? Include concrete use cases.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: |
+        What you'd like the fork to do. If this is a new metric, link to the
+        paper. If it's a new backend, name the runtime and target hardware.
+        If it's a new model, describe the training dataset.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - New feature metric
+        - New GPU backend (Vulkan, Metal, ROCm, ...)
+        - New SIMD path
+        - New model
+        - CLI / API change
+        - Docs / tooling
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you've tried or other approaches you've weighed.
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Can you contribute?
+      options:
+        - label: I'm willing to implement this.
+        - label: I can help test.
+        - label: I can help review.

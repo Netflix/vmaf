@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability (private)
+    url: https://github.com/lusoris/vmaf/security/advisories/new
+    about: Report a security issue privately. Do NOT file a public issue.
+  - name: Question / discussion
+    url: https://github.com/lusoris/vmaf/discussions
+    about: Open-ended questions and design discussions.
+  - name: Upstream Netflix/vmaf
+    url: https://github.com/Netflix/vmaf/issues
+    about: For issues affecting upstream code paths unchanged by the fork.

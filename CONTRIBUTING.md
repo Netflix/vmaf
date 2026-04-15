@@ -1,4 +1,70 @@
-# Contributing to VMAF
+# Contributing to VMAF (Lusoris Fork)
+
+This fork adds SYCL / CUDA / HIP GPU backends, AVX2 / AVX-512 / NEON SIMD,
+full-precision CLI output, tiny-AI integration, and an MCP server. Below is the
+fork-specific contribution guide. The **Netflix upstream contribution guide**
+follows below — still authoritative for algorithmic contributions (new feature
+extractors, quality runners, models).
+
+## Quickstart
+
+1. Install dev deps: `./scripts/setup/detect.sh` (auto-dispatches per distro).
+2. Configure: `meson setup build -Denable_cuda=false -Denable_sycl=false`
+3. Build: `ninja -C build`
+4. Test: `meson test -C build`
+5. Format + lint before pushing: `make format && make lint`
+
+## Core rules
+
+- **Conventional Commits** — every commit. Enforced by commit-msg hook and
+  `conventional-pre-commit`. Allowed types: `feat`, `fix`, `perf`, `refactor`,
+  `docs`, `test`, `build`, `ci`, `chore`, `revert`, `port` (upstream cherry-pick),
+  `sycl`, `cuda`, `simd`. Use `!` or `BREAKING CHANGE:` for breaking changes.
+- **Engineering principles** — see [`docs/principles.md`](docs/principles.md).
+  NASA Power-of-10 + JPL-C-STD + SEI CERT C/C++ + MISRA-C:2012 (informative).
+  `.clang-tidy` enforces the subset that can be machine-checked.
+- **Netflix golden-data gate** — do **not** modify the hardcoded score
+  assertions in `python/test/{quality_runner,feature_extractor,vmafexec,
+  vmafexec_feature_extractor,result}_test.py`. They're the numerical source
+  of truth for VMAF (see `CLAUDE.md` §8 and decision D24). Fork-added tests
+  go in separate files.
+- **Cross-backend numerical correctness** — any SIMD / GPU change must pass
+  `/cross-backend-diff` with `--tolerance-ulp=2`. If you need a larger
+  tolerance, open a CODEOWNERS-approved exception.
+- **License headers** — every new C/C++/CUDA file starts with a header. Use
+  `Copyright 2024-2026 Lusoris and Claude (Anthropic)` for wholly-new files
+  and the Netflix header for files touched in upstream.
+- **No `git push --force` to `master`**. No `--no-verify` skipping hooks.
+  `master` is merge-via-squash-or-ff-only via branch protection.
+
+## Reporting bugs / requesting features
+
+Use the GitHub issue templates under `.github/ISSUE_TEMPLATE/`. Security
+issues go via the coordinated-disclosure flow in [`SECURITY.md`](SECURITY.md) —
+not a public issue.
+
+## Review expectations
+
+- CI must be green (ci, lint, security workflows).
+- PRs that touch a feature with SIMD / GPU twins must either touch every
+  twin or explicitly call out the gap in the PR body so a follow-up can be
+  opened.
+- Performance-claiming PRs must include before/after numbers produced by
+  `/profile-hotpath` or equivalent (no eyeballed claims).
+
+## Upstream sync
+
+We periodically sync from `upstream/master` (Netflix/vmaf) via `/sync-upstream`.
+If you're rebasing a branch that spans a sync, prefer `git rebase
+--onto master <old-base>` over a merge commit.
+
+---
+
+## Netflix upstream contribution guide
+
+The rest of this file is the upstream Netflix/vmaf contribution guide — still
+the authoritative reference for adding new feature extractors, quality
+runners, and VMAF models. Fork-specific overrides are the section above.
 
 Please refer to this [slide deck](https://docs.google.com/presentation/d/1Gr4-MvOXu9HUiH4nnqLGWupJYMeh6nl2MNz6Qy9153c/edit#slide=id.p) for an overview contribution guide.
 

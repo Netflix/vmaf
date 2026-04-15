@@ -1,0 +1,87 @@
+name: Bug report
+description: Something is broken or produces the wrong output.
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug! Before you do — if this is a **security**
+        issue (memory corruption, crash on adversarial input, info leak),
+        **do NOT file a public issue**. Follow `SECURITY.md` instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect to happen, and what actually happened?
+      placeholder: "Expected: X. Got: Y."
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproducer
+      description: |
+        Minimal command line + inputs. Please include input dimensions,
+        pixel format, and bit depth. If the input is a YUV, use one from
+        `python/test/resource/yuv/` when possible so we can run it too.
+      render: shell
+    validations:
+      required: true
+
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend
+      description: Which backend is affected?
+      multiple: true
+      options:
+        - CPU (scalar)
+        - CPU (AVX2)
+        - CPU (AVX-512)
+        - CPU (NEON)
+        - CUDA
+        - SYCL / oneAPI
+        - HIP
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit SHA
+      description: Output of `vmaf --version` or `git rev-parse HEAD`.
+      placeholder: "v3.0.0-lusoris.0 / abc1234"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Ubuntu 24.04, Arch 2026.04, Fedora 40, macOS 14.5, Windows 11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Hardware (if relevant)
+      description: CPU model, GPU model + driver version, RAM.
+      placeholder: "AMD Ryzen 9 7950X, NVIDIA RTX 4090 driver 555.42, 64GB"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      description: Paste `--verbose` / sanitizer output / stack trace.
+      render: text
+
+  - type: checkboxes
+    id: golden
+    attributes:
+      label: Netflix golden gate
+      options:
+        - label: The Netflix CPU golden tests still pass locally (`make test-netflix-golden`).
