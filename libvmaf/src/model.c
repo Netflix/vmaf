@@ -128,12 +128,9 @@ char *vmaf_model_generate_name(VmafModelConfig *cfg)
 
     char *name = malloc(name_sz);
     if (!name) return NULL;
-    memset(name, 0, name_sz);
 
-    if (!cfg->name)
-        strcpy(name, default_name);
-    else
-        strcpy(name, cfg->name);
+    const char *src = cfg->name ? cfg->name : default_name;
+    memcpy(name, src, name_sz);
 
     return name;
 }

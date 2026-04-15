@@ -19,15 +19,18 @@
 #include "libvmaf/model.h"
 #include "model.h"
 #include "pdjson.h"
+#include "read_json_model.h"
 #include "svm.h"
 
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define MAX_FEATURE_COUNT 64 //FIXME
 #define MAX_KNOT_COUNT 10 //FIXME
 
+/* NOLINTNEXTLINE(readability-function-size) */
 static int parse_feature_opts_dicts(json_stream *s, VmafModel *model)
 {
     unsigned i = 0;
@@ -70,6 +73,7 @@ static int parse_feature_opts_dicts(json_stream *s, VmafModel *model)
                 free(key);
                 if (err) return err;
             } else {
+                free(key);
                 return -EINVAL; //TODO
             }
             json_skip(s);
@@ -126,10 +130,11 @@ static int parse_knots_list(struct json_stream *s, struct VmafModel *model, unsi
             return -EINVAL;
         if (i >= 2)
             return -EINVAL;
-        if (i == 0)
+        if (i == 0) {
             model->score_transform.knots.list[idx].x = json_get_number(s);
-        else
+        } else {
             model->score_transform.knots.list[idx].y = json_get_number(s);
+        }
         i++;
     }
 
@@ -183,6 +188,7 @@ static int parse_feature_names(json_stream *s, VmafModel *model)
     return 0;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 static int parse_score_transform(json_stream *s, VmafModel *model)
 {
     model->score_transform.enabled = false;
@@ -283,6 +289,7 @@ static int parse_libsvm_model(json_stream *s, VmafModel *model)
     return 0;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 static int parse_model_dict(json_stream *s, VmafModel *model,
                             enum VmafModelFlags flags)
 {
@@ -314,14 +321,15 @@ static int parse_model_dict(json_stream *s, VmafModel *model,
             if (json_next(s) != JSON_STRING)
                 return -EINVAL;
             const char *model_type = json_get_string(s, NULL);
-            if (!strcmp(model_type, "RESIDUEBOOTSTRAP_LIBSVMNUSVR"))
+            if (!strcmp(model_type, "RESIDUEBOOTSTRAP_LIBSVMNUSVR")) {
                 model->type = VMAF_MODEL_RESIDUE_BOOTSTRAP_SVM_NUSVR;
-            else if (!strcmp(model_type, "BOOTSTRAP_LIBSVMNUSVR"))
+            } else if (!strcmp(model_type, "BOOTSTRAP_LIBSVMNUSVR")) {
                 model->type = VMAF_MODEL_BOOTSTRAP_SVM_NUSVR;
-            else if (!strcmp(model_type, "LIBSVMNUSVR"))
+            } else if (!strcmp(model_type, "LIBSVMNUSVR")) {
                 model->type = VMAF_MODEL_TYPE_SVM_NUSVR;
-            else
+            } else {
                 return -EINVAL;
+            }
             continue;
         }
 
@@ -329,12 +337,13 @@ static int parse_model_dict(json_stream *s, VmafModel *model,
             if (json_next(s) != JSON_STRING)
                 return -EINVAL;
             const char *norm_type = json_get_string(s, NULL);
-            if (!strcmp(norm_type, "linear_rescale"))
+            if (!strcmp(norm_type, "linear_rescale")) {
                 model->norm_type = VMAF_MODEL_NORMALIZATION_TYPE_LINEAR_RESCALE;
-            else if (!strcmp(norm_type, "none"))
+            } else if (!strcmp(norm_type, "none")) {
                 model->norm_type = VMAF_MODEL_NORMALIZATION_TYPE_NONE;
-            else
+            } else {
                 return -EINVAL;
+            }
             continue;
         }
 
@@ -473,10 +482,11 @@ int vmaf_read_json_model_from_path(VmafModel **model, VmafModelConfig *cfg,
     json_open_stream(&s, in);
     err = vmaf_read_json_model(model, cfg, &s);
     json_close(&s);
-    fclose(in);
+    if (fclose(in) != 0 && err == 0) err = -EIO;
     return err;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 static int model_collection_parse(json_stream *s, VmafModel **model,
                                   VmafModelCollection **model_collection,
                                   VmafModelConfig *cfg)
@@ -504,9 +514,13 @@ static int model_collection_parse(json_stream *s, VmafModel **model,
             return -EINVAL;
 
         const char *key = json_get_string(s, NULL);
-        snprintf(generated_key, generated_key_sz, "%d", i);
+        (void) snprintf(generated_key, generated_key_sz, "%d", i);
 
         if (!strcmp(key, generated_key)) {
+            /* When i==0, ownership of m is transferred to *model below; when
+             * i>=1, ownership is transferred to *model_collection via append.
+             * The analyzer loses track of this cross-parameter ownership. */
+            // NOLINTBEGIN(clang-analyzer-unix.Malloc)
             VmafModel *m;
             err = vmaf_read_json_model(&m, &c, s);
             if (err) return err;
@@ -516,10 +530,14 @@ static int model_collection_parse(json_stream *s, VmafModel **model,
                 c.name = cfg_name;
             } else {
                 err = vmaf_model_collection_append(model_collection, m);
-                if (err) return err;
+                if (err) {
+                    vmaf_model_destroy(m);
+                    return err;
+                }
             }
+            // NOLINTEND(clang-analyzer-unix.Malloc)
 
-            sprintf((char*)c.name, "%s_%04d", name, ++i);
+            (void) snprintf((char*)c.name, cfg_name_sz, "%s_%04d", name, ++i);
             continue;
         }
 
@@ -543,7 +561,7 @@ int vmaf_read_json_model_collection_from_path(VmafModel **model,
     json_open_stream(&s, in);
     err = model_collection_parse(&s, model, model_collection, cfg);
     json_close(&s);
-    fclose(in);
+    if (fclose(in) != 0 && err == 0) err = -EIO;
     return err;
 }
 

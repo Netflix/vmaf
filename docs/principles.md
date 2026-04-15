@@ -84,7 +84,10 @@ Full compliance required for:
 - **CON (Concurrency)** — use atomics correctly (`_Atomic`); no data races (TSan nightly)
 - **ENV (Environment)** — never trust `getenv` input without validation
 
-Enforcement: `cert-*` checks in `.clang-tidy` all enabled.
+Enforcement: `cert-*` checks in `.clang-tidy` all enabled. The noisy
+`clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling` subset
+(Microsoft C11 `_s` functions) is explicitly disabled — it does not map to
+any portable POSIX API.
 
 ### 1.4 MISRA C:2012 (informative subset)
 

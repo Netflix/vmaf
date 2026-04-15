@@ -15,13 +15,14 @@ Checks: >
   performance-*,
   portability-*,
   readability-braces-around-statements,
+  readability-function-size,
   readability-isolate-declaration,
   readability-misleading-indentation,
   readability-non-const-parameter,
   readability-redundant-control-flow,
   -bugprone-easily-swappable-parameters,
   -bugprone-narrowing-conversions,
-  -cert-err33-c,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -misc-include-cleaner,
   -misc-no-recursion
 
@@ -49,3 +50,14 @@ CheckOptions:
     value: 'assert,VMAF_ASSERT_DEBUG'
   - key: cert-msc32-c.DisallowedSeedTypes
     value: 'time_t,std::time_t'
+  # Power-of-10 rule 4 — a printed page. Upstream Netflix functions that
+  # exceed this budget are explicitly marked with NOLINT and tracked for
+  # refactor in .workingdir2/OPEN.md.
+  - key: readability-function-size.LineThreshold
+    value: '60'
+  - key: readability-function-size.StatementThreshold
+    value: '120'
+  - key: readability-function-size.BranchThreshold
+    value: '15'
+  - key: readability-function-size.NestingThreshold
+    value: '4'

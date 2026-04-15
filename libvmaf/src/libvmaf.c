@@ -29,6 +29,8 @@
  * __libc_single_threaded.  The weak attribute lets the real glibc symbol
  * take precedence when available. */
 #ifdef __linux__
+/* The name is dictated by glibc's ABI and must match exactly. */
+/* NOLINTNEXTLINE(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp,misc-use-internal-linkage) */
 __attribute__((weak)) char __libc_single_threaded = 1;
 #endif
 
@@ -527,7 +529,8 @@ static int vmaf_ctx_dnn_run_frame(VmafContext *vmaf, VmafPicture *ref,
 
     const float *mean = NULL;
     const float *std  = NULL;
-    float m = 0.f, s = 1.f;
+    float m = 0.f;
+    float s = 1.f;
     if (vmaf->dnn.has_sidecar && vmaf->dnn.meta.has_norm) {
         m = vmaf->dnn.meta.norm_mean;
         s = vmaf->dnn.meta.norm_std;
@@ -825,6 +828,7 @@ unref:
 }
 #endif // VMAF_BATCH_THREADING
 
+/* NOLINTNEXTLINE(readability-function-size) */
 static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
                                   VmafPicture *dist, unsigned index)
 {
@@ -856,7 +860,9 @@ static int threaded_read_pictures(VmafContext *vmaf, VmafPicture *ref,
                                        &fex_ctx);
         if (err) return err;
 
-        VmafPicture pic_a, pic_b, prev_ref = { 0 };
+        VmafPicture pic_a;
+        VmafPicture pic_b;
+        VmafPicture prev_ref = { 0 };
         vmaf_picture_ref(&pic_a, ref);
         vmaf_picture_ref(&pic_b, dist);
 
@@ -1006,18 +1012,20 @@ static int flush_context_threaded(VmafContext *vmaf)
     return err;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 static int flush_context(VmafContext *vmaf)
 {
     int err = 0;
-    if (vmaf->thread_pool)
+    if (vmaf->thread_pool) {
         err = flush_context_threaded(vmaf);
-    else {
+    } else {
         RegisteredFeatureExtractors rfe = vmaf->registered_feature_extractors;
         for (unsigned i = 0; i < rfe.cnt; i++) {
             if (!(rfe.fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA) &&
-                !(rfe.fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_SYCL))
+                !(rfe.fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_SYCL)) {
                 err |= vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
                                                             vmaf->feature_collector);
+            }
         }
     }
 
@@ -1190,6 +1198,8 @@ static unsigned rfe_hw_flags(RegisteredFeatureExtractors *rfe)
 
 #endif
 
+/* Upstream dispatch function. Refactoring is tracked in .workingdir2/OPEN.md. */
+/* NOLINTNEXTLINE(readability-function-size) */
 int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
                        unsigned index)
 {
@@ -1541,7 +1551,10 @@ int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
     if (!pool_method) return -EINVAL;
 
     unsigned pic_cnt = 0;
-    double min = 0., max = 0., sum = 0., i_sum = 0.;
+    double min = 0.;
+    double max = 0.;
+    double sum = 0.;
+    double i_sum = 0.;
     for (unsigned i = index_low; i <= index_high; i++) {
         if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
             continue;
@@ -1632,22 +1645,22 @@ int vmaf_score_pooled_model_collection(VmafContext *vmaf,
     char name[name_sz];
     memset(name, 0, name_sz);
 
-    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_bagging);
+    (void) snprintf(name, name_sz, "%s%s", model_collection->name, suffix_bagging);
     err |= vmaf_feature_score_pooled(vmaf, name, pool_method,
                                      &score->bootstrap.bagging_score,
                                      index_low, index_high);
 
-    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_stddev);
+    (void) snprintf(name, name_sz, "%s%s", model_collection->name, suffix_stddev);
     err |= vmaf_feature_score_pooled(vmaf, name, pool_method,
                                      &score->bootstrap.stddev,
                                      index_low, index_high);
 
-    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_lo);
+    (void) snprintf(name, name_sz, "%s%s", model_collection->name, suffix_lo);
     err |= vmaf_feature_score_pooled(vmaf, name, pool_method,
                                      &score->bootstrap.ci.p95.lo,
                                      index_low, index_high);
 
-    snprintf(name, name_sz, "%s%s", model_collection->name, suffix_hi);
+    (void) snprintf(name, name_sz, "%s%s", model_collection->name, suffix_hi);
     err |= vmaf_feature_score_pooled(vmaf, name, pool_method,
                                      &score->bootstrap.ci.p95.hi,
                                      index_low, index_high);
@@ -1666,7 +1679,7 @@ int vmaf_write_output_with_format(VmafContext *vmaf, const char *output_path,
 {
     FILE *outfile = fopen(output_path, "w");
     if (!outfile) {
-        fprintf(stderr, "could not open file: %s\n", output_path);
+        (void) fprintf(stderr, "could not open file: %s\n", output_path);
         return -EINVAL;
     }
 
@@ -1700,7 +1713,7 @@ int vmaf_write_output_with_format(VmafContext *vmaf, const char *output_path,
         break;
     }
 
-    fclose(outfile);
+    if (fclose(outfile) != 0 && ret == 0) ret = -EIO;
     return ret;
 }
 
