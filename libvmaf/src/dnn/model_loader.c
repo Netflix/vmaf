@@ -3,8 +3,10 @@
  *  SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
  */
 
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,7 +78,12 @@ static int extract_int(const char *doc, const char *key, int *out)
     if (!p) return -ENOENT;
     p++;
     while (*p && isspace((unsigned char)*p)) p++;
-    *out = atoi(p);
+    errno = 0;
+    char *endp = NULL;
+    long v = strtol(p, &endp, 10);
+    if (endp == p) return -EINVAL;
+    if (errno == ERANGE || v < INT_MIN || v > INT_MAX) return -ERANGE;
+    *out = (int) v;
     return 0;
 }
 
@@ -100,16 +107,20 @@ int vmaf_dnn_sidecar_load(const char *onnx_path, VmafModelSidecar *out)
 
     FILE *f = fopen(sidecar, "rb");
     if (!f) return -errno;
-    if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return -EIO; }
-    long sz = ftell(f);
-    if (sz < 0 || sz > (1 << 20)) { fclose(f); return -EFBIG; }
-    rewind(f);
-    char *buf = (char *) malloc((size_t)sz + 1);
-    if (!buf) { fclose(f); return -ENOMEM; }
-    size_t r = fread(buf, 1, (size_t)sz, f);
-    fclose(f);
-    if (r != (size_t)sz) { free(buf); return -EIO; }
-    buf[sz] = '\0';
+    if (fseek(f, 0, SEEK_END) != 0) { (void) fclose(f); return -EIO; }
+    long sz_raw = ftell(f);
+    if (sz_raw < 0 || sz_raw > (1 << 20)) { (void) fclose(f); return -EFBIG; }
+    const size_t sz = (size_t) sz_raw;
+    if (fseek(f, 0, SEEK_SET) != 0) { (void) fclose(f); return -EIO; }
+    char *buf = (char *) malloc(sz + 1u);
+    if (!buf) { (void) fclose(f); return -ENOMEM; }
+    size_t r = fread(buf, 1u, sz, f);
+    (void) fclose(f);
+    if (r != sz) { free(buf); return -EIO; }
+    assert(sz <= (size_t)(1 << 20));
+    /* buf was allocated as sz + 1u bytes (line ~115), so buf[sz] is valid. The
+     * analyzer loses this relationship across the fread path. */
+    buf[sz] = '\0';  // NOLINT(clang-analyzer-security.ArrayBound)
 
     char *kind_str = extract_string(buf, "kind");
     if (kind_str) {
