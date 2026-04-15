@@ -1,7 +1,10 @@
 name: Docker
 on:
   push:
+    branches: [sycl]
   pull_request:
+    branches: [sycl]
+  workflow_dispatch:
 
 jobs:
   docker:
@@ -9,5 +12,4 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Build Docker Image
-        run: |
-          docker build -t vmaf .
+        run: docker build -t vmaf .

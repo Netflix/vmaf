@@ -35,12 +35,12 @@
 typedef struct MotionStateCuda {
     CUevent event, finished;
     CUfunction funcbpc8, funcbpc16;
-    CUstream str, host_stream;
+    CUstream str;
     VmafCudaBuffer* blur[2];
     VmafCudaBuffer* sad;
     uint64_t* sad_host;
-    void* write_score_parameters;
     unsigned index;
+    unsigned frame_w, frame_h;  // stored by submit for collect
     double score;
     bool debug;
     bool motion_force_zero;
@@ -70,13 +70,6 @@ static const VmafOption options[] = {
     },
     { 0 }
 };
-
-typedef struct write_score_parameters_moco {
-    VmafFeatureCollector *feature_collector;
-    MotionStateCuda *s;
-    unsigned h, w;
-    unsigned index;
-} write_score_parameters_moco;
 
 static int extract_force_zero(VmafFeatureExtractor *fex,
         VmafPicture *ref_pic, VmafPicture *ref_pic_90,
@@ -140,7 +133,6 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
     CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->str, CU_STREAM_NON_BLOCKING, 0));
-    CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
     CHECK_CUDA(cu_f, cuEventCreate(&s->event, CU_EVENT_DEFAULT));
     CHECK_CUDA(cu_f, cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
 
@@ -154,6 +146,8 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     if (s->motion_force_zero) {
         fex->extract = extract_force_zero;
+        fex->submit = NULL;
+        fex->collect = NULL;
         fex->flush = NULL;
         fex->close = NULL;
         return 0;
@@ -164,9 +158,6 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     int ret = 0;
 
     s->score = 0;
-
-    s->write_score_parameters = malloc(sizeof(write_score_parameters_moco));
-    ((write_score_parameters_moco*)s->write_score_parameters)->s = s;
 
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->blur[0], sizeof(uint16_t) * w * h);
     if (ret) goto free_ref;
@@ -210,7 +201,6 @@ static int flush_fex_cuda(VmafFeatureExtractor *fex,
     CudaFunctions *cu_f = fex->cu_state->f;
     int ret = 0;
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
-    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
 
     if (s->index > 0) {
         ret = vmaf_feature_collector_append(feature_collector,
@@ -227,95 +217,77 @@ static inline double normalize_and_scale_sad(uint64_t sad,
     return (float) (sad / 256.) / (w * h);
 }
 
-
-static int write_scores(write_score_parameters_moco* params)
-{
-    MotionStateCuda *s = params->s;
-    VmafFeatureCollector *feature_collector = params->feature_collector;
-
-    double score_prev = s->score;
-
-    s->score = normalize_and_scale_sad(*s->sad_host, params->w, params->h);
-    int err = 0;
-    if (s->debug) {
-        err |= vmaf_feature_collector_append(feature_collector,
-                "VMAF_integer_feature_motion_score",
-                s->score, params->index);
-    }
-    if (err) return err;
-
-    if (params->index == 1)
-        return 0;
-
-    err = vmaf_feature_collector_append(feature_collector,
-            "VMAF_integer_feature_motion2_score",
-            score_prev < s->score ? score_prev : s->score, params->index - 1);
-    return err;
-}
-
-static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
+static int submit_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
                             VmafPicture *ref_pic_90, VmafPicture *dist_pic,
-                            VmafPicture *dist_pic_90, unsigned index,
-                            VmafFeatureCollector *feature_collector)
+                            VmafPicture *dist_pic_90, unsigned index)
 {
     MotionStateCuda *s = fex->priv;
     CudaFunctions *cu_f = fex->cu_state->f;
 
-    // this is done to ensure that the CPU does not overwrite the buffer params for 'write_scores
-    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
-    // CHECK_CUDA(cu_f, cuEventSynchronize(s->finished));
-    CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
-
-    int err = 0;
     (void) dist_pic;
     (void) ref_pic_90;
     (void) dist_pic_90;
 
     s->index = index;
+    s->frame_w = ref_pic->w[0];
+    s->frame_h = ref_pic->h[0];
     const unsigned src_blurred_idx = (index + 0) % 2;
     const unsigned prev_blurred_idx = (index + 1) % 2;
 
     // Reset device SAD
     CHECK_CUDA(cu_f, cuMemsetD8Async(s->sad->data, 0, sizeof(uint64_t), s->str));
 
-    // Compute motion score
+    // Compute motion score (blur + SAD)
     CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic), vmaf_cuda_picture_get_ready_event(dist_pic), CU_EVENT_WAIT_DEFAULT));
     s->calculate_motion_score(ref_pic, s->blur[src_blurred_idx], s->blur[prev_blurred_idx],
             s->sad, ref_pic->w[0], ref_pic->h[0], ref_pic->stride[0], sizeof(uint16_t) * ref_pic->w[0],
             ref_pic->bpc, s->funcbpc8, s->funcbpc16, cu_f, vmaf_cuda_picture_get_stream(ref_pic));
     CHECK_CUDA(cu_f, cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
-    // This event ensures the input buffer is consumed
     CHECK_CUDA(cu_f, cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
-    CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
+
+    if (index == 0) return 0; // No SAD to download for frame 0
+
+    // Download SAD for collect
+    CHECK_CUDA(cu_f, cuMemcpyDtoHAsync(s->sad_host, (CUdeviceptr)s->sad->data,
+                sizeof(*s->sad_host), s->str));
+    CHECK_CUDA(cu_f, cuEventRecord(s->finished, s->str));
+    return 0;
+}
+
+static int collect_fex_cuda(VmafFeatureExtractor *fex, unsigned index,
+                             VmafFeatureCollector *feature_collector)
+{
+    MotionStateCuda *s = fex->priv;
+    CudaFunctions *cu_f = fex->cu_state->f;
+
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
 
     if (index == 0) {
-        err = vmaf_feature_collector_append(feature_collector,
-                "VMAF_integer_feature_motion2_score",
-                0., index);
+        int err = vmaf_feature_collector_append(feature_collector,
+                "VMAF_integer_feature_motion2_score", 0., 0);
         if (s->debug) {
             err |= vmaf_feature_collector_append(feature_collector,
-                    "VMAF_integer_feature_motion_score",
-                    0., index);
+                    "VMAF_integer_feature_motion_score", 0., 0);
         }
         return err;
     }
 
-    // Download sad
-    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
-    CHECK_CUDA(cu_f, cuMemcpyDtoHAsync(s->sad_host, (CUdeviceptr)s->sad->data,
-                sizeof(*s->sad_host), s->str));
-    CHECK_CUDA(cu_f, cuEventRecord(s->finished, s->str));
-    CHECK_CUDA(cu_f, cuStreamWaitEvent(s->host_stream, s->finished, CU_EVENT_WAIT_DEFAULT));
+    double score_prev = s->score;
+    s->score = normalize_and_scale_sad(*s->sad_host, s->frame_w, s->frame_h);
 
-    write_score_parameters_moco* params = s->write_score_parameters;
-    params->feature_collector = feature_collector;
-    params->h = ref_pic->h[0];
-    params->w = ref_pic->w[0];
-    params->index = index;
-    CHECK_CUDA(cu_f, cuLaunchHostFunc(s->host_stream, (CUhostFn*)write_scores, s->write_score_parameters));
-    return 0;
+    int err = 0;
+    if (s->debug) {
+        err |= vmaf_feature_collector_append(feature_collector,
+                "VMAF_integer_feature_motion_score", s->score, index);
+    }
+
+    if (index > 1) {
+        err |= vmaf_feature_collector_append(feature_collector,
+                "VMAF_integer_feature_motion2_score",
+                score_prev < s->score ? score_prev : s->score, index - 1);
+    }
+
+    return err;
 }
 
 static int close_fex_cuda(VmafFeatureExtractor *fex)
@@ -323,6 +295,7 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     MotionStateCuda *s = fex->priv;
     CudaFunctions *cu_f = fex->cu_state->f;
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
+    CHECK_CUDA(cu_f, cuStreamDestroy(s->str));
     CHECK_CUDA(cu_f, cuEventDestroy(s->event));
     CHECK_CUDA(cu_f, cuEventDestroy(s->finished));
 
@@ -342,9 +315,6 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     }
     ret |= vmaf_dictionary_free(&s->feature_name_dict);
 
-    if(s->write_score_parameters) {
-        free(s->write_score_parameters);
-    }
     return ret;
 }
 
@@ -356,7 +326,8 @@ static const char *provided_features[] = {
 VmafFeatureExtractor vmaf_fex_integer_motion_cuda = {
     .name = "motion_cuda",
     .init = init_fex_cuda,
-    .extract = extract_fex_cuda,
+    .submit = submit_fex_cuda,
+    .collect = collect_fex_cuda,
     .flush = flush_fex_cuda,
     .close = close_fex_cuda,
     .options = options,

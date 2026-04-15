@@ -1,0 +1,49 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PATH=\"/tmp/vmaf-build-env/bin:$PATH\" /tmp/vmaf-build-env/bin/meson setup:*)",
+      "Bash(PATH=\"/tmp/vmaf-build-env/bin:$PATH\" meson setup:*)",
+      "Bash(PATH=\"/tmp/vmaf-build-env/bin:$PATH\" meson test:*)",
+      "Bash(pacman -Ss:*)",
+      "Bash(ls:*)",
+      "Bash(nasm:*)",
+      "Bash(pkg-config:*)",
+      "Bash(PATH=\"/tmp/vmaf-build-env/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:$PATH\" /tmp/vmaf-build-env/bin/meson setup:*)",
+      "Bash(PATH=\"/tmp/vmaf-build-env/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:$PATH\" meson test:*)",
+      "WebFetch(domain:ffmpeg.org)",
+      "Bash(git status:*)",
+      "Bash(git clone:*)",
+      "Bash(git -C /tmp/ffmpeg-patch log --oneline -1)",
+      "Bash(pip3 show:*)",
+      "Bash(ninja:*)",
+      "Bash(/tmp/vmaf-build-env/bin/ninja:*)",
+      "Bash(/tmp/build-venv/bin/pip install:*)",
+      "Bash(/tmp/build-venv/bin/ninja:*)",
+      "Bash(PATH=\"/tmp/build-venv/bin:$PATH\" /tmp/build-venv/bin/meson setup:*)",
+      "Bash(PATH=\"/usr/bin:/usr/local/bin:/tmp/build-venv/bin:$PATH\" /tmp/build-venv/bin/meson:*)",
+      "Bash(PATH=\"/usr/bin:/usr/local/bin:/tmp/build-venv/bin:$PATH\" /tmp/build-venv/bin/ninja:*)",
+      "Bash(echo:*)",
+      "Bash(grep:*)",
+      "Bash(PATH=\"/usr/bin:/usr/local/bin:/tmp/build-venv/bin:$PATH\" /tmp/build-venv/bin/meson setup:*)",
+      "Bash(PATH=\"/usr/bin:/usr/local/bin:/tmp/build-venv/bin:$PATH\" /tmp/build-venv/bin/meson test:*)",
+      "Bash(/home/kilian/dev/libvmaf_vulkan/libvmaf/builddir/tools/vmaf:*)",
+      "Bash(/home/kilian/dev/libvmaf_vulkan/libvmaf/builddir/tools/vmaf_bench:*)",
+      "Bash(git -C /home/kilian/dev/libvmaf_vulkan add libvmaf/tools/vmaf_bench.c libvmaf/tools/meson.build)",
+      "Bash(git -C:*)",
+      "Bash(nvidia-smi:*)",
+      "Read(//opt/**)",
+      "Bash(ldconfig:*)",
+      "Bash(PATH=\"/usr/bin:/usr/local/bin:/tmp/build-venv/bin:$PATH\" /tmp/build-venv/bin/meson configure:*)",
+      "Bash(PATH=\"/opt/cuda/bin:/usr/bin:/usr/local/bin:/tmp/build-venv/bin:$PATH\" /tmp/build-venv/bin/ninja:*)",
+      "Bash(make:*)",
+      "Bash(PATH=\"/opt/cuda/bin:/usr/bin:/usr/local/bin:/tmp/build-venv/bin:$PATH\" /tmp/build-venv/bin/meson test:*)",
+      "Bash(/home/kilian/dev/libvmaf_vulkan/libvmaf/builddir/test/test_cuda_pic_preallocation)",
+      "Bash(ulimit:*)",
+      "Bash(LD_PRELOAD=/usr/lib/libSegFault.so SEGFAULT_SIGNALS=\"segv\" /home/kilian/dev/libvmaf_vulkan/libvmaf/builddir/test/test_cuda_pic_preallocation:*)"
+    ],
+    "additionalDirectories": [
+      "/tmp/ffmpeg-patch/libavfilter",
+      "/tmp/ffmpeg-patch"
+    ]
+  }
+}

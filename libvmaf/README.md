@@ -35,6 +35,29 @@ Special cases:
 - add `-Denable_avx512=true` to support wider SIMD instructions to achieve the fastest processing on supported CPUs
 - add `-Denable_cuda=true` to build with CUDA support, which requires `nvcc` for compilation (tested with CUDA >= 11)
 - add `-Denable_nvtx=true` to build with [NVTX](https://github.com/NVIDIA/NVTX) marker support, which enables easy profiling using Nsight Systems
+- add `-Denable_sycl=true` to build with Intel oneAPI/SYCL support, which requires `icpx` (DPC++ compiler from Intel oneAPI toolkit)
+
+### SYCL Build
+
+The SYCL backend targets Intel GPUs via oneAPI DPC++. Prerequisites:
+
+1. Install [Intel oneAPI Base Toolkit](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html) (provides `icx`/`icpx` compilers)
+2. Set up the environment: `source /opt/intel/oneapi/setvars.sh` (or manually add compiler to PATH)
+3. Configure and build:
+
+```
+CC=icx CXX=icpx meson setup build -Denable_sycl=true -Db_lto=false
+ninja -vC build
+```
+
+**Performance tip:** Set `SYCL_CACHE_PERSISTENT=1` to cache compiled SYCL kernels across runs, reducing JIT overhead on subsequent invocations:
+
+```
+export SYCL_CACHE_PERSISTENT=1
+./build/tools/vmaf --reference ref.yuv --distorted dis.yuv ...
+```
+
+Use `--no_sycl` to force CPU-only mode, or `--sycl_device <N>` to select a specific GPU device index.
 
 Build with:
 

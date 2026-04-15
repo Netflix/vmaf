@@ -128,7 +128,7 @@ VifResiduals vif_compute_line_residuals(VifPublicState *s, unsigned from,
                                         unsigned to, int scale);
 
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
 #include <intrin.h>
 
 static inline int __builtin_clz(unsigned x) {

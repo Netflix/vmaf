@@ -39,6 +39,7 @@ enum VmafFeatureExtractorFlags {
     VMAF_FEATURE_EXTRACTOR_CUDA = 1 << 1,
     VMAF_FEATURE_FRAME_SYNC = 1 << 2,
     VMAF_FEATURE_EXTRACTOR_PREV_REF = 1 << 3,
+    VMAF_FEATURE_EXTRACTOR_SYCL = 1 << 4,
 };
 
 typedef struct VmafFeatureExtractor {
@@ -87,6 +88,25 @@ typedef struct VmafFeatureExtractor {
      * @param               fex self.
      */
     int (*close)(struct VmafFeatureExtractor *fex);
+    /**
+     * Async submit callback. Optional. When set, the framework calls submit()
+     * for all GPU extractors first (recording & submitting GPU work without
+     * blocking), then calls collect() to wait for results and write scores.
+     * This allows the CPU to overlap command preparation across extractors.
+     *
+     * Parameters mirror extract(), except feature_collector is deferred.
+     */
+    int (*submit)(struct VmafFeatureExtractor *fex,
+                  VmafPicture *ref_pic, VmafPicture *ref_pic_90,
+                  VmafPicture *dist_pic, VmafPicture *dist_pic_90,
+                  unsigned index);
+    /**
+     * Async collect callback. Called after submit() to wait for GPU completion,
+     * download results, and write scores to the feature collector.
+     */
+    int (*collect)(struct VmafFeatureExtractor *fex,
+                   unsigned index,
+                   VmafFeatureCollector *feature_collector);
     const VmafOption *options; ///< Optional initialization options.
     void *priv; ///< Custom data.
     size_t priv_size; ///< sizeof private data.
@@ -95,6 +115,9 @@ typedef struct VmafFeatureExtractor {
 
     #ifdef HAVE_CUDA
     VmafCudaState *cu_state; ///< VmafCudaState, set by framework
+    #endif
+    #ifdef HAVE_SYCL
+    struct VmafSyclState *sycl_state; ///< VmafSyclState, set by framework
     #endif
 
     VmafFrameSyncContext *framesync;
@@ -114,6 +137,8 @@ typedef struct VmafFeatureExtractorContext {
     bool is_initialized, is_closed;
     VmafDictionary *opts_dict;
     VmafFeatureExtractor *fex;
+    bool gpu_pending;           ///< Has pending GPU submit awaiting collect
+    unsigned gpu_pending_index; ///< Frame index of pending GPU work
 } VmafFeatureExtractorContext;
 
 int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
@@ -127,6 +152,21 @@ int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx,
 int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
                                            VmafPicture *ref, VmafPicture *ref_90,
                                            VmafPicture *dist, VmafPicture *dist_90,
+                                           unsigned pic_index,
+                                           VmafFeatureCollector *vfc);
+
+int vmaf_feature_extractor_context_submit(VmafFeatureExtractorContext *fex_ctx,
+                                          VmafPicture *ref, VmafPicture *ref_90,
+                                          VmafPicture *dist, VmafPicture *dist_90,
+                                          unsigned pic_index);
+
+// Submit for zero-copy GPU path: no VmafPicture needed.
+// Caller must ensure extractor is initialized via
+// vmaf_feature_extractor_context_init() before first call.
+int vmaf_feature_extractor_context_submit_nocopy(
+        VmafFeatureExtractorContext *fex_ctx, unsigned pic_index);
+
+int vmaf_feature_extractor_context_collect(VmafFeatureExtractorContext *fex_ctx,
                                            unsigned pic_index,
                                            VmafFeatureCollector *vfc);
 

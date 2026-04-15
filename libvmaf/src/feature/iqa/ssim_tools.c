@@ -42,9 +42,24 @@
 #include "iqa.h"
 #include "convolve.h"
 #include "ssim_tools.h"
+#include "ssim_simd.h"
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+/* SIMD dispatch function pointers (set via _iqa_ssim_set_dispatch) */
+static ssim_precompute_fn g_ssim_precompute = NULL;
+static ssim_variance_fn g_ssim_variance = NULL;
+static ssim_accumulate_fn g_ssim_accumulate = NULL;
+
+void _iqa_ssim_set_dispatch(ssim_precompute_fn precompute,
+                             ssim_variance_fn variance,
+                             ssim_accumulate_fn accumulate)
+{
+    g_ssim_precompute = precompute;
+    g_ssim_variance = variance;
+    g_ssim_accumulate = accumulate;
+}
 
 /* _calc_luminance */
 IQA_INLINE static double _calc_luminance(float mu1, float mu2, float C1, float alpha)
@@ -149,12 +164,17 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
     _iqa_convolve(ref, w, h, k, ref_mu, 0, 0);
     _iqa_convolve(cmp, w, h, k, cmp_mu, 0, 0);
 
-    for (y=0; y<h; ++y) {
-        offset = y*w;
-        for (x=0; x<w; ++x, ++offset) {
-            ref_sigma_sqd[offset] = ref[offset] * ref[offset];
-            cmp_sigma_sqd[offset] = cmp[offset] * cmp[offset];
-            sigma_both[offset] = ref[offset] * cmp[offset];
+    if (g_ssim_precompute) {
+        g_ssim_precompute(ref, cmp, ref_sigma_sqd, cmp_sigma_sqd, sigma_both,
+                          w * h);
+    } else {
+        for (y=0; y<h; ++y) {
+            offset = y*w;
+            for (x=0; x<w; ++x, ++offset) {
+                ref_sigma_sqd[offset] = ref[offset] * ref[offset];
+                cmp_sigma_sqd[offset] = cmp[offset] * cmp[offset];
+                sigma_both[offset] = ref[offset] * cmp[offset];
+            }
         }
     }
 
@@ -164,16 +184,21 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
     _iqa_convolve(sigma_both,    w, h, k, 0, &w, &h); /* Update the width and height */
 
     /* The convolution results are smaller by the kernel width and height */
-    for (y=0; y<h; ++y) {
-        offset = y*w;
-        for (x=0; x<w; ++x, ++offset) {
-            ref_sigma_sqd[offset] -= ref_mu[offset] * ref_mu[offset];
-            cmp_sigma_sqd[offset] -= cmp_mu[offset] * cmp_mu[offset];
+    if (g_ssim_variance) {
+        g_ssim_variance(ref_sigma_sqd, cmp_sigma_sqd, sigma_both,
+                        ref_mu, cmp_mu, w * h);
+    } else {
+        for (y=0; y<h; ++y) {
+            offset = y*w;
+            for (x=0; x<w; ++x, ++offset) {
+                ref_sigma_sqd[offset] -= ref_mu[offset] * ref_mu[offset];
+                cmp_sigma_sqd[offset] -= cmp_mu[offset] * cmp_mu[offset];
 
-            ref_sigma_sqd[offset] = MAX(0.0, ref_sigma_sqd[offset]); /* zli-nflx */
-            cmp_sigma_sqd[offset] = MAX(0.0, cmp_sigma_sqd[offset]); /* zli-nflx */
+                ref_sigma_sqd[offset] = MAX(0.0, ref_sigma_sqd[offset]); /* zli-nflx */
+                cmp_sigma_sqd[offset] = MAX(0.0, cmp_sigma_sqd[offset]); /* zli-nflx */
 
-            sigma_both[offset] -= ref_mu[offset] * cmp_mu[offset];
+                sigma_both[offset] -= ref_mu[offset] * cmp_mu[offset];
+            }
         }
     }
 
@@ -181,6 +206,11 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
     l_sum = 0.0; /* zli-nflx */
     c_sum = 0.0; /* zli-nflx */
     s_sum = 0.0; /* zli-nflx */
+    if (!args && g_ssim_accumulate) {
+        g_ssim_accumulate(ref_mu, cmp_mu, ref_sigma_sqd, cmp_sigma_sqd,
+                          sigma_both, w * h, C1, C2, C3,
+                          &ssim_sum, &l_sum, &c_sum, &s_sum);
+    } else {
     for (y=0; y<h; ++y) {
         offset = y*w;
         for (x=0; x<w; ++x, ++offset) {
@@ -188,11 +218,6 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
             if (!args) {
 
             	/* The default case */
-                // numerator   = (2.0 * ref_mu[offset] * cmp_mu[offset] + C1) * (2.0 * sigma_both[offset] + C2);
-                // denominator = (ref_mu[offset]*ref_mu[offset] + cmp_mu[offset]*cmp_mu[offset] + C1) *
-                //     (ref_sigma_sqd[offset] + cmp_sigma_sqd[offset] + C2);
-                // ssim_sum += numerator / denominator;
-
                 /* zli-nflx: */
                 sigma_ref_sigma_cmp = sqrt(ref_sigma_sqd[offset] * cmp_sigma_sqd[offset]);
                 l = (2.0 * ref_mu[offset] * cmp_mu[offset] + C1) / (ref_mu[offset]*ref_mu[offset] + cmp_mu[offset]*cmp_mu[offset] + C1);
@@ -233,6 +258,7 @@ float _iqa_ssim(float *ref, float *cmp, int w, int h, const struct _kernel *k,
                     return INFINITY;
             }
         }
+    }
     }
 
     free(ref_mu);

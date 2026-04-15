@@ -26,6 +26,15 @@ void vmaf_init_cpu(void)
 {
 #if ARCH_X86
     flags = vmaf_get_cpu_flags_x86();
+#if HAVE_AVX512
+    if (flags & VMAF_X86_CPU_FLAG_AVX512) {
+        /* Warm up AVX-512 execution units. On Intel CPUs, the 512-bit
+         * units power down after idle and take 10-20µs to reactivate.
+         * Issuing a dummy instruction here avoids that latency penalty
+         * on the first frame of actual computation. */
+        __asm__ volatile("vpxord %%zmm0, %%zmm0, %%zmm0" ::: "zmm0");
+    }
+#endif
 #elif ARCH_AARCH64
     flags = vmaf_get_cpu_flags_arm();
 #endif

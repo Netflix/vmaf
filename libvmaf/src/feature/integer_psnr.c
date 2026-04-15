@@ -23,9 +23,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cpu.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "opt.h"
+
+#if ARCH_X86
+#include "x86/psnr_avx2.h"
+#if HAVE_AVX512
+#include "x86/psnr_avx512.h"
+#endif
+#endif
+
+#if ARCH_AARCH64
+#include "arm64/psnr_neon.h"
+#endif
 
 typedef struct PsnrState {
     bool enable_chroma;
@@ -39,6 +51,8 @@ typedef struct PsnrState {
         uint64_t sse[3];
         uint64_t n_pixels[3];
     } apsnr;
+    uint32_t (*sse_line_8)(const uint8_t *ref, const uint8_t *dis, unsigned w);
+    uint64_t (*sse_line_16)(const uint16_t *ref, const uint16_t *dis, unsigned w);
 } PsnrState;
 
 static const VmafOption options[] = {
@@ -83,6 +97,27 @@ static const VmafOption options[] = {
 };
 
 
+static uint32_t sse_line_8_c(const uint8_t *ref, const uint8_t *dis, unsigned w)
+{
+    uint32_t sse = 0;
+    for (unsigned j = 0; j < w; j++) {
+        const int16_t e = ref[j] - dis[j];
+        sse += e * e;
+    }
+    return sse;
+}
+
+static uint64_t sse_line_16_c(const uint16_t *ref, const uint16_t *dis,
+                               unsigned w)
+{
+    uint64_t sse = 0;
+    for (unsigned j = 0; j < w; j++) {
+        const uint32_t e = abs(ref[j] - dis[j]);
+        sse += e * e;
+    }
+    return sse;
+}
+
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
@@ -96,13 +131,38 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         if (s->min_sse != 0.0) {
             const int ss_hor = pix_fmt != VMAF_PIX_FMT_YUV444P;
             const int ss_ver = pix_fmt == VMAF_PIX_FMT_YUV420P;
-            const double mse = s->min_sse / 
+            const double mse = s->min_sse /
                 (((i && ss_hor) ? w / 2 : w) * ((i && ss_ver) ? h / 2 : h));
             s->psnr_max[i] = ceil(10. * log10(s->peak * s->peak / mse));
         } else {
             s->psnr_max[i] = (6 * bpc) + 12;
         }
     }
+
+    s->sse_line_8 = sse_line_8_c;
+    s->sse_line_16 = sse_line_16_c;
+
+#if ARCH_X86
+    unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+        s->sse_line_8 = psnr_sse_line_8_avx2;
+        s->sse_line_16 = psnr_sse_line_16_avx2;
+    }
+#if HAVE_AVX512
+    if (flags & VMAF_X86_CPU_FLAG_AVX512) {
+        s->sse_line_8 = psnr_sse_line_8_avx512;
+        s->sse_line_16 = psnr_sse_line_16_avx512;
+    }
+#endif
+#endif
+
+#if ARCH_AARCH64
+    unsigned flags = vmaf_get_cpu_flags();
+    if (flags & VMAF_ARM_CPU_FLAG_NEON) {
+        s->sse_line_8 = psnr_sse_line_8_neon;
+        s->sse_line_16 = psnr_sse_line_16_neon;
+    }
+#endif
 
     return 0;
 }
@@ -127,13 +187,10 @@ static int psnr(VmafPicture *ref_pic, VmafPicture *dist_pic,
         uint8_t *dis = dist_pic->data[p];
 
         uint64_t sse = 0;
+        uint32_t (*sse_fn)(const uint8_t *, const uint8_t *, unsigned) =
+            s->sse_line_8 ? s->sse_line_8 : sse_line_8_c;
         for (unsigned i = 0; i < ref_pic->h[p]; i++) {
-            uint32_t sse_inner = 0;
-            for (unsigned j = 0; j < ref_pic->w[p]; j++) {
-                const int16_t e = ref[j] - dis[j];
-                sse_inner += e * e;
-            }
-            sse += sse_inner;
+            sse += sse_fn(ref, dis, ref_pic->w[p]);
             ref += ref_pic->stride[p];
             dis += dist_pic->stride[p];
         }
@@ -171,11 +228,10 @@ static int psnr_hbd(VmafPicture *ref_pic, VmafPicture *dist_pic,
         uint16_t *dis = dist_pic->data[p];
 
         uint64_t sse = 0;
+        uint64_t (*sse_fn)(const uint16_t *, const uint16_t *, unsigned) =
+            s->sse_line_16 ? s->sse_line_16 : sse_line_16_c;
         for (unsigned i = 0; i < ref_pic->h[p]; i++) {
-            for (unsigned j = 0; j < ref_pic->w[p]; j++) {
-                const uint32_t e = abs(ref[j] - dis[j]);
-                sse += e * e;
-            }
+            sse += sse_fn(ref, dis, ref_pic->w[p]);
             ref += ref_pic->stride[p] / 2;
             dis += dist_pic->stride[p] / 2;
         }

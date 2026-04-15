@@ -33,6 +33,9 @@
 
 #if ARCH_X86
 #include "x86/cambi_avx2.h"
+#include "x86/cambi_avx512.h"
+#elif ARCH_AARCH64
+#include "arm64/cambi_neon.h"
 #endif
 
 /* Ratio of pixels for computation, must be 0 < topk <= 1.0 */
@@ -589,6 +592,20 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->inc_range_callback = cambi_increment_range_avx2;
         s->dec_range_callback = cambi_decrement_range_avx2;
         s->derivative_callback = get_derivative_data_for_row_avx2;
+    }
+    if (flags & VMAF_X86_CPU_FLAG_AVX512) {
+        s->inc_range_callback = cambi_increment_range_avx512;
+        s->dec_range_callback = cambi_decrement_range_avx512;
+        s->derivative_callback = get_derivative_data_for_row_avx512;
+    }
+#elif ARCH_AARCH64
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        if (flags & VMAF_ARM_CPU_FLAG_NEON) {
+            s->inc_range_callback = cambi_increment_range_neon;
+            s->dec_range_callback = cambi_decrement_range_neon;
+            s->derivative_callback = get_derivative_data_for_row_neon;
+        }
     }
 #endif
 

@@ -54,6 +54,11 @@ extern VmafFeatureExtractor vmaf_fex_integer_adm_cuda;
 extern VmafFeatureExtractor vmaf_fex_integer_vif_cuda;
 extern VmafFeatureExtractor vmaf_fex_integer_motion_cuda;
 #endif
+#if HAVE_SYCL
+extern VmafFeatureExtractor vmaf_fex_integer_vif_sycl;
+extern VmafFeatureExtractor vmaf_fex_integer_adm_sycl;
+extern VmafFeatureExtractor vmaf_fex_integer_motion_sycl;
+#endif
 extern VmafFeatureExtractor vmaf_fex_null;
 
 static VmafFeatureExtractor *feature_extractor_list[] = {
@@ -75,6 +80,15 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_integer_motion_v2,
     &vmaf_fex_integer_vif,
     &vmaf_fex_cambi,
+#if HAVE_SYCL
+    // SYCL before CUDA: when multiple GPU backends are compiled in,
+    // the first matching extractor wins.  SYCL is the preferred backend
+    // because it supports the widest range of Intel hardware.
+    // Use --no_sycl to fall back to CUDA.
+    &vmaf_fex_integer_vif_sycl,
+    &vmaf_fex_integer_adm_sycl,
+    &vmaf_fex_integer_motion_sycl,
+#endif
 #if HAVE_CUDA
     &vmaf_fex_integer_adm_cuda,
     &vmaf_fex_integer_vif_cuda,
@@ -236,6 +250,49 @@ int vmaf_feature_extractor_context_extract(VmafFeatureExtractorContext *fex_ctx,
 #endif
 
     return err;
+}
+
+int vmaf_feature_extractor_context_submit(VmafFeatureExtractorContext *fex_ctx,
+                                          VmafPicture *ref, VmafPicture *ref_90,
+                                          VmafPicture *dist, VmafPicture *dist_90,
+                                          unsigned pic_index)
+{
+    if (!fex_ctx) return -EINVAL;
+    if (!ref) return -EINVAL;
+    if (!dist) return -EINVAL;
+    if (!fex_ctx->fex->submit) return -EINVAL;
+
+    if (!fex_ctx->is_initialized) {
+        int err =
+            vmaf_feature_extractor_context_init(fex_ctx, ref->pix_fmt, ref->bpc,
+                                                ref->w[0], ref->h[0]);
+        if (err) return err;
+    }
+
+    return fex_ctx->fex->submit(fex_ctx->fex, ref, ref_90, dist, dist_90,
+                                pic_index);
+}
+
+int vmaf_feature_extractor_context_submit_nocopy(
+        VmafFeatureExtractorContext *fex_ctx, unsigned pic_index)
+{
+    if (!fex_ctx) return -EINVAL;
+    if (!fex_ctx->fex->submit) return -EINVAL;
+    if (!fex_ctx->is_initialized) return -EINVAL;
+
+    return fex_ctx->fex->submit(fex_ctx->fex, NULL, NULL, NULL, NULL,
+                                pic_index);
+}
+
+int vmaf_feature_extractor_context_collect(VmafFeatureExtractorContext *fex_ctx,
+                                           unsigned pic_index,
+                                           VmafFeatureCollector *vfc)
+{
+    if (!fex_ctx) return -EINVAL;
+    if (!vfc) return -EINVAL;
+    if (!fex_ctx->fex->collect) return -EINVAL;
+
+    return fex_ctx->fex->collect(fex_ctx->fex, pic_index, vfc);
 }
 
 int vmaf_feature_extractor_context_flush(VmafFeatureExtractorContext *fex_ctx,

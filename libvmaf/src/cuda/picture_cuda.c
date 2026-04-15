@@ -144,6 +144,7 @@ int vmaf_cuda_picture_alloc_pinned(VmafPicture *pic, enum VmafPixelFormat pix_fm
 
     err |= vmaf_picture_priv_init(pic);
     VmafPicturePrivate* priv = pic->priv;
+    priv->cuda.state = cuda_state;
     priv->cuda.ctx = cuda_state->ctx;
     err |= vmaf_picture_set_release_callback(pic, NULL, default_release_pinned_picture);
     if (err) goto free_data;
@@ -252,10 +253,10 @@ int vmaf_cuda_picture_synchronize(VmafPicture *pic, void *cookie)
     VmafPicturePrivate* priv = pic->priv;
     CudaFunctions* cu_f = priv->cuda.state->f;
     CHECK_CUDA(cu_f ,cuEventSynchronize(priv->cuda.finished));
-    CHECK_CUDA(cu_f ,cuStreamSynchronize(priv->cuda.str));
-    CHECK_CUDA(cu_f ,cuCtxPushCurrent(priv->cuda.ctx));
-    CHECK_CUDA(cu_f ,cuCtxPopCurrent(NULL));
-    
+    // cuStreamSynchronize after cuEventSynchronize on the same stream is
+    // redundant — the event was recorded on this stream, so the sync
+    // already guarantees all prior work on the stream is complete.
+    // cuCtxPushCurrent/cuCtxPopCurrent with no work between them is a no-op.
     return 0;
 }
 

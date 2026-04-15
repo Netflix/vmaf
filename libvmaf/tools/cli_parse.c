@@ -29,6 +29,9 @@ enum {
     ARG_FRAME_CNT,
     ARG_FRAME_SKIP_REF,
     ARG_FRAME_SKIP_DIST,
+    ARG_NO_CUDA,
+    ARG_NO_SYCL,
+    ARG_SYCL_DEVICE,
 };
 
 static const struct option long_opts[] = {
@@ -54,6 +57,9 @@ static const struct option long_opts[] = {
     { "frame_cnt",        1, NULL, ARG_FRAME_CNT },
     { "frame_skip_ref",   1, NULL, ARG_FRAME_SKIP_REF },
     { "frame_skip_dist",  1, NULL, ARG_FRAME_SKIP_DIST },
+    { "no_cuda",          0, NULL, ARG_NO_CUDA },
+    { "no_sycl",          0, NULL, ARG_NO_SYCL },
+    { "sycl_device",      1, NULL, ARG_SYCL_DEVICE },
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { "quiet",            0, NULL, 'q' },
@@ -93,6 +99,9 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --frame_skip_ref $unsigned:  skip the first N frames in reference\n"
             " --frame_skip_dist $unsigned: skip the first N frames in distorted\n"
             " --subsample: $unsigned       compute scores only every N frames\n"
+            " --no_cuda:                   disable CUDA backend\n"
+            " --no_sycl:                    disable SYCL/oneAPI backend\n"
+            " --sycl_device $unsigned:      select SYCL GPU by index (default: auto)\n"
             " --quiet/-q:                  disable FPS meter when run in a TTY\n"
             " --no_prediction/-n:          no prediction, extract features only\n"
             " --version/-v:                print version and exit\n"
@@ -452,6 +461,7 @@ void cli_parse(const int argc, char *const *const argv,
                CLISettings *const settings)
 {
     memset(settings, 0, sizeof(*settings));
+    settings->sycl_device = -1;    // auto-select by default
     int o;
 
     while ((o = getopt_long(argc, argv, short_opts, long_opts, NULL)) >= 0) {
@@ -512,6 +522,7 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case ARG_GPUMASK:
             settings->gpumask = parse_unsigned(optarg, ARG_GPUMASK, argv[0]);
+            settings->use_gpumask = true;
             break;
         case ARG_AOM_CTC:
             parse_aom_ctc(settings, optarg, argv[0]);
@@ -528,6 +539,15 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case ARG_FRAME_SKIP_DIST:
             settings->frame_skip_dist = parse_unsigned(optarg, ARG_FRAME_SKIP_DIST, argv[0]);
+            break;
+        case ARG_NO_CUDA:
+            settings->no_cuda = true;
+            break;
+        case ARG_NO_SYCL:
+            settings->no_sycl = true;
+            break;
+        case ARG_SYCL_DEVICE:
+            settings->sycl_device = (int)parse_unsigned(optarg, ARG_SYCL_DEVICE, argv[0]);
             break;
         case 'n':
             settings->no_prediction = true;

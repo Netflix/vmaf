@@ -35,6 +35,8 @@
 #if HAVE_AVX512
 #include "x86/motion_avx512.h"
 #endif
+#elif ARCH_AARCH64
+#include "arm64/motion_neon.h"
 #endif
 
 typedef struct MotionState {
@@ -321,6 +323,12 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (flags & VMAF_X86_CPU_FLAG_AVX512)
         s->x_convolution = x_convolution_16_avx512;
 #endif
+#elif ARCH_AARCH64
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        if (flags & VMAF_ARM_CPU_FLAG_NEON)
+            s->x_convolution = x_convolution_16_neon;
+    }
 #endif
 
     s->sad = sad_c;

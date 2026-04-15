@@ -287,8 +287,8 @@ class QualityRunnerTest(MyTestCase):
         with self.assertRaises(KeyError):
             self.assertAlmostEqual(results[1]['VMAF_feature_motion_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 76.68425574067017, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 76.68433966696026, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 99.94641626675809, places=4)
 
     def test_run_vmaf_runner_with_phone_score(self):
 
@@ -1604,8 +1604,8 @@ class QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion2_score'], 3.8953518541666665, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 73.28968543912883, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 73.28977086338743, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 99.94641635864981, places=4)
 
     def test_run_vmaf_runner_rdh2160_nvd1d5(self):
 

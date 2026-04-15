@@ -42,7 +42,13 @@ class LazyExtensions(list):
             self._extensions = cythonize([
                 'vmaf/core/adm_dwt2_cy.pyx'
             ], compiler_directives={'language_level' : "3"})
-            self._extensions[0].include_dirs = [numpy.get_include(), '../libvmaf/src']
+            # compat/ contains a stub config.h that disables SIMD dispatch
+            # (the SIMD .c files are not compiled into this extension)
+            self._extensions[0].include_dirs = [
+                numpy.get_include(),
+                os.path.join(PYTHON_PROJECT, 'compat'),
+                '../libvmaf/src',
+            ]
 
         return self._extensions
 

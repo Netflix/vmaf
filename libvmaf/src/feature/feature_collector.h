@@ -78,6 +78,18 @@ int vmaf_feature_collector_get_score(VmafFeatureCollector *feature_collector,
                                      const char *feature_name, double *score,
                                      unsigned index);
 
+FeatureVector *vmaf_feature_collector_find(VmafFeatureCollector *feature_collector,
+                                           const char *feature_name);
+
+static inline int vmaf_feature_vector_get_score(FeatureVector *fv,
+                                                double *score, unsigned index)
+{
+    if (!fv || index >= fv->capacity || !fv->score[index].written)
+        return -1;
+    *score = fv->score[index].value;
+    return 0;
+}
+
 int vmaf_feature_collector_set_aggregate(VmafFeatureCollector *feature_collector,
                                          const char *feature_name,
                                          double score);

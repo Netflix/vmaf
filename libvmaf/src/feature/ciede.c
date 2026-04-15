@@ -47,15 +47,33 @@ SOFTWARE.
 #include <stddef.h>
 #include <string.h>
 
+#include "cpu.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "mem.h"
 #include "opt.h"
 
+#if ARCH_X86
+#include "x86/ciede_avx2.h"
+#if HAVE_AVX512
+#include "x86/ciede_avx512.h"
+#endif
+#endif
+
+#if ARCH_AARCH64
+#include "arm64/ciede_neon.h"
+#endif
+
 typedef struct CiedeState {
     VmafPicture ref;
     VmafPicture dist;
     void (*scale_chroma_planes)(VmafPicture *in, VmafPicture *out);
+    void (*preprocess_8)(const uint8_t *, const uint8_t *, const uint8_t *,
+                         float *, float *, float *, int);
+    void (*preprocess_16)(const uint16_t *, const uint16_t *, const uint16_t *,
+                          float *, float *, float *, int);
+    float *tmp[6];
+    unsigned width;
 } CiedeState;
 
 static void scale_chroma_planes_hbd(VmafPicture *in, VmafPicture *out)
@@ -103,6 +121,42 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (pix_fmt == VMAF_PIX_FMT_YUV400P)
         return -EINVAL;
 
+    s->width = w;
+    s->preprocess_8 = NULL;
+    s->preprocess_16 = NULL;
+    memset(s->tmp, 0, sizeof(s->tmp));
+
+#if ARCH_X86
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+            s->preprocess_8 = ciede_preprocess_8_avx2;
+            s->preprocess_16 = ciede_preprocess_16_avx2;
+        }
+#if HAVE_AVX512
+        if (flags & VMAF_X86_CPU_FLAG_AVX512) {
+            s->preprocess_8 = ciede_preprocess_8_avx512;
+            s->preprocess_16 = ciede_preprocess_16_avx512;
+        }
+#endif
+    }
+#elif ARCH_AARCH64
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        if (flags & VMAF_ARM_CPU_FLAG_NEON) {
+            s->preprocess_8 = ciede_preprocess_8_neon;
+            s->preprocess_16 = ciede_preprocess_16_neon;
+        }
+    }
+#endif
+
+    if (s->preprocess_8 || s->preprocess_16) {
+        for (int i = 0; i < 6; i++) {
+            s->tmp[i] = aligned_malloc(w * sizeof(float), 32);
+            if (!s->tmp[i]) goto fail_tmp;
+        }
+    }
+
     if (pix_fmt == VMAF_PIX_FMT_YUV444P)
         return 0;
 
@@ -116,12 +170,17 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->scale_chroma_planes = scale_chroma_planes_hbd;
         break;
     default:
-        return -EINVAL;
+        goto fail_tmp;
     }
 
     err |= vmaf_picture_alloc(&s->ref, VMAF_PIX_FMT_YUV444P, bpc, w, h);
     err |= vmaf_picture_alloc(&s->dist, VMAF_PIX_FMT_YUV444P, bpc, w, h);
     return err;
+
+fail_tmp:
+    for (int i = 0; i < 6; i++)
+        if (s->tmp[i]) aligned_free(s->tmp[i]);
+    return -ENOMEM;
 }
 
 static float get_h_prime(const float x, const float y)
@@ -331,38 +390,83 @@ static int extract(VmafFeatureExtractor *fex,
     }
 
     double de00_sum = 0.;
-    for (unsigned i = 0; i < ref->h[0]; i++) {
-        for (unsigned j = 0; j < ref->w[0]; j++) {
-            float r_y, r_u, r_v, d_y, d_u, d_v;
+    const int w = ref->w[0];
+    const KSubArgs default_ksub = { .l = 0.65, .c = 1.0, .h = 4.0 };
 
-            switch (ref->bpc) {
-            case 8:
-                r_y = ((uint8_t*)ref->data[0])[i * ref->stride[0] + j];
-                r_u = ((uint8_t*)ref->data[1])[i * ref->stride[1] + j];
-                r_v = ((uint8_t*)ref->data[2])[i * ref->stride[2] + j];
-                d_y = ((uint8_t*)dist->data[0])[i * dist->stride[0] + j];
-                d_u = ((uint8_t*)dist->data[1])[i * dist->stride[1] + j];
-                d_v = ((uint8_t*)dist->data[2])[i * dist->stride[2] + j];
-                break;
-            case 10:
-            case 12:
-            case 16:
-                r_y = ((uint16_t*)ref->data[0])[i * (ref->stride[0] / 2) + j];
-                r_u = ((uint16_t*)ref->data[1])[i * (ref->stride[1] / 2) + j];
-                r_v = ((uint16_t*)ref->data[2])[i * (ref->stride[2] / 2) + j];
-                d_y = ((uint16_t*)dist->data[0])[i * (dist->stride[0] / 2) + j];
-                d_u = ((uint16_t*)dist->data[1])[i * (dist->stride[1] / 2) + j];
-                d_v = ((uint16_t*)dist->data[2])[i * (dist->stride[2] / 2) + j];
-                break;
-            default:
-                return -EINVAL;
+    if (ref->bpc == 8 && s->preprocess_8) {
+        float *ry = s->tmp[0], *ru = s->tmp[1], *rv = s->tmp[2];
+        float *dy = s->tmp[3], *du = s->tmp[4], *dv = s->tmp[5];
+        for (unsigned i = 0; i < ref->h[0]; i++) {
+            const uint8_t *ref_y = (uint8_t*)ref->data[0] + i * ref->stride[0];
+            const uint8_t *ref_u = (uint8_t*)ref->data[1] + i * ref->stride[1];
+            const uint8_t *ref_v = (uint8_t*)ref->data[2] + i * ref->stride[2];
+            const uint8_t *dis_y = (uint8_t*)dist->data[0] + i * dist->stride[0];
+            const uint8_t *dis_u = (uint8_t*)dist->data[1] + i * dist->stride[1];
+            const uint8_t *dis_v = (uint8_t*)dist->data[2] + i * dist->stride[2];
+            s->preprocess_8(ref_y, ref_u, ref_v, ry, ru, rv, w);
+            s->preprocess_8(dis_y, dis_u, dis_v, dy, du, dv, w);
+            for (unsigned j = 0; j < (unsigned)w; j++) {
+                const LABColor c1 = get_lab_color(ry[j], ru[j], rv[j], ref->bpc);
+                const LABColor c2 = get_lab_color(dy[j], du[j], dv[j], dist->bpc);
+                de00_sum += ciede2000(c1, c2, default_ksub);
             }
+        }
+    } else if (ref->bpc > 8 && s->preprocess_16) {
+        float *ry = s->tmp[0], *ru = s->tmp[1], *rv = s->tmp[2];
+        float *dy = s->tmp[3], *du = s->tmp[4], *dv = s->tmp[5];
+        int stride16_r0 = ref->stride[0] / 2;
+        int stride16_r1 = ref->stride[1] / 2;
+        int stride16_r2 = ref->stride[2] / 2;
+        int stride16_d0 = dist->stride[0] / 2;
+        int stride16_d1 = dist->stride[1] / 2;
+        int stride16_d2 = dist->stride[2] / 2;
+        for (unsigned i = 0; i < ref->h[0]; i++) {
+            const uint16_t *ref_y = (uint16_t*)ref->data[0] + i * stride16_r0;
+            const uint16_t *ref_u = (uint16_t*)ref->data[1] + i * stride16_r1;
+            const uint16_t *ref_v = (uint16_t*)ref->data[2] + i * stride16_r2;
+            const uint16_t *dis_y = (uint16_t*)dist->data[0] + i * stride16_d0;
+            const uint16_t *dis_u = (uint16_t*)dist->data[1] + i * stride16_d1;
+            const uint16_t *dis_v = (uint16_t*)dist->data[2] + i * stride16_d2;
+            s->preprocess_16(ref_y, ref_u, ref_v, ry, ru, rv, w);
+            s->preprocess_16(dis_y, dis_u, dis_v, dy, du, dv, w);
+            for (unsigned j = 0; j < (unsigned)w; j++) {
+                const LABColor c1 = get_lab_color(ry[j], ru[j], rv[j], ref->bpc);
+                const LABColor c2 = get_lab_color(dy[j], du[j], dv[j], dist->bpc);
+                de00_sum += ciede2000(c1, c2, default_ksub);
+            }
+        }
+    } else {
+        for (unsigned i = 0; i < ref->h[0]; i++) {
+            for (unsigned j = 0; j < ref->w[0]; j++) {
+                float r_y, r_u, r_v, d_y, d_u, d_v;
 
-            const LABColor color_1 = get_lab_color(r_y, r_u, r_v, ref->bpc);
-            const LABColor color_2 = get_lab_color(d_y, d_u, d_v, dist->bpc);
-            const KSubArgs default_ksub = { .l = 0.65, .c = 1.0, .h = 4.0 };
-            const float de00 = ciede2000(color_1, color_2, default_ksub);
-            de00_sum += de00;
+                switch (ref->bpc) {
+                case 8:
+                    r_y = ((uint8_t*)ref->data[0])[i * ref->stride[0] + j];
+                    r_u = ((uint8_t*)ref->data[1])[i * ref->stride[1] + j];
+                    r_v = ((uint8_t*)ref->data[2])[i * ref->stride[2] + j];
+                    d_y = ((uint8_t*)dist->data[0])[i * dist->stride[0] + j];
+                    d_u = ((uint8_t*)dist->data[1])[i * dist->stride[1] + j];
+                    d_v = ((uint8_t*)dist->data[2])[i * dist->stride[2] + j];
+                    break;
+                case 10:
+                case 12:
+                case 16:
+                    r_y = ((uint16_t*)ref->data[0])[i * (ref->stride[0] / 2) + j];
+                    r_u = ((uint16_t*)ref->data[1])[i * (ref->stride[1] / 2) + j];
+                    r_v = ((uint16_t*)ref->data[2])[i * (ref->stride[2] / 2) + j];
+                    d_y = ((uint16_t*)dist->data[0])[i * (dist->stride[0] / 2) + j];
+                    d_u = ((uint16_t*)dist->data[1])[i * (dist->stride[1] / 2) + j];
+                    d_v = ((uint16_t*)dist->data[2])[i * (dist->stride[2] / 2) + j];
+                    break;
+                default:
+                    return -EINVAL;
+                }
+
+                const LABColor color_1 = get_lab_color(r_y, r_u, r_v, ref->bpc);
+                const LABColor color_2 = get_lab_color(d_y, d_u, d_v, dist->bpc);
+                de00_sum += ciede2000(color_1, color_2, default_ksub);
+            }
         }
     }
 
@@ -379,6 +483,8 @@ static int close(VmafFeatureExtractor *fex)
         vmaf_picture_unref(&s->ref);
         vmaf_picture_unref(&s->dist);
     }
+    for (int i = 0; i < 6; i++)
+        if (s->tmp[i]) aligned_free(s->tmp[i]);
     return 0;
 }
 

@@ -43,7 +43,7 @@
 typedef struct VifStateCuda {
     VifBufferCuda buf;
     CUevent event, finished;
-    CUstream str, host_stream;
+    CUstream str;
     bool debug;
     double vif_enhn_gain_limit;
     void (*filter1d_8)(VifBufferCuda *buf, uint8_t* ref_in, uint8_t* dis_in, unsigned w, unsigned h, double vif_enhn_gain_limit, CUstream stream);
@@ -99,7 +99,6 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
     CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->str, CU_STREAM_NON_BLOCKING, 0));
-    CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
     CHECK_CUDA(cu_f, cuEventCreate(&s->event, CU_EVENT_DEFAULT));
     CHECK_CUDA(cu_f, cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
     // make this static
@@ -135,13 +134,17 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cu_f, cuDeviceGetAttribute(&tex_alignment, CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT,
                 fex->cu_state->dev));
     s->buf.stride = tex_alignment * (((w * (1 << (int)hbd) + tex_alignment - 1) / tex_alignment));
+    {
+        const int rd_w_bytes = ((w + 1) / 2) * sizeof(uint16_t);
+        s->buf.rd_stride = tex_alignment * ((rd_w_bytes + tex_alignment - 1) / tex_alignment);
+    }
     s->buf.stride_16 = ALIGN_CEIL(w * sizeof(uint16_t));
     s->buf.stride_32 = ALIGN_CEIL(w * sizeof(uint32_t));
     s->buf.stride_64 = ALIGN_CEIL(w * sizeof(uint64_t));
     s->buf.stride_tmp =
         ALIGN_CEIL(w * sizeof(uint32_t));
-    const size_t frame_size = s->buf.stride * h;
-    const size_t data_sz = 2 * frame_size +
+    const size_t rd_size = s->buf.rd_stride * ((h + 1) / 2);
+    const size_t data_sz = 2 * rd_size +
         2 * (h * s->buf.stride_16) + 5 * (h * s->buf.stride_32) + 8 * (s->buf.stride_tmp * h); // intermediater buffers
     int ret = vmaf_cuda_buffer_alloc(fex->cu_state, &s->buf.data, data_sz);
     if (ret) goto free_ref;
@@ -156,8 +159,8 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     ret = vmaf_cuda_buffer_get_dptr(s->buf.data, &data);
     if (ret) goto free_ref;
 
-    s->buf.ref = data; data += frame_size;
-    s->buf.dis = data; data += frame_size;
+    s->buf.ref = data; data += rd_size;
+    s->buf.dis = data; data += rd_size;
     s->buf.mu1 = (uint16_t*)data; data += h * s->buf.stride_16;
     s->buf.mu2 = (uint16_t*)data; data += h * s->buf.stride_16;
     s->buf.mu1_32 = (uint32_t*)data; data += h * s->buf.stride_32;
@@ -180,10 +183,6 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     s->buf.accum = (int64_t*)data_accum;
 
-    s->buf.cpu_param_buf = malloc(sizeof(write_score_parameters_vif));
-    write_score_parameters_vif *data_p = s->buf.cpu_param_buf;
-    data_p->s = s;
-
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features,
                 fex->options, s);
@@ -201,9 +200,6 @@ free_ref:
     }
     if (s->buf.accum_host) {
         ret |= vmaf_cuda_buffer_host_free(fex->cu_state, s->buf.accum_host);
-    }
-    if (s->buf.cpu_param_buf) {
-        free(s->buf.cpu_param_buf);
     }
 
     return -ENOMEM;
@@ -437,10 +433,9 @@ static int write_scores(write_score_parameters_vif* data)
     return err;
 }
 
-static int extract_fex_cuda(VmafFeatureExtractor *fex,
-        VmafPicture *ref_pic, VmafPicture *ref_pic_90,
-        VmafPicture *dist_pic, VmafPicture *dist_pic_90,
-        unsigned index, VmafFeatureCollector *feature_collector)
+static int submit_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
+                            VmafPicture *ref_pic_90, VmafPicture *dist_pic,
+                            VmafPicture *dist_pic_90, unsigned index)
 {
     VifStateCuda *s = fex->priv;
     CudaFunctions* cu_f = fex->cu_state->f;
@@ -450,11 +445,6 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     int w = ref_pic->w[0];
     int h = dist_pic->h[0];
 
-    // this is done to ensure that the CPU does not overwrite the buffer params for 'write_scores
-    // before the GPU has finished writing to it.
-    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
-    CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
     CHECK_CUDA(cu_f, cuMemsetD8Async(s->buf.accum_data->data, 0, sizeof(vif_accums) * 4, s->str));
     CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic), vmaf_cuda_picture_get_ready_event(dist_pic), CU_EVENT_WAIT_DEFAULT));
     for (unsigned scale = 0; scale < 4; ++scale) {
@@ -474,32 +464,38 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
             // This event ensures the input buffer is consumed
             CHECK_CUDA(cu_f, cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
             CHECK_CUDA(cu_f, cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
-            CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
-            CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
         }
     }
 
-    // log has to be divided by 2048 as log_value = log2(i*2048)  i=16384 to 65535
-    // num[0] = accum_num_log / 2048.0 + (accum_den_non_log - (accum_num_non_log /
-    // 65536.0) / (255.0*255.0)); den[0] = accum_den_log / 2048.0 +
-    vif_accums *accum = (vif_accums*)s->buf.accum_host;
-    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
-    CHECK_CUDA(cu_f, cuMemcpyDtoHAsync(accum, s->buf.accum_data->data,
+    // Queue async download of accumulators
+    CHECK_CUDA(cu_f, cuMemcpyDtoHAsync(s->buf.accum_host, s->buf.accum_data->data,
                 sizeof(vif_accums) * 4, s->str));
     CHECK_CUDA(cu_f, cuEventRecord(s->finished, s->str));
-    CHECK_CUDA(cu_f, cuStreamWaitEvent(s->host_stream, s->finished, CU_EVENT_WAIT_DEFAULT));
-
-    write_score_parameters_vif *data = s->buf.cpu_param_buf;
-    data->feature_collector = feature_collector;
-    data->index = index;
-    CHECK_CUDA(cu_f, cuLaunchHostFunc(s->str, (CUhostFn*)write_scores, data));
     return 0;
+}
+
+static int collect_fex_cuda(VmafFeatureExtractor *fex, unsigned index,
+                             VmafFeatureCollector *feature_collector)
+{
+    VifStateCuda *s = fex->priv;
+    CudaFunctions* cu_f = fex->cu_state->f;
+
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
+
+    // Results are now in accum_host — compute and write scores
+    write_score_parameters_vif data = {
+        .feature_collector = feature_collector,
+        .s = s,
+        .index = index,
+    };
+    return write_scores(&data);
 }
 
 static int close_fex_cuda(VmafFeatureExtractor *fex)
 {
     VifStateCuda *s = fex->priv;
     CHECK_CUDA(fex->cu_state->f, cuStreamSynchronize(s->str));
+    CHECK_CUDA(fex->cu_state->f, cuStreamDestroy(s->str));
     CHECK_CUDA(fex->cu_state->f, cuEventDestroy(s->event));
     CHECK_CUDA(fex->cu_state->f, cuEventDestroy(s->finished));
 
@@ -514,9 +510,6 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     }
     if (s->buf.accum_host) {
         ret |= vmaf_cuda_buffer_host_free(fex->cu_state, s->buf.accum_host);
-    }
-    if (s->buf.cpu_param_buf) {
-        free(s->buf.cpu_param_buf);
     }
     ret |= vmaf_dictionary_free(&s->feature_name_dict);
     return ret;
@@ -545,7 +538,8 @@ static const char *provided_features[] = {
 VmafFeatureExtractor vmaf_fex_integer_vif_cuda = {
     .name = "vif_cuda",
     .init = init_fex_cuda,
-    .extract = extract_fex_cuda,
+    .submit = submit_fex_cuda,
+    .collect = collect_fex_cuda,
     .flush = flush_fex_cuda,
     .options = options,
     .close = close_fex_cuda,

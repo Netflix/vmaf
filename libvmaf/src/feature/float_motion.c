@@ -17,9 +17,11 @@
  */
 
 #include <errno.h>
+#include <math.h>
 #include <string.h>
 #include <stddef.h>
 
+#include "cpu.h"
 #include "common/convolution.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
@@ -29,6 +31,27 @@
 #include "motion_tools.h"
 
 #include "picture_copy.h"
+
+#if ARCH_X86
+#include "x86/float_motion_avx2.h"
+#if HAVE_AVX512
+#include "x86/float_motion_avx512.h"
+#endif
+#endif
+
+#if ARCH_AARCH64
+#include "arm64/float_motion_neon.h"
+#endif
+
+static float float_sad_line_c(const float *img1, const float *img2, int w)
+{
+    float accum = 0.0f;
+    for (int j = 0; j < w; j++) {
+        float diff = img1[j] - img2[j];
+        accum += diff < 0 ? -diff : diff;
+    }
+    return accum;
+}
 
 typedef struct MotionState {
     size_t float_stride;
@@ -40,6 +63,7 @@ typedef struct MotionState {
     bool debug;
     bool motion_force_zero;
     VmafDictionary *feature_name_dict;
+    float (*sad_line)(const float *, const float *, int);
 } MotionState;
 
 static const VmafOption options[] = {
@@ -62,6 +86,20 @@ static const VmafOption options[] = {
     { 0 }
 };
 
+static double compute_motion_simd(const float *ref, const float *dis,
+                                  int w, int h, int ref_stride, int dis_stride,
+                                  float (*sad_line)(const float *, const float *, int))
+{
+    int ref_px_stride = ref_stride / sizeof(float);
+    int dis_px_stride = dis_stride / sizeof(float);
+    float accum = 0.0f;
+
+    for (int i = 0; i < h; i++)
+        accum += sad_line(ref + i * ref_px_stride, dis + i * dis_px_stride, w);
+
+    return (double)(accum / (w * h));
+}
+
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
@@ -81,6 +119,26 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (s->motion_force_zero)
         fex->flush = NULL;
     s->score = 0;
+
+    s->sad_line = float_sad_line_c;
+
+#if ARCH_X86
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        if (flags & VMAF_X86_CPU_FLAG_AVX2)
+            s->sad_line = float_sad_line_avx2;
+#if HAVE_AVX512
+        if (flags & VMAF_X86_CPU_FLAG_AVX512)
+            s->sad_line = float_sad_line_avx512;
+#endif
+    }
+#elif ARCH_AARCH64
+    {
+        unsigned flags = vmaf_get_cpu_flags();
+        if (flags & VMAF_ARM_CPU_FLAG_NEON)
+            s->sad_line = float_sad_line_neon;
+    }
+#endif
 
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features,
@@ -164,11 +222,10 @@ static int extract(VmafFeatureExtractor *fex,
         return err;
     }
 
-    double score;
-    err = compute_motion(s->blur[blur_idx_2], s->blur[blur_idx_0],
-                         ref_pic->w[0], ref_pic->h[0],
-                         s->float_stride, s->float_stride, &score);
-    if (err) return err;
+    double score = compute_motion_simd(s->blur[blur_idx_2], s->blur[blur_idx_0],
+                                       ref_pic->w[0], ref_pic->h[0],
+                                       s->float_stride, s->float_stride,
+                                       s->sad_line);
 
     if (s->debug) {
         err |= vmaf_feature_collector_append(feature_collector,
@@ -181,11 +238,10 @@ static int extract(VmafFeatureExtractor *fex,
     if (index == 1)
         return 0;
     
-    double score2;
-    err = compute_motion(s->blur[blur_idx_2], s->blur[blur_idx_1],
-                         ref_pic->w[0], ref_pic->h[0],
-                         s->float_stride, s->float_stride, &score2);
-    if (err) return err;
+    double score2 = compute_motion_simd(s->blur[blur_idx_2], s->blur[blur_idx_1],
+                                        ref_pic->w[0], ref_pic->h[0],
+                                        s->float_stride, s->float_stride,
+                                        s->sad_line);
     score2 = score2 < score ? score2 : score;
     err = vmaf_feature_collector_append(feature_collector,
                                         "VMAF_feature_motion2_score",

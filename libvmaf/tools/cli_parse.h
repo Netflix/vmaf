@@ -51,6 +51,10 @@ typedef struct {
     bool common_bitdepth;
     unsigned cpumask;
     unsigned gpumask;
+    bool use_gpumask;   // true only when --gpumask was explicitly passed
+    bool no_cuda;
+    bool no_sycl;
+    int sycl_device;    // -1 = not requested (default), 0+ = device index
 } CLISettings;
 
 void cli_parse(const int argc, char *const *const argv,
