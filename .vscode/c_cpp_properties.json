@@ -1,0 +1,16 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "libvmaf",
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+      "intelliSenseMode": "linux-clang-x64",
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "includePath": [
+        "${workspaceFolder}/libvmaf/include",
+        "${workspaceFolder}/libvmaf/src"
+      ]
+    }
+  ]
+}

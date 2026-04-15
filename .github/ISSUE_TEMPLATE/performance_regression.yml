@@ -1,0 +1,83 @@
+name: Performance regression
+description: A previously-fast path got slower between two commits or versions.
+title: "perf: "
+labels: ["performance", "regression"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for **regressions** — "it used to be faster."
+        For first-time perf questions or "can we make X faster?", use a
+        normal feature request instead.
+
+  - type: input
+    id: backend
+    attributes:
+      label: Affected backend
+      description: cpu / cuda / sycl / hip / simd-avx2 / simd-avx512 / simd-neon
+      placeholder: "cuda"
+    validations:
+      required: true
+
+  - type: input
+    id: feature
+    attributes:
+      label: Affected feature / kernel
+      description: ADM, VIF (scale 0..3), motion2, integer_motion, DWT2, CSF, CM, DNN, ...
+      placeholder: "adm_decouple"
+    validations:
+      required: true
+
+  - type: input
+    id: good-ref
+    attributes:
+      label: Last known good ref (commit / tag)
+      placeholder: "v3.0.0-lusoris.2 or 24c88a32"
+    validations:
+      required: true
+
+  - type: input
+    id: bad-ref
+    attributes:
+      label: First known bad ref
+      placeholder: "master@HEAD or 787e3382"
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproducer
+      description: Exact command(s), inputs (prefer public Netflix fixtures), clock method (chrono / perf / nsys).
+      render: bash
+    validations:
+      required: true
+
+  - type: textarea
+    id: numbers
+    attributes:
+      label: Numbers
+      description: Before vs after; fps, ms/frame, or kernel μs. Include variance if you have it.
+      placeholder: |
+        Before: 214.3 ± 1.2 fps
+        After:   172.1 ± 0.8 fps
+        Delta:  -19.7 %
+    validations:
+      required: true
+
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware
+      description: CPU model / GPU model / driver version.
+      placeholder: "Ryzen 7950X + RTX 4090 / driver 555.58.02"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: bisect
+    attributes:
+      label: Checks
+      options:
+        - label: I ran `/bisect-regression` (or manual `git bisect`) and have a candidate first-bad commit.
+        - label: Netflix golden CPU scores still match (this is a perf regression, not a numeric one).
