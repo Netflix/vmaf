@@ -132,6 +132,35 @@ def eval_cmd(
     console.print(f"[cyan]{report.pretty()}[/cyan]")
 
 
+@app.command("manifest-scan")
+def manifest_scan_cmd(
+    dataset: str = typer.Option(..., help="Dataset name (nflx, konvid-1k, ...)"),
+    root: Path = typer.Option(..., exists=True, file_okay=False, help="Local dataset root"),
+    mos_csv: Optional[Path] = typer.Option(
+        None, "--mos-csv", exists=True, dir_okay=False,
+        help="Optional CSV with columns key,mos",
+    ),
+) -> None:
+    """Populate a dataset manifest from a local cache.
+
+    Scans @p root for YUV/Y4M/MP4/MKV/WebM files, pins each by SHA-256, and
+    joins an optional MOS CSV (columns: key,mos). Overwrites the in-tree
+    manifest file for @p dataset.
+    """
+    from .data.manifest_scan import scan, write_manifest
+
+    entries = scan(dataset, root, mos_csv)
+    if not entries:
+        console.print(f"[yellow]No video files found under {root}[/yellow]")
+        raise typer.Exit(code=2)
+    dst = write_manifest(dataset, entries)
+    with_mos = sum(1 for e in entries if e.mos is not None)
+    console.print(
+        f"[green]Wrote {dst} with {len(entries)} entries "
+        f"({with_mos} with MOS)[/green]"
+    )
+
+
 @app.command("register")
 def register_cmd(
     model: Path = typer.Option(..., exists=True, help="ONNX model to register"),

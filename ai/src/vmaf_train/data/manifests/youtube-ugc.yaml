@@ -1,3 +1,7 @@
+# Intentionally empty — fetch YouTube-UGC from its source and populate via:
+#
+#   vmaf-train manifest-scan --dataset youtube-ugc --root $VMAF_DATA_ROOT/youtube-ugc \
+#       --mos-csv path/to/yt_ugc_mos.csv
 name: youtube-ugc
 license: "CC BY 3.0"
 description: "Large-scale YouTube UGC dataset for NR training."

@@ -1,3 +1,7 @@
+# Intentionally empty — request LIVE-VQC from UT Austin and populate via:
+#
+#   vmaf-train manifest-scan --dataset live-vqc --root $VMAF_DATA_ROOT/live-vqc \
+#       --mos-csv path/to/live_vqc_mos.csv
 name: live-vqc
 license: "Academic (request from UT Austin)"
 description: "LIVE Video Quality Challenge dataset — NR validation."

@@ -1,3 +1,7 @@
+# Intentionally empty — fetch KoNViD-1k from its source and populate via:
+#
+#   vmaf-train manifest-scan --dataset konvid-1k --root $VMAF_DATA_ROOT/konvid-1k \
+#       --mos-csv path/to/konvid_mos.csv
 name: konvid-1k
 license: "CC BY 4.0"
 description: "KoNViD-1k UGC no-reference MOS dataset."

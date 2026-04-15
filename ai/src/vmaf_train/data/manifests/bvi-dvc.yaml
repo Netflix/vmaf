@@ -1,3 +1,10 @@
+# Intentionally empty — request BVI-DVC from the University of Bristol and
+# populate via:
+#
+#   vmaf-train manifest-scan --dataset bvi-dvc --root $VMAF_DATA_ROOT/bvi-dvc
+#
+# BVI-DVC is organised as reference/distorted pairs for learned-filter (C3)
+# training; MOS is not directly applicable.
 name: bvi-dvc
 license: "Academic (request from University of Bristol)"
 description: "BVI-DVC — encoder distortion pairs for learned filter training (C3)."

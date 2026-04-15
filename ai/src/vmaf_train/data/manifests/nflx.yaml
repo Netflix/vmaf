@@ -1,3 +1,11 @@
+# Intentionally empty — the repository does not redistribute Netflix Public
+# Dataset content or MOS scores. Operators must obtain the dataset directly
+# and then run:
+#
+#   vmaf-train manifest-scan --dataset nflx --root $VMAF_DATA_ROOT/nflx \
+#       [--mos-csv path/to/mos.csv]
+#
+# which will overwrite this file with SHA-256-pinned entries.
 name: nflx
 license: "Netflix research"
 description: "Netflix Public Dataset — source for the upstream vmaf_v0.6.1 SVM."
