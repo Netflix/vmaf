@@ -15,9 +15,8 @@
 # Requires libvmaf already installed (`pip`-level: "pkg-config --cflags libvmaf"
 # must resolve). Set VMAF_PREFIX to point at a non-standard install prefix.
 #
-# Status: mirrors the scaffold nature of the patches themselves — the patches
-# do not yet apply cleanly against upstream master. Run this once the patches
-# are rebased.
+# Patches target FFmpeg n8.1 (the current release at time of authoring).
+# Applied via `git apply --3way` so small upstream drift can still merge.
 
 set -euo pipefail
 
@@ -26,7 +25,7 @@ PATCHES_DIR="$(cd "$HERE/.." && pwd)"
 REPO_ROOT="$(cd "$PATCHES_DIR/.." && pwd)"
 
 : "${FFMPEG_SRC:=/tmp/vmaf-ffmpeg}"
-: "${FFMPEG_SHA:=n7.1}"        # pinned release tag; update as patches evolve
+: "${FFMPEG_SHA:=n8.1}"        # pinned release tag; update as patches evolve
 : "${KEEP_BUILD:=}"
 : "${VMAF_PREFIX:=}"
 
@@ -59,8 +58,7 @@ while IFS= read -r line; do
     line="${line// /}"
     [[ -z "$line" ]] && continue
     echo "  → $line"
-    git -C "$FFMPEG_SRC" apply --check "$PATCHES_DIR/$line"
-    git -C "$FFMPEG_SRC" apply "$PATCHES_DIR/$line"
+    git -C "$FFMPEG_SRC" apply --3way "$PATCHES_DIR/$line"
 done < "$PATCHES_DIR/series.txt"
 
 echo "Configuring FFmpeg …"

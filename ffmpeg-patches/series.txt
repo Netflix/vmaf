@@ -1,9 +1,6 @@
-# Ordered list of patches against FFmpeg master.
+# Ordered list of patches against FFmpeg n8.1.
 # Applied in order by ffmpeg-patches/test/build-and-run.sh.
 #
 0001-libvmaf-add-tiny-model-option.patch
 0002-add-vmaf_pre-filter.patch
-#
-# Future patches (uncomment once cut):
-# 0003-vf_libvmaf-expose-precision-option.patch
-# 0004-vf_libvmaf-wire-sycl-backend-selector.patch
+0003-libvmaf-wire-sycl-backend-selector.patch

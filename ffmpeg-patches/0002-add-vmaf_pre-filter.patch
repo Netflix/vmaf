@@ -1,111 +1,104 @@
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2 Mon Sep 17 00:00:00 2001
 From: Lusoris <lusoris@pm.me>
-Date: Wed, 15 Apr 2026 12:00:00 +0000
-Subject: [PATCH 2/2] avfilter: add vmaf_pre filter (learned pre-processing)
+Date: Wed, 15 Apr 2026 12:05:00 +0000
+Subject: [PATCH 2/3] avfilter: add vmaf_pre filter (learned pre-processing)
 
-New video filter `vmaf_pre` that runs a tiny residual CNN (C3 in Lusoris
-libvmaf's tiny-AI matrix) to pre-process frames before encoding. The
-filter loads an ONNX model via libvmaf's shared DNN runtime (ONNX
-Runtime) and applies an identity-plus-residual transform that clamps to
-[0,1] in normalized space. Intended for denoise / deblock / perceptual-
-sharpener learned filters shipped under model/tiny/filter_*.onnx.
+New video filter `vmaf_pre` that runs a residual CNN (C3 in Lusoris
+libvmaf's tiny-AI matrix) to pre-process luma planes before encoding.
+Uses the standalone vmaf_dnn_session_* public API — no scoring path is
+exercised. Requires libvmaf built with --enable_dnn.
 
 Options:
   model   - path to .onnx learned-filter model (required)
   device  - auto | cpu | cuda | openvino | rocm (default: auto)
   threads - CPU EP intra-op threads (default: 0)
 
-Links against libvmaf for the inference primitives only — no scoring
-path is exercised. Requires libvmaf built with --enable_dnn.
-
-Status: DRAFT. Needs rebase against upstream master before submission.
+Rebased against FFmpeg n8.1. The filter uses the FFFilter struct layout
+(`.p.name`, `.p.description`, ...) introduced in n8.0.
 
 Signed-off-by: Lusoris <lusoris@pm.me>
 ---
- configure                 |   4 +
+ configure                 |   3 +
  libavfilter/Makefile      |   1 +
  libavfilter/allfilters.c  |   1 +
- libavfilter/vf_vmaf_pre.c | 201 ++++++++++++++++++++++++++++++++++++++
- 4 files changed, 207 insertions(+)
+ libavfilter/vf_vmaf_pre.c | 211 ++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 216 insertions(+)
  create mode 100644 libavfilter/vf_vmaf_pre.c
 
 diff --git a/configure b/configure
-index 0000000..1111111 100755
 --- a/configure
 +++ b/configure
-@@ -3800,6 +3800,7 @@ libvmaf_filter_deps="libvmaf"
- libvmaf_filter_deps_any="libvmaf_cuda"
- libvorbis_encoder_deps="libvorbis"
- libvpx_vp8_decoder_deps="libvpx"
+@@ -4236,6 +4236,7 @@ vidstabtransform_filter_deps="libvidstab"
+ libvmaf_filter_deps="libvmaf"
+ libvmaf_cuda_filter_deps="libvmaf libvmaf_cuda ffnvcodec"
 +vmaf_pre_filter_deps="libvmaf"
- mcdeint_filter_deps="avcodec"
- mestimate_filter_deps="gpl"
- metadata_filter_deps="avformat"
-@@ -5900,6 +5901,9 @@ enabled libvmaf          && {
-     require_pkg_config libvmaf libvmaf "libvmaf.h" vmaf_init
- }
-+enabled vmaf_pre_filter  && {
-+    require_pkg_config libvmaf libvmaf "libvmaf/dnn.h" vmaf_dnn_available
-+}
- enabled libvorbis        && require_pkg_config libvorbis vorbis vorbis/vorbisenc.h vorbis_info_init
- enabled libvpx           && require_pkg_config libvpx "vpx >= 1.4.0" "vpx/vpx_codec.h" vpx_codec_version
- enabled libvpx_vp8_decoder && {
+ zmq_filter_deps="libzmq"
+ zoompan_filter_deps="swscale"
+ zscale_filter_deps="libzimg const_nan"
+@@ -7391,6 +7392,7 @@ enabled libvidstab        && require_pkg_config libvidstab "vidstab >= 0.98" vid
+ enabled libvmaf           && require_pkg_config libvmaf "libvmaf >= 2.0.0" libvmaf.h vmaf_init
+ enabled libvmaf           && check_pkg_config libvmaf_cuda "libvmaf >= 2.0.0" libvmaf_cuda.h vmaf_cuda_state_init
++enabled vmaf_pre_filter   && require_pkg_config libvmaf_dnn "libvmaf >= 3.0.0" libvmaf/dnn.h vmaf_dnn_session_open
+ enabled libvo_amrwbenc    && { check_pkg_config libvo_amrwbenc vo-amrwbenc vo-amrwbenc/enc_if.h E_IF_init ||
+                                require libvo_amrwbenc vo-amrwbenc/enc_if.h E_IF_init -lvo-amrwbenc; }
+ enabled libvorbis         && require_pkg_config libvorbis vorbis vorbis/codec.h vorbis_info_init &&
 diff --git a/libavfilter/Makefile b/libavfilter/Makefile
-index 0000000..1111111 100644
 --- a/libavfilter/Makefile
 +++ b/libavfilter/Makefile
-@@ -520,6 +520,7 @@ OBJS-$(CONFIG_VIGNETTE_FILTER)               += vf_vignette.o
+@@ -573,6 +573,7 @@ OBJS-$(CONFIG_VIGNETTE_FILTER)               += vf_vignette.o
  OBJS-$(CONFIG_VMAFMOTION_FILTER)             += vf_vmafmotion.o framesync.o
++OBJS-$(CONFIG_VMAF_PRE_FILTER)               += vf_vmaf_pre.o
  OBJS-$(CONFIG_W3FDIF_FILTER)                 += vf_w3fdif.o
  OBJS-$(CONFIG_WAVEFORM_FILTER)               += vf_waveform.o
-+OBJS-$(CONFIG_VMAF_PRE_FILTER)               += vf_vmaf_pre.o
- OBJS-$(CONFIG_WEAVE_FILTER)                  += vf_weave.o
- OBJS-$(CONFIG_XBR_FILTER)                    += vf_xbr.o
- OBJS-$(CONFIG_XCORRELATE_FILTER)             += vf_xcorrelate.o framesync.o
 diff --git a/libavfilter/allfilters.c b/libavfilter/allfilters.c
-index 0000000..1111111 100644
 --- a/libavfilter/allfilters.c
 +++ b/libavfilter/allfilters.c
-@@ -497,6 +497,7 @@ extern const AVFilter ff_vf_vibrance;
- extern const AVFilter ff_vf_vif;
- extern const AVFilter ff_vf_vignette;
- extern const AVFilter ff_vf_vmafmotion;
-+extern const AVFilter ff_vf_vmaf_pre;
- extern const AVFilter ff_vf_w3fdif;
- extern const AVFilter ff_vf_waveform;
- extern const AVFilter ff_vf_weave;
+@@ -539,6 +539,7 @@ extern const FFFilter ff_vf_vif;
+ extern const FFFilter ff_vf_vignette;
+ extern const FFFilter ff_vf_vmafmotion;
++extern const FFFilter ff_vf_vmaf_pre;
+ extern const FFFilter ff_vf_vpp_qsv;
+ extern const FFFilter ff_vf_vstack;
+ extern const FFFilter ff_vf_w3fdif;
 diff --git a/libavfilter/vf_vmaf_pre.c b/libavfilter/vf_vmaf_pre.c
 new file mode 100644
-index 0000000..2222222
 --- /dev/null
 +++ b/libavfilter/vf_vmaf_pre.c
-@@ -0,0 +1,201 @@
+@@ -0,0 +1,211 @@
 +/*
 + * Copyright 2026 Lusoris and Claude (Anthropic)
 + *
 + * This file is part of FFmpeg.
 + *
-+ * FFmpeg is free software; you can redistribute it and/or modify it under the
-+ * terms of the GNU Lesser General Public License as published by the Free
-+ * Software Foundation; either version 2.1 of the License, or (at your option)
-+ * any later version.
++ * FFmpeg is free software; you can redistribute it and/or modify it under
++ * the terms of the GNU Lesser General Public License as published by the
++ * Free Software Foundation; either version 2.1 of the License, or (at
++ * your option) any later version.
++ *
++ * FFmpeg is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
++ * License for more details.
 + */
 +
 +/**
 + * @file
 + * vmaf_pre: learned pre-processing filter backed by libvmaf's DNN runtime.
-+ * Loads a residual-CNN ONNX model that maps a luma frame to a filtered luma
-+ * frame (identity + residual, clamped). No scoring is performed.
++ * Loads a residual-CNN ONNX model via the standalone vmaf_dnn_session_*
++ * API and applies it to the luma plane. Chroma planes are copied through
++ * untouched. 8-bit luma only (matches the current session API scope).
 + */
 +
 +#include <libvmaf/dnn.h>
 +
 +#include "libavutil/avstring.h"
++#include "libavutil/mem.h"
 +#include "libavutil/opt.h"
 +#include "libavutil/pixdesc.h"
 +
 +#include "avfilter.h"
 +#include "filters.h"
++#include "formats.h"
 +#include "video.h"
 +
 +typedef struct VmafPreContext {
@@ -113,22 +106,19 @@ index 0000000..2222222
 +    char *model_path;
 +    char *device;
 +    int   threads;
-+    /* Opaque session handle returned by libvmaf's dnn runtime; NULL until
-+     * the first filter_frame pulls in the first frame and we know the
-+     * exact dimensions for shape binding. */
-+    void *session;
++    VmafDnnSession *session;
 +} VmafPreContext;
 +
 +#define OFFSET(x) offsetof(VmafPreContext, x)
 +#define FLAGS AV_OPT_FLAG_FILTERING_PARAM | AV_OPT_FLAG_VIDEO_PARAM
 +
 +static const AVOption vmaf_pre_options[] = {
-+    { "model",   "path to ONNX learned-filter model", OFFSET(model_path),
-+        AV_OPT_TYPE_STRING, {.str=NULL}, 0, 0, FLAGS },
-+    { "device",  "auto | cpu | cuda | openvino | rocm", OFFSET(device),
-+        AV_OPT_TYPE_STRING, {.str="auto"}, 0, 0, FLAGS },
-+    { "threads", "CPU EP intra-op threads", OFFSET(threads),
-+        AV_OPT_TYPE_INT, {.i64=0}, 0, INT_MAX, FLAGS },
++    { "model",   "Path to ONNX learned-filter model.",    OFFSET(model_path),
++        AV_OPT_TYPE_STRING, {.str=NULL},   0, 0,       FLAGS },
++    { "device",  "auto | cpu | cuda | openvino | rocm.", OFFSET(device),
++        AV_OPT_TYPE_STRING, {.str="auto"}, 0, 0,       FLAGS },
++    { "threads", "CPU EP intra-op threads.",              OFFSET(threads),
++        AV_OPT_TYPE_INT,    {.i64=0},      0, INT_MAX, FLAGS },
 +    { NULL }
 +};
 +
@@ -147,6 +137,9 @@ index 0000000..2222222
 +static av_cold int init(AVFilterContext *ctx)
 +{
 +    VmafPreContext *s = ctx->priv;
++    VmafDnnConfig  cfg = { 0 };
++    int err;
++
 +    if (!s->model_path || !*s->model_path) {
 +        av_log(ctx, AV_LOG_ERROR, "vmaf_pre: model= option is required.\n");
 +        return AVERROR(EINVAL);
@@ -156,24 +149,44 @@ index 0000000..2222222
 +               "vmaf_pre: libvmaf was built without --enable_dnn.\n");
 +        return AVERROR(ENOSYS);
 +    }
++
++    err = parse_device(s->device, &cfg.device);
++    if (err < 0) {
++        av_log(ctx, AV_LOG_ERROR,
++               "vmaf_pre: unknown device=%s.\n", s->device ? s->device : "");
++        return err;
++    }
++    cfg.threads = s->threads;
++
++    err = vmaf_dnn_session_open(&s->session, s->model_path, &cfg);
++    if (err < 0) {
++        av_log(ctx, AV_LOG_ERROR,
++               "vmaf_pre: vmaf_dnn_session_open(%s) failed: %d.\n",
++               s->model_path, err);
++        return AVERROR(EINVAL);
++    }
++    av_log(ctx, AV_LOG_INFO,
++           "vmaf_pre: loaded %s (device=%s threads=%d)\n",
++           s->model_path, s->device ? s->device : "auto", s->threads);
 +    return 0;
 +}
 +
 +static av_cold void uninit(AVFilterContext *ctx)
 +{
 +    VmafPreContext *s = ctx->priv;
-+    /* libvmaf-internal session teardown happens when the opaque handle is
-+     * released through the libvmaf runtime. Actual symbol wired in the
-+     * libvmaf ORT backend — TBD follow-up patch once vmaf_dnn_filter_*
-+     * symbols are exported. */
-+    s->session = NULL;
++    if (s->session) {
++        vmaf_dnn_session_close(s->session);
++        s->session = NULL;
++    }
 +}
 +
 +static int filter_frame(AVFilterLink *inlink, AVFrame *in)
 +{
-+    AVFilterContext *ctx = inlink->dst;
-+    AVFilterLink *outlink = ctx->outputs[0];
++    AVFilterContext *ctx    = inlink->dst;
++    AVFilterLink    *outlink = ctx->outputs[0];
++    VmafPreContext  *s       = ctx->priv;
 +    AVFrame *out;
++    int err;
 +
 +    out = ff_get_video_buffer(outlink, in->width, in->height);
 +    if (!out) {
@@ -182,40 +195,67 @@ index 0000000..2222222
 +    }
 +    av_frame_copy_props(out, in);
 +
-+    /* TODO: wire vmaf_dnn_filter_run() once the C symbol is exported by
-+     * libvmaf's ORT backend. For now, identity passthrough so the filter
-+     * is fully functional end-to-end as a scaffold. */
-+    av_frame_copy(out, in);
++    err = vmaf_dnn_session_run_luma8(s->session,
++                                     in->data[0], (size_t) in->linesize[0],
++                                     in->width, in->height,
++                                     out->data[0], (size_t) out->linesize[0]);
++    if (err < 0) {
++        av_log(ctx, AV_LOG_ERROR,
++               "vmaf_pre: inference failed (%d); passing the frame through.\n",
++               err);
++        /* Fail closed for the luma plane rather than silently drift. */
++        av_frame_free(&in);
++        av_frame_free(&out);
++        return AVERROR(EIO);
++    }
++
++    /* Chroma (if any) passes through untouched. */
++    if (in->data[1] && out->data[1]) {
++        const AVPixFmtDescriptor *d = av_pix_fmt_desc_get(in->format);
++        int sub_w = d ? d->log2_chroma_w : 0;
++        int sub_h = d ? d->log2_chroma_h : 0;
++        int cw = AV_CEIL_RSHIFT(in->width,  sub_w);
++        int ch = AV_CEIL_RSHIFT(in->height, sub_h);
++        av_image_copy_plane(out->data[1], out->linesize[1],
++                            in->data[1],  in->linesize[1], cw, ch);
++        av_image_copy_plane(out->data[2], out->linesize[2],
++                            in->data[2],  in->linesize[2], cw, ch);
++    }
 +
 +    av_frame_free(&in);
 +    return ff_filter_frame(outlink, out);
 +}
 +
-+static const enum AVPixelFormat pix_fmts[] = {
-+    AV_PIX_FMT_YUV420P, AV_PIX_FMT_YUV422P, AV_PIX_FMT_YUV444P,
-+    AV_PIX_FMT_GRAY8,   AV_PIX_FMT_GRAY16,
-+    AV_PIX_FMT_NONE
-+};
++static int query_formats(const AVFilterContext *ctx,
++                         AVFilterFormatsConfig **cfg_in,
++                         AVFilterFormatsConfig **cfg_out)
++{
++    static const enum AVPixelFormat pix_fmts[] = {
++        AV_PIX_FMT_GRAY8,
++        AV_PIX_FMT_YUV420P, AV_PIX_FMT_YUV422P, AV_PIX_FMT_YUV444P,
++        AV_PIX_FMT_NONE,
++    };
++    return ff_set_common_formats_from_list2(ctx, cfg_in, cfg_out, pix_fmts);
++}
 +
 +static const AVFilterPad vmaf_pre_inputs[] = {
-+    { .name = "default", .type = AVMEDIA_TYPE_VIDEO, .filter_frame = filter_frame },
++    {
++        .name         = "default",
++        .type         = AVMEDIA_TYPE_VIDEO,
++        .filter_frame = filter_frame,
++    },
 +};
 +
-+static const AVFilterPad vmaf_pre_outputs[] = {
-+    { .name = "default", .type = AVMEDIA_TYPE_VIDEO },
-+};
-+
-+const AVFilter ff_vf_vmaf_pre = {
-+    .name            = "vmaf_pre",
-+    .description     = NULL_IF_CONFIG_SMALL("Learned pre-processing filter (Lusoris libvmaf tiny-AI C3)."),
++const FFFilter ff_vf_vmaf_pre = {
++    .p.name          = "vmaf_pre",
++    .p.description   = NULL_IF_CONFIG_SMALL("Learned pre-processing filter (Lusoris libvmaf tiny-AI C3)."),
++    .p.priv_class    = &vmaf_pre_class,
 +    .priv_size       = sizeof(VmafPreContext),
-+    .priv_class      = &vmaf_pre_class,
 +    .init            = init,
 +    .uninit          = uninit,
 +    FILTER_INPUTS(vmaf_pre_inputs),
-+    FILTER_OUTPUTS(vmaf_pre_outputs),
-+    FILTER_PIXFMTS_ARRAY(pix_fmts),
-+    .flags           = AVFILTER_FLAG_METADATA_ONLY,
++    FILTER_OUTPUTS(ff_video_default_filterpad),
++    FILTER_QUERY_FUNC2(query_formats),
 +};
 --
 2.45.0

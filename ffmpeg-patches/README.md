@@ -1,34 +1,43 @@
 # ffmpeg-patches/
 
-Local patches against FFmpeg for integrating this VMAF fork into the
-`libavfilter/vf_libvmaf*` filters.
+Local patches against FFmpeg **n8.1** for integrating this VMAF fork into
+`libavfilter/vf_libvmaf*` plus a new `vf_vmaf_pre` filter.
 
-## Status
+## Contents
 
-Scaffolding only. No patches have been cut yet — upstream FFmpeg still
-links against Netflix/libvmaf and the surface additions in this fork
-(`--precision`, the SYCL backend, the tiny-AI path) are not yet plumbed
-through the filter's option parser.
+- **`0001-libvmaf-add-tiny-model-option.patch`** — adds `tiny_model` /
+  `tiny_device` / `tiny_threads` / `tiny_fp16` options on the existing
+  `libvmaf` filter; calls `vmaf_use_tiny_model()` when set.
+- **`0002-add-vmaf_pre-filter.patch`** — new `vmaf_pre` filter: luma-in /
+  luma-out learned pre-processing via `vmaf_dnn_session_*`. Chroma
+  planes pass through.
+- **`0003-libvmaf-wire-sycl-backend-selector.patch`** — adds `sycl_device`
+  / `sycl_profile` options; invokes `vmaf_sycl_state_init()` +
+  `vmaf_sycl_import_state()` when `sycl_device >= 0`.
 
-## Layout
-
-```
-ffmpeg-patches/
-  README.md          # this file
-  series.txt         # quilt-style ordered patch list
-  0001-*.patch       # individual patches (not yet written)
-```
+Every patch is guarded by `check_pkg_config` so it degrades gracefully when
+libvmaf was built without the relevant feature (`-Denable_dnn`, `-Denable_sycl`).
 
 ## How to apply
 
 ```bash
-cd /path/to/ffmpeg
-for p in $(cat /path/to/vmaf/ffmpeg-patches/series.txt); do
-    patch -p1 < /path/to/vmaf/ffmpeg-patches/$p
+cd /path/to/ffmpeg    # must be at tag n8.1
+for p in $(grep -v '^\s*#' /path/to/vmaf/ffmpeg-patches/series.txt); do
+    git apply --3way /path/to/vmaf/ffmpeg-patches/$p
 done
 ```
 
 Or via the helper skill: `/ffmpeg-apply-patches /path/to/ffmpeg`.
+
+## How to smoke-test
+
+```bash
+bash ffmpeg-patches/test/build-and-run.sh
+```
+
+Requires `libvmaf` to be installed (`pkg-config --cflags libvmaf` must
+resolve). Set `VMAF_PREFIX` to point at a non-standard install prefix.
+Pins `FFMPEG_SHA=n8.1`; override to test against a newer tag.
 
 ## How to regenerate
 

@@ -1,0 +1,122 @@
+From c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3 Mon Sep 17 00:00:00 2001
+From: Lusoris <lusoris@pm.me>
+Date: Wed, 15 Apr 2026 12:10:00 +0000
+Subject: [PATCH 3/3] avfilter/vf_libvmaf: wire SYCL backend selector
+
+Lusoris libvmaf ships a SYCL / oneAPI GPU backend alongside the existing
+CUDA backend. Expose it to FFmpeg users via two new options:
+
+  sycl_device  - device index (default -1 = disabled; use CPU / CUDA
+                 paths); 0+ selects that SYCL device
+  sycl_profile - enable SYCL queue profiling (default 0)
+
+When sycl_device >= 0 the filter initialises a VmafSyclState via
+vmaf_sycl_state_init() and imports it into the VmafContext before any
+feature extractor runs. The state is torn down in uninit().
+
+Guarded by CONFIG_LIBVMAF_SYCL (detected in configure the same way as
+CONFIG_LIBVMAF_CUDA).
+
+Rebased against FFmpeg n8.1.
+
+Signed-off-by: Lusoris <lusoris@pm.me>
+---
+ configure                |  1 +
+ libavfilter/vf_libvmaf.c | 55 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 56 insertions(+)
+
+diff --git a/configure b/configure
+--- a/configure
++++ b/configure
+@@ -7392,6 +7392,7 @@ enabled libvidstab        && require_pkg_config libvidstab "vidstab >= 0.98" vid
+ enabled libvmaf           && require_pkg_config libvmaf "libvmaf >= 2.0.0" libvmaf.h vmaf_init
+ enabled libvmaf           && check_pkg_config libvmaf_cuda "libvmaf >= 2.0.0" libvmaf_cuda.h vmaf_cuda_state_init
++enabled libvmaf           && check_pkg_config libvmaf_sycl "libvmaf >= 3.0.0" libvmaf/libvmaf_sycl.h vmaf_sycl_state_init
+ enabled libvo_amrwbenc    && { check_pkg_config libvo_amrwbenc vo-amrwbenc vo-amrwbenc/enc_if.h E_IF_init ||
+                                require libvo_amrwbenc vo-amrwbenc/enc_if.h E_IF_init -lvo-amrwbenc; }
+ enabled libvorbis         && require_pkg_config libvorbis vorbis vorbis/codec.h vorbis_info_init &&
+diff --git a/libavfilter/vf_libvmaf.c b/libavfilter/vf_libvmaf.c
+--- a/libavfilter/vf_libvmaf.c
++++ b/libavfilter/vf_libvmaf.c
+@@ -46,6 +46,10 @@
+ #include "libavutil/hwcontext_cuda_internal.h"
+ #endif
+
++#if CONFIG_LIBVMAF_SYCL
++#include <libvmaf/libvmaf_sycl.h>
++#endif
++
+ typedef struct LIBVMAFContext {
+     const AVClass *class;
+     FFFrameSync fs;
+@@ -63,6 +67,12 @@ typedef struct LIBVMAFContext {
+     char *tiny_device;
+     int   tiny_threads;
+     int   tiny_fp16;
++    int   sycl_device;
++    int   sycl_profile;
++#if CONFIG_LIBVMAF_SYCL
++    VmafSyclState *sycl_state;
++#endif
++
+     VmafContext *vmaf;
+     VmafModel **model;
+     unsigned model_cnt;
+@@ -87,6 +97,8 @@ static const AVOption libvmaf_options[] = {
+     {"tiny_device",  "tiny-model device: auto|cpu|cuda|openvino|rocm.",                 OFFSET(tiny_device),     AV_OPT_TYPE_STRING, {.str="auto"}, 0, 0,        FLAGS},
+     {"tiny_threads", "tiny-model CPU EP intra-op threads (0 = ORT default).",           OFFSET(tiny_threads),    AV_OPT_TYPE_INT,    {.i64=0},      0, INT_MAX,  FLAGS},
+     {"tiny_fp16",    "Request fp16 I/O when the device supports it.",                   OFFSET(tiny_fp16),       AV_OPT_TYPE_BOOL,   {.i64=0},      0, 1,        FLAGS},
++    {"sycl_device",  "SYCL device index (-1 = disabled).",                              OFFSET(sycl_device),     AV_OPT_TYPE_INT,    {.i64=-1},    -1, INT_MAX,  FLAGS},
++    {"sycl_profile", "Enable SYCL queue profiling.",                                    OFFSET(sycl_profile),    AV_OPT_TYPE_BOOL,   {.i64=0},      0, 1,        FLAGS},
+     { NULL }
+ };
+
+@@ -446,6 +458,34 @@ static av_cold int init(AVFilterContext *ctx)
+     if (err)
+         return AVERROR(EINVAL);
+
++    if (s->sycl_device >= 0) {
++#if CONFIG_LIBVMAF_SYCL
++        VmafSyclConfiguration sycl_cfg = {
++            .device_index     = s->sycl_device,
++            .enable_profiling = !!s->sycl_profile,
++        };
++        err = vmaf_sycl_state_init(&s->sycl_state, sycl_cfg);
++        if (err) {
++            av_log(ctx, AV_LOG_ERROR,
++                   "vmaf_sycl_state_init(%d) failed: %d.\n",
++                   s->sycl_device, err);
++            return AVERROR(EINVAL);
++        }
++        err = vmaf_sycl_import_state(s->vmaf, s->sycl_state);
++        if (err) {
++            av_log(ctx, AV_LOG_ERROR,
++                   "vmaf_sycl_import_state failed: %d.\n", err);
++            return AVERROR(EINVAL);
++        }
++        av_log(ctx, AV_LOG_INFO,
++               "SYCL backend active (device=%d profile=%d)\n",
++               s->sycl_device, s->sycl_profile);
++#else
++        av_log(ctx, AV_LOG_ERROR,
++               "sycl_device set but libvmaf was built without SYCL support.\n");
++        return AVERROR(ENOSYS);
++#endif
++    }
++
+     err = parse_models(ctx);
+     if (err)
+         return err;
+@@ -595,4 +613,11 @@ clean_up:
+     if (s->vmaf)
+         vmaf_close(s->vmaf);
++
++#if CONFIG_LIBVMAF_SYCL
++    if (s->sycl_state) {
++        vmaf_sycl_state_free(s->sycl_state);
++        s->sycl_state = NULL;
++    }
++#endif
+ }
+--
+2.45.0
