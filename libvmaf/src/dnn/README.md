@@ -1,37 +1,58 @@
 # libvmaf DNN runtime
 
-C-side integration for running tiny ONNX models inside libvmaf.
+C-side integration for running tiny ONNX models inside libvmaf — the runtime
+consumed by the `--tiny-model` CLI flag and the ffmpeg `libvmaf` filter's
+`tiny_model=` option.
 
-## Status
+## Files
 
-Scaffolding only. Header + loader stub are in place; the feature extractor
-hookup is gated behind `-Denable_dnn=true` (default **off**) and is wired
-into meson once a first shippable model lands under
-[`model/tiny/`](../../../model/tiny/).
+| File | Role |
+| --- | --- |
+| [dnn_api.c](dnn_api.c) | Public `libvmaf/dnn.h` entry points |
+| [ort_backend.{c,h}](ort_backend.c) | ONNX Runtime C-API session wrapper + EP select |
+| [model_loader.{c,h}](model_loader.c) | File sniff, size cap, sidecar JSON parse |
+| [op_allowlist.{c,h}](op_allowlist.c) | Allowlist of permitted ONNX op types |
+| [tensor_io.{c,h}](tensor_io.c) | luma ↔ F32/F16 tensor conversion + normalization |
 
-## Design
+## Public API
 
-- Runtime: **ONNX Runtime** (C API), linked dynamically.
-- Execution providers: CPU (baseline), CUDA (if built with `-Denable_cuda=true`),
-  DirectML / CoreML / SYCL (via TensorRT EP or oneDNN EP) once validated.
-- Model artefacts: shipped under `model/tiny/*.onnx` and discoverable via
-  the same `--model version=<name>` flag used for the stock SVR models.
-- Determinism: pinned opset (17), pinned EP config per backend, ULP drift
-  across EPs bounded by the same cross-backend gate as the classical path.
-
-## API sketch
+Declared in [`libvmaf/include/libvmaf/dnn.h`](../../include/libvmaf/dnn.h):
 
 ```c
-#include "dnn/vmaf_dnn.h"
+int vmaf_dnn_available(void);
 
-VmafDnnSession *sess = NULL;
-int err = vmaf_dnn_open(&sess, "model/tiny/vmaf_tiny_v0.onnx",
-                        VMAF_DNN_PROVIDER_CPU);
-/* feed features → score */
-vmaf_dnn_infer(sess, feat, n_feat, &score);
-vmaf_dnn_close(sess);
+int vmaf_use_tiny_model(VmafContext *ctx,
+                        const char *onnx_path,
+                        const VmafDnnConfig *cfg);
 ```
 
-## License
+`VmafDnnConfig` selects an execution provider (`VMAF_DNN_DEVICE_{AUTO,CPU,CUDA,OPENVINO,ROCM}`),
+intra-op thread count, and an fp16-io hint. AUTO picks the best EP compiled
+into ORT.
 
-BSD-3-Clause-Plus-Patent.
+## Build
+
+Meson feature option `enable_dnn` — `auto` (default), `enabled`, `disabled`.
+
+```bash
+meson setup build -Denable_dnn=enabled     # require ORT, fail build if missing
+meson setup build -Denable_dnn=auto        # use ORT if present, stub otherwise
+meson setup build -Denable_dnn=disabled    # never link ORT
+```
+
+When ORT is missing or disabled, the public symbols still exist but return
+`-ENOSYS`; `vmaf_dnn_available()` returns 0.
+
+## Security
+
+- Size cap (`VMAF_MAX_MODEL_BYTES`, default 50 MB).
+- `op_allowlist.c` rejects graphs with ops outside a narrow set (conv / gemm /
+  elementwise / pool / norm / common activations).
+- Sidecar JSON (`<name>.json` next to `<name>.onnx`) records kind, opset,
+  normalization, and expected output range for runtime sanity checks.
+- Cosign keyless signatures on release artefacts — see [SECURITY.md](../../../SECURITY.md).
+
+## Shipped models
+
+[`model/tiny/`](../../../model/tiny/) — each `.onnx` has a matching `.json`
+written by `vmaf-train register`.

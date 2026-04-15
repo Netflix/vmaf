@@ -20,11 +20,16 @@ if is_sycl_enabled
   platform_specific_headers += 'libvmaf_sycl.h'
 endif
 
+if get_option('enable_dnn').enabled() or get_option('enable_dnn').auto()
+  platform_specific_headers += 'dnn.h'
+endif
+
 # install headers
 install_headers(['libvmaf.h',
                 'feature.h',
                 'model.h',
-                'picture.h'],
+                'picture.h',
+                'vmaf_assert.h'],
                 version_h_target,
                 platform_specific_headers,
                 subdir : 'libvmaf')

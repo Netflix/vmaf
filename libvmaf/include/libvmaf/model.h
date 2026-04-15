@@ -29,6 +29,23 @@ extern "C" {
 
 typedef struct VmafModel VmafModel;
 
+/**
+ * Discriminates which runtime owns a loaded model.
+ *
+ *   - SVM    — upstream libsvm-backed model (default, json/pkl).
+ *   - DNN_FR — feature-vector → MOS (tiny FR regressor, .onnx + sidecar).
+ *   - DNN_NR — distorted frame → MOS, no reference needed (.onnx + sidecar).
+ *
+ * Auto-detected by vmaf_model_load_from_path() from the file extension:
+ * `.json`/`.pkl` → SVM, `.onnx` → DNN_FR (unless the matching sidecar JSON
+ * sets `"kind": "nr"`, in which case DNN_NR).
+ */
+typedef enum VmafModelKind {
+    VMAF_MODEL_KIND_SVM    = 0,
+    VMAF_MODEL_KIND_DNN_FR = 1,
+    VMAF_MODEL_KIND_DNN_NR = 2,
+} VmafModelKind;
+
 enum VmafModelFlags {
     VMAF_MODEL_FLAGS_DEFAULT = 0,
     VMAF_MODEL_FLAG_DISABLE_CLIP = (1 << 0),

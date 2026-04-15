@@ -57,3 +57,8 @@ option('sycl_compiler',
     type: 'string',
     value: 'icpx',
     description: 'Path or name of the SYCL compiler (Intel icpx from oneAPI)')
+
+option('enable_dnn',
+    type: 'feature',
+    value: 'auto',
+    description: 'Build DNN runtime (ONNX Runtime) for tiny-model inference')

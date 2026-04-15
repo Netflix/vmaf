@@ -29,6 +29,12 @@ is_sycl_enabled = get_option('enable_sycl') == true
 is_avx512_enabled = get_option('enable_avx512') == true
 is_nvtx_enabled = get_option('enable_nvtx') == true
 
+# DNN runtime (ONNX Runtime) — defines dnn_sources / dnn_defines / dnn_deps.
+subdir('dnn')
+if dnn_have_ort
+    cdata.set10('HAVE_DNN', true)
+endif
+
 if is_nvtx_enabled
     cdata.set10('HAVE_NVTX', is_nvtx_enabled)
 endif
@@ -682,9 +688,9 @@ endif
 
 libvmaf = library(
     'vmaf',
-    [libvmaf_sources, rev_target, json_model_c_sources],
-    include_directories : [libvmaf_inc, vmaf_include],
-    c_args : vmaf_cflags_common,
+    [libvmaf_sources, rev_target, json_model_c_sources, dnn_sources],
+    include_directories : [libvmaf_inc, vmaf_include, dnn_inc],
+    c_args : vmaf_cflags_common + dnn_defines,
     link_args : vmaf_link_args,
     dependencies : [
       thread_lib,
@@ -692,6 +698,7 @@ libvmaf = library(
       stdatomic_dependency,
       cuda_dependency,
       sycl_dependency,
+      dnn_deps,
     ],
     objects : [
         platform_specific_cpu_objects,
