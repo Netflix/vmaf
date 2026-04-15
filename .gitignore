@@ -27,6 +27,10 @@ testdata/bbb/*.yuv
 
 # Working/scratch directories
 .workingdir/
+.workingdir2/
+
+# Claude Code local (machine-specific) settings
+.claude/settings.local.json
 
 # Generated benchmark results
 testdata/bbb/results/

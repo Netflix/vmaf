@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/settings.schema.json",
+  "_comment": "Copy this to .claude/settings.local.json and adapt for your machine. settings.local.json is git-ignored; this .example file is the committed template.",
+  "permissions": {
+    "allow": [
+      "Bash(/opt/cuda/bin/nvcc:*)",
+      "Bash(PATH=\"/opt/cuda/bin:$PATH\" ninja:*)",
+      "Bash(PATH=\"/opt/intel/oneapi/compiler/latest/bin:$PATH\" icpx:*)"
+    ],
+    "additionalDirectories": [
+      "/tmp/vmaf-build-env",
+      "/opt/cuda",
+      "/opt/intel/oneapi"
+    ]
+  }
+}
