@@ -1,0 +1,41 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "5868f0e62e3a1c8d5e7f9b3d4a2e8c7f6d9a0b1c",
+  "release-type": "simple",
+  "include-component-in-tag": false,
+  "include-v-in-tag": true,
+  "tag-separator": "-",
+  "packages": {
+    ".": {
+      "package-name": "vmaf-lusoris",
+      "release-type": "simple",
+      "versioning": "default",
+      "prerelease": false,
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": false,
+      "draft": false,
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" },
+        { "type": "perf", "section": "Performance" },
+        { "type": "refactor", "section": "Refactors" },
+        { "type": "docs", "section": "Documentation" },
+        { "type": "test", "section": "Tests" },
+        { "type": "build", "section": "Build System" },
+        { "type": "ci", "section": "CI / Infrastructure" },
+        { "type": "chore", "section": "Miscellaneous", "hidden": false },
+        { "type": "port", "section": "Ports from upstream Netflix/vmaf" },
+        { "type": "sycl", "section": "SYCL Backend" },
+        { "type": "cuda", "section": "CUDA Backend" },
+        { "type": "simd", "section": "SIMD" }
+      ],
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "libvmaf/include/libvmaf/version.h.in"
+        }
+      ]
+    }
+  },
+  "plugins": ["sentence-case"]
+}

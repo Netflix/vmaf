@@ -1,0 +1,32 @@
+# release-please — on push to master, open or update a release PR that
+# (a) bumps the version per Conventional Commits, (b) regenerates CHANGELOG.md,
+# and (c) when merged, tags `vX.Y.Z-lusoris.N` and fires the `release:published`
+# event that supply-chain.yml keys on for signing + SBOM + SLSA.
+
+name: release-please
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dump outputs
+        if: steps.release.outputs.release_created == 'true'
+        run: |
+          echo "Tag: ${{ steps.release.outputs.tag_name }}"
+          echo "Version: ${{ steps.release.outputs.version }}"
