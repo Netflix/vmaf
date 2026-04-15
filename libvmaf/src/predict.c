@@ -16,6 +16,7 @@
  *
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
@@ -244,6 +245,7 @@ int vmaf_predict_score_at_index(VmafModel *model,
 
     // Lazily build the cached feature name lookup table
     if (!model->predict_feature_names) {
+        assert(model->n_features > 0);
         model->predict_feature_names =
             (char **) calloc(model->n_features, sizeof(char *));
         if (!model->predict_feature_names) return -ENOMEM;
@@ -292,6 +294,7 @@ int vmaf_predict_score_at_index(VmafModel *model,
 
     // Lazily cache FeatureVector pointers for direct score access
     if (!model->predict_feature_vectors) {
+        assert(model->n_features > 0);
         model->predict_feature_vectors =
             (void **) calloc(model->n_features, sizeof(void *));
         if (!model->predict_feature_vectors) return -ENOMEM;
