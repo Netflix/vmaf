@@ -35,6 +35,69 @@
           "path": "libvmaf/include/libvmaf/version.h.in"
         }
       ]
+    },
+    "ai": {
+      "package-name": "vmaf-train",
+      "release-type": "python",
+      "versioning": "default",
+      "prerelease": false,
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": false,
+      "draft": false,
+      "changelog-path": "CHANGELOG.md",
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" },
+        { "type": "perf", "section": "Performance" },
+        { "type": "refactor", "section": "Refactors" },
+        { "type": "docs", "section": "Documentation" },
+        { "type": "test", "section": "Tests" },
+        { "type": "build", "section": "Build System" },
+        { "type": "ci", "section": "CI / Infrastructure" },
+        { "type": "chore", "section": "Miscellaneous", "hidden": false }
+      ],
+      "extra-files": [
+        { "type": "generic", "path": "pyproject.toml" }
+      ]
+    },
+    "dev-llm": {
+      "package-name": "vmaf-dev-llm",
+      "release-type": "python",
+      "versioning": "default",
+      "prerelease": false,
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": false,
+      "draft": false,
+      "changelog-path": "CHANGELOG.md",
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" },
+        { "type": "docs", "section": "Documentation" },
+        { "type": "test", "section": "Tests" },
+        { "type": "chore", "section": "Miscellaneous", "hidden": false }
+      ],
+      "extra-files": [
+        { "type": "generic", "path": "pyproject.toml" }
+      ]
+    },
+    "mcp-server/vmaf-mcp": {
+      "package-name": "vmaf-mcp",
+      "release-type": "python",
+      "versioning": "default",
+      "prerelease": false,
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": false,
+      "draft": false,
+      "changelog-path": "CHANGELOG.md",
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" },
+        { "type": "docs", "section": "Documentation" },
+        { "type": "chore", "section": "Miscellaneous", "hidden": false }
+      ],
+      "extra-files": [
+        { "type": "generic", "path": "pyproject.toml" }
+      ]
     }
   },
   "plugins": ["sentence-case"]

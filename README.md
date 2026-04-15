@@ -86,12 +86,32 @@ verification loop.
 
 All upstream flags are preserved unchanged.
 
+## Tiny AI
+
+Lightweight perceptual-quality models trained and shipped in-repo, consumed
+through a single ONNX Runtime-backed inference path inside libvmaf.
+
+| # | Capability | What it is | Where it runs |
+| --- | --- | --- | --- |
+| C1 | **Custom FR models** | Tiny MLP regressor on the libvmaf feature vector → MOS. Drop-in for the upstream SVM. | libvmaf, `vmaf` CLI, ffmpeg `libvmaf` filter |
+| C2 | **No-reference metrics** | Small CNN / MobileNet-tiny on the distorted frame alone. | libvmaf, `vmaf --no-reference`, ffmpeg filter |
+| C3 | **Learned filters** | Residual CNN denoisers / sharpeners exposed through ffmpeg `vmaf_pre`. | ffmpeg `vmaf_pre`, `dnn_processing` |
+| C4 | **LLM dev helpers** | Ollama-backed review / commit-msg / docgen helpers, never linked into libvmaf. | [`dev-llm/`](dev-llm/), `.claude/skills/dev-llm-*` |
+
+- Training: [`ai/`](ai/) (`pip install -e ai && vmaf-train --help`).
+- Inference runtime: [`libvmaf/src/dnn/`](libvmaf/src/dnn/) (C, ONNX Runtime).
+- CLI usage: `vmaf --tiny-model model/tiny/vmaf_tiny_fr_v1.onnx [--tiny-device cuda]`.
+- Meson flag: `-Denable_dnn=auto|enabled|disabled` (default `auto`).
+- ffmpeg: apply [`ffmpeg-patches/*.patch`](ffmpeg-patches/) for `tiny_model=...` and the new `vmaf_pre` filter.
+- Docs: [`docs/tiny-ai/`](docs/tiny-ai/).
+
 ## Documentation
 
 - [`CLAUDE.md`](CLAUDE.md) — orientation for Claude Code sessions.
 - [`AGENTS.md`](AGENTS.md) — same, for tool-agnostic agents (Cursor, Aider, Copilot).
 - [`docs/principles.md`](docs/principles.md) — NASA Power-of-10 + JPL + CERT + MISRA coding standard, Netflix golden gate, quality policy.
 - [`docs/sycl_bundling.md`](docs/sycl_bundling.md) — self-contained SYCL runtime bundling.
+- [`docs/tiny-ai/`](docs/tiny-ai/) — training, inference, benchmarks, security.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to contribute (fork-specific + upstream guide preserved).
 - [`SECURITY.md`](SECURITY.md) — coordinated disclosure, SLA, supply-chain guarantees.
 - [Netflix/vmaf upstream docs](resource/doc/index.md) — FAQs, models, AOM CTC usage.

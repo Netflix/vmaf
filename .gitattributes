@@ -4,3 +4,11 @@
 # The model file parser requires LF line endings
 *.pkl text eol=lf
 *.model text eol=lf
+
+# Tiny-AI model artefacts — tracked via git-lfs.
+model/tiny/*.onnx filter=lfs diff=lfs merge=lfs -text
+model/tiny/*.onnx.sig binary
+model/tiny/*.onnx.cert binary
+
+# Ffmpeg patch series — diff-friendly text.
+ffmpeg-patches/*.patch text eol=lf

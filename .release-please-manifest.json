@@ -1,3 +1,6 @@
 {
-  ".": "3.0.0-lusoris.0"
+  ".": "3.0.0-lusoris.0",
+  "ai": "0.1.0",
+  "dev-llm": "0.1.0",
+  "mcp-server/vmaf-mcp": "0.1.0"
 }
