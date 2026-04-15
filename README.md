@@ -1,45 +1,141 @@
-# VMAF - Video Multi-Method Assessment Fusion
+# VMAF — Lusoris Fork
 
-[![libvmaf](https://github.com/Netflix/vmaf/actions/workflows/libvmaf.yml/badge.svg)](https://github.com/Netflix/vmaf/actions/workflows/libvmaf.yml)
-[![Windows](https://github.com/Netflix/vmaf/actions/workflows/windows.yml/badge.svg)](https://github.com/Netflix/vmaf/actions/workflows/windows.yml)
-[![ffmpeg](https://github.com/Netflix/vmaf/actions/workflows/ffmpeg.yml/badge.svg)](https://github.com/Netflix/vmaf/actions/workflows/ffmpeg.yml)
-[![Docker](https://github.com/Netflix/vmaf/actions/workflows/docker.yml/badge.svg)](https://github.com/Netflix/vmaf/actions/workflows/docker.yml)
+[![ci](https://github.com/lusoris/vmaf/actions/workflows/ci.yml/badge.svg)](https://github.com/lusoris/vmaf/actions/workflows/ci.yml)
+[![lint](https://github.com/lusoris/vmaf/actions/workflows/lint.yml/badge.svg)](https://github.com/lusoris/vmaf/actions/workflows/lint.yml)
+[![security](https://github.com/lusoris/vmaf/actions/workflows/security.yml/badge.svg)](https://github.com/lusoris/vmaf/actions/workflows/security.yml)
+[![libvmaf](https://github.com/lusoris/vmaf/actions/workflows/libvmaf.yml/badge.svg)](https://github.com/lusoris/vmaf/actions/workflows/libvmaf.yml)
+[![ffmpeg](https://github.com/lusoris/vmaf/actions/workflows/ffmpeg.yml/badge.svg)](https://github.com/lusoris/vmaf/actions/workflows/ffmpeg.yml)
+[![License: BSD-3-Clause+Patent](https://img.shields.io/badge/License-BSD--3--Clause--Plus--Patent-blue.svg)](LICENSE)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits)](https://www.conventionalcommits.org)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/lusoris/vmaf/badge)](https://securityscorecards.dev/viewer/?uri=github.com/lusoris/vmaf)
+[![ko-fi](https://img.shields.io/badge/ko--fi-support%20lusoris-ff5e5b?logo=kofi&logoColor=white)](https://ko-fi.com/lusoris)
 
-VMAF is an [Emmy-winning](https://theemmys.tv/) perceptual video quality assessment algorithm developed by Netflix. This software package includes a stand-alone C library `libvmaf` and its wrapping Python library. The Python library also provides a set of tools that allows a user to train and test a custom VMAF model.
+**A GPU-accelerated, full-precision, signed-release fork of
+[Netflix/vmaf](https://github.com/Netflix/vmaf)** — perceptual video quality
+assessment, Emmy-winning, now with:
 
-Read [this](https://medium.com/netflix-techblog/toward-a-practical-perceptual-video-quality-metric-653f208b9652) tech blog post for an overview, [this](https://medium.com/netflix-techblog/vmaf-the-journey-continues-44b51ee9ed12) post for the tips of best practices, and [this](https://netflixtechblog.com/toward-a-better-quality-metric-for-the-video-community-7ed94e752a30) post for our latest efforts on speed optimization, new API design and the introduction of a codec evaluation-friendly [NEG mode](resource/doc/models.md#disabling-enhancement-gain-neg-mode).
+- **SYCL / oneAPI** GPU backend (Intel, NVIDIA, AMD via Codeplay plugins).
+- **CUDA** GPU backend (optimized ADM decouple fusion, VIF rd_stride,
+  memory-efficient scoring).
+- **AVX2 / AVX-512 / NEON** SIMD paths for every hot kernel.
+- **`--precision`** CLI flag — default `%.17g` for IEEE-754 round-trip lossless
+  scores; `legacy` opts back to upstream `%.6f`.
+- **Tiny-AI** model surface (ONNX Runtime) for lightweight quality-proxy
+  experiments — see [`ai/`](ai/).
+- **MCP server** — expose VMAF scoring to LLM tooling via JSON-RPC. See
+  [`mcp-server/vmaf-mcp/`](mcp-server/vmaf-mcp/).
+- **Signed releases** — every tag carries SBOM (SPDX + CycloneDX), Sigstore
+  keyless signatures, and SLSA L3 provenance.
 
-Also included in `libvmaf` are implementations of several other metrics: PSNR, PSNR-HVS, SSIM, MS-SSIM and CIEDE2000.
+Upstream Netflix/vmaf stays authoritative for the scoring algorithm; the fork
+adds backends, tooling, and productization without changing the numerical
+contract. The three Netflix CPU golden-data tests (1 normal + 2 checkerboard
+pairs) run as a required CI gate on every PR — see
+[`docs/principles.md`](docs/principles.md) §3.1 and decision D24.
 
 ![vmaf logo](resource/images/vmaf_logo.jpg)
 
-## News
+## Quickstart
 
-- (2023-12-07) We are releasing `libvmaf v3.0.0`. It contains several optimizations and bug fixes, and a full removal of the APIs which were deprecated in `v2.0.0`.
-- (2021-12-15) We have added to CAMBI the `full_ref` input parameter to allow running CAMBI as a full-reference metric, taking into account the banding that was already present on the source. Check out the [usage](resource/doc/cambi.md) page.
-- (2021-12-1) We have added to CAMBI the `max_log_contrast` input parameter to allow to capture banding with higher contrasts than the default. We have also sped up CAMBI (e.g., around 4.5x for 4k). Check out the [usage](resource/doc/cambi.md) page.
-- (2021-10-7) We are open-sourcing CAMBI (Contrast Aware Multiscale Banding Index) - Netflix's detector for banding (aka contouring) artifacts. Check out the [tech blog](https://netflixtechblog.medium.com/cambi-a-banding-artifact-detector-96777ae12fe2) for an overview and the [technical paper](resource/doc/papers/CAMBI_PCS2021.pdf) published in PCS 2021 (note that the paper describes an initial version of CAMBI that no longer matches the code exactly, but it is still a good introduction). Also check out the [usage](resource/doc/cambi.md) page.
-- (2020-12-7) Check out our [latest tech blog](https://netflixtechblog.com/toward-a-better-quality-metric-for-the-video-community-7ed94e752a30) on speed optimization, new API design and the introduction of a codec evaluation-friendly NEG mode.
-- (2020-12-3) We are releasing `libvmaf v2.0.0`. It has a new fixed-point and x86 SIMD-optimized (AVX2, AVX-512) implementation that achieves 2x speed up compared to the previous floating-point version. It also has a [new API](libvmaf/README.md) that is more flexible and extensible.
-- (2020-7-13) We have created a [memo](https://docs.google.com/document/d/1dJczEhXO0MZjBSNyKmd3ARiCTdFVMNPBykH4_HMPoyY/edit?usp=sharing) to share our thoughts on VMAF's property in the presence of image enhancement operations, its impact on codec evaluation, and our solutions. Accordingly, we have added a new mode called [No Enhancement Gain (NEG)](resource/doc/models.md#disabling-enhancement-gain-neg-mode).
-- (2020-2-27) We have changed VMAF's license from Apache 2.0 to [BSD+Patent](https://opensource.org/licenses/BSDplusPatent), a more permissive license compared to Apache that also includes an express patent grant.
+```bash
+# One-liner dev env install (auto-detects Ubuntu/Arch/Fedora/Alpine/macOS/Win).
+./scripts/setup/detect.sh
+
+# CPU-only build + test.
+meson setup build -Denable_cuda=false -Denable_sycl=false
+ninja -C build
+meson test -C build
+
+# Score a pair.
+build/tools/vmaf -r ref.yuv -d dis.yuv --width 1920 --height 1080 \
+                 -p 420 -b 8 -m version=vmaf_v0.6.1 --precision=17
+```
+
+Add `-Denable_cuda=true` (requires `/opt/cuda`) or `-Denable_sycl=true`
+(requires oneAPI `icpx`) to bring up a GPU backend.
+
+## Backends at a glance
+
+| Backend | Status | Notes                                               |
+| ------- | ------ | --------------------------------------------------- |
+| CPU     | ✅     | Scalar + AVX2 + AVX-512 + NEON. Golden-data truth.  |
+| CUDA    | ✅     | `/opt/cuda`, `nvcc`. Works on RTX 20xx and newer.   |
+| SYCL    | ✅     | oneAPI DPC++, Intel/NVIDIA/AMD via Codeplay.        |
+| HIP     | 🚧     | Planned — infrastructure in place, kernels pending. |
+| Vulkan  | 💭     | Experimental / future.                              |
+| Metal   | 💭     | Apple Silicon — not prioritized, PRs welcome.       |
+
+Cross-backend numerical divergence is held to ≤ 2 ULP in double precision; see
+[`/cross-backend-diff`](.claude/skills/cross-backend-diff/SKILL.md) for the
+verification loop.
+
+## CLI additions (fork-only)
+
+```text
+--precision $spec
+      score output precision
+        N (1..17) -> printf "%.<N>g"
+        max|full  -> "%.17g" (default; round-trip lossless)
+        legacy    -> "%.6f" (pre-fork Netflix output)
+
+--no_cuda                  disable CUDA backend
+--no_sycl                  disable SYCL/oneAPI backend
+--sycl_device $unsigned    select SYCL GPU by index (default: auto)
+--gpumask: $bitmask        restrict permitted GPU operations
+```
+
+All upstream flags are preserved unchanged.
 
 ## Documentation
 
-There is an [overview of the documentation](resource/doc/index.md) with links to specific pages, covering FAQs, available models and features, software usage guides, and a list of resources.
+- [`CLAUDE.md`](CLAUDE.md) — orientation for Claude Code sessions.
+- [`AGENTS.md`](AGENTS.md) — same, for tool-agnostic agents (Cursor, Aider, Copilot).
+- [`docs/principles.md`](docs/principles.md) — NASA Power-of-10 + JPL + CERT + MISRA coding standard, Netflix golden gate, quality policy.
+- [`docs/sycl_bundling.md`](docs/sycl_bundling.md) — self-contained SYCL runtime bundling.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to contribute (fork-specific + upstream guide preserved).
+- [`SECURITY.md`](SECURITY.md) — coordinated disclosure, SLA, supply-chain guarantees.
+- [Netflix/vmaf upstream docs](resource/doc/index.md) — FAQs, models, AOM CTC usage.
 
-## Usage
+## Release & signing
 
-The software package offers a number of ways to interact with the VMAF implementation.
+Tagged releases use `vX.Y.Z-lusoris.N`, tracking upstream Netflix version +
+fork suffix. Every release asset is:
 
-  - The command-line tool [`vmaf`](libvmaf/tools/README.md) provides a complete algorithm implementation, such that one can easily deploy VMAF in a production environment. Additionally, the `vmaf` tool provides a number of auxillary features such as PSNR, SSIM and MS-SSIM.
-  - The [C library `libvmaf`](libvmaf/README.md) provides an interface to incorporate VMAF into your code, and tools to integrate other feature extractors into the library.
-  - The [Python library](resource/doc/python.md) offers a full array of wrapper classes and scripts for software testing, VMAF model training and validation, dataset processing, data visualization, etc.
-  - VMAF is now included as a filter in FFmpeg, and can be configured using: `./configure --enable-libvmaf`. Refer to the [Using VMAF with FFmpeg](resource/doc/ffmpeg.md) page.
-  - [VMAF Dockerfile](Dockerfile) generates a docker image from the [Python library](resource/doc/python.md). Refer to [this](resource/doc/docker.md) document for detailed usage.
-  - To build VMAF on Windows, follow [these](resource/doc/windows.md) instructions.
-  - AOM CTC: [AOM]((http://aomedia.org/)) has specified vmaf to be the standard implementation metrics tool according to the AOM common test conditions (CTC). Refer to [this page](resource/doc/aom_ctc.md) for usage compliant with AOM CTC.
+- Signed with [Sigstore](https://sigstore.dev) keyless OIDC — verify with
+  `cosign verify-blob --certificate <asset>.pem --signature <asset>.sig <asset>`.
+- Accompanied by SPDX and CycloneDX SBOMs.
+- Backed by [SLSA L3](https://slsa.dev) provenance via
+  `slsa-github-generator` — verify with `slsa-verifier`.
 
-## Contribution Guide
+Release automation: [release-please](https://github.com/googleapis/release-please)
+opens a PR on every push to `master`; merging it tags and fires signing.
 
-Refer to the [contribution](CONTRIBUTING.md) page. Also refer to this [slide deck](https://docs.google.com/presentation/d/1Gr4-MvOXu9HUiH4nnqLGWupJYMeh6nl2MNz6Qy9153c/edit#slide=id.gc20398b4b7_0_132) for an overview contribution guide.
+## License
+
+[BSD-3-Clause-Plus-Patent](LICENSE) — preserved from upstream Netflix/vmaf.
+
+Fork-authored code (SYCL backend, `.claude/` scaffolding, MCP server, Tiny-AI
+surface) is © 2024-2026 Lusoris and Claude (Anthropic), licensed under the
+same BSD-3-Clause-Plus-Patent terms as the rest of the project.
+
+## Attribution
+
+Upstream: [Netflix/vmaf](https://github.com/Netflix/vmaf). The scoring
+algorithm, Python training harness, and the 3 Netflix CPU golden test pairs
+remain Netflix's. The fork wraps, extends, and hardens — it does not replace.
+
+Fork maintainers: [Lusoris](https://github.com/Lusoris) and
+[Claude (Anthropic)](https://www.anthropic.com/claude) — co-authored.
+
+---
+
+## Support the fork
+
+If the fork saves you time, [ko-fi.com/lusoris](https://ko-fi.com/lusoris)
+keeps the GPU bill paid and the test rigs running.
+
+## Upstream news & history
+
+See [`CHANGELOG.md`](CHANGELOG.md) for fork-specific changes and the
+[upstream release history](https://github.com/Netflix/vmaf/releases) for the
+core VMAF algorithm evolution (CAMBI, NEG mode, v3.0.0 API overhaul, etc.).
