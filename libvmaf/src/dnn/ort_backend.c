@@ -224,6 +224,8 @@ int vmaf_ort_open(VmafOrtSession **out, const char *onnx_path,
     return -ENOSYS;
 }
 
+/* NOLINTBEGIN(readability-non-const-parameter)
+ * Stub signatures must match the real-ORT path declared in the header. */
 int vmaf_ort_infer(VmafOrtSession *sess,
                    const float *input, const int64_t *input_shape,
                    size_t input_rank,
@@ -242,6 +244,7 @@ int vmaf_ort_input_shape(VmafOrtSession *sess,
     (void) sess; (void) out_shape; (void) max_rank; (void) out_rank;
     return -ENOSYS;
 }
+/* NOLINTEND(readability-non-const-parameter) */
 
 void vmaf_ort_close(VmafOrtSession *sess)
 {

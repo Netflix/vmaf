@@ -225,10 +225,11 @@ int vmaf_dnn_session_open(VmafDnnSession **out, const char *onnx_path,
     return -ENOSYS;
 }
 
+/* Stub signature must match the real-ORT path declared in the header. */
 int vmaf_dnn_session_run_luma8(VmafDnnSession *sess,
                                const uint8_t *in, size_t in_stride,
                                int w, int h,
-                               uint8_t *out, size_t out_stride)
+                               uint8_t *out, size_t out_stride) // NOLINT(readability-non-const-parameter)
 {
     (void) sess; (void) in; (void) in_stride; (void) w; (void) h;
     (void) out; (void) out_stride;
