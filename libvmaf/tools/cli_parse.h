@@ -59,6 +59,12 @@ typedef struct {
     int precision_n;            // -1 = unset (default %.17g), else user N
     bool precision_max;
     bool precision_legacy;
+    /* Phase 3k — tiny-AI surface (all unset by default). */
+    const char *tiny_model_path;   /* NULL = no tiny model */
+    const char *tiny_device;       /* "auto"|"cpu"|"cuda"|"openvino"|"rocm" */
+    int         tiny_threads;      /* 0 = ORT default */
+    bool        tiny_fp16;
+    bool        no_reference;      /* skip reference; only meaningful with NR tiny model */
 } CLISettings;
 
 void cli_parse(const int argc, char *const *const argv,

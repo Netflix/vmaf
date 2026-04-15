@@ -9,6 +9,7 @@
 
 #include "libvmaf/picture.h"
 #include "libvmaf/libvmaf.h"
+#include "libvmaf/dnn.h"
 #ifdef HAVE_CUDA
 #include "libvmaf/libvmaf_cuda.h"
 #endif
@@ -446,6 +447,35 @@ int main(int argc, char *argv[])
         if (err) {
             fprintf(stderr, "problem loading feature extractor: %s\n",
                     c.feature_cfg[i].name);
+            return -1;
+        }
+    }
+
+    if (c.tiny_model_path) {
+        if (!vmaf_dnn_available()) {
+            fprintf(stderr,
+                    "--tiny-model requested (%s) but libvmaf was built "
+                    "without DNN support (-Denable_dnn=disabled).\n",
+                    c.tiny_model_path);
+            return -1;
+        }
+        VmafDnnDevice dev = VMAF_DNN_DEVICE_AUTO;
+        if (c.tiny_device) {
+            if      (!strcmp(c.tiny_device, "cpu"))      dev = VMAF_DNN_DEVICE_CPU;
+            else if (!strcmp(c.tiny_device, "cuda"))     dev = VMAF_DNN_DEVICE_CUDA;
+            else if (!strcmp(c.tiny_device, "openvino")) dev = VMAF_DNN_DEVICE_OPENVINO;
+            else if (!strcmp(c.tiny_device, "rocm"))     dev = VMAF_DNN_DEVICE_ROCM;
+        }
+        VmafDnnConfig dnn_cfg = {
+            .device       = dev,
+            .device_index = 0,
+            .threads      = c.tiny_threads,
+            .fp16_io      = c.tiny_fp16,
+        };
+        err = vmaf_use_tiny_model(vmaf, c.tiny_model_path, &dnn_cfg);
+        if (err) {
+            fprintf(stderr, "problem loading tiny model %s: %d\n",
+                    c.tiny_model_path, err);
             return -1;
         }
     }

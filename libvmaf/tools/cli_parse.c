@@ -33,6 +33,11 @@ enum {
     ARG_NO_SYCL,
     ARG_SYCL_DEVICE,
     ARG_PRECISION,
+    ARG_TINY_MODEL,
+    ARG_TINY_DEVICE,
+    ARG_TINY_THREADS,
+    ARG_TINY_FP16,
+    ARG_NO_REFERENCE,
 };
 
 #define VMAF_DEFAULT_PRECISION_FMT "%.17g"
@@ -91,6 +96,16 @@ static const struct option long_opts[] = {
     { "no_sycl",          0, NULL, ARG_NO_SYCL },
     { "sycl_device",      1, NULL, ARG_SYCL_DEVICE },
     { "precision",        1, NULL, ARG_PRECISION },
+    { "tiny-model",       1, NULL, ARG_TINY_MODEL },
+    { "tiny_model",       1, NULL, ARG_TINY_MODEL },
+    { "tiny-device",      1, NULL, ARG_TINY_DEVICE },
+    { "tiny_device",      1, NULL, ARG_TINY_DEVICE },
+    { "tiny-threads",     1, NULL, ARG_TINY_THREADS },
+    { "tiny_threads",     1, NULL, ARG_TINY_THREADS },
+    { "tiny-fp16",        0, NULL, ARG_TINY_FP16 },
+    { "tiny_fp16",        0, NULL, ARG_TINY_FP16 },
+    { "no-reference",     0, NULL, ARG_NO_REFERENCE },
+    { "no_reference",     0, NULL, ARG_NO_REFERENCE },
     { "no_prediction",    0, NULL, 'n' },
     { "version",          0, NULL, 'v' },
     { "quiet",            0, NULL, 'q' },
@@ -137,6 +152,11 @@ static void usage(const char *const app, const char *const reason, ...) {
             "                                  N (1..17) -> printf \"%%.<N>g\"\n"
             "                                  max|full  -> \"%%.17g\" (default; round-trip lossless)\n"
             "                                  legacy    -> \"%%.6f\" (pre-fork Netflix output)\n"
+            " --tiny-model $path:           load a tiny ONNX model alongside classic models\n"
+            " --tiny-device $string:        auto|cpu|cuda|openvino|rocm (default: auto)\n"
+            " --tiny-threads $unsigned:     CPU EP intra-op threads (0 = ORT default)\n"
+            " --tiny-fp16:                  request fp16 IO where the EP supports it\n"
+            " --no-reference:               no-reference mode; valid only with an NR tiny model\n"
             " --quiet/-q:                  disable FPS meter when run in a TTY\n"
             " --no_prediction/-n:          no prediction, extract features only\n"
             " --version/-v:                print version and exit\n"
@@ -499,6 +519,7 @@ void cli_parse(const int argc, char *const *const argv,
     settings->sycl_device = -1;    // auto-select by default
     settings->precision_n = -1;
     settings->precision_fmt = VMAF_DEFAULT_PRECISION_FMT;
+    settings->tiny_device = "auto";
     int o;
 
     while ((o = getopt_long(argc, argv, short_opts, long_opts, NULL)) >= 0) {
@@ -588,6 +609,28 @@ void cli_parse(const int argc, char *const *const argv,
             break;
         case ARG_PRECISION:
             settings->precision_fmt = resolve_precision_fmt(optarg, argv[0], settings);
+            break;
+        case ARG_TINY_MODEL:
+            settings->tiny_model_path = optarg;
+            break;
+        case ARG_TINY_DEVICE:
+            if (strcmp(optarg, "auto") && strcmp(optarg, "cpu") &&
+                strcmp(optarg, "cuda") && strcmp(optarg, "openvino") &&
+                strcmp(optarg, "rocm")) {
+                error(argv[0], optarg, ARG_TINY_DEVICE,
+                      "one of auto|cpu|cuda|openvino|rocm");
+            }
+            settings->tiny_device = optarg;
+            break;
+        case ARG_TINY_THREADS:
+            settings->tiny_threads =
+                (int) parse_unsigned(optarg, ARG_TINY_THREADS, argv[0]);
+            break;
+        case ARG_TINY_FP16:
+            settings->tiny_fp16 = true;
+            break;
+        case ARG_NO_REFERENCE:
+            settings->no_reference = true;
             break;
         case 'n':
             settings->no_prediction = true;
