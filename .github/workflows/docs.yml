@@ -1,0 +1,87 @@
+name: docs
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "docs/**"
+      - "libvmaf/include/**"
+      - "libvmaf/src/**"
+      - "python/vmaf/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Doxygen + Sphinx
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz python3-pip
+          pip install sphinx sphinx-rtd-theme breathe myst-parser
+      - name: Run Doxygen
+        run: |
+          doxygen -g docs/Doxyfile.generated 2>/dev/null || true
+          cat > docs/Doxyfile <<'EOF'
+          PROJECT_NAME           = "libvmaf (Lusoris fork)"
+          INPUT                  = libvmaf/include libvmaf/src docs
+          RECURSIVE              = YES
+          EXTRACT_ALL            = YES
+          GENERATE_HTML          = YES
+          GENERATE_LATEX         = NO
+          GENERATE_XML           = YES
+          HTML_OUTPUT            = doxygen-html
+          XML_OUTPUT             = doxygen-xml
+          OUTPUT_DIRECTORY       = build-docs
+          WARN_AS_ERROR          = NO
+          QUIET                  = YES
+          EOF
+          doxygen docs/Doxyfile
+      - name: Build Sphinx site
+        run: |
+          mkdir -p build-docs/sphinx-src
+          cat > build-docs/sphinx-src/conf.py <<'EOF'
+          project = "libvmaf (Lusoris fork)"
+          extensions = ["breathe", "myst_parser"]
+          breathe_projects = {"libvmaf": "../doxygen-xml"}
+          breathe_default_project = "libvmaf"
+          html_theme = "sphinx_rtd_theme"
+          master_doc = "index"
+          source_suffix = [".rst", ".md"]
+          EOF
+          cat > build-docs/sphinx-src/index.rst <<'EOF'
+          libvmaf — Lusoris fork
+          ======================
+
+          .. toctree::
+             :maxdepth: 2
+
+          API reference
+          -------------
+          .. doxygenindex::
+          EOF
+          sphinx-build -b html build-docs/sphinx-src build-docs/html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build-docs/html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

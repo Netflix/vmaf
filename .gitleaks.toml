@@ -1,0 +1,35 @@
+title = "VMAF fork gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "VMAF-specific false positives"
+paths = [
+  '''^subprojects/''',
+  '''^python/test/resource/''',
+  '''^testdata/.*\.(yuv|y4m|mp4|json)$''',
+  '''^model/.*\.(json|pkl|onnx)$''',
+  '''^\.git/''',
+  '''^build/''',
+  '''^builddir.*/''',
+]
+
+regexes = [
+  '''0{8,}''',
+  '''[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}''',
+  '''vmaf_v\d+\.\d+\.\d+''',
+]
+
+stopwords = [
+  "REPLACE_WITH_YOUR",
+  "your-api-key",
+  "example.com",
+  "EXAMPLE",
+]
+
+[[rules]]
+id = "vmaf-no-cosign-private-key"
+description = "A cosign private key must never enter the repo (we use keyless OIDC)."
+regex = '''-----BEGIN ENCRYPTED COSIGN PRIVATE KEY-----'''
+tags = ["key", "cosign"]

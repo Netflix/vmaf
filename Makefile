@@ -95,7 +95,7 @@ lint-c: $(BUILD_DIR)
 	 clang-tidy -p $(BUILD_DIR) --quiet $$FILES
 	@echo "--- cppcheck ---"
 	cppcheck --enable=all --inline-suppr \
-	         --suppressions-list=.cppcheck-suppressions \
+	         --suppressions-list=.cppcheck-suppressions.txt \
 	         --project=$(BUILD_DIR)/compile_commands.json \
 	         --error-exitcode=1
 

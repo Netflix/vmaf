@@ -1,0 +1,79 @@
+name: nightly
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tsan:
+    name: ThreadSanitizer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: bash scripts/setup/ubuntu.sh
+        env:
+          INSTALL_LINTERS: "1"
+      - name: Meson setup (TSan)
+        run: |
+          cd libvmaf
+          meson setup ../build-tsan \
+            -Db_sanitize=thread \
+            -Denable_cuda=false \
+            -Denable_sycl=false \
+            --buildtype=debugoptimized
+      - name: Build
+        run: ninja -C build-tsan
+      - name: Run tests
+        run: meson test -C build-tsan --print-errorlogs --timeout-multiplier 3
+
+  clang-tidy-full:
+    name: Full clang-tidy scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: bash scripts/setup/ubuntu.sh
+        env:
+          INSTALL_LINTERS: "1"
+      - name: Generate compile_commands.json
+        run: |
+          cd libvmaf
+          meson setup ../build -Denable_cuda=false -Denable_sycl=false
+      - name: Run clang-tidy on full tree
+        run: |
+          find libvmaf/src libvmaf/tools -name '*.c' -o -name '*.cpp' | \
+            parallel -j"$(nproc)" --joblog tidy.log \
+              'clang-tidy -p build {} 2>&1 || true' | tee clang-tidy-full.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clang-tidy-full-report
+          path: clang-tidy-full.log
+
+  netflix-benchmark:
+    name: Netflix benchmark suite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: bash scripts/setup/ubuntu.sh
+      - name: Build
+        run: |
+          cd libvmaf
+          meson setup ../build -Denable_cuda=false -Denable_sycl=false --buildtype=release
+          ninja -C ../build
+      - name: Run benchmark
+        run: bash testdata/bench_all.sh || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nightly-benchmark-results
+          path: testdata/netflix_benchmark_results.json

@@ -1,0 +1,20 @@
+[
+  { "include": ["<bits/.*>", "private", "<string>", "public"] },
+  { "include": ["<ext/.*>", "private", "<string>", "public"] },
+  { "symbol": ["NULL", "private", "<stddef.h>", "public"] },
+  { "symbol": ["size_t", "private", "<stddef.h>", "public"] },
+  { "symbol": ["ssize_t", "private", "<sys/types.h>", "public"] },
+  { "symbol": ["uint8_t", "private", "<stdint.h>", "public"] },
+  { "symbol": ["uint16_t", "private", "<stdint.h>", "public"] },
+  { "symbol": ["uint32_t", "private", "<stdint.h>", "public"] },
+  { "symbol": ["uint64_t", "private", "<stdint.h>", "public"] },
+  { "symbol": ["int8_t", "private", "<stdint.h>", "public"] },
+  { "symbol": ["int16_t", "private", "<stdint.h>", "public"] },
+  { "symbol": ["int32_t", "private", "<stdint.h>", "public"] },
+  { "symbol": ["int64_t", "private", "<stdint.h>", "public"] },
+
+  { "include": ["@<cuda_runtime.*>", "public", "<cuda_runtime.h>", "public"] },
+  { "include": ["@<sycl/.*>", "public", "<sycl/sycl.hpp>", "public"] },
+  { "include": ["@<immintrin\\.h>", "public", "<immintrin.h>", "public"] },
+  { "include": ["@<arm_neon\\.h>", "public", "<arm_neon.h>", "public"] }
+]

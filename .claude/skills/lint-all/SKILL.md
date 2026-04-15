@@ -20,7 +20,7 @@ description: Run clang-tidy, cppcheck, include-what-you-use, ruff, and semgrep i
    - `--changed-only`: `git diff --name-only origin/master...HEAD`.
 3. Run linters in parallel, each writing JSON to `build/lint/<tool>.json`:
    - `clang-tidy -p build --config-file=.clang-tidy <files>`
-   - `cppcheck --enable=all --suppressions-list=.cppcheck-suppressions
+   - `cppcheck --enable=all --suppressions-list=.cppcheck-suppressions.txt
      --project=build/compile_commands.json`
    - `include-what-you-use` (via `iwyu_tool.py -p build`)
    - `ruff check python/ ai/ scripts/`

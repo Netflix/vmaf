@@ -74,7 +74,7 @@ jobs:
       - name: Run cppcheck
         run: |
           cppcheck --enable=all --inline-suppr \
-            --suppressions-list=.cppcheck-suppressions \
+            --suppressions-list=.cppcheck-suppressions.txt \
             --project=build/compile_commands.json \
             --error-exitcode=1 \
             --xml --output-file=cppcheck-report.xml 2>&1
