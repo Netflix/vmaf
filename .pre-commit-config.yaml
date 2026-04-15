@@ -1,0 +1,74 @@
+# Light-touch pre-commit. The Netflix golden gate is intentionally NOT here
+# (see D24) — it runs in CI only because it requires a built binary.
+# The format/lint hooks run only on changed files for speed.
+
+minimum_pre_commit_version: "3.5.0"
+fail_fast: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.patch$|^subprojects/|^libvmaf/test/data/'
+      - id: end-of-file-fixer
+        exclude: '\.patch$|^subprojects/|^libvmaf/test/data/'
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+        exclude: '^libvmaf/test/data/'
+      - id: detect-private-key
+
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v18.1.8
+    hooks:
+      - id: clang-format
+        types_or: [c, c++, cuda]
+        exclude: '^subprojects/|^libvmaf/test/data/'
+
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        files: '^(python|ai|scripts)/.*\.py$'
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        files: '^(python|ai|scripts)/.*\.py$'
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.5
+    hooks:
+      - id: ruff
+        files: '^(python|ai|scripts)/.*\.py$'
+        args: ["--fix"]
+
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.9.0-1
+    hooks:
+      - id: shfmt
+        args: ["-w", "-i", "2", "-ci"]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [--strict, "feat", "fix", "perf", "refactor", "docs", "test", "build", "ci", "chore", "revert", "port", "sycl", "cuda", "simd"]

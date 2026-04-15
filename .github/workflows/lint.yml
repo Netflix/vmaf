@@ -1,0 +1,117 @@
+# Static-analysis gate. Runs in parallel with build (ci.yml) so a lint failure
+# doesn't block discovering build breakage and vice versa.
+
+name: lint
+on:
+  push:
+    branches: [sycl, master]
+  pull_request:
+    branches: [sycl, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    name: pre-commit (formatters + basic checks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: pre-commit/action@v3.0.1
+
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build nasm clang-tidy-18 \
+            jq parallel
+          sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy \
+            /usr/bin/clang-tidy-18 100
+      - name: Generate compile_commands.json
+        run: |
+          meson setup build -Denable_cuda=false -Denable_sycl=false
+      - name: Run clang-tidy on changed files
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            files=$(git diff --name-only \
+              origin/${{ github.base_ref }}...HEAD \
+              -- '*.c' '*.h' '*.cpp' '*.hpp' | tr '\n' ' ')
+          else
+            files=$(git ls-files '*.c' '*.h' '*.cpp' '*.hpp' \
+              | grep -v '^subprojects/' | tr '\n' ' ')
+          fi
+          [ -z "$files" ] && { echo "no C/C++ changes"; exit 0; }
+          echo "$files" | tr ' ' '\n' \
+            | parallel -j$(nproc) "clang-tidy -p build --quiet {} || touch /tmp/tidy.fail"
+          [ -f /tmp/tidy.fail ] && exit 1 || exit 0
+
+  cppcheck:
+    name: cppcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install
+        run: sudo apt-get update && sudo apt-get install -y cppcheck meson ninja-build nasm
+      - name: Generate compile_commands
+        run: meson setup build -Denable_cuda=false -Denable_sycl=false
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=all --inline-suppr \
+            --suppressions-list=.cppcheck-suppressions \
+            --project=build/compile_commands.json \
+            --error-exitcode=1 \
+            --xml --output-file=cppcheck-report.xml 2>&1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cppcheck-report
+          path: cppcheck-report.xml
+
+  python-lint:
+    name: ruff + mypy + black --check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install ruff black isort mypy
+      - run: ruff check python/ ai/ scripts/
+      - run: black --check python/ ai/ scripts/
+      - run: isort --check-only python/ ai/ scripts/
+      - run: mypy ai/ scripts/ || echo "mypy advisory only on first run"
+
+  shellcheck:
+    name: shellcheck + shfmt
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          curl -sSL https://github.com/mvdan/sh/releases/download/v3.9.0/shfmt_v3.9.0_linux_amd64 \
+            -o /usr/local/bin/shfmt && chmod +x /usr/local/bin/shfmt
+      - run: |
+          files=$(git ls-files '*.sh')
+          shellcheck $files
+          shfmt -d -i 2 -ci $files

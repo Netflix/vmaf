@@ -1,0 +1,78 @@
+# Custom semantic patterns for the vmaf fork. Standard rule packs (cwe-top-25,
+# cert-c, cert-cpp) are pulled in via `semgrep --config p/cert-c-strict
+# --config p/cwe-top-25` in CI; this file holds project-specific rules.
+
+rules:
+  - id: vmaf-no-double-precision-loss-in-reduction
+    pattern-either:
+      - pattern: |
+          float $ACC = 0;
+          ...
+          for (...) { ... $ACC += $X * $X * $X; ... }
+      - pattern: |
+          float $ACC = 0.0f;
+          ...
+          for (...) { ... $ACC += $X * $X * $X; ... }
+    message: >
+      Float accumulator for cubed values causes order-dependent drift between
+      scalar and SIMD paths. Use double for outer accumulators in reductions
+      (see commit 24c88a32 — float ADM csf_den_scale fix).
+    languages: [c, cpp]
+    severity: ERROR
+
+  - id: vmaf-no-printf-precision-below-17g
+    pattern-regex: '%\.[0-9]+(f|g)\b'
+    paths:
+      include:
+        - libvmaf/src/**
+        - libvmaf/tools/**
+    message: >
+      VMAF score output must be IEEE-754 round-trip lossless (%.17g). Lower
+      precision in user-facing output silently truncates score deltas (see D11).
+    languages: [generic]
+    severity: WARNING
+
+  - id: vmaf-no-system-rand
+    pattern-either:
+      - pattern: rand()
+      - pattern: srand($X)
+    message: Use a deterministic, seedable RNG (see CERT MSC30-C). VMAF must be reproducible.
+    languages: [c, cpp]
+    severity: ERROR
+
+  - id: vmaf-no-strcpy-strcat-sprintf
+    pattern-either:
+      - pattern: strcpy(...)
+      - pattern: strcat(...)
+      - pattern: sprintf(...)
+    message: Use strncpy/strncat/snprintf with explicit bound. (CERT STR31-C / Power-of-10 Rule 9.)
+    languages: [c, cpp]
+    severity: ERROR
+
+  - id: vmaf-no-malloc-without-check
+    pattern: |
+      $P = malloc(...);
+      $P->$F = ...;
+    message: Check malloc result before dereferencing. (Power-of-10 Rule 7.)
+    languages: [c]
+    severity: ERROR
+
+  - id: vmaf-no-tmp-path-hardcoded
+    pattern-either:
+      - pattern: '"/tmp/..."'
+      - pattern: 'fopen("/tmp/...", ...)'
+    message: Use mkstemp() or g_get_tmp_dir(); hardcoded /tmp paths are TOCTOU-prone.
+    languages: [c, cpp]
+    severity: WARNING
+
+  - id: vmaf-no-skip-hooks-in-scripts
+    pattern-either:
+      - pattern-regex: 'git\s+commit\s+.*--no-verify'
+      - pattern-regex: 'git\s+push\s+.*--no-verify'
+    paths:
+      include:
+        - "**/*.sh"
+        - .claude/**
+    message: Hooks may not be skipped from scripts. Surface failures, fix root cause.
+    languages: [generic]
+    severity: ERROR

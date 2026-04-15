@@ -1,0 +1,16 @@
+# Vendored upstream code we don't own.
+*:subprojects/*
+*:libvmaf/test/data/*
+*:build/*
+
+# False positives we've reviewed; revisit yearly.
+unusedFunction:libvmaf/src/feature/*_avx512.c
+unusedFunction:libvmaf/src/feature/*_avx2.c
+unusedFunction:libvmaf/src/feature/*_neon.c
+unusedFunction:libvmaf/src/cuda/*.cu
+unusedFunction:libvmaf/src/sycl/*.cpp
+
+# Public C API surface — naturally has functions only called by external linkers.
+unusedFunction:libvmaf/include/libvmaf/*.h
+missingIncludeSystem
+unmatchedSuppression

@@ -1,0 +1,75 @@
+# Centralizes Python linter/formatter config for the fork-added Python tooling
+# (ai/, scripts/) and the existing python/ tree. Upstream-authored python/
+# tests are formatted but not lint-failed (see [tool.ruff.lint.per-file-ignores]).
+
+[project]
+name = "vmaf-fork-tooling"
+version = "0.0.0"
+description = "Lusoris fork of Netflix/vmaf — Python tooling and scripts"
+requires-python = ">=3.10"
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.git
+  | build
+  | dist
+  | subprojects
+  | python/test/resource
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["vmaf", "ai"]
+skip_glob = ["build/*", "subprojects/*", "python/test/resource/*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["build", "subprojects", "python/test/resource"]
+
+[tool.ruff.lint]
+select = [
+  "E", "F", "W",   # pyflakes + pycodestyle
+  "I",             # isort
+  "B",             # bugbear
+  "C4",            # comprehensions
+  "PIE",
+  "RET",
+  "SIM",
+  "S",             # bandit (security)
+  "PL",            # pylint subset
+  "RUF",
+]
+ignore = [
+  "E501",          # line length handled by black
+  "PLR0913",       # too-many-arguments — VMAF feature kernels naturally take many
+  "S101",          # assert is fine in tests
+]
+
+[tool.ruff.lint.per-file-ignores]
+"python/test/**" = ["S", "PL", "B"]   # upstream test code, not our style
+"python/vmaf/**" = ["PL"]             # upstream library code
+
+[tool.pytest.ini_options]
+testpaths = ["python/test", "ai/tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "netflix_golden: the 3 Netflix CPU golden test pairs (D24) — must always pass",
+  "slow: tests that take more than 30s",
+  "gpu: requires a GPU backend (CUDA/SYCL)",
+]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+exclude = ["build/", "subprojects/", "python/test/resource/"]
+
+[[tool.mypy.overrides]]
+module = "vmaf.*"
+ignore_errors = true   # upstream library — not our type stubs to maintain

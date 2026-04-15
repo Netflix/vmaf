@@ -1,0 +1,36 @@
+---
+# Mirrors upstream Netflix/vmaf style so /sync-upstream doesn't churn formatting.
+BasedOnStyle: LLVM
+Language: Cpp
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: None
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBraces: Linux
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: false
+BreakStringLiterals: false
+ContinuationIndentWidth: 4
+DerivePointerAlignment: false
+PointerAlignment: Right
+ReflowComments: false
+SortIncludes: false
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+Standard: c++17
+IncludeBlocks: Preserve
+---
+Language: ObjC
+DisableFormat: true
+---
+Language: JavaScript
+DisableFormat: true

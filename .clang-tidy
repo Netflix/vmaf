@@ -1,0 +1,51 @@
+# See docs/principles.md §2 for the philosophy. We enable the families that map
+# directly to NASA Power-of-10, JPL-C-STD, CERT-C, and MISRA-C:2012 informative.
+# Vendored upstream code (subprojects/, libvmaf/test/data/) is excluded by
+# HeaderFilterRegex below.
+
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  concurrency-*,
+  misc-*,
+  modernize-use-nullptr,
+  modernize-use-override,
+  performance-*,
+  portability-*,
+  readability-braces-around-statements,
+  readability-isolate-declaration,
+  readability-misleading-indentation,
+  readability-non-const-parameter,
+  readability-redundant-control-flow,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -cert-err33-c,
+  -misc-include-cleaner,
+  -misc-no-recursion
+
+WarningsAsErrors: >
+  bugprone-use-after-move,
+  bugprone-integer-division,
+  bugprone-infinite-loop,
+  cert-flp30-c,
+  cert-msc30-c,
+  cert-msc50-cpp,
+  clang-analyzer-core.*,
+  clang-analyzer-deadcode.DeadStores,
+  clang-analyzer-security.*,
+  performance-no-int-to-ptr
+
+# Lint our code; skip vendored / generated.
+HeaderFilterRegex: '^(libvmaf/(include|src|tools|test)|python|ai)/.*\.(h|hpp|hxx|cuh)$'
+
+FormatStyle: file
+
+CheckOptions:
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: '2'
+  - key: bugprone-assert-side-effect.AssertMacros
+    value: 'assert,VMAF_ASSERT_DEBUG'
+  - key: cert-msc32-c.DisallowedSeedTypes
+    value: 'time_t,std::time_t'

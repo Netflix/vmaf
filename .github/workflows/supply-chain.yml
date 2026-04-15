@@ -1,0 +1,138 @@
+# Supply-chain provenance: SLSA L3 build, Sigstore keyless signing, SBOM.
+# Triggered when release-please publishes a tag (`v3.x.y-lusoris.N`).
+# release-please-config.json is added in Phase 3c — until then this workflow
+# is dormant on push but can be exercised via workflow_dispatch.
+
+name: supply-chain
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build provenance for"
+        required: true
+
+permissions:
+  contents: write          # upload release assets
+  id-token: write          # OIDC for Sigstore keyless + SLSA generator
+  attestations: write
+  packages: write
+
+jobs:
+  build-artifacts:
+    name: Build release artifacts (libvmaf.so, vmaf CLI, models)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          submodules: recursive
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build nasm pkg-config
+      - name: Build (release, optimized)
+        run: |
+          meson setup build --buildtype=release -Denable_avx512=true \
+            -Denable_cuda=false -Denable_sycl=false
+          meson compile -C build
+      - name: Stage artifacts
+        run: |
+          mkdir -p artifacts
+          cp build/libvmaf/libvmaf.so* artifacts/
+          cp build/tools/vmaf artifacts/
+          tar czf artifacts/models.tar.gz model/
+      - name: Compute SHA256 hashes (SLSA input)
+        id: hash
+        run: |
+          cd artifacts
+          echo "hashes=$(sha256sum * | base64 -w0)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: artifacts/
+          retention-days: 7
+
+  sbom:
+    name: Generate SBOM (SPDX + CycloneDX)
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: actions/download-artifact@v4
+        with: { name: release-artifacts, path: artifacts/ }
+      - uses: anchore/sbom-action@v0
+        with:
+          format: spdx-json
+          output-file: artifacts/sbom.spdx.json
+          path: .
+      - uses: anchore/sbom-action@v0
+        with:
+          format: cyclonedx-json
+          output-file: artifacts/sbom.cdx.json
+          path: .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: artifacts/sbom.*.json
+
+  sign:
+    name: Sigstore keyless sign (cosign)
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: release-artifacts, path: artifacts/ }
+      - uses: sigstore/cosign-installer@v3
+        with: { cosign-release: "v2.4.0" }
+      - name: Sign every artifact (keyless OIDC)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          cd artifacts
+          for f in *; do
+            cosign sign-blob --yes \
+              --output-signature "$f.sig" \
+              --output-certificate "$f.pem" \
+              "$f"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signatures
+          path: artifacts/*.{sig,pem}
+
+  slsa-provenance:
+    name: SLSA L3 provenance
+    needs: build-artifacts
+    permissions:
+      id-token: write
+      contents: write
+      actions: read
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: ${{ needs.build-artifacts.outputs.hashes }}
+      upload-assets: ${{ github.event_name == 'release' }}
+
+  attach-to-release:
+    name: Attach SBOM + signatures to GitHub Release
+    if: github.event_name == 'release'
+    needs: [build-artifacts, sbom, sign, slsa-provenance]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: dist/ }
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            dist/release-artifacts/*
+            dist/sbom/*
+            dist/signatures/*

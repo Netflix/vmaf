@@ -1,0 +1,99 @@
+# Security scans: SAST (semgrep + CodeQL), secret scanning, dependency review.
+
+name: security
+on:
+  push:
+    branches: [sycl, master]
+  pull_request:
+    branches: [sycl, master]
+  schedule:
+    - cron: "0 6 * * 1"   # weekly Mon 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write   # CodeQL needs this to upload SARIF
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    name: semgrep (CWE Top 25 + CERT-C + custom)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: returntocorp/semgrep:latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          semgrep scan \
+            --config=.semgrep.yml \
+            --config=p/cwe-top-25 \
+            --config=p/cert-c-strict \
+            --config=p/cert-cpp-strict \
+            --error \
+            --sarif --output=semgrep.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+
+  codeql-cpp:
+    name: CodeQL (C/C++)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+          queries: security-extended,security-and-quality
+      - name: Build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build nasm
+          meson setup build -Denable_cuda=false -Denable_sycl=false
+          meson compile -C build
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:cpp"
+
+  codeql-python:
+    name: CodeQL (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"
+
+  secret-scan:
+    name: gitleaks (secret scan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-review:
+    name: dependency-review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-3.0, AGPL-3.0

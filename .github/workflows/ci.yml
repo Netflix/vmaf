@@ -1,0 +1,107 @@
+# Top-level CI — orchestrates Netflix golden gate (D24 — must always pass) and
+# the cross-backend numerical-correctness check. The pre-existing `libvmaf.yml`
+# handles the cross-platform build matrix; this file owns the *correctness* gate.
+
+name: ci
+on:
+  push:
+    branches: [sycl, master]
+  pull_request:
+    branches: [sycl, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  # ===== Netflix golden-data gate (D24) =====
+  # The 3 Netflix CPU test pairs (1 normal + 2 checkerboard) are the source of
+  # truth for VMAF correctness. They MUST pass on every PR. No skips, no excuses.
+  netflix-golden:
+    name: "Netflix CPU golden tests (D24)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build nasm pkg-config \
+            libavcodec-dev libavformat-dev libavutil-dev libswscale-dev \
+            python3-pip
+          python3 -m pip install --user numpy scipy scikit-learn pandas
+
+      - name: Build (CPU, release)
+        run: |
+          meson setup build -Denable_cuda=false -Denable_sycl=false \
+            -Denable_avx512=true --buildtype=release
+          meson compile -C build
+
+      - name: Run Netflix golden test pairs
+        env:
+          PYTHONPATH: ${{ github.workspace }}/python
+        run: |
+          # The 3 pairs live in python/test/resource/yuv/ — see D24.
+          # Hardcoded CPU score assertions live in the python/test/*_test.py files.
+          python3 -m pytest python/test/quality_runner_test.py \
+                            python/test/feature_extractor_test.py \
+                            -v -m "not slow" --tb=short
+
+  # ===== Cross-backend ULP gate =====
+  # Skipped on CI runners without GPUs; runs only on self-hosted with cuda.
+  # On default runners it executes the CPU-only validation (sanity).
+  cross-backend:
+    name: "Cross-backend ULP diff (CPU sanity)"
+    runs-on: ubuntu-latest
+    needs: netflix-golden
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build nasm pkg-config python3-pip
+          python3 -m pip install --user numpy
+      - name: Build CPU
+        run: |
+          meson setup build -Denable_cuda=false -Denable_sycl=false --buildtype=release
+          meson compile -C build
+      - name: Compute CPU scores against snapshot
+        run: |
+          ./testdata/bench_all.sh --backend=cpu --snapshot-only --tolerance-ulp=2
+
+  # ===== Sanitizer build =====
+  sanitizers:
+    name: "ASan + UBSan + MSan"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, undefined, thread]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build nasm clang
+      - name: Build with ${{ matrix.sanitizer }} sanitizer
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          meson setup build -Db_sanitize=${{ matrix.sanitizer }} \
+            -Denable_cuda=false -Denable_sycl=false --buildtype=debug
+          meson compile -C build
+      - name: Run unit tests under sanitizer
+        run: meson test -C build --print-errorlogs --suite=unit
