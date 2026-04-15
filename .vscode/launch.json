@@ -1,0 +1,43 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug: vmaf CLI (Netflix normal pair)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/tools/vmaf",
+      "args": [
+        "-r", "${workspaceFolder}/python/test/resource/yuv/src01_hrc00_576x324.yuv",
+        "-d", "${workspaceFolder}/python/test/resource/yuv/src01_hrc01_576x324.yuv",
+        "--width", "576",
+        "--height", "324",
+        "-p", "420",
+        "-b", "8",
+        "-m", "version=vmaf_v0.6.1",
+        "--precision=17",
+        "-q"
+      ],
+      "cwd": "${workspaceFolder}",
+      "MIMode": "gdb",
+      "setupCommands": [
+        { "description": "enable pretty-printing", "text": "-enable-pretty-printing", "ignoreFailures": true }
+      ]
+    },
+    {
+      "name": "Debug: vmaf CLI (attach)",
+      "type": "cppdbg",
+      "request": "attach",
+      "program": "${workspaceFolder}/build/tools/vmaf",
+      "MIMode": "gdb"
+    },
+    {
+      "name": "Debug: test_feature",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/test/test_feature",
+      "args": [],
+      "cwd": "${workspaceFolder}/build",
+      "MIMode": "gdb"
+    }
+  ]
+}

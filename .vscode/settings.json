@@ -1,0 +1,93 @@
+{
+  "//": "Disable MS C/C++ IntelliSense — clangd is the source of truth.",
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "C_Cpp.autocomplete": "disabled",
+  "C_Cpp.errorSquiggles": "disabled",
+  "C_Cpp.formatting": "disabled",
+  "C_Cpp.autoAddFileAssociations": false,
+
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}/build",
+    "--background-index",
+    "--clang-tidy",
+    "--clang-tidy-checks=-*,bugprone-*,cert-*,clang-analyzer-*,performance-*,portability-*",
+    "--header-insertion=never",
+    "--completion-style=detailed",
+    "--function-arg-placeholders=true",
+    "--pch-storage=memory",
+    "-j=8"
+  ],
+  "clangd.fallbackFlags": [
+    "-std=c11",
+    "-I${workspaceFolder}/libvmaf/include",
+    "-I${workspaceFolder}/libvmaf/src"
+  ],
+  "clangd.onConfigChanged": "restart",
+  "clangd.checkUpdates": false,
+
+  "[c]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "[cuda-cpp]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+
+  "ruff.enable": true,
+  "ruff.organizeImports": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["python/test", "ai/tests"],
+
+  "editor.rulers": [100],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.eol": "\n",
+
+  "files.associations": {
+    "*.cu": "cuda-cpp",
+    "*.cuh": "cuda-cpp",
+    "meson.build": "meson",
+    "meson_options.txt": "meson"
+  },
+
+  "files.watcherExclude": {
+    "**/build/**": true,
+    "**/build-san/**": true,
+    "**/subprojects/*/**": true,
+    "**/.venv/**": true,
+    "**/node_modules/**": true
+  },
+  "search.exclude": {
+    "**/build": true,
+    "**/build-san": true,
+    "**/subprojects": true,
+    "**/.venv": true
+  },
+
+  "cmake.configureOnOpen": false,
+  "cmake.sourceDirectory": ""
+}

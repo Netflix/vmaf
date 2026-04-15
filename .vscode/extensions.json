@@ -1,0 +1,27 @@
+{
+  "//": "Recommendations VS Code surfaces to new contributors on first open.",
+  "recommendations": [
+    "llvm-vs-code-extensions.vscode-clangd",
+    "twxs.cmake",
+    "mesonbuild.mesonbuild",
+    "ms-python.python",
+    "ms-python.black-formatter",
+    "charliermarsh.ruff",
+    "nvidia.nsight-vscode-edition",
+    "intel-corporation.oneapi-environment-configurator",
+    "foxundermoon.shell-format",
+    "timonwong.shellcheck",
+    "redhat.vscode-yaml",
+    "tamasfe.even-better-toml",
+    "editorconfig.editorconfig",
+    "github.vscode-github-actions",
+    "github.vscode-pull-request-github",
+    "anthropic.claude-code",
+    "streetsidesoftware.code-spell-checker"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.cpptools",
+    "ms-vscode.cpptools-extension-pack",
+    "ms-vscode.cmake-tools"
+  ]
+}
