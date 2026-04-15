@@ -60,7 +60,7 @@ authored by hand once for each candidate backend). Expected templates:
 1. Validate `<name>` is a known backend (has a template) or fall back to generic.
 2. Check no `libvmaf/src/<name>/` exists yet; if it does, refuse.
 3. Copy template files, substituting `@NAME@`, `@NAME_UPPER@`, and `@COPYRIGHT@`
-   (= `Copyright 2024-2026 Lusoris and Claude (Anthropic)`) placeholders.
+   (= `Copyright 2026 Lusoris and Claude (Anthropic)`) placeholders.
 4. Apply patches to shared files (search-and-replace-based).
 5. Run `/build-vmaf --backend=<name>` to confirm the stub compiles.
 6. Run `build/test/test_<name>_smoke` to confirm init path works.

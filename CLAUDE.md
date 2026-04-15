@@ -161,5 +161,5 @@ Use `/prep-release` to dry-run locally before merging a release PR.
 6. **Every** commit message is Conventional Commits (`type(scope): subject`). Enforced
    by the `commit-msg` git hook.
 7. **Every** new `.c` / `.h` / `.cpp` / `.cu` starts with the license header. Use
-   `Copyright 2024-2026 Lusoris and Claude (Anthropic)` for wholly-new files, Netflix
+   `Copyright 2026 Lusoris and Claude (Anthropic)` for wholly-new files, Netflix
    header for upstream-touched files.

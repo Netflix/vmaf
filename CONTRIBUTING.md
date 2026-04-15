@@ -32,7 +32,7 @@ extractors, quality runners, models).
   `/cross-backend-diff` with `--tolerance-ulp=2`. If you need a larger
   tolerance, open a CODEOWNERS-approved exception.
 - **License headers** — every new C/C++/CUDA file starts with a header. Use
-  `Copyright 2024-2026 Lusoris and Claude (Anthropic)` for wholly-new files
+  `Copyright 2026 Lusoris and Claude (Anthropic)` for wholly-new files
   and the Netflix header for files touched in upstream.
 - **No `git push --force` to `master`**. No `--no-verify` skipping hooks.
   `master` is merge-via-squash-or-ff-only via branch protection.

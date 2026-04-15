@@ -130,5 +130,5 @@ tracking upstream version + a fork suffix. Signing is keyless via Sigstore / Git
 5. Every commit message is Conventional Commits (`type(scope): subject`) — enforced by
    the `commit-msg` git hook.
 6. Every new `.c` / `.h` / `.cpp` / `.cu` file starts with the applicable license
-   header (wholly-new fork files: `Copyright 2024-2026 Lusoris and Claude (Anthropic)`;
+   header (wholly-new fork files: `Copyright 2026 Lusoris and Claude (Anthropic)`;
    files touching Netflix code: Netflix header preserved).
