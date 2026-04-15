@@ -202,6 +202,7 @@ int main(int argc, char *argv[])
     FILE *file_dist = fopen(c.path_dist, "rb");
     if (!file_dist) {
         fprintf(stderr, "could not open file: %s\n", c.path_dist);
+        fclose(file_ref);
         return -1;
     }
 
@@ -214,6 +215,8 @@ int main(int argc, char *argv[])
     }
     if (err) {
         fprintf(stderr, "problem with reference file: %s\n", c.path_ref);
+        fclose(file_ref);
+        fclose(file_dist);
         return -1;
     }
 
@@ -226,6 +229,8 @@ int main(int argc, char *argv[])
     }
     if (err) {
         fprintf(stderr, "problem with distorted file: %s\n", c.path_dist);
+        video_input_close(&vid_ref);
+        fclose(file_dist);
         return -1;
     }
 
@@ -233,6 +238,8 @@ int main(int argc, char *argv[])
     if (err) {
         fprintf(stderr, "videos are incompatible, %d %s.\n",
                 err, err == 1 ? "problem" : "problems");
+        video_input_close(&vid_ref);
+        video_input_close(&vid_dist);
         return -1;
     }
 

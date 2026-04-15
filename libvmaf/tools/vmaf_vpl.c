@@ -17,6 +17,7 @@
  *    - libva + libva-drm + Level Zero
  */
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -435,10 +436,24 @@ int main(int argc, char *argv[])
             dis_file = argv[++i];
         else if (!strcmp(argv[i], "--model") && i + 1 < argc)
             model_name = argv[++i];
-        else if (!strcmp(argv[i], "--frames") && i + 1 < argc)
-            max_frames = atoi(argv[++i]);
-        else if (!strcmp(argv[i], "--device") && i + 1 < argc)
-            device_idx = atoi(argv[++i]);
+        else if (!strcmp(argv[i], "--frames") && i + 1 < argc) {
+            char *end = NULL;
+            const long v = strtol(argv[++i], &end, 10);
+            if (end == argv[i] || *end != '\0' || v < 0 || v > INT_MAX) {
+                fprintf(stderr, "Invalid --frames value: %s\n", argv[i]);
+                return 1;
+            }
+            max_frames = (int) v;
+        }
+        else if (!strcmp(argv[i], "--device") && i + 1 < argc) {
+            char *end = NULL;
+            const long v = strtol(argv[++i], &end, 10);
+            if (end == argv[i] || *end != '\0' || v < 0 || v > INT_MAX) {
+                fprintf(stderr, "Invalid --device value: %s\n", argv[i]);
+                return 1;
+            }
+            device_idx = (int) v;
+        }
         else if (!strcmp(argv[i], "--render-node") && i + 1 < argc)
             render_node = argv[++i];
         else if (!strcmp(argv[i], "--fallback"))

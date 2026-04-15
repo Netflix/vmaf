@@ -22,6 +22,10 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 
+/* Vendored Daala Y4M parser. sscanf return-code checks guard against malformed
+ * headers; per-check suppression would clutter the file. */
+// NOLINTBEGIN(bugprone-unchecked-string-to-number-conversion,cert-err34-c)
+
 #include "vidinput.h"
 #include <stdlib.h>
 #include <string.h>
@@ -836,3 +840,5 @@ OC_EXTERN const video_input_vtbl Y4M_INPUT_VTBL={
   (video_input_fetch_frame_func)y4m_input_fetch_frame,
   (video_input_close_func)y4m_input_close
 };
+
+// NOLINTEND(bugprone-unchecked-string-to-number-conversion,cert-err34-c)

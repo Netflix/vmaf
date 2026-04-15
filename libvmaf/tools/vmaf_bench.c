@@ -19,6 +19,7 @@
  *    vmaf_bench --device N                               Select GPU device
  */
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -664,28 +665,52 @@ int main(int argc, char *argv[])
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--frames") && i + 1 < argc) {
-            n_frames = (unsigned)atoi(argv[++i]);
+            char *end = NULL;
+            const long v = strtol(argv[++i], &end, 10);
+            if (end == argv[i] || *end != '\0' || v < 0 || v > INT_MAX) {
+                fprintf(stderr, "Invalid --frames value: %s\n", argv[i]);
+                return 1;
+            }
+            n_frames = (unsigned) v;
             if (n_frames < 2) n_frames = 2;
         } else if (!strcmp(argv[i], "--resolution") && i + 1 < argc) {
             i++;
-            unsigned rw = 0, rh = 0;
-            if (sscanf(argv[i], "%ux%u", &rw, &rh) == 2) {
-                for (int j = 0; j < n_resolutions; j++) {
-                    if (resolutions[j].width == rw &&
-                        resolutions[j].height == rh) {
-                        res_idx = j;
-                        break;
-                    }
-                }
-                if (res_idx < 0) {
-                    fprintf(stderr, "Unknown resolution %ux%u. "
-                            "Supported: 576x324, 640x480, 1280x720, "
-                            "1920x1080, 3840x2160\n", rw, rh);
-                    return 1;
+            char *end = NULL;
+            const long rw_l = strtol(argv[i], &end, 10);
+            if (end == argv[i] || *end != 'x' || rw_l <= 0 || rw_l > INT_MAX) {
+                fprintf(stderr, "Invalid --resolution: %s\n", argv[i]);
+                return 1;
+            }
+            char *p = end + 1;
+            char *end2 = NULL;
+            const long rh_l = strtol(p, &end2, 10);
+            if (end2 == p || *end2 != '\0' || rh_l <= 0 || rh_l > INT_MAX) {
+                fprintf(stderr, "Invalid --resolution: %s\n", argv[i]);
+                return 1;
+            }
+            const unsigned rw = (unsigned) rw_l;
+            const unsigned rh = (unsigned) rh_l;
+            for (int j = 0; j < n_resolutions; j++) {
+                if (resolutions[j].width == rw &&
+                    resolutions[j].height == rh) {
+                    res_idx = j;
+                    break;
                 }
             }
+            if (res_idx < 0) {
+                fprintf(stderr, "Unknown resolution %ux%u. "
+                        "Supported: 576x324, 640x480, 1280x720, "
+                        "1920x1080, 3840x2160\n", rw, rh);
+                return 1;
+            }
         } else if (!strcmp(argv[i], "--bpc") && i + 1 < argc) {
-            g_bpc = (unsigned)atoi(argv[++i]);
+            char *end = NULL;
+            const long v = strtol(argv[++i], &end, 10);
+            if (end == argv[i] || *end != '\0' || v < 0 || v > 16) {
+                fprintf(stderr, "Invalid --bpc value: %s\n", argv[i]);
+                return 1;
+            }
+            g_bpc = (unsigned) v;
             if (g_bpc != 8 && g_bpc != 10 && g_bpc != 12 && g_bpc != 16) {
                 fprintf(stderr, "Unsupported bpc: %u (use 8, 10, 12, or 16)\n", g_bpc);
                 return 1;
