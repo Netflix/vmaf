@@ -89,6 +89,10 @@ static Alias alias_map[] = {
         .alias = "integer_motion2",
     },
     {
+        .name = "VMAF_integer_feature_motion3_score",
+        .alias = "integer_motion3",
+    },
+    {
         .name = "VMAF_integer_feature_vif_scale0_score",
         .alias = "integer_vif_scale0",
     },
