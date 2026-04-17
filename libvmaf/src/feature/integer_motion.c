@@ -27,6 +27,7 @@
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "integer_motion.h"
+#include "log.h"
 #include "mem.h"
 #include "picture.h"
 
@@ -37,6 +38,11 @@
 #endif
 #endif
 
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+/* Default maximum value allowed for motion */
+#define DEFAULT_MOTION_MAX_VAL (10000.0)
+
 typedef struct MotionState {
     VmafPicture tmp;
     VmafPicture blur[3];
@@ -44,6 +50,7 @@ typedef struct MotionState {
     double score;
     bool debug;
     bool motion_force_zero;
+    double motion_max_val;
     void (*y_convolution)(void *src, uint16_t *dst, unsigned width,
                           unsigned height, ptrdiff_t src_stride,
                           ptrdiff_t dst_stride, unsigned inp_size_bits);
@@ -70,6 +77,17 @@ static const VmafOption options[] = {
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_max_val",
+        .help = "maximum value allowed; larger values will be clipped to this value",
+        .offset = offsetof(MotionState, motion_max_val),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_MOTION_MAX_VAL,
+        .min = 0.0,
+        .max = 10000.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "mmxv",
     },
     { 0 }
 };
@@ -172,7 +190,7 @@ edge_8(const uint8_t *src, int height, int stride, int i, int j)
         if (i_tap < 0)
             i_tap = -i_tap;
         else if (i_tap >= height)
-            i_tap = height - (i_tap - height + 1);
+            i_tap = height - (i_tap - height + 2);
 
         accum += filter[k] * src[i_tap * stride + j_tap];
     }
@@ -262,6 +280,13 @@ static int extract_force_zero(VmafFeatureExtractor *fex,
 
     if (!s->debug) return err;
 
+    err =
+        vmaf_feature_collector_append_with_dict(feature_collector,
+                s->feature_name_dict, "VMAF_integer_feature_motion3_score", 0.,
+                index);
+
+    if (!s->debug) return err;
+
     err = vmaf_feature_collector_append_with_dict(feature_collector,
             s->feature_name_dict, "VMAF_integer_feature_motion_score", 0.,
             index);
@@ -304,34 +329,24 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (err) goto fail;
 
     s->y_convolution = bpc == 8 ? y_convolution_8 : y_convolution_16;
-#if ARCH_X86
-    if (flags & VMAF_X86_CPU_FLAG_AVX2)
-        s->y_convolution = bpc == 8 ? y_convolution_8_avx2 : y_convolution_16_avx2;
-#if HAVE_AVX512
-    if (flags & VMAF_X86_CPU_FLAG_AVX512)
-        s->y_convolution = bpc == 8 ? y_convolution_8_avx512 : y_convolution_16_avx512;
-#endif
-#endif
-
     s->x_convolution = x_convolution_16;
+    s->sad = sad_c;
+
 #if ARCH_X86
-    if (flags & VMAF_X86_CPU_FLAG_AVX2)
+    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
+        s->y_convolution = bpc == 8 ? y_convolution_8_avx2 : y_convolution_16_avx2;
         s->x_convolution = x_convolution_16_avx2;
+        s->sad = sad_avx2;
+    }
 #if HAVE_AVX512
-    if (flags & VMAF_X86_CPU_FLAG_AVX512)
+    if (flags & VMAF_X86_CPU_FLAG_AVX512) {
+        s->y_convolution = bpc == 8 ? y_convolution_8_avx512 : y_convolution_16_avx512;
         s->x_convolution = x_convolution_16_avx512;
+        s->sad = sad_avx512;
+    }
 #endif
 #endif
 
-    s->sad = sad_c;
-#if ARCH_X86
-    if (flags & VMAF_X86_CPU_FLAG_AVX2)
-        s->sad = sad_avx2;
-#if HAVE_AVX512
-    if (flags & VMAF_X86_CPU_FLAG_AVX512)
-        s->sad = sad_avx512;
-#endif
-#endif
     s->score = 0.;
 
     return 0;
@@ -351,10 +366,17 @@ static int flush(VmafFeatureExtractor *fex,
     MotionState *s = fex->priv;
     int ret = 0;
 
-    if (s->index > 0) {
-        ret = vmaf_feature_collector_append(feature_collector,
+    if (s->index >= 1) {
+        double clipped = MIN(s->score, s->motion_max_val);
+        ret = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                             "VMAF_integer_feature_motion2_score",
-                                            s->score, s->index);
+                                            clipped, s->index);
+        ret |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                             "VMAF_integer_feature_motion3_score",
+                                             clipped, s->index);
+    } else {
+        ret |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                             "VMAF_integer_feature_motion3_score", 0, s->index);
     }
 
     return (ret < 0) ? ret : !ret;
@@ -379,9 +401,9 @@ static int extract(VmafFeatureExtractor *fex,
     (void) dist_pic_90;
 
     s->index = index;
-    const unsigned blur_idx_0 = (index + 0) % 3;
-    const unsigned blur_idx_1 = (index + 1) % 3;
-    const unsigned blur_idx_2 = (index + 2) % 3;
+    const unsigned blur_idx_0 = (index + 0) % 3;  // i (current frame)
+    const unsigned blur_idx_1 = (index + 1) % 3;  // i - 2
+    const unsigned blur_idx_2 = (index + 2) % 3;  // i - 1
 
     const ptrdiff_t y_src_stride =
         ref_pic->bpc == 8 ? ref_pic->stride[0] : ref_pic->stride[0] / 2;
@@ -394,12 +416,12 @@ static int extract(VmafFeatureExtractor *fex,
                      s->tmp.w[0], s->tmp.h[0], s->tmp.stride[0] / 2,
                      s->blur[blur_idx_0].stride[0] / 2);
 
-    if (index == 0) {
-        err = vmaf_feature_collector_append(feature_collector,
+    if (index < 1) {
+        err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                             "VMAF_integer_feature_motion2_score",
                                             0., index);
         if (s->debug) {
-            err |= vmaf_feature_collector_append(feature_collector,
+            err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                                  "VMAF_integer_feature_motion_score",
                                                  0., index);
         }
@@ -407,28 +429,39 @@ static int extract(VmafFeatureExtractor *fex,
     }
 
     uint64_t sad;
+    // compare frame i - 1 (blur_idx_2) with i (blur_idx_0)
     s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_0], &sad);
     double score = s->score =
         normalize_and_scale_sad(sad, ref_pic->w[0], ref_pic->h[0]);
 
     if (s->debug) {
-        err |= vmaf_feature_collector_append(feature_collector,
+        err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                              "VMAF_integer_feature_motion_score",
-                                             score, index);
+                                             MIN(score, s->motion_max_val), index);
     }
     if (err) return err;
 
-    if (index == 1)
-        return 0;
+    if (index == 1) {
+        err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                             "VMAF_integer_feature_motion3_score",
+                                             MIN(score, s->motion_max_val), 0);
+        return err;
+    }
 
     uint64_t sad2;
+    // compare frame i - 1 (blur_idx_2) with i - 2 (blur_idx_1)
     s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_1], &sad2);
     double score2 = normalize_and_scale_sad(sad2, ref_pic->w[0], ref_pic->h[0]);
 
     score2 = score2 < score ? score2 : score;
-    err = vmaf_feature_collector_append(feature_collector,
+
+    double clipped2 = MIN(score2, s->motion_max_val);
+    err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                         "VMAF_integer_feature_motion2_score",
-                                        score2, index - 1);
+                                        clipped2, index - 1);
+    err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                         "VMAF_integer_feature_motion3_score",
+                                         clipped2, index - 1);
     return err;
 }
 
@@ -446,7 +479,7 @@ static int close(VmafFeatureExtractor *fex)
 }
 
 static const char *provided_features[] = {
-    "VMAF_integer_feature_motion_score", "VMAF_integer_feature_motion2_score",
+    "VMAF_integer_feature_motion_score", "VMAF_integer_feature_motion2_score", "VMAF_integer_feature_motion3_score",
     NULL
 };
 
