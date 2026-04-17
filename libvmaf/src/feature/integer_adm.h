@@ -81,6 +81,44 @@ typedef struct AdmBuffer {
 #define ADM_BORDER_FACTOR (0.1)
 #endif // !ADM_BORDER_FACTOR
 
+/* noise multiplicative weight */
+#ifndef DEFAULT_ADM_NOISE_WEIGHT
+#define DEFAULT_ADM_NOISE_WEIGHT (0.03125)
+#endif // !DEFAULT_ADM_NOISE_WEIGHT
+
+/* CSF scale factor */
+#ifndef DEFAULT_ADM_CSF_SCALE
+#define DEFAULT_ADM_CSF_SCALE (1.0)
+#endif // !DEFAULT_ADM_CSF_SCALE
+
+/* CSF diagonal scale factor */
+#ifndef DEFAULT_ADM_CSF_DIAG_SCALE
+#define DEFAULT_ADM_CSF_DIAG_SCALE (1.0)
+#endif // !DEFAULT_ADM_CSF_DIAG_SCALE
+
+/* Default minimum value allowed for the feature */
+#ifndef DEFAULT_ADM_MIN_VAL
+#define DEFAULT_ADM_MIN_VAL (0.0)
+#endif // !DEFAULT_ADM_MIN_VAL
+
+/* Contrast sensitivity function */
+enum ADM_CSF_MODE {
+    ADM_CSF_MODE_WATSON97 = 0,
+    ADM_CSF_MODE_BARTEN = 1,
+    ADM_CSF_MODE_BARTEN_WATSON_BLEND = 2,
+    ADM_CSF_MODE_BARTEN_WATSON_BLEND_MAE = 3,
+};
+
+/* Default contrast sensitivity function */
+#ifndef DEFAULT_ADM_CSF_MODE
+#define DEFAULT_ADM_CSF_MODE (ADM_CSF_MODE_WATSON97)
+#endif // !DEFAULT_ADM_CSF_MODE
+
+/* Default luminance level (in cd/m2) for contrast sensitivity function calculation */
+#ifndef DEFAULT_ADM_CSF_LUM
+#define DEFAULT_ADM_CSF_LUM (100.0)
+#endif // !DEFAULT_ADM_CSF_LUM
+
 #define DIVS(n, d) ((n) / (d))
 
 static const int16_t dwt2_db2_coeffs_lo[10] = {15826, 27411, 7345, -4240};
