@@ -258,7 +258,7 @@ static char *test_decimate_generic()
 static char *test_filter_mode()
 {
     VmafPicture filtered_image, image;
-    unsigned w = 5, h = 5;
+    enum { w = 5, h = 5 };
     uint16_t buffer[3 * w];
 
     int err = 0;
