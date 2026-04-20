@@ -429,7 +429,7 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf,
                 fcoeff = f[fi];
 
                 ii = i - fwidth / 2 + fi;
-                ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 1 : ii);
+                ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 2 : ii);
 
                 imgcoeff = src[ii * src_px_stride + j];
 
@@ -497,7 +497,7 @@ void vif_filter1d_sq_s(const float *f, const float *src, float *dst, float *tmpb
                 fcoeff = f[fi];
 
                 ii = i - fwidth / 2 + fi;
-                ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 1 : ii);
+                ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 2 : ii);
 
                 imgcoeff = src[ii * src_px_stride + j];
 
@@ -563,7 +563,7 @@ void vif_filter1d_xy_s(const float *f, const float *src1, const float *src2, flo
                 fcoeff = f[fi];
 
                 ii = i - fwidth / 2 + fi;
-                ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 1 : ii);
+                ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 2 : ii);
 
                 imgcoeff1 = src1[ii * src1_px_stride + j];
                 imgcoeff2 = src2[ii * src2_px_stride + j];
