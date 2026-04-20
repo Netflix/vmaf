@@ -281,10 +281,9 @@ float vif_sum_s(const float *x, int w, int h, int stride)
 
 void vif_statistic_s(const float *mu1, const float *mu2, const float *xx_filt, const float *yy_filt, const float *xy_filt, float *num, float *den,
     int w, int h, int mu1_stride, int mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride,
-    double vif_enhn_gain_limit)
+    double vif_enhn_gain_limit, double vif_sigma_nsq)
 {
-    static const float sigma_nsq = 2;
-    static const float sigma_max_inv = 4.0 / (255.0*255.0);
+    const float sigma_max_inv = powf(vif_sigma_nsq, 2.0f) / (255.0*255.0);
 
     int mu1_px_stride = mu1_stride / sizeof(float);
     int mu2_px_stride = mu2_stride / sizeof(float);
@@ -326,12 +325,12 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *xx_filt, c
 
             /* ==== vif_stat_mode = 'matching_c' ==== */
 
-            /* if (sigma1_sq < sigma_nsq) {
+            /* if (sigma1_sq < vif_sigma_nsq) {
                 num_val = 1.0 - sigma2_sq * sigma_max_inv;
                 den_val = 1.0;
             }
             else {
-                num_log_num = (sigma2_sq + sigma_nsq) * sigma1_sq;
+                num_log_num = (sigma2_sq + vif_sigma_nsq) * sigma1_sq;
                 if (sigma12 < 0)
                 {
                     num_val = 0.0;
@@ -341,7 +340,7 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *xx_filt, c
                     num_log_den = num_log_num - sigma12 * sigma12;
                     num_val = log2f(num_log_num / num_log_den);
                 }
-                den_val = log2f(1.0f + sigma1_sq / sigma_nsq);
+                den_val = log2f(1.0f + sigma1_sq / vif_sigma_nsq);
             } */
 
             /* ==== vif_stat_mode = 'matching_matlab' ==== */
@@ -371,14 +370,14 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *xx_filt, c
 
             g = MIN(g, vif_enhn_gain_limit_f);
 
-            num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + sigma_nsq));
-            den_val = log2f(1.0f + (sigma1_sq) / (sigma_nsq));
+            num_val = log2f(1.0f + (g * g * sigma1_sq) / (sv_sq + vif_sigma_nsq));
+            den_val = log2f(1.0f + (sigma1_sq) / (vif_sigma_nsq));
 
             if (sigma12 < 0.0f) {
                 num_val = 0.0f;
             }
 
-            if (sigma1_sq < sigma_nsq) {
+            if (sigma1_sq < vif_sigma_nsq) {
                 num_val = 1.0f - sigma2_sq * sigma_max_inv;
                 den_val = 1.0f;
             }
