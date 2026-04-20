@@ -1013,7 +1013,9 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
 
     if (vmaf->prev_ref.ref)
         vmaf_picture_unref(&vmaf->prev_ref);
-    vmaf_picture_ref(&vmaf->prev_ref, ref);
+    
+    if (ref && ref->ref)
+        vmaf_picture_ref(&vmaf->prev_ref, ref);
 #ifdef HAVE_CUDA
     if (ref_host.priv)
         err |= vmaf_picture_unref(&ref_host);
