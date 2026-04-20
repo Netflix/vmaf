@@ -20,7 +20,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _MSC_VER
+#include <windows.h>
+#define usleep(x) Sleep((x) / 1000)
+#else
 #include <unistd.h>
+#endif
 
 #include "test.h"
 

@@ -43,6 +43,10 @@ SOFTWARE.
 */
 
 #include <errno.h>
+#ifdef _MSC_VER
+// MSVC needs this to get M_PI defined in math.h
+#define _USE_MATH_DEFINES
+#endif
 #include <math.h>
 #include <stddef.h>
 #include <string.h>

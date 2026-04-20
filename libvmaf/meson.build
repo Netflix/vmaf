@@ -29,6 +29,13 @@ elif host_machine.system() == 'darwin'
 endif
 
 # Header checks
+if cc.has_header('malloc.h', args: test_args)
+    add_project_arguments('-DHAVE_MALLOC_H', language: ['c', 'cpp'])
+endif
+if cc.has_header('alloca.h', args: test_args)
+    add_project_arguments('-DHAVE_ALLOCA_H', language: ['c', 'cpp'])
+endif
+
 stdatomic_dependency = []
 if not cc.check_header('stdatomic.h')
     if cc.get_id() == 'msvc'
@@ -44,6 +51,37 @@ if not cc.check_header('stdatomic.h')
     else
         error('Atomics not supported')
     endif
+endif
+
+builtin_clz_dependency = []
+if cc.get_id() == 'msvc'
+    builtin_clz_dependency = declare_dependency(
+        include_directories : include_directories('src/compat/msvc'),
+        compile_args : ['-DHAVE_BUILTIN_CLZ_COMPAT'],
+    )
+endif
+
+if cc.check_header('getopt.h', args: test_args)
+    getopt_dependency = declare_dependency(compile_args : '-DHAVE_GETOPT_H')
+else
+    getopt_dependency = declare_dependency(
+        compile_args : '-DHAVE_GETOPT_H',
+        sources: ['src/compat/getopt/getopt.c'],
+        include_directories : include_directories('src/compat/getopt'),
+    )
+endif
+
+pthreadwin32_inc = []
+if cc.get_id() == 'msvc'
+    cmake = import('cmake')
+
+    pthreadwin32_opts = cmake.subproject_options()
+    pthreadwin32_opts.add_cmake_defines({
+        'BUILD_SHARED_LIBS': false,
+    })
+    pthreadwin32_proj = cmake.subproject('pthread-win32', options: pthreadwin32_opts)
+    pthreadwin32_lib = pthreadwin32_proj.dependency('pthreadVC3')
+    pthreadwin32_inc = include_directories('./subprojects/pthread-win32')
 endif
 
 subdir('include')

@@ -6,7 +6,7 @@ test_inc = include_directories('.')
 
 test_context = executable('test_context',
     ['test.c', 'test_context.c'],
-    include_directories : [libvmaf_inc, test_inc],
+    include_directories : [libvmaf_inc, test_inc, pthreadwin32_inc],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     dependencies:[stdatomic_dependency, cuda_dependency],
 )
@@ -26,7 +26,7 @@ test_feature_collector = executable('test_feature_collector',
     ['test.c', 'test_feature_collector.c', '../src/log.c', '../src/predict.c', '../src/metadata_handler.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/feature/'), include_directories('../src')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: cuda_dependency,
+    dependencies: [cuda_dependency, stdatomic_dependency, thread_lib],
     objects : libsvm_static_lib.extract_all_objects(recursive: true),
 )
 
@@ -38,7 +38,7 @@ test_log = executable('test_log',
 test_thread_pool = executable('test_thread_pool',
     ['test.c', 'test_thread_pool.c', '../src/thread_pool.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    dependencies : thread_lib,
+    dependencies : [thread_lib, getopt_dependency]
 )
 
 test_model = executable('test_model',
@@ -46,7 +46,7 @@ test_model = executable('test_model',
     include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     c_args : [vmaf_cflags_common, '-DJSON_MODEL_PATH="'+join_paths(meson.project_source_root(), '../model/')+'"'],
-    dependencies : [thread_lib, cuda_dependency],
+    dependencies : [thread_lib, cuda_dependency, stdatomic_dependency],
     objects : libsvm_static_lib.extract_all_objects(recursive: true),
 )
 
@@ -57,7 +57,7 @@ test_predict = executable('test_predict',
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     c_args : vmaf_cflags_common,
-    dependencies : [thread_lib, cuda_dependency],
+    dependencies : [thread_lib, cuda_dependency, stdatomic_dependency],
     objects : libsvm_static_lib.extract_all_objects(recursive: true),
 )
 
@@ -66,7 +66,9 @@ test_feature_extractor = executable('test_feature_extractor',
      '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c',
      '../src/metadata_handler.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
+    c_args : vmaf_cflags_common,
+    cpp_args : vmaf_cflags_common,
+    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency, getopt_dependency],
     objects : [
       common_cuda_objects,
       platform_specific_cpu_objects,
@@ -90,6 +92,7 @@ test_cpu = executable('test_cpu',
 test_ref = executable('test_ref',
     ['test.c', 'test_ref.c', '../src/ref.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    dependencies : stdatomic_dependency,
 )
 
 test_feature = executable('test_feature',
@@ -100,15 +103,16 @@ test_feature = executable('test_feature',
 test_ciede = executable('test_ciede',
     ['test.c', 'test_ciede.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: cuda_dependency
+    dependencies: [thread_lib, cuda_dependency, stdatomic_dependency]
 )
 
 test_cambi = executable('test_cambi',
     ['test.c', 'test_cambi.c', '../src/picture.c', '../src/mem.c', '../src/ref.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: cuda_dependency
+    dependencies: [thread_lib, cuda_dependency, stdatomic_dependency]
 )
 
 test_luminance_tools = executable('test_luminance_tools',
@@ -122,11 +126,13 @@ test_cli_parse = executable('test_cli_parse',
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/'), include_directories('../tools/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     c_args : [compat_cflags],
+    dependencies : getopt_dependency
 )
 
 test_psnr = executable('test_psnr',
     ['test.c', 'test_psnr.c', '../src/picture.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    dependencies: [thread_lib, stdatomic_dependency],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
 )
 
@@ -136,7 +142,7 @@ test_framesync = executable('test_framesync',
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     c_args : vmaf_cflags_common,
     cpp_args : vmaf_cflags_common,
-    dependencies : thread_lib,
+    dependencies : [thread_lib, stdatomic_dependency],
 )
 
 if get_option('enable_cuda')

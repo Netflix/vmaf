@@ -19,6 +19,9 @@ jobs:
           - os: macos-latest
             CC: clang
             CXX: clang++
+          - os: windows-latest
+            CC: cl
+            CXX: cl
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
@@ -29,6 +32,7 @@ jobs:
         with:
           python-version: 3.11
       - name: Install meson and ninja
+        if: matrix.os != 'windows-latest'
         run: |
           python -m pip install --upgrade pip
           pip install meson
@@ -41,20 +45,60 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           brew install -q ninja nasm
+      - name: Install dependencies (windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install -y nasm pkgconfiglite
+          pip install meson ninja
+      - name: Setup MSVC
+        if: matrix.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
       - uses: actions/checkout@v6
-      - name: Build vmaf
+      - name: Build vmaf (unix)
+        if: matrix.os != 'windows-latest'
         run: |
           meson setup libvmaf libvmaf/build --buildtype release
           sudo ninja -vC libvmaf/build install
-      - name: Prepare FFmpeg
+      - name: Build vmaf (windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          meson setup libvmaf libvmaf/build --buildtype release --default-library static --prefix "C:/vmaf"
+          meson install -C libvmaf/build
+      - name: Prepare static libs for MSVC
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Rename-Item -Path C:\vmaf\lib\libpthreadVC3.a  -NewName C:\vmaf\lib\pthreadVC3.lib
+          Rename-Item -Path C:\vmaf\lib\libpthreadVCE3.a -NewName C:\vmaf\lib\pthreadVCE3.lib
+          Rename-Item -Path C:\vmaf\lib\libpthreadVSE3.a -NewName C:\vmaf\lib\pthreadVSE3.lib
+          Rename-Item -Path C:\vmaf\lib\libvmaf.a        -NewName C:\vmaf\lib\vmaf.lib
+          echo "INCLUDE=C:/vmaf/include;$env:INCLUDE" >> $env:GITHUB_ENV
+          echo "LIB=C:/vmaf/lib;$env:LIB" >> $env:GITHUB_ENV
+          echo "PATH=C:/vmaf/bin;$env:PATH" >> $env:GITHUB_ENV
+          echo "PKG_CONFIG_PATH=C:/vmaf/lib/pkgconfig;$env:PKG_CONFIG_PATH" >> $env:GITHUB_ENV
+      - name: Prepare FFmpeg (unix)
+        if: matrix.os != 'windows-latest'
         run: |
           git clone -q --branch master --depth=1 "https://github.com/FFmpeg/FFmpeg" ffmpeg
           cd ffmpeg
           ./configure --enable-version3 --enable-libvmaf --disable-indevs --cc="$CC" --cxx="$CXX" || { less ffbuild/config.log; exit 1; }
-      - name: Make FFmpeg
+      - name: Prepare FFmpeg (windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          git clone --depth=1 https://gitlab.freedesktop.org/gstreamer/meson-ports/ffmpeg.git ffmpeg
+          cd ffmpeg
+          meson setup build --buildtype release -Dversion3=enabled -Dindevs=disabled -Dlibvmaf=enabled -Dprograms=enabled --prefix "C:/ffmpeg"
+      - name: Make FFmpeg (unix)
+        if: matrix.os != 'windows-latest'
         run: |
           sudo make -C ffmpeg --quiet -j $(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu) install
-      - name: Test ffmpeg
+      - name: Make FFmpeg (windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          meson install -C ffmpeg/build
+      - name: Test ffmpeg (unix)
+        if: matrix.os != 'windows-latest'
         run: |
           curl "https://gist.githubusercontent.com/1480c1/0c4575da638ef6e8203feffd0597de16/raw/akiyo_cif.tar.xz.base64" | base64 -d | tar xJ
           vmaf_score=$(ffmpeg -hide_banner -nostats -i encoded.mkv -i orig.mkv -filter_complex libvmaf -f null - 2>&1 | grep 'VMAF score' | tr ' ' '\n' | tail -n1)
@@ -66,4 +110,22 @@ jobs:
             echo "vmaf score matches"
             exit 0
           fi
+        continue-on-error: true
+      - name: Test ffmpeg (MSVC)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          curl "https://gist.githubusercontent.com/1480c1/0c4575da638ef6e8203feffd0597de16/raw/akiyo_cif.tar.xz.base64" | base64 -d | tar xJ
+          $ffmpeg = "C:/ffmpeg/bin/ffmpeg.exe"
+          $vmaf_score = (& $ffmpeg -hide_banner -nostats -i encoded.mkv -i orig.mkv -filter_complex libvmaf -f null - 2>&1 |
+                         Select-String "VMAF score" |
+                         ForEach-Object { $_.ToString().Split()[-1] }).Trim()
+          echo "VMAF score: $vmaf_score"
+          if ($vmaf_score -ne "93.663925") {
+            echo "vmaf score doesn't match 93.663925"
+            exit 1
+          } else {
+            echo "vmaf score matches"
+            exit 0
+          }
         continue-on-error: true

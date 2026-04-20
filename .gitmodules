@@ -1,0 +1,3 @@
+[submodule "GerHobbelt-pthread-win32"]
+	path = libvmaf/subprojects/pthread-win32
+	url = https://github.com/GerHobbelt/pthread-win32
