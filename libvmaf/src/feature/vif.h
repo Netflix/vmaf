@@ -18,4 +18,4 @@
 
 int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride,
         double *score, double *score_num, double *score_den, double *scores,
-        double vif_enhn_gain_limit, double vif_kernelscale);
+        double vif_enhn_gain_limit, double vif_kernelscale, double vif_sigma_nsq);

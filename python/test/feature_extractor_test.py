@@ -124,6 +124,28 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_vif2_score'], 1.0, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm3_score'], 1.0, places=4)
 
+    def test_run_vmaf_fextractor_with_vif_sigma_nsq(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        self.fextractor = VmafFeatureExtractor(
+            [asset],
+            None, fifo_mode=True,
+            result_store=None,
+            optional_dict={'vif_sigma_nsq': 1.5}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        # scale0 is reported directly from float_vif with the snsq suffix;
+        # scales 1..3 are derived in _post_process_result from num/den and
+        # land on their usual non-suffixed keys but carry the snsq=1.5 values.
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_snsq_1.5_score'], 0.34616335416666666, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale1_score'], 0.7433470833333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale2_score'], 0.8450055416666666, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale3_score'], 0.9031788124999999, places=4)
+
     def test_run_vmaf_integer_fextractor(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()

@@ -44,7 +44,7 @@ void apply_frame_differencing(const float *current_frame, const float *previous_
 
 int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride,
         double *score, double *score_num, double *score_den, double *scores,
-        double vif_enhn_gain_limit, double vif_kernelscale)
+        double vif_enhn_gain_limit, double vif_kernelscale, double vif_sigma_nsq)
 {
     float *data_buf = 0;
     char *data_top;
@@ -204,7 +204,7 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 
         float num, den;
         vif_statistic_s(mu1, mu2, ref_sq_filt, dis_sq_filt, ref_dis_filt, &num, &den,
-            w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, vif_enhn_gain_limit);
+            w, h, buf_stride, buf_stride, buf_stride, buf_stride, buf_stride, vif_enhn_gain_limit, vif_sigma_nsq);
         mu1_adj = ADJUST(mu1);
         mu2_adj = ADJUST(mu2);
 
@@ -396,7 +396,7 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
             if ((ret = compute_vif(ref_diff_buf, dis_diff_buf, w, h, stride, stride,
                     &score, &score_num, &score_den, scores,
                     DEFAULT_VIF_ENHN_GAIN_LIMIT,
-                    DEFAULT_VIF_KERNELSCALE)))
+                    DEFAULT_VIF_KERNELSCALE, 2.0)))
             {
                 printf("error: compute_vifdiff failed.\n");
                 fflush(stdout);
