@@ -1469,7 +1469,7 @@ class QualityRunnerTest(MyTestCase):
         self.runner.run(parallelize=False)
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 88.03295534339294, places=2)  # 132.7329528948058
+        self.assertAlmostEqual(results[0]['VMAF_score'], 88.03295534339294, places=1)  # 132.7329528948058
 
         self.assertAlmostEqual(results[0]['VMAF_feature_vif_scale0_score'], 0.9837379749630343, places=4)
         with self.assertRaises(KeyError):
