@@ -19,6 +19,18 @@ static inline void div_lookup_generator() {
     }
 }
 
+/* Shared CSF recipe for the integer ADM kernels: view geometry, CSF mode,
+ * CSF scales, and optional per-scale factor overrides. */
+typedef struct AdmCsfParams {
+    double adm_norm_view_dist;
+    int adm_ref_display_height;
+    int adm_csf_mode;
+    double adm_csf_scale;
+    double adm_csf_diag_scale;
+    double adm_f1s0, adm_f1s1, adm_f1s2, adm_f1s3;
+    double adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3;
+} AdmCsfParams;
+
 typedef struct adm_dwt_band_t {
     int16_t *band_a; /* Low-pass V + low-pass H. */
     int16_t *band_v; /* Low-pass V + high-pass H. */
