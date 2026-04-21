@@ -3083,7 +3083,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         if (!(w % 8)) s->dwt2_8 = adm_dwt2_8_avx2;
         s->dwt2_16 = adm_dwt2_16_avx2;
         s->adm_decouple = adm_decouple_avx2;
-        s->adm_decouple_s123 = adm_decouple_s123_avx2;
+        //s->adm_decouple_s123 = adm_decouple_s123_avx2;
         s->adm_csf = adm_csf_avx2;
         s->i4_adm_csf = i4_adm_csf_avx2;
         s->adm_csf_den_scale = adm_csf_den_scale_avx2;
@@ -3097,7 +3097,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->dwt2_8 = adm_dwt2_8_avx512;
         s->dwt2_16 = adm_dwt2_16_avx512;
         s->adm_decouple = adm_decouple_avx512;
-        s->adm_decouple_s123 = adm_decouple_s123_avx512;
+        //s->adm_decouple_s123 = adm_decouple_s123_avx512;
         s->adm_csf = adm_csf_avx512;
         s->i4_adm_csf = i4_adm_csf_avx512;
         s->adm_csf_den_scale = adm_csf_den_scale_avx512;
