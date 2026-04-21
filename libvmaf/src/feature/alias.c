@@ -112,6 +112,22 @@ static Alias alias_map[] = {
         .name = "Cambi_feature_cambi_score",
         .alias = "cambi",
     },
+    {
+        .name = "Speed_chroma_feature_speed_chroma_u_score",
+        .alias = "speed_chroma_u",
+    },
+    {
+        .name = "Speed_chroma_feature_speed_chroma_v_score",
+        .alias = "speed_chroma_v",
+    },
+    {
+        .name = "Speed_chroma_feature_speed_chroma_uv_score",
+        .alias = "speed_chroma_uv",
+    },
+    {
+        .name = "Speed_temporal_feature_speed_temporal_score",
+        .alias = "speed_temporal",
+    },
 };
 
 const char *vmaf_feature_name_alias(const char *feature_name)
