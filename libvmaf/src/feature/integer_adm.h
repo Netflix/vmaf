@@ -60,10 +60,6 @@ typedef struct AdmBuffer {
 #define NUM_BUFS_ADM 30
 #endif
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338327
-#endif // M_PI
-
 /* Enhancement gain imposed on adm, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #ifndef DEFAULT_ADM_ENHN_GAIN_LIMIT
 #define DEFAULT_ADM_ENHN_GAIN_LIMIT (100.0)
