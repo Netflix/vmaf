@@ -44,7 +44,7 @@ void apply_frame_differencing(const float *current_frame, const float *previous_
 
 int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride,
         double *score, double *score_num, double *score_den, double *scores,
-        double vif_enhn_gain_limit, double vif_kernelscale, double vif_sigma_nsq)
+        double vif_enhn_gain_limit, double vif_kernelscale, int vif_skip_scale0, double vif_sigma_nsq)
 {
     float *data_buf = 0;
     char *data_top;
@@ -144,7 +144,14 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
     ref_dis_filt = (float *)data_top; data_top += buf_sz_one;
     tmpbuf = (float *)data_top; data_top += buf_sz_one;
 
-    for (scale = 0; scale < 4; ++scale)
+    unsigned scale_start = 0;
+    if (vif_skip_scale0) {
+        scale_start = 1;
+        scores[0] = 0.0;
+        scores[1] = 0.0;
+    }
+
+    for (scale = scale_start; scale < 4; ++scale)
     {
 #ifdef VIF_OPT_DEBUG_DUMP
         char pathbuf[256];
@@ -250,7 +257,7 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 
     *score_num = 0.0;
     *score_den = 0.0;
-    for (scale = 0; scale < 4; ++scale)
+    for (scale = scale_start; scale < 4; ++scale)
     {
         *score_num += scores[2*scale];
         *score_den += scores[2*scale+1];
@@ -396,7 +403,7 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
             if ((ret = compute_vif(ref_diff_buf, dis_diff_buf, w, h, stride, stride,
                     &score, &score_num, &score_den, scores,
                     DEFAULT_VIF_ENHN_GAIN_LIMIT,
-                    DEFAULT_VIF_KERNELSCALE, 2.0)))
+                    DEFAULT_VIF_KERNELSCALE, 0, 2.0)))
             {
                 printf("error: compute_vifdiff failed.\n");
                 fflush(stdout);
