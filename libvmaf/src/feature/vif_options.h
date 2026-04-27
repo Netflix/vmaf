@@ -40,4 +40,10 @@
  * standard deviation by 2 and expand the kernel length accordingly. */
 #define DEFAULT_VIF_KERNELSCALE (1.0)
 
+/* Scaling factor for the frame, where 2.0 means multiplying the frame width and height by 2 */
+#define DEFAULT_VIF_PRESCALE (1.0)
+
+/* Scaling method for the frame, supported options: [nearest, bilinear, bicubic, lanczos4] */
+#define DEFAULT_VIF_PRESCALE_METHOD ("nearest")
+
 #endif /* VIF_OPTIONS_H_ */
