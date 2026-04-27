@@ -31,7 +31,7 @@
 #include "mkdirp.h"
 #include "picture.h"
 
-#if ARCH_X86
+#if ARCH_X86_64
 #include "x86/cambi_avx2.h"
 #endif
 
@@ -583,7 +583,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->dec_range_callback = decrement_range;
     s->derivative_callback = get_derivative_data_for_row;
 
-#if ARCH_X86
+#if ARCH_X86_64
     unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {
         s->inc_range_callback = cambi_increment_range_avx2;

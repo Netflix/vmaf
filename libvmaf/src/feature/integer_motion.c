@@ -31,7 +31,7 @@
 #include "mem.h"
 #include "picture.h"
 
-#if ARCH_X86
+#if ARCH_X86_64
 #include "x86/motion_avx2.h"
 #if HAVE_AVX512
 #include "x86/motion_avx512.h"
@@ -308,7 +308,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     MotionState *s = fex->priv;
     int err = 0;
+#if ARCH_X86_64
     unsigned flags = vmaf_get_cpu_flags();
+#endif
 
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features,
@@ -332,7 +334,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->x_convolution = x_convolution_16;
     s->sad = sad_c;
 
-#if ARCH_X86
+#if ARCH_X86_64
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {
         s->y_convolution = bpc == 8 ? y_convolution_8_avx2 : y_convolution_16_avx2;
         s->x_convolution = x_convolution_16_avx2;

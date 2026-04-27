@@ -25,7 +25,7 @@
 #include "integer_adm.h"
 #include "log.h"
 
-#if ARCH_X86
+#if ARCH_X86_64
 #include "x86/adm_avx2.h"
 #if HAVE_AVX512
 #include "x86/adm_avx512.h"
@@ -3077,7 +3077,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->i4_adm_cm = i4_adm_cm;
     s->adm_dwt2_s123_combined = adm_dwt2_s123_combined;
 
-#if ARCH_X86
+#if ARCH_X86_64
     unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {
         if (!(w % 8)) s->dwt2_8 = adm_dwt2_8_avx2;
