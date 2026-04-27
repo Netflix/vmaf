@@ -66,7 +66,12 @@ static const double dwt2_db2_coeffs_hi_d[4] = { -0.129409522550921, -0.224143868
 #define FLOAT_ONE_BY_15 0.0666666701
 #endif
 
-float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor)
+static float get_noise_constant(int w, int h, double weight, double adm_p_norm)
+{
+    return powf(w * h * weight, 1.0f / adm_p_norm);
+}
+
+float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_factor, double adm_p_norm)
 {
     int px_stride = stride / sizeof(float);
     int left   = w * border_factor - 0.5;
@@ -76,22 +81,24 @@ float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_fac
 
     int i, j;
 
-    float val;
     float accum = 0;
 
     for (i = top; i < bottom; ++i) {
         float accum_inner = 0;
 
         for (j = left; j < right; ++j) {
-            val = fabsf(x[i * px_stride + j]);
-
-            accum_inner += val * val * val;
+            float val = fabsf(x[i * px_stride + j]);
+            if (adm_p_norm == 3.0) {
+                accum_inner += val * val * val;
+            } else {
+                accum_inner += powf(val, adm_p_norm);
+            }
         }
 
         accum += accum_inner;
     }
 
-    return powf(accum, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+    return powf(accum, 1.0f / adm_p_norm) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / adm_p_norm);
 }
 
 void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis,
@@ -230,7 +237,10 @@ void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis,
 
 void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const adm_dwt_band_t_s *flt,
                int orig_h, int scale, int w, int h, int src_stride, int dst_stride, double border_factor,
-               double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode)
+               double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode, double luminance_level,
+               double adm_csf_scale, double adm_csf_diag_scale,
+               double adm_f1s0, double adm_f1s1, double adm_f1s2, double adm_f1s3,
+               double adm_f2s0, double adm_f2s1, double adm_f2s2, double adm_f2s3)
 {
 	(void)orig_h;
 	(void)adm_csf_mode;
@@ -248,10 +258,30 @@ void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const a
 
 	// for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
 	// 1 to 4 (from finest scale to coarsest scale).
-	// TODO: we will add more CSF functions here
 	float factor1, factor2;
-	factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
-	factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
+	if (adm_csf_mode == ADM_CSF_MODE_BARTEN) {
+	    factor1 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height, luminance_level, adm_csf_scale);
+	    factor2 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height, luminance_level, adm_csf_diag_scale);
+	} else if (adm_csf_mode == ADM_CSF_MODE_ADM) {
+        factor1 = adm_native_csf(scale, adm_norm_view_dist, adm_ref_display_height, 0);
+        factor2 = adm_native_csf(scale, adm_norm_view_dist, adm_ref_display_height, 45);
+	} else {
+	    factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
+	    factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
+	}
+	if (scale == 0) {
+	    if (adm_f1s0 >= 0) factor1 = adm_f1s0;
+	    if (adm_f2s0 >= 0) factor2 = adm_f2s0;
+	} else if (scale == 1) {
+	    if (adm_f1s1 >= 0) factor1 = adm_f1s1;
+	    if (adm_f2s1 >= 0) factor2 = adm_f2s1;
+	} else if (scale == 2) {
+	    if (adm_f1s2 >= 0) factor1 = adm_f1s2;
+	    if (adm_f2s2 >= 0) factor2 = adm_f2s2;
+	} else {
+	    if (adm_f1s3 >= 0) factor1 = adm_f1s3;
+	    if (adm_f2s3 >= 0) factor2 = adm_f2s3;
+	}
 	float rfactor[3] = { factor1, factor1, factor2 };
 
 	/* The computation of the csf values is not required for the regions which lie outside the frame borders */
@@ -297,7 +327,11 @@ void adm_csf_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst, const a
 /* Combination of adm_csf_s and adm_sum_cube_s for csf_o based den_scale */
 float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale,
                           int w, int h, int src_stride, double border_factor,
-                          double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode)
+                          double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode,
+                          double luminance_level, double adm_csf_scale, double adm_csf_diag_scale,
+                          double adm_noise_weight, double adm_p_norm,
+                          double adm_f1s0, double adm_f1s1, double adm_f1s2, double adm_f1s3,
+                          double adm_f2s0, double adm_f2s1, double adm_f2s2, double adm_f2s3)
 {
 	(void)adm_csf_mode;
 	(void)orig_h;
@@ -308,18 +342,36 @@ float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale,
 
 	// for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
 	// 1 to 4 (from finest scale to coarsest scale).
-	// TODO: we will add more CSF functions here
 	float factor1, factor2;
-	factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
-	factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
+	if (adm_csf_mode == ADM_CSF_MODE_BARTEN) {
+	    factor1 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height, luminance_level, adm_csf_scale);
+	    factor2 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height, luminance_level, adm_csf_diag_scale);
+	} else if (adm_csf_mode == ADM_CSF_MODE_ADM) {
+        factor1 = adm_native_csf(scale, adm_norm_view_dist, adm_ref_display_height, 0);
+        factor2 = adm_native_csf(scale, adm_norm_view_dist, adm_ref_display_height, 45);
+	} else {
+	    factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
+	    factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
+	}
+	if (scale == 0) {
+	    if (adm_f1s0 >= 0) factor1 = adm_f1s0;
+	    if (adm_f2s0 >= 0) factor2 = adm_f2s0;
+	} else if (scale == 1) {
+	    if (adm_f1s1 >= 0) factor1 = adm_f1s1;
+	    if (adm_f2s1 >= 0) factor2 = adm_f2s1;
+	} else if (scale == 2) {
+	    if (adm_f1s2 >= 0) factor1 = adm_f1s2;
+	    if (adm_f2s2 >= 0) factor2 = adm_f2s2;
+	} else {
+	    if (adm_f1s3 >= 0) factor1 = adm_f1s3;
+	    if (adm_f2s3 >= 0) factor2 = adm_f2s3;
+	}
 	float rfactor[3] = { factor1, factor1, factor2 };
 
 	float accum_h = 0, accum_v = 0, accum_d = 0;
 	float accum_inner_h, accum_inner_v, accum_inner_d;
 	float den_scale_h, den_scale_v, den_scale_d;
 
-	float val;
-	
 	/* The computation of the denominator scales is not required for the regions which lie outside the frame borders */
 	int left = w * border_factor - 0.5;
 	int top = h * border_factor - 0.5;
@@ -340,42 +392,67 @@ float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale,
 			float abs_csf_o_val_v = fabsf(rfactor[1] * src_v[j]);
 			float abs_csf_o_val_d = fabsf(rfactor[2] * src_d[j]);
 
-			val = abs_csf_o_val_h * abs_csf_o_val_h * abs_csf_o_val_h;
-			accum_inner_h += val;
-			val = abs_csf_o_val_v * abs_csf_o_val_v * abs_csf_o_val_v;
-			accum_inner_v += val;
-			val = abs_csf_o_val_d * abs_csf_o_val_d * abs_csf_o_val_d;
-			accum_inner_d += val;
+            if (adm_p_norm == 3.0) {
+            	accum_inner_h += abs_csf_o_val_h * abs_csf_o_val_h * abs_csf_o_val_h;
+			    accum_inner_v += abs_csf_o_val_v * abs_csf_o_val_v * abs_csf_o_val_v;
+			    accum_inner_d += abs_csf_o_val_d * abs_csf_o_val_d * abs_csf_o_val_d;
+            } else {
+            	accum_inner_h += powf(abs_csf_o_val_h, adm_p_norm);
+			    accum_inner_v += powf(abs_csf_o_val_v, adm_p_norm);
+			    accum_inner_d += powf(abs_csf_o_val_d, adm_p_norm);
+            }
 		}
 
 		accum_h += accum_inner_h;
 		accum_v += accum_inner_v;
 		accum_d += accum_inner_d;
-
 	}
 
-	den_scale_h = powf(accum_h, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
-	den_scale_v = powf(accum_v, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
-	den_scale_d = powf(accum_d, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+    den_scale_h = powf(accum_h, 1.0f / adm_p_norm) + get_noise_constant(right - left, bottom - top, adm_noise_weight, adm_p_norm);
+    den_scale_v = powf(accum_v, 1.0f / adm_p_norm) + get_noise_constant(right - left, bottom - top, adm_noise_weight, adm_p_norm);
+    den_scale_d = powf(accum_d, 1.0f / adm_p_norm) + get_noise_constant(right - left, bottom - top, adm_noise_weight, adm_p_norm);
 
 	return(den_scale_h + den_scale_v + den_scale_d);
-
 }
 
 float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
                const adm_dwt_band_t_s *csf_a, int w, int h, int src_stride,
                int flt_stride, int csf_a_stride, double border_factor, int scale,
-               double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode)
+               double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode,
+               double luminance_level, double adm_csf_scale, double adm_csf_diag_scale,
+               double adm_noise_weight, int adm_bypass_cm, double adm_p_norm,
+               double adm_f1s0, double adm_f1s1, double adm_f1s2, double adm_f1s3,
+               double adm_f2s0, double adm_f2s1, double adm_f2s2, double adm_f2s3)
 {
 	(void)flt_stride;
 	(void)adm_csf_mode;
 
 	// for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
 	// 1 to 4 (from finest scale to coarsest scale).
-	// TODO: we will add more CSF functions here
 	float factor1, factor2;
-	factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
-	factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
+	if (adm_csf_mode == ADM_CSF_MODE_BARTEN) {
+	    factor1 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height, luminance_level, adm_csf_scale);
+	    factor2 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height, luminance_level, adm_csf_diag_scale);
+	} else if (adm_csf_mode == ADM_CSF_MODE_ADM) {
+        factor1 = adm_native_csf(scale, adm_norm_view_dist, adm_ref_display_height, 0);
+        factor2 = adm_native_csf(scale, adm_norm_view_dist, adm_ref_display_height, 45);
+	} else {
+	    factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
+	    factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
+	}
+	if (scale == 0) {
+	    if (adm_f1s0 >= 0) factor1 = adm_f1s0;
+	    if (adm_f2s0 >= 0) factor2 = adm_f2s0;
+	} else if (scale == 1) {
+	    if (adm_f1s1 >= 0) factor1 = adm_f1s1;
+	    if (adm_f2s1 >= 0) factor2 = adm_f2s1;
+	} else if (scale == 2) {
+	    if (adm_f1s2 >= 0) factor1 = adm_f1s2;
+	    if (adm_f2s2 >= 0) factor2 = adm_f2s2;
+	} else {
+	    if (adm_f1s3 >= 0) factor1 = adm_f1s3;
+	    if (adm_f2s3 >= 0) factor2 = adm_f2s3;
+	}
 	float rfactor[3] = { factor1, factor1, factor2 };
 
 	const float *angles[3] = { csf_a->band_h, csf_a->band_v, csf_a->band_d };
@@ -384,9 +461,8 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 	int src_px_stride = src_stride / sizeof(float);
 	int csf_px_stride = csf_a_stride / sizeof(float);
 
-	float xh, xv, xd, thr;
+	float xh, xv, xd, thr = 0.0f;
 
-	float val;
 	float accum_h = 0, accum_v = 0, accum_d = 0;
 	float accum_inner_h, accum_inner_v, accum_inner_d;
 	float num_scale_h, num_scale_v, num_scale_d;
@@ -413,7 +489,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 		xh = src->band_h[0] * rfactor[0];
 		xv = src->band_v[0] * rfactor[1];
 		xd = src->band_d[0] * rfactor[2];
-		ADM_CM_THRESH_S_0_0(angles, flt_angles, csf_px_stride, &thr, w, h, 0, 0);
+		if (adm_bypass_cm == 0) {
+			ADM_CM_THRESH_S_0_0(angles, flt_angles, csf_px_stride, &thr, w, h, 0, 0);
+		}
 
 		xh = fabsf(xh) - thr;
 		xv = fabsf(xv) - thr;
@@ -423,12 +501,15 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 		xv = xv < 0.0f ? 0.0f : xv;
 		xd = xd < 0.0f ? 0.0f : xd;
 
-		val = (xh * xh * xh);
-		accum_inner_h += val;
-		val = (xv * xv * xv);
-		accum_inner_v += val;
-		val = (xd * xd * xd);
-		accum_inner_d += val;
+		if (adm_p_norm == 3.0) {
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            } else {
+                accum_inner_h += powf(xh, adm_p_norm);
+                accum_inner_v += powf(xv, adm_p_norm);
+                accum_inner_d += powf(xd, adm_p_norm);
+            }
 
 	}
 
@@ -438,7 +519,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 			xh = src->band_h[j] * rfactor[0];
 			xv = src->band_v[j] * rfactor[1];
 			xd = src->band_d[j] * rfactor[2];
-			ADM_CM_THRESH_S_0_J(angles, flt_angles, csf_px_stride, &thr, w, h, 0, j);
+			if (adm_bypass_cm == 0) {
+				ADM_CM_THRESH_S_0_J(angles, flt_angles, csf_px_stride, &thr, w, h, 0, j);
+			}
 
 			xh = fabsf(xh) - thr;
 			xv = fabsf(xv) - thr;
@@ -448,12 +531,15 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 			xv = xv < 0.0f ? 0.0f : xv;
 			xd = xd < 0.0f ? 0.0f : xd;
 
-			val = (xh * xh * xh);
-			accum_inner_h += val;
-			val = (xv * xv * xv);
-			accum_inner_v += val;
-			val = (xd * xd * xd);
-			accum_inner_d += val;
+			if (adm_p_norm == 3.0) {
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            } else {
+                accum_inner_h += powf(xh, adm_p_norm);
+                accum_inner_v += powf(xv, adm_p_norm);
+                accum_inner_d += powf(xd, adm_p_norm);
+            }
 
 		}
 	}
@@ -464,7 +550,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 		xh = src->band_h[w - 1] * rfactor[0];
 		xv = src->band_v[w - 1] * rfactor[1];
 		xd = src->band_d[w - 1] * rfactor[2];
-		ADM_CM_THRESH_S_0_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, 0, (w - 1));
+		if (adm_bypass_cm == 0) {
+			ADM_CM_THRESH_S_0_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, 0, (w - 1));
+		}
 
 		xh = fabsf(xh) - thr;
 		xv = fabsf(xv) - thr;
@@ -474,12 +562,15 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 		xv = xv < 0.0f ? 0.0f : xv;
 		xd = xd < 0.0f ? 0.0f : xd;
 
-		val = (xh * xh * xh);
-		accum_inner_h += val;
-		val = (xv * xv * xv);
-		accum_inner_v += val;
-		val = (xd * xd * xd);
-		accum_inner_d += val;
+		if (adm_p_norm == 3.0) {
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            } else {
+                accum_inner_h += powf(xh, adm_p_norm);
+                accum_inner_v += powf(xv, adm_p_norm);
+                accum_inner_d += powf(xd, adm_p_norm);
+            }
 
 	}
 
@@ -497,7 +588,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 				xh = src->band_h[i * src_px_stride + j] * rfactor[0];
 				xv = src->band_v[i * src_px_stride + j] * rfactor[1];
 				xd = src->band_d[i * src_px_stride + j] * rfactor[2];
-				ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+				if (adm_bypass_cm == 0) {
+					ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+				}
 
 			xh = fabsf(xh) - thr;
 			xv = fabsf(xv) - thr;
@@ -507,12 +600,15 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 			xv = xv < 0.0f ? 0.0f : xv;
 			xd = xd < 0.0f ? 0.0f : xd;
 
-			val = (xh * xh * xh);
-			accum_inner_h += val;
-			val = (xv * xv * xv);
-			accum_inner_v += val;
-			val = (xd * xd * xd);
-			accum_inner_d += val;
+			if (adm_p_norm == 3.0) {
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            } else {
+                accum_inner_h += powf(xh, adm_p_norm);
+                accum_inner_v += powf(xv, adm_p_norm);
+                accum_inner_d += powf(xd, adm_p_norm);
+            }
 
 		}
 			accum_h += accum_inner_h;
@@ -531,7 +627,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 			xh = src->band_h[i * src_px_stride] * rfactor[0];
 			xv = src->band_v[i * src_px_stride] * rfactor[1];
 			xd = src->band_d[i * src_px_stride] * rfactor[2];
-			ADM_CM_THRESH_S_I_0(angles, flt_angles, csf_px_stride, &thr, w, h, i, 0);
+			if (adm_bypass_cm == 0) {
+				ADM_CM_THRESH_S_I_0(angles, flt_angles, csf_px_stride, &thr, w, h, i, 0);
+			}
 
 
 			xh = fabsf(xh) - thr;
@@ -542,19 +640,24 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 			xv = xv < 0.0f ? 0.0f : xv;
 			xd = xd < 0.0f ? 0.0f : xd;
 
-			val = (xh * xh * xh);
-			accum_inner_h += val;
-			val = (xv * xv * xv);
-			accum_inner_v += val;
-			val = (xd * xd * xd);
-			accum_inner_d += val;
+			if (adm_p_norm == 3.0) {
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            } else {
+                accum_inner_h += powf(xh, adm_p_norm);
+                accum_inner_v += powf(xv, adm_p_norm);
+                accum_inner_d += powf(xd, adm_p_norm);
+            }
 
 			/* j within frame */
 			for (j = start_col; j < end_col; ++j) {
 				xh = src->band_h[i * src_px_stride + j] * rfactor[0];
 				xv = src->band_v[i * src_px_stride + j] * rfactor[1];
 				xd = src->band_d[i * src_px_stride + j] * rfactor[2];
-				ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+				if (adm_bypass_cm == 0) {
+					ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+				}
 
 				xh = fabsf(xh) - thr;
 				xv = fabsf(xv) - thr;
@@ -564,12 +667,15 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 				xv = xv < 0.0f ? 0.0f : xv;
 				xd = xd < 0.0f ? 0.0f : xd;
 
-				val = (xh * xh * xh);
-				accum_inner_h += val;
-				val = (xv * xv * xv);
-				accum_inner_v += val;
-				val = (xd * xd * xd);
-				accum_inner_d += val;
+			if (adm_p_norm == 3.0) {
+                    accum_inner_h += (xh * xh * xh);
+                    accum_inner_v += (xv * xv * xv);
+                    accum_inner_d += (xd * xd * xd);
+                } else {
+                    accum_inner_h += powf(xh, adm_p_norm);
+                    accum_inner_v += powf(xv, adm_p_norm);
+                    accum_inner_d += powf(xd, adm_p_norm);
+                }
 
 			}
 	accum_h += accum_inner_h;
@@ -588,7 +694,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 				xh = src->band_h[i * src_px_stride + j] * rfactor[0];
 				xv = src->band_v[i * src_px_stride + j] * rfactor[1];
 				xd = src->band_d[i * src_px_stride + j] * rfactor[2];
-				ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+				if (adm_bypass_cm == 0) {
+					ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+				}
 
 				xh = fabsf(xh) - thr;
 				xv = fabsf(xv) - thr;
@@ -598,19 +706,24 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 				xv = xv < 0.0f ? 0.0f : xv;
 				xd = xd < 0.0f ? 0.0f : xd;
 
-				val = (xh * xh * xh);
-				accum_inner_h += val;
-				val = (xv * xv * xv);
-				accum_inner_v += val;
-				val = (xd * xd * xd);
-				accum_inner_d += val;
+			if (adm_p_norm == 3.0) {
+                    accum_inner_h += (xh * xh * xh);
+                    accum_inner_v += (xv * xv * xv);
+                    accum_inner_d += (xd * xd * xd);
+                } else {
+                    accum_inner_h += powf(xh, adm_p_norm);
+                    accum_inner_v += powf(xv, adm_p_norm);
+                    accum_inner_d += powf(xd, adm_p_norm);
+                }
 
 			}
 			/* j = w-1 */
 			xh = src->band_h[i * src_px_stride + w - 1] * rfactor[0];
 			xv = src->band_v[i * src_px_stride + w - 1] * rfactor[1];
 			xd = src->band_d[i * src_px_stride + w - 1] * rfactor[2];
-			ADM_CM_THRESH_S_I_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, i, (w - 1));
+			if (adm_bypass_cm == 0) {
+				ADM_CM_THRESH_S_I_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, i, (w - 1));
+			}
 
 			xh = fabsf(xh) - thr;
 			xv = fabsf(xv) - thr;
@@ -620,12 +733,15 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 			xv = xv < 0.0f ? 0.0f : xv;
 			xd = xd < 0.0f ? 0.0f : xd;
 
-			val = (xh * xh * xh);
-			accum_inner_h += val;
-			val = (xv * xv * xv);
-			accum_inner_v += val;
-			val = (xd * xd * xd);
-			accum_inner_d += val;
+			if (adm_p_norm == 3.0) {
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            } else {
+                accum_inner_h += powf(xh, adm_p_norm);
+                accum_inner_v += powf(xv, adm_p_norm);
+                accum_inner_d += powf(xd, adm_p_norm);
+            }
 
 			accum_h += accum_inner_h;
 			accum_v += accum_inner_v;
@@ -643,7 +759,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 			xh = src->band_h[i * src_px_stride] * rfactor[0];
 			xv = src->band_v[i * src_px_stride] * rfactor[1];
 			xd = src->band_d[i * src_px_stride] * rfactor[2];
-			ADM_CM_THRESH_S_I_0(angles, flt_angles, csf_px_stride, &thr, w, h, i, 0);
+			if (adm_bypass_cm == 0) {
+				ADM_CM_THRESH_S_I_0(angles, flt_angles, csf_px_stride, &thr, w, h, i, 0);
+			}
 
 			xh = fabsf(xh) - thr;
 			xv = fabsf(xv) - thr;
@@ -653,19 +771,24 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 			xv = xv < 0.0f ? 0.0f : xv;
 			xd = xd < 0.0f ? 0.0f : xd;
 
-			val = (xh * xh * xh);
-			accum_inner_h += val;
-			val = (xv * xv * xv);
-			accum_inner_v += val;
-			val = (xd * xd * xd);
-			accum_inner_d += val;
+			if (adm_p_norm == 3.0) {
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            } else {
+                accum_inner_h += powf(xh, adm_p_norm);
+                accum_inner_v += powf(xv, adm_p_norm);
+                accum_inner_d += powf(xd, adm_p_norm);
+            }
 
 			/* j within frame */
 			for (j = start_col; j < end_col; ++j) {
 				xh = src->band_h[i * src_px_stride + j] * rfactor[0];
 				xv = src->band_v[i * src_px_stride + j] * rfactor[1];
 				xd = src->band_d[i * src_px_stride + j] * rfactor[2];
-				ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+				if (adm_bypass_cm == 0) {
+					ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+				}
 
 				xh = fabsf(xh) - thr;
 				xv = fabsf(xv) - thr;
@@ -675,19 +798,24 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 				xv = xv < 0.0f ? 0.0f : xv;
 				xd = xd < 0.0f ? 0.0f : xd;
 
-				val = (xh * xh * xh);
-				accum_inner_h += val;
-				val = (xv * xv * xv);
-				accum_inner_v += val;
-				val = (xd * xd * xd);
-				accum_inner_d += val;
+			if (adm_p_norm == 3.0) {
+                    accum_inner_h += (xh * xh * xh);
+                    accum_inner_v += (xv * xv * xv);
+                    accum_inner_d += (xd * xd * xd);
+                } else {
+                    accum_inner_h += powf(xh, adm_p_norm);
+                    accum_inner_v += powf(xv, adm_p_norm);
+                    accum_inner_d += powf(xd, adm_p_norm);
+                }
 
 			}
 			/* j = w-1 */
 			xh = src->band_h[i * src_px_stride + w - 1] * rfactor[0];
 			xv = src->band_v[i * src_px_stride + w - 1] * rfactor[1];
 			xd = src->band_d[i * src_px_stride + w - 1] * rfactor[2];
-			ADM_CM_THRESH_S_I_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, i, (w - 1));
+			if (adm_bypass_cm == 0) {
+				ADM_CM_THRESH_S_I_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, i, (w - 1));
+			}
 
 		xh = fabsf(xh) - thr;
 		xv = fabsf(xv) - thr;
@@ -697,12 +825,15 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 		xv = xv < 0.0f ? 0.0f : xv;
 		xd = xd < 0.0f ? 0.0f : xd;
 
-		val = (xh * xh * xh);
-		accum_inner_h += val;
-		val = (xv * xv * xv);
-		accum_inner_v += val;
-		val = (xd * xd * xd);
-		accum_inner_d += val;
+		if (adm_p_norm == 3.0) {
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            } else {
+                accum_inner_h += powf(xh, adm_p_norm);
+                accum_inner_v += powf(xv, adm_p_norm);
+                accum_inner_d += powf(xd, adm_p_norm);
+            }
 
 			accum_h += accum_inner_h;
 			accum_v += accum_inner_v;
@@ -719,7 +850,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 		xh = src->band_h[(h - 1) * src_px_stride] * rfactor[0];
 		xv = src->band_v[(h - 1) * src_px_stride] * rfactor[1];
 		xd = src->band_d[(h - 1) * src_px_stride] * rfactor[2];
-		ADM_CM_THRESH_S_H_M_1_0(angles, flt_angles, csf_px_stride, &thr, w, h, (h - 1), 0);
+		if (adm_bypass_cm == 0) {
+			ADM_CM_THRESH_S_H_M_1_0(angles, flt_angles, csf_px_stride, &thr, w, h, (h - 1), 0);
+		}
 
 		xh = fabsf(xh) - thr;
 		xv = fabsf(xv) - thr;
@@ -729,12 +862,15 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 		xv = xv < 0.0f ? 0.0f : xv;
 		xd = xd < 0.0f ? 0.0f : xd;
 
-		val = (xh * xh * xh);
-		accum_inner_h += val;
-		val = (xv * xv * xv);
-		accum_inner_v += val;
-		val = (xd * xd * xd);
-		accum_inner_d += val;
+		if (adm_p_norm == 3.0) {
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            } else {
+                accum_inner_h += powf(xh, adm_p_norm);
+                accum_inner_v += powf(xv, adm_p_norm);
+                accum_inner_d += powf(xd, adm_p_norm);
+            }
 
 	}
 
@@ -744,7 +880,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 			xh = src->band_h[(h - 1) * src_px_stride + j] * rfactor[0];
 			xv = src->band_v[(h - 1) * src_px_stride + j] * rfactor[1];
 			xd = src->band_d[(h - 1) * src_px_stride + j] * rfactor[2];
-			ADM_CM_THRESH_S_H_M_1_J(angles, flt_angles, csf_px_stride, &thr, w, h, (h - 1), j);
+			if (adm_bypass_cm == 0) {
+				ADM_CM_THRESH_S_H_M_1_J(angles, flt_angles, csf_px_stride, &thr, w, h, (h - 1), j);
+			}
 
 			xh = fabsf(xh) - thr;
 			xv = fabsf(xv) - thr;
@@ -754,12 +892,15 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 			xv = xv < 0.0f ? 0.0f : xv;
 			xd = xd < 0.0f ? 0.0f : xd;
 
-			val = (xh * xh * xh);
-			accum_inner_h += val;
-			val = (xv * xv * xv);
-			accum_inner_v += val;
-			val = (xd * xd * xd);
-			accum_inner_d += val;
+			if (adm_p_norm == 3.0) {
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            } else {
+                accum_inner_h += powf(xh, adm_p_norm);
+                accum_inner_v += powf(xv, adm_p_norm);
+                accum_inner_d += powf(xd, adm_p_norm);
+            }
 
 		}
 	}
@@ -770,7 +911,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 		xh = src->band_h[(h - 1) * src_px_stride + w - 1] * rfactor[0];
 		xv = src->band_v[(h - 1) * src_px_stride + w - 1] * rfactor[1];
 		xd = src->band_d[(h - 1) * src_px_stride + w - 1] * rfactor[2];
-		ADM_CM_THRESH_S_H_M_1_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, (h - 1), (w - 1));
+		if (adm_bypass_cm == 0) {
+			ADM_CM_THRESH_S_H_M_1_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, (h - 1), (w - 1));
+		}
 
 			xh = fabsf(xh) - thr;
 			xv = fabsf(xv) - thr;
@@ -780,12 +923,15 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 			xv = xv < 0.0f ? 0.0f : xv;
 			xd = xd < 0.0f ? 0.0f : xd;
 
-			val = (xh * xh * xh);
-			accum_inner_h += val;
-			val = (xv * xv * xv);
-			accum_inner_v += val;
-			val = (xd * xd * xd);
-			accum_inner_d += val;
+			if (adm_p_norm == 3.0) {
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            } else {
+                accum_inner_h += powf(xh, adm_p_norm);
+                accum_inner_v += powf(xv, adm_p_norm);
+                accum_inner_d += powf(xd, adm_p_norm);
+            }
 
 		}
 		accum_h += accum_inner_h;
@@ -794,9 +940,9 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
 	
 
 
-	num_scale_h = powf(accum_h, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
-	num_scale_v = powf(accum_v, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
-	num_scale_d = powf(accum_d, 1.0f / 3.0f) + powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+    num_scale_h = powf(accum_h, 1.0f / adm_p_norm) + get_noise_constant(right - left, bottom - top, adm_noise_weight, adm_p_norm);
+    num_scale_v = powf(accum_v, 1.0f / adm_p_norm) + get_noise_constant(right - left, bottom - top, adm_noise_weight, adm_p_norm);
+    num_scale_d = powf(accum_d, 1.0f / adm_p_norm) + get_noise_constant(right - left, bottom - top, adm_noise_weight, adm_p_norm);
 
 	return (num_scale_h + num_scale_v + num_scale_d);
 }
@@ -1028,6 +1174,112 @@ void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int
 
 	aligned_free(tmplo);
 	aligned_free(tmphi);
+}
+
+void adm_dwt2_lo_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride)
+{
+	const float *filter_lo = dwt2_db2_coeffs_lo_s;
+
+	int src_px_stride = src_stride / sizeof(float);
+	int dst_px_stride = dst_stride / sizeof(float);
+
+	float *tmplo = aligned_malloc(ALIGN_CEIL(sizeof(float) * w), MAX_ALIGN);
+	float s0, s1, s2, s3;
+	float accum;
+
+	int i, j;
+	int j0, j1, j2, j3;
+
+	for (i = 0; i < (h + 1) / 2; ++i) {
+		/* Vertical pass. */
+		for (j = 0; j < w; ++j) {
+			s0 = src[ind_y[0][i] * src_px_stride + j];
+			s1 = src[ind_y[1][i] * src_px_stride + j];
+			s2 = src[ind_y[2][i] * src_px_stride + j];
+			s3 = src[ind_y[3][i] * src_px_stride + j];
+
+			accum = 0;
+			accum += filter_lo[0] * s0;
+			accum += filter_lo[1] * s1;
+			accum += filter_lo[2] * s2;
+			accum += filter_lo[3] * s3;
+			tmplo[j] = accum;
+		}
+
+		/* Horizontal pass (lo). */
+		for (j = 0; j < (w + 1) / 2; ++j) {
+			j0 = ind_x[0][j];
+			j1 = ind_x[1][j];
+			j2 = ind_x[2][j];
+			j3 = ind_x[3][j];
+			s0 = tmplo[j0];
+			s1 = tmplo[j1];
+			s2 = tmplo[j2];
+			s3 = tmplo[j3];
+
+			accum = 0;
+			accum += filter_lo[0] * s0;
+			accum += filter_lo[1] * s1;
+			accum += filter_lo[2] * s2;
+			accum += filter_lo[3] * s3;
+			dst->band_a[i * dst_px_stride + j] = accum;
+		}
+	}
+
+	aligned_free(tmplo);
+}
+
+void adm_dwt2_lo_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int **ind_x, int w, int h, int src_stride, int dst_stride)
+{
+	const double *filter_lo = dwt2_db2_coeffs_lo_d;
+
+	int src_px_stride = src_stride / sizeof(double);
+	int dst_px_stride = dst_stride / sizeof(double);
+
+	double *tmplo = aligned_malloc(ALIGN_CEIL(sizeof(double) * w), MAX_ALIGN);
+	double s0, s1, s2, s3;
+	double accum;
+
+	int i, j;
+	int j0, j1, j2, j3;
+
+	for (i = 0; i < (h + 1) / 2; ++i) {
+		/* Vertical pass. */
+		for (j = 0; j < w; ++j) {
+			s0 = src[ind_y[0][i] * src_px_stride + j];
+			s1 = src[ind_y[1][i] * src_px_stride + j];
+			s2 = src[ind_y[2][i] * src_px_stride + j];
+			s3 = src[ind_y[3][i] * src_px_stride + j];
+
+			accum = 0;
+			accum += filter_lo[0] * s0;
+			accum += filter_lo[1] * s1;
+			accum += filter_lo[2] * s2;
+			accum += filter_lo[3] * s3;
+			tmplo[j] = accum;
+		}
+
+		/* Horizontal pass (lo). */
+		for (j = 0; j < (w + 1) / 2; ++j) {
+			j0 = ind_x[0][j];
+			j1 = ind_x[1][j];
+			j2 = ind_x[2][j];
+			j3 = ind_x[3][j];
+			s0 = tmplo[j0];
+			s1 = tmplo[j1];
+			s2 = tmplo[j2];
+			s3 = tmplo[j3];
+
+			accum = 0;
+			accum += filter_lo[0] * s0;
+			accum += filter_lo[1] * s1;
+			accum += filter_lo[2] * s2;
+			accum += filter_lo[3] * s3;
+			dst->band_a[i * dst_px_stride + j] = accum;
+		}
+	}
+
+	aligned_free(tmplo);
 }
 
 void adm_buffer_copy(const void *src, void *dst, int linewidth, int h, int src_stride, int dst_stride)

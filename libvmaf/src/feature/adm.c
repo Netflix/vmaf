@@ -17,6 +17,7 @@
  */
 
 #include <limits.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -30,6 +31,7 @@
 typedef adm_dwt_band_t_s adm_dwt_band_t;
 
 #define adm_dwt2      adm_dwt2_s
+#define adm_dwt2_lo   adm_dwt2_lo_s
 #define adm_decouple  adm_decouple_s
 #define adm_csf       adm_csf_s
 #define adm_cm_thresh adm_cm_thresh_s
@@ -39,6 +41,8 @@ typedef adm_dwt_band_t_s adm_dwt_band_t;
 
 #define adm_csf_den_scale adm_csf_den_scale_s
 #define dwt2_src_indices_filt dwt2_src_indices_filt_s
+
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 static char *init_dwt_band(adm_dwt_band_t *band, char *data_top, size_t buf_sz_one)
 {
@@ -69,8 +73,13 @@ static char *init_dwt_band_hvd(adm_dwt_band_t *band, char *data_top, size_t buf_
 }
 
 int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score,
-                double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit,
-                double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode)
+        double *score_num, double *score_den, double *scores, double border_factor, double adm_enhn_gain_limit,
+        double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode, double luminance_level,
+        double adm_csf_scale, double adm_csf_diag_scale, double adm_noise_weight, int adm_bypass_cm, double adm_p_norm,
+        double *score_aim,
+        double adm_f1s0, double adm_f1s1, double adm_f1s2, double adm_f1s3,
+        double adm_f2s0, double adm_f2s1, double adm_f2s2, double adm_f2s3, int adm_skip_aim_scale,
+		bool adm_skip_scale0)
 {
 #ifdef ADM_OPT_SINGLE_PRECISION
 	double numden_limit = 1e-2 * (w * h) / (1920.0 * 1080.0);
@@ -111,6 +120,8 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 
 	double num = 0;
 	double den = 0;
+	double aim_num = 0;
+	double aim_den = 0;
 
 	int scale;
 	int ret = 1;
@@ -171,30 +182,56 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 #endif
 		float num_scale = 0.0;
 		float den_scale = 0.0;
-	
+		float aim_num_scale = 0.0;
+
 		dwt2_src_indices_filt(ind_y, ind_x, w, h);
-		adm_dwt2(curr_ref_scale, &ref_dwt2, ind_y, ind_x, w, h, curr_ref_stride, buf_stride);
-		adm_dwt2(curr_dis_scale, &dis_dwt2, ind_y, ind_x, w, h, curr_dis_stride, buf_stride);
+		if ((scale==0) && (adm_skip_scale0)) {
+			adm_dwt2_lo(curr_ref_scale, &ref_dwt2, ind_y, ind_x, w, h, curr_ref_stride, buf_stride);
+			adm_dwt2_lo(curr_dis_scale, &dis_dwt2, ind_y, ind_x, w, h, curr_dis_stride, buf_stride);
 
-		w = (w + 1) / 2;
-		h = (h + 1) / 2;
-	
-		adm_decouple(&ref_dwt2, &dis_dwt2, &decouple_r, &decouple_a, w, h,
-		        buf_stride, buf_stride, buf_stride, buf_stride, border_factor, adm_enhn_gain_limit);
+			w = (w + 1) / 2;
+			h = (h + 1) / 2;
+			den_scale = 1e-10;  // avoid divide by zero
+		}
+		else {
+			adm_dwt2(curr_ref_scale, &ref_dwt2, ind_y, ind_x, w, h, curr_ref_stride, buf_stride);
+			adm_dwt2(curr_dis_scale, &dis_dwt2, ind_y, ind_x, w, h, curr_dis_stride, buf_stride);
 
-		den_scale = adm_csf_den_scale(&ref_dwt2, orig_h, scale, w, h,
-                                buf_stride, border_factor,
-                                adm_norm_view_dist, adm_ref_display_height, adm_csf_mode);
+			w = (w + 1) / 2;
+			h = (h + 1) / 2;
 
-		adm_csf(&decouple_a, &csf_a, &csf_f, orig_h, scale, w, h, buf_stride,
-          buf_stride, border_factor,
-          adm_norm_view_dist, adm_ref_display_height, adm_csf_mode);
-	
-		num_scale = adm_cm(&decouple_r, &csf_f, &csf_a, w, h, buf_stride,
-                     buf_stride, buf_stride, border_factor, scale,
-                     adm_norm_view_dist, adm_ref_display_height, adm_csf_mode);
+			adm_decouple(&ref_dwt2, &dis_dwt2, &decouple_r, &decouple_a, w, h,
+					buf_stride, buf_stride, buf_stride, buf_stride, border_factor, adm_enhn_gain_limit);
 
-#ifdef ADM_OPT_DEBUG_DUMP
+			den_scale = adm_csf_den_scale(&ref_dwt2, orig_h, scale, w, h,
+									buf_stride, border_factor,
+									adm_norm_view_dist, adm_ref_display_height, adm_csf_mode, luminance_level,
+									adm_csf_scale, adm_csf_diag_scale, adm_noise_weight, adm_p_norm,
+									adm_f1s0, adm_f1s1, adm_f1s2, adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+
+			adm_csf(&decouple_a, &csf_a, &csf_f, orig_h, scale, w, h, buf_stride,
+			buf_stride, border_factor,
+			adm_norm_view_dist, adm_ref_display_height, adm_csf_mode, luminance_level, adm_csf_scale, adm_csf_diag_scale,
+			adm_f1s0, adm_f1s1, adm_f1s2, adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+
+			num_scale = adm_cm(&decouple_r, &csf_f, &csf_a, w, h, buf_stride,
+						buf_stride, buf_stride, border_factor, scale,
+						adm_norm_view_dist, adm_ref_display_height, adm_csf_mode, luminance_level,
+						adm_csf_scale, adm_csf_diag_scale, adm_noise_weight, adm_bypass_cm, adm_p_norm,
+						adm_f1s0, adm_f1s1, adm_f1s2, adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+
+			adm_csf(&decouple_r, &csf_f, &csf_a, orig_h, scale, w, h, buf_stride,
+			buf_stride, border_factor,
+			adm_norm_view_dist, adm_ref_display_height, adm_csf_mode, luminance_level, adm_csf_scale, adm_csf_diag_scale,
+			adm_f1s0, adm_f1s1, adm_f1s2, adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+
+			aim_num_scale = adm_cm(&decouple_a, &csf_a, &csf_f, w, h, buf_stride,
+						buf_stride, buf_stride, border_factor, scale,
+						adm_norm_view_dist, adm_ref_display_height, adm_csf_mode, luminance_level,
+						adm_csf_scale, adm_csf_diag_scale, 0.0, adm_bypass_cm, adm_p_norm,
+						adm_f1s0, adm_f1s1, adm_f1s2, adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+
+	#ifdef ADM_OPT_DEBUG_DUMP
 		sprintf(pathbuf, "stage/ref[%d]_a.yuv", scale);
 		write_image(pathbuf, ref_dwt2.band_a, w, h, buf_stride, sizeof(float));
 
@@ -246,10 +283,15 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 		sprintf(pathbuf, "stage/csf_a[%d]_d.yuv", scale);
 		write_image(pathbuf, csf_a.band_d, w, h, buf_stride, sizeof(float));
 
-#endif
+	#endif
+		}
 
 		num += num_scale;
 		den += den_scale;
+		if (adm_skip_aim_scale != scale) {
+			aim_den += den_scale;
+		    aim_num += aim_num_scale;
+		}
 
 		ref_scale = ref_dwt2.band_a;
 		dis_scale = dis_dwt2.band_a;
@@ -277,6 +319,8 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 	}
 	else
 	{
+	    // normalize AIM score by the DLM denominator and clip values larger than 1
+	    *score_aim = MIN(aim_num / aim_den, 1.0f);
 		*score = num / den;
 	}
 	*score_num = num;
