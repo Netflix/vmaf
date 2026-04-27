@@ -20,8 +20,13 @@
 #define __VMAF_SRC_PICTURE_H__
 
 #ifdef HAVE_CUDA
+#ifdef DEVICE_CODE
+#include <cuda.h>
+typedef struct VmafCudaState VmafCudaState;
+#else
 #include <ffnvcodec/dynlink_cuda.h>
 #include "libvmaf/libvmaf_cuda.h"
+#endif
 #endif
 #include "libvmaf/picture.h"
 
