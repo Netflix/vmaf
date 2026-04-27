@@ -33,7 +33,7 @@
 #include "cuda/integer_vif_cuda.h"
 #include "picture_cuda.h"
 
-#if ARCH_X86
+#if ARCH_X86_64
 #include "x86/vif_avx2.h"
 #if HAVE_AVX512
 #include "x86/vif_avx512.h"

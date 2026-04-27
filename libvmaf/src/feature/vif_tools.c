@@ -403,7 +403,7 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf,
 
     /* if support avx */
 
-#if ARCH_X86
+#if ARCH_X86_64
     const unsigned flags = vmaf_get_cpu_flags();
     if ((flags & VMAF_X86_CPU_FLAG_AVX2) && fwidth <= MAX_FWIDTH_AVX_CONV) {
         convolution_f32_avx_s(f, fwidth, src, dst, tmpbuf, w, h,
@@ -470,8 +470,8 @@ void vif_filter1d_sq_s(const float *f, const float *src, float *dst, float *tmpb
     int dst_px_stride = dst_stride / sizeof(float);
 
     /* if support avx */
-    
-#if ARCH_X86
+
+#if ARCH_X86_64
     const unsigned flags = vmaf_get_cpu_flags();
     if ((flags & VMAF_X86_CPU_FLAG_AVX2) && fwidth <= MAX_FWIDTH_AVX_CONV) {
         convolution_f32_avx_sq_s(f, fwidth, src, dst, tmpbuf, w, h,
@@ -537,7 +537,7 @@ void vif_filter1d_xy_s(const float *f, const float *src1, const float *src2, flo
 
     /* if support avx */
 
-#if ARCH_X86
+#if ARCH_X86_64
     const unsigned flags = vmaf_get_cpu_flags();
     if ((flags & VMAF_X86_CPU_FLAG_AVX2) && fwidth <= MAX_FWIDTH_AVX_CONV) {
         convolution_f32_avx_xy_s(f, fwidth, src1, src2, dst, tmpbuf, w, h,

@@ -37,7 +37,7 @@
 #include "feature_extractor.h"
 #include "integer_motion.h"
 
-#if ARCH_X86
+#if ARCH_X86_64
 #include "x86/motion_v2_avx2.h"
 #if HAVE_AVX512
 #include "x86/motion_v2_avx512.h"
@@ -178,7 +178,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     else
         s->pipeline = motion_score_pipeline_16;
 
-#if ARCH_X86
+#if ARCH_X86_64
     if (vmaf_get_cpu_flags() & VMAF_X86_CPU_FLAG_AVX2) {
         if (bpc == 8)
             s->pipeline = motion_score_pipeline_8_avx2;
