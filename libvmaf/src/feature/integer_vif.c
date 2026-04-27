@@ -32,7 +32,7 @@
 #include "picture.h"
 #include "integer_vif.h"
 
-#if ARCH_X86
+#if ARCH_X86_64
 #include "x86/vif_avx2.h"
 #if HAVE_AVX512
 #include "x86/vif_avx512.h"
@@ -585,7 +585,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->vif_statistic_8 = vif_statistic_8;
     s->vif_statistic_16 = vif_statistic_16;
 
-#if ARCH_X86
+#if ARCH_X86_64
     unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {
         s->subsample_rd_8 = vif_subsample_rd_8_avx2;

@@ -81,7 +81,7 @@ void convolution_f32_c_s(const float *filter, int filter_width, const float *src
 {
     /* if support avx */
 
-#if ARCH_X86
+#if ARCH_X86_64
     const unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {
         convolution_f32_avx_s(filter, filter_width, src, dst, tmp, width,

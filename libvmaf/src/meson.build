@@ -235,7 +235,7 @@ if is_asm_enabled
         platform_specific_cpu_objects += arm64_static_lib.extract_all_objects()
     endif
 
-    if host_machine.cpu_family().startswith('x86')
+    if host_machine.cpu_family() == 'x86_64'
       x86_avx2_sources = [
           feature_src_dir + 'common/convolution_avx.c',
           feature_src_dir + 'x86/motion_avx2.c',

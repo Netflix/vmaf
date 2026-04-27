@@ -29,7 +29,7 @@ static char *test_cpu()
     mu_assert("flags should be zero before vmaf_init_cpu()", !flags);
     vmaf_init_cpu();
 
-#if ARCH_X86
+#if ARCH_X86_64
     /*
     flags = vmaf_get_cpu_flags();
     mu_assert("flags should include AVX2", flags & VMAF_X86_CPU_FLAG_AVX2);
