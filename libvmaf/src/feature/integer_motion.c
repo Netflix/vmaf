@@ -29,6 +29,7 @@
 #include "integer_motion.h"
 #include "log.h"
 #include "mem.h"
+#include "motion_blend_tools.h"
 #include "picture.h"
 
 #if ARCH_X86
@@ -38,19 +39,23 @@
 #endif
 #endif
 
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
-
 /* Default maximum value allowed for motion */
 #define DEFAULT_MOTION_MAX_VAL (10000.0)
 
 typedef struct MotionState {
     VmafPicture tmp;
-    VmafPicture blur[3];
+    VmafPicture blur[5];
     unsigned index;
     double score;
     bool debug;
+    bool motion_five_frame_window;
     bool motion_force_zero;
+    bool motion_moving_average;
+    double motion_fps_weight;
+    double motion_blend_factor;
+    double motion_blend_offset;
     double motion_max_val;
+    double previous_score;
     void (*y_convolution)(void *src, uint16_t *dst, unsigned width,
                           unsigned height, ptrdiff_t src_stride,
                           ptrdiff_t dst_stride, unsigned inp_size_bits);
@@ -79,6 +84,39 @@ static const VmafOption options[] = {
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {
+        .name = "motion_blend_factor",
+        .alias = "mbf",
+        .help = "blend motion score given an offset",
+        .offset = offsetof(MotionState, motion_blend_factor),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = 1.0,
+        .min = 0.0,
+        .max = 1.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_blend_offset",
+        .alias = "mbo",
+        .help = "blend motion score starting from this offset",
+        .offset = offsetof(MotionState, motion_blend_offset),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = 40.0,
+        .min = 0.0,
+        .max = 1000.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_fps_weight",
+        .alias = "mfw",
+        .help = "fps-aware multiplicative weight/correction",
+        .offset = offsetof(MotionState, motion_fps_weight),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = 1.0,
+        .min = 0.0,
+        .max = 5.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
         .name = "motion_max_val",
         .help = "maximum value allowed; larger values will be clipped to this value",
         .offset = offsetof(MotionState, motion_max_val),
@@ -88,6 +126,24 @@ static const VmafOption options[] = {
         .max = 10000.0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
         .alias = "mmxv",
+    },
+    {
+        .name = "motion_five_frame_window",
+        .alias = "mffw",
+        .help = "use five-frame temporal window",
+        .offset = offsetof(MotionState, motion_five_frame_window),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_moving_average",
+        .alias = "mma",
+        .help = "use moving average for motion scores after first frame",
+        .offset = offsetof(MotionState, motion_moving_average),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     { 0 }
 };
@@ -326,6 +382,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     err |= vmaf_picture_alloc(&s->blur[0], VMAF_PIX_FMT_YUV400P, 16, w, h);
     err |= vmaf_picture_alloc(&s->blur[1], VMAF_PIX_FMT_YUV400P, 16, w, h);
     err |= vmaf_picture_alloc(&s->blur[2], VMAF_PIX_FMT_YUV400P, 16, w, h);
+    err |= vmaf_picture_alloc(&s->blur[3], VMAF_PIX_FMT_YUV400P, 16, w, h);
+    err |= vmaf_picture_alloc(&s->blur[4], VMAF_PIX_FMT_YUV400P, 16, w, h);
     if (err) goto fail;
 
     s->y_convolution = bpc == 8 ? y_convolution_8 : y_convolution_16;
@@ -348,6 +406,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 #endif
 
     s->score = 0.;
+    s->previous_score = 0.;
 
     return 0;
 
@@ -355,6 +414,8 @@ fail:
     err |= vmaf_picture_unref(&s->blur[0]);
     err |= vmaf_picture_unref(&s->blur[1]);
     err |= vmaf_picture_unref(&s->blur[2]);
+    err |= vmaf_picture_unref(&s->blur[3]);
+    err |= vmaf_picture_unref(&s->blur[4]);
     err |= vmaf_picture_unref(&s->tmp);
     err |= vmaf_dictionary_free(&s->feature_name_dict);
     return err;
@@ -366,17 +427,31 @@ static int flush(VmafFeatureExtractor *fex,
     MotionState *s = fex->priv;
     int ret = 0;
 
-    if (s->index >= 1) {
-        double clipped = MIN(s->score, s->motion_max_val);
+    unsigned minimum_past_frames_needed = s->motion_five_frame_window ? 2 : 1;
+    if (s->index >= minimum_past_frames_needed) {
         ret = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                             "VMAF_integer_feature_motion2_score",
-                                            clipped, s->index);
+                                            MIN(s->score * s->motion_fps_weight, s->motion_max_val), s->index);
+        double processed_score = MIN(motion_blend(s->score * s->motion_fps_weight, s->motion_blend_factor,
+                                    s->motion_blend_offset), s->motion_max_val);
+        if (s->motion_moving_average) {
+            processed_score = (processed_score + s->previous_score) / 2.0;
+        }
         ret |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                              "VMAF_integer_feature_motion3_score",
-                                             clipped, s->index);
+                                             processed_score, s->index);
     } else {
-        ret |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                             "VMAF_integer_feature_motion3_score", 0, s->index);
+        if (s->motion_five_frame_window) {
+            ret |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                 "VMAF_integer_feature_motion3_score", 0, s->index);
+            if (s->index >= 1) {
+                ret |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                     "VMAF_integer_feature_motion3_score", 0, s->index - 1);
+            }
+        } else {
+            ret |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                 "VMAF_integer_feature_motion3_score", 0, s->index);
+        }
     }
 
     return (ret < 0) ? ret : !ret;
@@ -401,9 +476,16 @@ static int extract(VmafFeatureExtractor *fex,
     (void) dist_pic_90;
 
     s->index = index;
-    const unsigned blur_idx_0 = (index + 0) % 3;  // i (current frame)
-    const unsigned blur_idx_1 = (index + 1) % 3;  // i - 2
-    const unsigned blur_idx_2 = (index + 2) % 3;  // i - 1
+    // calculate circular buffer indices based on whether we are using a three-frame or a five-frame window
+    unsigned buffer_size = s->motion_five_frame_window ? 5 : 3;
+    const unsigned blur_idx_0 = (index + 0) % buffer_size;  // i (current frame)
+    const unsigned blur_idx_1 = (index + 1) % buffer_size;  // i - 2 (three-frame window) or i - 4 (five-frame window)
+    const unsigned blur_idx_2 = (index + 2) % buffer_size;  // i - 1 (three-frame window) or i - 3 (five-frame window)
+
+    // these are only used with five-frame window
+    const unsigned blur_idx_3 = s->motion_five_frame_window ? (index + 3) % buffer_size : 0;  // i - 2 (five-frame window)
+    const unsigned blur_idx_4 = s->motion_five_frame_window ? (index + 4) % buffer_size : 0;  // i - 1 (five-frame window)
+    (void) blur_idx_4;
 
     const ptrdiff_t y_src_stride =
         ref_pic->bpc == 8 ? ref_pic->stride[0] : ref_pic->stride[0] / 2;
@@ -416,7 +498,8 @@ static int extract(VmafFeatureExtractor *fex,
                      s->tmp.w[0], s->tmp.h[0], s->tmp.stride[0] / 2,
                      s->blur[blur_idx_0].stride[0] / 2);
 
-    if (index < 1) {
+    unsigned minimum_past_frames_needed = s->motion_five_frame_window ? 2 : 1;
+    if (index < minimum_past_frames_needed) {
         err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                             "VMAF_integer_feature_motion2_score",
                                             0., index);
@@ -429,39 +512,70 @@ static int extract(VmafFeatureExtractor *fex,
     }
 
     uint64_t sad;
-    // compare frame i - 1 (blur_idx_2) with i (blur_idx_0)
-    s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_0], &sad);
+    // compare frame i - 1 (blur_idx_2) with i (blur_idx_0) or frame i - 2 (blur_idx_3) with i (blur_idx_0)
+    if (s->motion_five_frame_window) {
+        s->sad(&s->blur[blur_idx_3], &s->blur[blur_idx_0], &sad);
+    } else {
+        s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_0], &sad);
+    }
     double score = s->score =
         normalize_and_scale_sad(sad, ref_pic->w[0], ref_pic->h[0]);
 
     if (s->debug) {
         err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                              "VMAF_integer_feature_motion_score",
-                                             MIN(score, s->motion_max_val), index);
+                                             MIN(score * s->motion_fps_weight, s->motion_max_val), index);
     }
     if (err) return err;
 
-    if (index == 1) {
-        err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                             "VMAF_integer_feature_motion3_score",
-                                             MIN(score, s->motion_max_val), 0);
+    if (index == minimum_past_frames_needed) {
+        double processed_score_for_previous = MIN(motion_blend(score * s->motion_fps_weight, s->motion_blend_factor,
+                                                 s->motion_blend_offset), s->motion_max_val);
+        double processed_score = processed_score_for_previous;
+        if (s->motion_moving_average && index > minimum_past_frames_needed) {
+            processed_score = (processed_score + s->previous_score) / 2.0;
+        }
+        if (s->motion_five_frame_window) {
+            err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                 "VMAF_integer_feature_motion3_score",
+                                                 processed_score, minimum_past_frames_needed - 1);
+            err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                 "VMAF_integer_feature_motion3_score",
+                                                 processed_score, minimum_past_frames_needed - 2);
+        } else {
+            err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                 "VMAF_integer_feature_motion3_score",
+                                                 processed_score, minimum_past_frames_needed - 1);
+        }
+        s->previous_score = processed_score_for_previous;
         return err;
     }
 
     uint64_t sad2;
-    // compare frame i - 1 (blur_idx_2) with i - 2 (blur_idx_1)
-    s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_1], &sad2);
+    // compare frame i - 1 (blur_idx_2) with i - 2 (blur_idx_1) or frame i - 2 (blur_idx_3) with i - 4 (blur_idx_1)
+    if (s->motion_five_frame_window) {
+        s->sad(&s->blur[blur_idx_3], &s->blur[blur_idx_1], &sad2);
+    } else {
+        s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_1], &sad2);
+    }
     double score2 = normalize_and_scale_sad(sad2, ref_pic->w[0], ref_pic->h[0]);
 
     score2 = score2 < score ? score2 : score;
 
-    double clipped2 = MIN(score2, s->motion_max_val);
+    double processed_score2_for_previous = MIN(motion_blend(score2 * s->motion_fps_weight, s->motion_blend_factor,
+                                              s->motion_blend_offset), s->motion_max_val);
+    double processed_score2 = processed_score2_for_previous;
+    if (s->motion_moving_average) {
+        processed_score2 = (processed_score2 + s->previous_score) / 2.0;
+    }
+
     err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                         "VMAF_integer_feature_motion2_score",
-                                        clipped2, index - 1);
+                                        MIN(score2 * s->motion_fps_weight, s->motion_max_val), index - 1);
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                          "VMAF_integer_feature_motion3_score",
-                                         clipped2, index - 1);
+                                         processed_score2, index - 1);
+    s->previous_score = processed_score2_for_previous;
     return err;
 }
 
@@ -473,6 +587,8 @@ static int close(VmafFeatureExtractor *fex)
     err |= vmaf_picture_unref(&s->blur[0]);
     err |= vmaf_picture_unref(&s->blur[1]);
     err |= vmaf_picture_unref(&s->blur[2]);
+    err |= vmaf_picture_unref(&s->blur[3]);
+    err |= vmaf_picture_unref(&s->blur[4]);
     err |= vmaf_picture_unref(&s->tmp);
     err |= vmaf_dictionary_free(&s->feature_name_dict);
     return err;

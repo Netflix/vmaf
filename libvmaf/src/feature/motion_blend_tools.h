@@ -16,31 +16,18 @@
  *
  */
 
+#include "common/macros.h"
+
 #pragma once
 
-#ifndef MOTION_TOOLS_H_
-#define MOTION_TOOLS_H_
+#ifndef MOTION_BLEND_TOOLS_H_
+#define MOTION_BLEND_TOOLS_H_
 
-static const float FILTER_5_s[5] = {
-        0.054488685,
-        0.244201342,
-        0.402619947,
-        0.244201342,
-        0.054488685};
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-static const float FILTER_3_s[3] = {
-        0.166378498,
-        0.667243004,
-        0.166378498};
+static FORCE_INLINE inline double motion_blend(double motion_score, double blend_factor, double blend_offset) {
+    /* return a blended motion score */
+    return motion_score * blend_factor + (1 - blend_factor) * MIN(blend_offset, motion_score);
+}
 
-static const float FILTER_5_NO_OP_s[5] = {
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        0.0};
-
-/* Default motion filtering size */
-#define DEFAULT_MOTION_FILTER_SIZE (5)
-
-#endif /* MOTION_TOOLS_H_ */
+#endif /* MOTION_BLEND_TOOLS_H_ */
