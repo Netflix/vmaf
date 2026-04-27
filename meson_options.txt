@@ -1,0 +1,44 @@
+option('enable_tests',
+    type: 'boolean',
+    value: true,
+    description: 'Build libvmaf tests')
+
+option('enable_docs',
+    type: 'boolean',
+    value: true,
+    description: 'Build libvmaf documentation')
+
+option('enable_asm',
+    type: 'boolean',
+    value: true,
+    description: 'Build asm files, if available')
+
+option('enable_avx512',
+    type: 'boolean',
+    value: true,
+    description: 'Build AVX-512 asm files, requires nasm 2.14')
+
+option('built_in_models',
+    type: 'boolean',
+    value: true,
+    description: 'Compile default vmaf models into the library')
+
+option('enable_float',
+    type: 'boolean',
+    value: false,
+    description: 'Compile floating-point feature extractors into the library')
+
+option('enable_cuda',
+    type: 'boolean',
+    value: false,
+    description: 'Enable CUDA support')
+
+option('enable_nvtx',
+    type: 'boolean',
+    value: false,
+    description: 'Enable NVTX range support')
+
+option('enable_nvcc',
+    type: 'boolean',
+    value: true,
+    description: 'Use clang to compile CUDA code.')

@@ -16,5 +16,5 @@ We are going to build vmaf in Windows. These steps are in accordance with the co
         
     cd <Vmaf project root directory>
     mkdir C:/vmaf-install
-    meson setup libvmaf libvmaf/build --buildtype release --default-library static --prefix C:/vmaf-install
-    meson install -C libvmaf/build
+    meson setup builddir --buildtype release --default-library static --prefix C:/vmaf-install
+    meson install -C builddir
