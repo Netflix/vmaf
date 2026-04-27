@@ -21,4 +21,10 @@ int compute_adm(const float *ref, const float *dis, int w, int h,
                 double *score_num, double *score_den, double *scores,
                 double border_factor, double adm_enhn_gain_limit,
                 double adm_norm_view_dist, int adm_ref_display_height,
-                int adm_csf_mode);
+                int adm_csf_mode, double luminance_level,
+                double adm_csf_scale, double adm_csf_diag_scale,
+                double adm_noise_weight, int adm_bypass_cm, double adm_p_norm,
+                double *score_aim,
+                double adm_f1s0, double adm_f1s1, double adm_f1s2, double adm_f1s3,
+                double adm_f2s0, double adm_f2s1, double adm_f2s2, double adm_f2s3, int adm_skip_aim_scale,
+                bool adm_skip_scale0);
