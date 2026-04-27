@@ -113,7 +113,7 @@ static const VmafOption options[] = {
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
         .alias = "s1miv",
     },
-    {
+        {
         .name = "vif_scale2_min_val",
         .help = "minimum value allowed; smaller values will be set to this value",
         .offset = offsetof(VifState, vif_scale2_min_val),
@@ -124,7 +124,7 @@ static const VmafOption options[] = {
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
         .alias = "s2miv",
     },
-    {
+        {
         .name = "vif_scale3_min_val",
         .help = "minimum value allowed; smaller values will be set to this value",
         .offset = offsetof(VifState, vif_scale3_min_val),
@@ -223,6 +223,7 @@ static int extract(VmafFeatureExtractor *fex,
     picture_copy(s->ref, s->float_stride, ref_pic, -128, ref_pic->bpc, 0);
     picture_copy(s->dist, s->float_stride, dist_pic, -128, dist_pic->bpc, 0);
 
+    // The scaling method has been checked for validity in the init callback
     enum vif_scaling_method scaling_method;
     vif_get_scaling_method(s->vif_prescale_method, &scaling_method);
 
