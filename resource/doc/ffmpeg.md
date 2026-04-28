@@ -51,6 +51,10 @@ The expected output is:
 
 See the [FFmpeg's guide to libvmaf](https://ffmpeg.org/ffmpeg-filters.html#libvmaf), the [FFmpeg Filtering Guide](https://trac.ffmpeg.org/wiki/FilteringGuide) for more examples of complex filters, and the [Scaling Guide](https://trac.ffmpeg.org/wiki/Scaling) for information about scaling and using different scaling algorithms.
 
+## Note about ordering of streams
+
+The order matters: the inputs must be specified as `[distorted][reference]`. Unlike most FFmpeg filters, which expect `[reference][distorted]` ordering, VMAF uses `[distorted][reference]`.
+
 ## Note about the model path on Windows
 
 Due to Windows not having a good default for where to pull the VMAF model from, you will always need to specify `model_path` when calling libvmaf through `ffmpeg`. However, you will need to be careful about the path you pass to `model_path`.
