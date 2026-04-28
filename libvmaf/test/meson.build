@@ -139,6 +139,39 @@ test_framesync = executable('test_framesync',
     dependencies : thread_lib,
 )
 
+test_adm_csf = executable('test_adm_csf',
+    ['test.c', 'test_adm_csf.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies : math_lib,
+)
+
+test_barten_csf = executable('test_barten_csf',
+    ['test.c', 'test_barten_csf.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies : math_lib,
+)
+
+if float_enabled
+    test_vif_tools = executable('test_vif_tools',
+        ['test.c', 'test_vif_tools.c'],
+        include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+        link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+        dependencies : math_lib,
+    )
+
+    test_speed_chroma = executable('test_speed_chroma',
+        ['test.c', 'test_speed_chroma.c', '../src/picture.c', '../src/mem.c', '../src/ref.c'],
+        include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+        link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+        dependencies : math_lib,
+    )
+
+    test('test_vif_tools', test_vif_tools)
+    test('test_speed_chroma', test_speed_chroma)
+endif
+
 if get_option('enable_cuda')
 test_ring_buffer = executable('test_ring_buffer',
     ['test.c', 'test_ring_buffer.c', '../src/cuda/ring_buffer.c', '../src/cuda/picture_cuda.c'],
@@ -189,3 +222,5 @@ test('test_cli_parse', test_cli_parse)
 test('test_psnr', test_psnr)
 test('test_framesync', test_framesync)
 test('test_propagate_metadata', test_propagate_metadata)
+test('test_adm_csf', test_adm_csf)
+test('test_barten_csf', test_barten_csf)
