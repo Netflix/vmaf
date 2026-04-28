@@ -1355,6 +1355,19 @@ static inline __m256i sra_epi64(__m256i a, __m256i mask)
     return _mm256_or_si256(rl_shift, signmask);
 }
 
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
+#define extract_epi64 _mm256_extract_epi64
+#else
+static inline int64_t extract_epi64(__m256i a, const int index)
+{
+    // Fallback for 32-bit where _mm256_extract_epi64 is not available.
+    // Based on how GCC implements _mm256_extract_epi64.
+    __m128i y = _mm256_extractf128_si256(a, index / 2);
+    const int i = index % 2;
+    return ((int64_t)_mm_extract_epi32(y, 2 * i + 1) << 32) | _mm_extract_epi32(y, 2 * i);
+}
+#endif
+
 // No lzcnt in avx2
 void adm_decouple_s123_avx2(AdmBuffer *buf, int w, int h, int stride,
                               double adm_enhn_gain_limit, int32_t* adm_div_lookup)
@@ -1439,14 +1452,14 @@ void adm_decouple_s123_avx2(AdmBuffer *buf, int w, int h, int stride,
 
             // angle_flag as int64
             int64_t angle_flag[8];
-            calc_angle(_mm256_extract_epi64(ot_dp_lo_epi64, 0), _mm256_extract_epi64(o_mag_sq_lo_epi64, 0), _mm256_extract_epi64(t_mag_sq_lo_epi64, 0), angle_flag[0]);
-            calc_angle(_mm256_extract_epi64(ot_dp_lo_epi64, 1), _mm256_extract_epi64(o_mag_sq_lo_epi64, 1), _mm256_extract_epi64(t_mag_sq_lo_epi64, 1), angle_flag[1]);
-            calc_angle(_mm256_extract_epi64(ot_dp_lo_epi64, 2), _mm256_extract_epi64(o_mag_sq_lo_epi64, 2), _mm256_extract_epi64(t_mag_sq_lo_epi64, 2), angle_flag[2]);
-            calc_angle(_mm256_extract_epi64(ot_dp_lo_epi64, 3), _mm256_extract_epi64(o_mag_sq_lo_epi64, 3), _mm256_extract_epi64(t_mag_sq_lo_epi64, 3), angle_flag[3]);
-            calc_angle(_mm256_extract_epi64(ot_dp_hi_epi64, 0), _mm256_extract_epi64(o_mag_sq_hi_epi64, 0), _mm256_extract_epi64(t_mag_sq_hi_epi64, 0), angle_flag[4]);
-            calc_angle(_mm256_extract_epi64(ot_dp_hi_epi64, 1), _mm256_extract_epi64(o_mag_sq_hi_epi64, 1), _mm256_extract_epi64(t_mag_sq_hi_epi64, 1), angle_flag[5]);
-            calc_angle(_mm256_extract_epi64(ot_dp_hi_epi64, 2), _mm256_extract_epi64(o_mag_sq_hi_epi64, 2), _mm256_extract_epi64(t_mag_sq_hi_epi64, 2), angle_flag[6]);
-            calc_angle(_mm256_extract_epi64(ot_dp_hi_epi64, 3), _mm256_extract_epi64(o_mag_sq_hi_epi64, 3), _mm256_extract_epi64(t_mag_sq_hi_epi64, 3), angle_flag[7]);
+            calc_angle(extract_epi64(ot_dp_lo_epi64, 0), extract_epi64(o_mag_sq_lo_epi64, 0), extract_epi64(t_mag_sq_lo_epi64, 0), angle_flag[0]);
+            calc_angle(extract_epi64(ot_dp_lo_epi64, 1), extract_epi64(o_mag_sq_lo_epi64, 1), extract_epi64(t_mag_sq_lo_epi64, 1), angle_flag[1]);
+            calc_angle(extract_epi64(ot_dp_lo_epi64, 2), extract_epi64(o_mag_sq_lo_epi64, 2), extract_epi64(t_mag_sq_lo_epi64, 2), angle_flag[2]);
+            calc_angle(extract_epi64(ot_dp_lo_epi64, 3), extract_epi64(o_mag_sq_lo_epi64, 3), extract_epi64(t_mag_sq_lo_epi64, 3), angle_flag[3]);
+            calc_angle(extract_epi64(ot_dp_hi_epi64, 0), extract_epi64(o_mag_sq_hi_epi64, 0), extract_epi64(t_mag_sq_hi_epi64, 0), angle_flag[4]);
+            calc_angle(extract_epi64(ot_dp_hi_epi64, 1), extract_epi64(o_mag_sq_hi_epi64, 1), extract_epi64(t_mag_sq_hi_epi64, 1), angle_flag[5]);
+            calc_angle(extract_epi64(ot_dp_hi_epi64, 2), extract_epi64(o_mag_sq_hi_epi64, 2), extract_epi64(t_mag_sq_hi_epi64, 2), angle_flag[6]);
+            calc_angle(extract_epi64(ot_dp_hi_epi64, 3), extract_epi64(o_mag_sq_hi_epi64, 3), extract_epi64(t_mag_sq_hi_epi64, 3), angle_flag[7]);
             __m256i angle_flag_lo_epi64 = _mm256_loadu_si256((__m256i*) (&angle_flag[0]));
             __m256i angle_flag_hi_epi64 = _mm256_loadu_si256((__m256i*) (&angle_flag[4]));
 
