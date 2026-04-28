@@ -483,7 +483,6 @@ if float_enabled
         feature_src_dir + 'psnr.c',
         feature_src_dir + 'psnr_tools.c',
         feature_src_dir + 'moment.c',
-        feature_src_dir + 'all.c',
         feature_src_dir + 'common/blur_array.c',
     ]
 endif
