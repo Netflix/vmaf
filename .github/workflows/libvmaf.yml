@@ -28,10 +28,15 @@ jobs:
           - os: ubuntu-24.04-arm
             CC: ccache clang
             CXX: ccache clang++
+          - os: ubuntu-latest
+            CC: ccache gcc
+            CXX: ccache g++
+            CROSS: ./libvmaf/test/meson-toolchains/i686-pc-linux-gnu-gcc-cross.ini
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
       CXX: ${{ matrix.CXX }}
+      CROSS: ${{ matrix.CROSS }}
     steps:
       - name: Setup python
         uses: actions/setup-python@v6
@@ -55,6 +60,9 @@ jobs:
             ;;
           *clang) sudo -E apt-get -yq install clang nasm ;;
           esac
+          if [ -n "$CROSS" ]; then
+            sudo -E apt-get -yq install gcc-multilib g++-multilib
+          fi
           $CC --version
           meson --version
           ccache --version
@@ -71,7 +79,7 @@ jobs:
       - uses: actions/checkout@v6
       - name: Run meson
         run: |
-          meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install -Denable_float=true
+          meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install -Denable_float=true ${CROSS:+--cross-file $CROSS}
       - name: Run ninja
         run: |
           sudo ninja -vC libvmaf/build install
