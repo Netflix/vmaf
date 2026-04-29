@@ -32,6 +32,10 @@ jobs:
             CC: ccache gcc
             CXX: ccache g++
             CROSS: ./libvmaf/test/meson-toolchains/i686-pc-linux-gnu-gcc-cross.ini
+          - os: ubuntu-latest
+            CC: ccache clang
+            CXX: ccache clang++
+            CROSS: ./libvmaf/test/meson-toolchains/i686-pc-linux-gnu-clang-cross.ini
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
@@ -58,7 +62,7 @@ jobs:
             sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
             sudo -E apt-get -yq install gcc-9 g++-9 nasm
             ;;
-          *clang) sudo -E apt-get -yq install clang nasm ;;
+          *clang) sudo -E apt-get -yq install clang llvm nasm ;;
           esac
           if [ -n "$CROSS" ]; then
             sudo -E apt-get -yq install gcc-multilib g++-multilib
