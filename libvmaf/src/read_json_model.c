@@ -354,6 +354,14 @@ static int parse_model_dict(json_stream *s, VmafModel *model,
             continue;
         }
 
+        if (!strcmp(key, "chroma_correction_parameter")) {
+            if (json_next(s) != JSON_NUMBER)
+                return -EINVAL;
+            model->chroma_from_luma.enabled = true;
+            model->chroma_from_luma.chroma_correction_parameter = json_get_number(s);
+            continue;
+        }
+
         if (!strcmp(key, "slopes")) {
             if (json_next(s) != JSON_ARRAY)
                 return -EINVAL;

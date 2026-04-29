@@ -59,6 +59,10 @@ typedef struct VmafModel {
         bool enabled;
         double min, max;
     } score_clip;
+    struct {
+        bool enabled;
+        double chroma_correction_parameter;
+    } chroma_from_luma;
     enum VmafModelNormalizationType norm_type;
     struct {
         bool enabled;
