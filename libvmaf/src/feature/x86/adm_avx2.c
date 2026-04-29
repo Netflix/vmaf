@@ -1362,9 +1362,26 @@ static inline int64_t extract_epi64(__m256i a, const int index)
 {
     // Fallback for 32-bit where _mm256_extract_epi64 is not available.
     // Based on how GCC implements _mm256_extract_epi64.
-    __m128i y = _mm256_extractf128_si256(a, index / 2);
-    const int i = index % 2;
-    return ((int64_t)_mm_extract_epi32(y, 2 * i + 1) << 32) | _mm_extract_epi32(y, 2 * i);
+    // Uses a switch to ensure constant indices since clang will complain.
+    switch (index) {
+    case 0: {
+        __m128i y = _mm256_extractf128_si256(a, 0);
+        return ((uint64_t)_mm_extract_epi32(y, 1) << 32) | (unsigned)_mm_extract_epi32(y, 0);
+    }
+    case 1: {
+        __m128i y = _mm256_extractf128_si256(a, 0);
+        return ((uint64_t)_mm_extract_epi32(y, 3) << 32) | (unsigned)_mm_extract_epi32(y, 2);
+    }
+    case 2: {
+        __m128i y = _mm256_extractf128_si256(a, 1);
+        return ((uint64_t)_mm_extract_epi32(y, 1) << 32) | (unsigned)_mm_extract_epi32(y, 0);
+    }
+    case 3: {
+        __m128i y = _mm256_extractf128_si256(a, 1);
+        return ((uint64_t)_mm_extract_epi32(y, 3) << 32) | (unsigned)_mm_extract_epi32(y, 2);
+    }
+    default: return 0;
+    }
 }
 #endif
 
