@@ -10,10 +10,15 @@ from test.testutil import set_default_576_324_videos_for_testing, \
 from vmaf.core.cambi_feature_extractor import CambiFeatureExtractor, CambiFullReferenceFeatureExtractor
 from vmaf.core.cambi_quality_runner import CambiQualityRunner, CambiFullReferenceQualityRunner
 from vmaf.core.result_store import FileSystemResultStore
-from vmaf.tools.testutils import MyTestCaseWithCleanup
+from vmaf.tools.misc import MyTestCase
 
 
-class CambiFeatureExtractorTest(MyTestCaseWithCleanup):
+class CambiFeatureExtractorTest(MyTestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'fextractor'):
+            self.fextractor.remove_results()
+        super().tearDown()
 
     def test_run_cambi_fextractor(self):
         _, _, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -429,7 +434,12 @@ class CambiFeatureExtractorTest(MyTestCaseWithCleanup):
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_ench_1440_encw_2560_score'], 0.15102933333333332, places=4)
 
 
-class CambiQualityRunnerTest(MyTestCaseWithCleanup):
+class CambiQualityRunnerTest(MyTestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'qrunner'):
+            self.qrunner.remove_results()
+        super().tearDown()
 
     def test_run_cambi_runner(self):
         _, _, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -511,7 +521,7 @@ class CambiQualityRunnerTest(MyTestCaseWithCleanup):
                                0.25968416666666666, places=4)
 
 
-class CambiResultsCachingTest(MyTestCaseWithCleanup):
+class CambiResultsCachingTest(MyTestCase):
 
     def setUp(self):
         super().setUp()
