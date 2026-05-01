@@ -5,7 +5,8 @@ from test.testutil import set_default_576_324_videos_for_testing, \
     set_default_576_324_videos_for_testing_scaled, \
     set_default_cambi_video_for_testing_b, \
     set_default_cambi_video_for_testing_10b, \
-    set_default_cambi_video_for_testing_mp4
+    set_default_cambi_video_for_testing_yuv10b, \
+    set_default_cambi_notyuv_asset_for_validation_testing
 
 from vmaf.core.cambi_feature_extractor import CambiFeatureExtractor, CambiFullReferenceFeatureExtractor
 from vmaf.core.cambi_quality_runner import CambiQualityRunner, CambiFullReferenceQualityRunner
@@ -154,9 +155,9 @@ class CambiFeatureExtractorTest(MyTestCase):
                                0.0013863333333333334, places=4)
 
     def test_run_cambi_fextractor_notyuv_unspecified_enc_bitdepth(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        asset = set_default_cambi_notyuv_asset_for_validation_testing()
         self.fextractor = CambiFeatureExtractor(
-            [asset, asset_original],
+            [asset],
             None, fifo_mode=False,
             result_store=None,
             optional_dict={}
@@ -165,7 +166,7 @@ class CambiFeatureExtractorTest(MyTestCase):
             self.fextractor.run(parallelize=False)
 
     def test_run_cambi_fextractor_notyuv_correct_enc_bitdepth(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
         asset.asset_dict['dis_enc_bitdepth'] = 8
         self.fextractor = CambiFeatureExtractor(
             [asset, asset_original],
@@ -181,7 +182,7 @@ class CambiFeatureExtractorTest(MyTestCase):
                                0.022446666666666667, places=4)
 
     def test_run_cambi_fextractor_notyuv_incorrect_enc_bitdepth(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
         asset.asset_dict['dis_enc_bitdepth'] = 10
         self.fextractor = CambiFeatureExtractor(
             [asset, asset_original],
@@ -197,11 +198,11 @@ class CambiFeatureExtractorTest(MyTestCase):
                                0.020136333333333336, places=4)
 
     def test_run_cambi_fextractor_notyuv_10bit_without_workfile_yuv_type(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        asset = set_default_cambi_notyuv_asset_for_validation_testing()
         asset.asset_dict['dis_enc_bitdepth'] = 10
         del asset.asset_dict['workfile_yuv_type']
         self.fextractor = CambiFeatureExtractor(
-            [asset, asset_original],
+            [asset],
             None, fifo_mode=False,
             result_store=None,
             optional_dict={}
@@ -297,7 +298,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_full_reference_score'], 0.0001, places=4)
 
     def test_run_cambi_fextractor_notyuv_4k_encode(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
         asset.asset_dict['dis_enc_bitdepth'] = 8
         asset.asset_dict['quality_width'] = 3840
         asset.asset_dict['quality_height'] = 2160
@@ -317,7 +318,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_score'], 0.24399833333333332, places=4)
 
     def test_run_cambi_fextractor_notyuv_4k_encode_high_res_speedup(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
         asset.asset_dict['dis_enc_bitdepth'] = 8
         asset.asset_dict['quality_width'] = 3840
         asset.asset_dict['quality_height'] = 2160
@@ -337,7 +338,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_hrs_2160_encbd_8_score'], 0.24772933333333333, places=4)
 
     def test_run_cambi_fextractor_notyuv_1080p_encode(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
         asset.asset_dict['dis_enc_bitdepth'] = 8
         asset.asset_dict['quality_width'] = 3840
         asset.asset_dict['quality_height'] = 2160
@@ -357,7 +358,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_ench_1080_encw_1920_score'], 0.14994066666666664, places=4)
 
     def test_run_cambi_fextractor_notyuv_1080p_encode_high_res_speedup(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
         asset.asset_dict['dis_enc_bitdepth'] = 8
         asset.asset_dict['quality_width'] = 3840
         asset.asset_dict['quality_height'] = 2160
@@ -377,7 +378,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['Cambi_feature_cambi_hrs_1080_encbd_8_ench_1080_encw_1920_score'], 0.16270733333333334, places=4)
 
     def test_run_cambi_fextractor_notyuv_1080p_encode_vis_lum_threshold(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
         asset.asset_dict['dis_enc_bitdepth'] = 8
         asset.asset_dict['quality_width'] = 3840
         asset.asset_dict['quality_height'] = 2160
@@ -414,7 +415,7 @@ class CambiFeatureExtractorTest(MyTestCase):
                                places=4)
 
     def test_run_cambi_fextractor_notyuv_1440p_encode_at_1080p_quality_height(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_mp4()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
         asset.asset_dict['dis_enc_bitdepth'] = 8
         asset.asset_dict['quality_width'] = 1920
         asset.asset_dict['quality_height'] = 1080
