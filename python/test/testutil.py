@@ -235,3 +235,35 @@ def set_default_cambi_video_for_testing_mp4():
                                    'dis_enc_height': 360})
 
     return dis_path, dis_path, asset, asset
+
+
+def set_default_cambi_video_for_testing_yuv10b():
+    dis_path = VmafConfig.test_resource_path("yuv", "blue_sky_360p_60f_8b_converted_to_10b.yuv")
+    asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                       workdir_root=VmafConfig.workdir_path(),
+                       dis_path=dis_path,
+                       asset_dict={'yuv_type': 'yuv420p10le',
+                                   'width': 640,
+                                   'height': 360,
+                                   'quality_width': 640,
+                                   'quality_height': 360,
+                                   'dis_enc_width': 640,
+                                   'dis_enc_height': 360})
+
+    return dis_path, dis_path, asset, asset
+
+
+def set_default_cambi_notyuv_asset_for_validation_testing():
+    """Returns a notyuv asset with a dummy path for testing validation guards.
+    The dummy path is never accessed — assertions fire before any I/O occurs."""
+    asset = NorefAsset(dataset="test", content_id=0, asset_id=0,
+                       workdir_root=VmafConfig.workdir_path(),
+                       dis_path="dummy_not_accessed.mp4",
+                       asset_dict={'yuv_type': 'notyuv',
+                                   'workfile_yuv_type': 'yuv420p10le',
+                                   'quality_width': 640,
+                                   'quality_height': 360,
+                                   'dis_enc_width': 640,
+                                   'dis_enc_height': 360})
+
+    return asset
