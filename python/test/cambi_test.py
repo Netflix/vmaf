@@ -1,6 +1,7 @@
 import os
 import shutil
 import unittest
+from unittest.mock import patch
 from test.testutil import set_default_576_324_videos_for_testing, \
     set_default_576_324_videos_for_testing_scaled, \
     set_default_cambi_video_for_testing_b, \
@@ -158,14 +159,15 @@ class CambiFeatureExtractorTest(MyTestCase):
 
     def test_run_cambi_fextractor_notyuv_unspecified_enc_bitdepth(self):
         asset = set_default_cambi_notyuv_asset_for_validation_testing()
-        self.fextractor = CambiFeatureExtractor(
-            [asset],
-            None, fifo_mode=False,
-            result_store=None,
-            optional_dict={}
-        )
-        with self.assertRaises(AssertionError):
-            self.fextractor.run(parallelize=False)
+        with patch('vmaf.config.VmafExternalConfig.get_and_assert_ffmpeg'):
+            self.fextractor = CambiFeatureExtractor(
+                [asset],
+                None, fifo_mode=False,
+                result_store=None,
+                optional_dict={}
+            )
+            with self.assertRaises(AssertionError):
+                self.fextractor.run(parallelize=False)
 
     def test_run_cambi_fextractor_notyuv_correct_enc_bitdepth(self):
         _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
@@ -203,15 +205,15 @@ class CambiFeatureExtractorTest(MyTestCase):
         asset = set_default_cambi_notyuv_asset_for_validation_testing()
         asset.asset_dict['dis_enc_bitdepth'] = 10
         del asset.asset_dict['workfile_yuv_type']
-        self.fextractor = CambiFeatureExtractor(
-            [asset],
-            None, fifo_mode=False,
-            result_store=None,
-            optional_dict={}
-        )
-
-        with self.assertRaises(AssertionError):
-            self.fextractor.run(parallelize=False)
+        with patch('vmaf.config.VmafExternalConfig.get_and_assert_ffmpeg'):
+            self.fextractor = CambiFeatureExtractor(
+                [asset],
+                None, fifo_mode=False,
+                result_store=None,
+                optional_dict={}
+            )
+            with self.assertRaises(AssertionError):
+                self.fextractor.run(parallelize=False)
 
     def test_run_cambi_fextractor_max_log_contrast(self):
         _, _, asset, asset_original = set_default_576_324_videos_for_testing()
