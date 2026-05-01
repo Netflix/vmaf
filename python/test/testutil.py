@@ -44,19 +44,19 @@ def set_default_576_324_videos_for_testing():
 
 
 def set_default_576_324_videos_for_testing_5frames():
-    ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324.yuv")
-    dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324.yuv")
+    ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324_5frames.yuv")
+    dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324_5frames.yuv")
     asset = Asset(dataset="test", content_id=0, asset_id=0,
                   workdir_root=VmafConfig.workdir_path(),
                   ref_path=ref_path,
                   dis_path=dis_path,
-                  asset_dict={'width': 576, 'height': 324, 'start_frame': 0, 'end_frame': 4})
+                  asset_dict={'width': 576, 'height': 324})
 
     asset_original = Asset(dataset="test", content_id=0, asset_id=1,
                            workdir_root=VmafConfig.workdir_path(),
                            ref_path=ref_path,
                            dis_path=ref_path,
-                           asset_dict={'width': 576, 'height': 324, 'start_frame': 0, 'end_frame': 4})
+                           asset_dict={'width': 576, 'height': 324})
 
     return ref_path, dis_path, asset, asset_original
 
