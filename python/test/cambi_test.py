@@ -6,6 +6,8 @@ from test.testutil import set_default_576_324_videos_for_testing, \
     set_default_cambi_video_for_testing_b, \
     set_default_cambi_video_for_testing_10b, \
     set_default_cambi_video_for_testing_yuv10b, \
+    set_default_cambi_video_for_testing_yuv4k, \
+    set_default_cambi_video_for_testing_yuv1080p, \
     set_default_cambi_notyuv_asset_for_validation_testing
 
 from vmaf.core.cambi_feature_extractor import CambiFeatureExtractor, CambiFullReferenceFeatureExtractor
@@ -298,12 +300,8 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['Cambi_FR_feature_cambi_full_reference_score'], 0.0001, places=4)
 
     def test_run_cambi_fextractor_notyuv_4k_encode(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv4k()
         asset.asset_dict['dis_enc_bitdepth'] = 8
-        asset.asset_dict['quality_width'] = 3840
-        asset.asset_dict['quality_height'] = 2160
-        asset.asset_dict['dis_enc_width'] = 3840
-        asset.asset_dict['dis_enc_height'] = 2160
 
         self.fextractor = CambiFeatureExtractor(
             [asset],
@@ -314,16 +312,11 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.fextractor.run(parallelize=False)
         results = self.fextractor.results
 
-        # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_score'], 0.24399833333333332, places=4)
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_score'], 0.271599, places=4)
 
     def test_run_cambi_fextractor_notyuv_4k_encode_high_res_speedup(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv4k()
         asset.asset_dict['dis_enc_bitdepth'] = 8
-        asset.asset_dict['quality_width'] = 3840
-        asset.asset_dict['quality_height'] = 2160
-        asset.asset_dict['dis_enc_width'] = 3840
-        asset.asset_dict['dis_enc_height'] = 2160
 
         self.fextractor = CambiFeatureExtractor(
             [asset],
@@ -334,14 +327,11 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.fextractor.run(parallelize=False)
         results = self.fextractor.results
 
-        # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_hrs_2160_encbd_8_score'], 0.24772933333333333, places=4)
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_hrs_2160_encbd_8_score'], 0.270937, places=4)
 
     def test_run_cambi_fextractor_notyuv_1080p_encode(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv4k()
         asset.asset_dict['dis_enc_bitdepth'] = 8
-        asset.asset_dict['quality_width'] = 3840
-        asset.asset_dict['quality_height'] = 2160
         asset.asset_dict['dis_enc_width'] = 1920
         asset.asset_dict['dis_enc_height'] = 1080
 
@@ -354,14 +344,11 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.fextractor.run(parallelize=False)
         results = self.fextractor.results
 
-        # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_ench_1080_encw_1920_score'], 0.14994066666666664, places=4)
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_ench_1080_encw_1920_score'], 0.167373, places=4)
 
     def test_run_cambi_fextractor_notyuv_1080p_encode_high_res_speedup(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv4k()
         asset.asset_dict['dis_enc_bitdepth'] = 8
-        asset.asset_dict['quality_width'] = 3840
-        asset.asset_dict['quality_height'] = 2160
         asset.asset_dict['dis_enc_width'] = 1920
         asset.asset_dict['dis_enc_height'] = 1080
 
@@ -374,14 +361,11 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.fextractor.run(parallelize=False)
         results = self.fextractor.results
 
-        # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_hrs_1080_encbd_8_ench_1080_encw_1920_score'], 0.16270733333333334, places=4)
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_hrs_1080_encbd_8_ench_1080_encw_1920_score'], 0.192061, places=4)
 
     def test_run_cambi_fextractor_notyuv_1080p_encode_vis_lum_threshold(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv4k()
         asset.asset_dict['dis_enc_bitdepth'] = 8
-        asset.asset_dict['quality_width'] = 3840
-        asset.asset_dict['quality_height'] = 2160
         asset.asset_dict['dis_enc_width'] = 1920
         asset.asset_dict['dis_enc_height'] = 1080
 
@@ -394,9 +378,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.fextractor.run(parallelize=False)
         results = self.fextractor.results
 
-        # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_vlt_5_encbd_8_ench_1080_encw_1920_score'], 0.095409,
-                               places=4)
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_vlt_5_encbd_8_ench_1080_encw_1920_score'], 0.104946, places=4)
 
     def test_run_cambi_fextractor_max_val(self):
         _, _, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -415,10 +397,8 @@ class CambiFeatureExtractorTest(MyTestCase):
                                places=4)
 
     def test_run_cambi_fextractor_notyuv_1440p_encode_at_1080p_quality_height(self):
-        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv10b()
+        _, _, asset, asset_original = set_default_cambi_video_for_testing_yuv1080p()
         asset.asset_dict['dis_enc_bitdepth'] = 8
-        asset.asset_dict['quality_width'] = 1920
-        asset.asset_dict['quality_height'] = 1080
         asset.asset_dict['dis_enc_width'] = 2560
         asset.asset_dict['dis_enc_height'] = 1440
 
@@ -431,8 +411,7 @@ class CambiFeatureExtractorTest(MyTestCase):
         self.fextractor.run(parallelize=False)
         results = self.fextractor.results
 
-        # score: arithmetic mean score over all frames
-        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_ench_1440_encw_2560_score'], 0.15102933333333332, places=4)
+        self.assertAlmostEqual(results[0]['Cambi_feature_cambi_encbd_8_ench_1440_encw_2560_score'], 0.172338, places=4)
 
 
 class CambiQualityRunnerTest(MyTestCase):
