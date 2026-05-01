@@ -927,3 +927,75 @@ class AnsnrFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         ExternalProgramCaller.call_vmafexec_single_feature(
             'float_ansnr', yuv_type, ref_path, dis_path, w, h, log_file_path, logger,
             options={**optional_dict2})
+
+
+class SpeedChromaFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
+
+    # C implementation for the SpEED-QA variant applied on chroma
+    TYPE = "Speed_chroma_feature"
+    # VERSION = "0.1"  # original version
+    # VERSION = "0.2"  # sigma trick for downscaling, change to scale 4
+    # VERSION = "0.3"  # fix check for regular matrix
+    # VERSION = "0.4"  # change default sigma_nn to 0.29
+    # VERSION = "0.5"  # introduce speed_chroma_uv as atom feature
+    # VERSION = "0.6"  # Include the feature options as part of the feature name
+    # VERSION = "0.7"  # Introduce the speed_nn_floor parameter
+    # VERSION = "0.8"  # Compute the filter coefficients on the fly rather than precomputing
+    VERSION = "0.9"  # Impute singular channel score from the other channel
+
+    ATOM_FEATURES = ['speed_chroma_u', 'speed_chroma_v', 'speed_chroma_uv']
+
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
+        'speed_chroma_u': 'speed_chroma_u',
+        'speed_chroma_v': 'speed_chroma_v',
+        'speed_chroma_uv': 'speed_chroma_uv'
+    }
+
+    DERIVED_ATOM_FEATURES = []
+
+    def _generate_result(self, asset):
+        quality_width, quality_height = asset.quality_width_height
+        log_file_path = self._get_log_file_path(asset)
+
+        yuv_type = self._get_workfile_yuv_type(asset)
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
+        logger = self.logger
+
+        optional_dict = self.optional_dict if self.optional_dict is not None else dict()
+        optional_dict2 = self.optional_dict2 if self.optional_dict2 is not None else dict()
+
+        ExternalProgramCaller.call_vmafexec_single_feature(
+            'speed_chroma', yuv_type, ref_path, dis_path, quality_width, quality_height,
+            log_file_path, logger, options={**optional_dict, **optional_dict2})
+
+
+class SpeedTemporalFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
+
+    # C implementation for the SpEED-QA variant applied on frame differences
+    TYPE = "Speed_temporal_feature"
+    VERSION = "0.1"  # original version
+
+    ATOM_FEATURES = ['speed_temporal']
+
+    ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
+        'speed_temporal': 'speed_temporal'
+    }
+
+    DERIVED_ATOM_FEATURES = []
+
+    def _generate_result(self, asset):
+        quality_width, quality_height = asset.quality_width_height
+        log_file_path = self._get_log_file_path(asset)
+
+        yuv_type = self._get_workfile_yuv_type(asset)
+        ref_path = asset.ref_procfile_path
+        dis_path = asset.dis_procfile_path
+        logger = self.logger
+
+        optional_dict = self.optional_dict if self.optional_dict is not None else dict()
+        optional_dict2 = self.optional_dict2 if self.optional_dict2 is not None else dict()
+
+        ExternalProgramCaller.call_vmafexec_single_feature(
+            'speed_temporal', yuv_type, ref_path, dis_path, quality_width, quality_height,
+            log_file_path, logger, options={**optional_dict, **optional_dict2})
