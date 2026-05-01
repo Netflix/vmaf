@@ -18,16 +18,11 @@ class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         'cambi': 'cambi'
     }
 
-    def _generate_result(self, asset):
-        # routine to call the command-line executable and generate quality
-        # scores in the log file.
-
-        quality_width, quality_height = asset.quality_width_height
+    def _validate_asset(self, asset):
         assert asset.dis_encode_width_height is not None, \
             'For Cambi, dis_encode_width_height cannot be None. One can specify dis_encode_width_height by adding ' \
             'the following fields to asset_dict: 1) dis_enc_width and dis_enc_height, or 2) dis_width and ' \
             'dis_height, or 3) width and height.'
-        encode_width, encode_height = asset.dis_encode_width_height
 
         assert asset.dis_encode_bitdepth is not None, \
             'For Cambi, dis_encode_bitdepth cannot be None. One can specify dis_encode_bitdepth by adding ' \
@@ -48,6 +43,18 @@ class CambiFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
                           f"This would lead to converting the encode to 8 bit prior to calculating CAMBI and " \
                           f"producing inaccurate results. To compute Cambi in {encode_bitdepth} bit, one can add " \
                           f"workfile_yuv_type field to asset_dict. The supported values are {supported_yuv_types}."
+
+    def _run_on_asset(self, asset):
+        self._validate_asset(asset)
+        return super()._run_on_asset(asset)
+
+    def _generate_result(self, asset):
+        # routine to call the command-line executable and generate quality
+        # scores in the log file.
+
+        quality_width, quality_height = asset.quality_width_height
+        encode_width, encode_height = asset.dis_encode_width_height
+        encode_bitdepth = asset.dis_encode_bitdepth
 
         additional_params = {'enc_bitdepth': encode_bitdepth}
         if encode_width != quality_width or encode_height != quality_height:
