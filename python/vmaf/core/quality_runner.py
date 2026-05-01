@@ -20,7 +20,7 @@ from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel
 from vmaf.core.feature_extractor import SsimFeatureExtractor, \
     MsSsimFeatureExtractor, \
     VmafFeatureExtractor, PsnrFeatureExtractor, VmafIntegerFeatureExtractor, \
-    FeatureExtractor
+    FeatureExtractor, SpeedChromaFeatureExtractor, SpeedTemporalFeatureExtractor
 from vmaf.core.vmafexec_feature_extractor import CIEDE2000FeatureExtractor
 from vmaf.tools.decorator import override
 
@@ -1451,6 +1451,58 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
                 assert feature_nicknames[i_feature] is not None
                 quality_result[self.get_feature_scores_key(feature_nicknames[i_feature])] = feature_scores[i_feature]
         return quality_result
+
+
+class SpeedChromaQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
+    TYPE = 'SpeedChroma'
+    VERSION = SpeedChromaFeatureExtractor.VERSION
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return SpeedChromaFeatureExtractor
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'speed_chroma_uv'
+
+
+class SpeedChromaUQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
+    TYPE = 'SpeedChromaU'
+    VERSION = SpeedChromaFeatureExtractor.VERSION
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return SpeedChromaFeatureExtractor
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'speed_chroma_u'
+
+
+class SpeedChromaVQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
+    TYPE = 'SpeedChromaV'
+    VERSION = SpeedChromaFeatureExtractor.VERSION
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return SpeedChromaFeatureExtractor
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'speed_chroma_v'
+
+
+class SpeedTemporalQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
+    TYPE = 'SpeedTemporal'
+    VERSION = SpeedTemporalFeatureExtractor.VERSION
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return SpeedTemporalFeatureExtractor
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'speed_temporal'
 
 
 if __name__ == '__main__':
