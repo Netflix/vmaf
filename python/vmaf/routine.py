@@ -1,5 +1,8 @@
+import copy
 import os
 import numpy as np
+import re
+
 import pandas
 
 from vmaf import plt
@@ -18,265 +21,590 @@ __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 
+class SubjectiveDatasetReader(object):
+
+    def __init__(self, dataset, **kwargs):
+        self.dataset = dataset
+        self.kwargs = kwargs
+
+        self._assert_args()
+
+    def _assert_args(self):
+
+        dataset = self.dataset
+
+        # asserts, can add more to the list...
+        assert hasattr(dataset, 'dataset_name')
+        assert hasattr(dataset, 'ref_videos')
+        assert hasattr(dataset, 'dis_videos')
+
+        assert hasattr(dataset, 'yuv_fmt') or all(['yuv_fmt' in ref_video for ref_video in dataset.ref_videos])
+
+    def read(self):
+
+        groundtruth_key = self.kwargs['groundtruth_key'] if 'groundtruth_key' in self.kwargs else None
+        skip_asset_with_none_groundtruth = self.kwargs['skip_asset_with_none_groundtruth'] \
+            if 'skip_asset_with_none_groundtruth' in self.kwargs else False
+        content_ids = self.kwargs['content_ids'] if 'content_ids' in self.kwargs else None
+        asset_ids = self.kwargs['asset_ids'] if 'asset_ids' in self.kwargs else None
+        workdir_root = self.kwargs['workdir_root'] if 'workdir_root' in self.kwargs else VmafConfig.workdir_path()
+
+        data_set_name = self.dataset.dataset_name
+        ref_videos = self.dataset.ref_videos
+        dis_videos = self.dataset.dis_videos
+
+        width = self.dataset.width if hasattr(self.dataset, 'width') else None
+        height = self.dataset.height if hasattr(self.dataset, 'height') else None
+        yuv_fmt = self.dataset.yuv_fmt if hasattr(self.dataset, 'yuv_fmt') else None
+
+        quality_width = self.dataset.quality_width if hasattr(self.dataset, 'quality_width') else None
+        quality_height = self.dataset.quality_height if hasattr(self.dataset, 'quality_height') else None
+        resampling_type = self.dataset.resampling_type if hasattr(self.dataset, 'resampling_type') else None
+        crop_cmd = self.dataset.crop_cmd if hasattr(self.dataset, 'crop_cmd') else None
+        pad_cmd = self.dataset.pad_cmd if hasattr(self.dataset, 'pad_cmd') else None
+        fps_cmd = self.dataset.fps_cmd if hasattr(self.dataset, 'fps_cmd') else None
+        workfile_yuv_type = self.dataset.workfile_yuv_type if hasattr(self.dataset, 'workfile_yuv_type') else None
+        duration_sec = self.dataset.duration_sec if hasattr(self.dataset, 'duration_sec') else None
+        fps = self.dataset.fps if hasattr(self.dataset, 'fps') else None
+        start_frame = self.dataset.start_frame if hasattr(self.dataset, 'start_frame') else None
+        end_frame = self.dataset.end_frame if hasattr(self.dataset, 'end_frame') else None
+
+        assets = []
+        ref_dict = {}  # dictionary of content_id -> path for ref videos
+        for ref_video in ref_videos:
+            ref_dict[ref_video['content_id']] = ref_video
+
+        for dis_video in dis_videos:
+
+            if content_ids is not None and dis_video['content_id'] not in content_ids:
+                continue
+
+            if asset_ids is not None and dis_video['asset_id'] not in asset_ids:
+                continue
+
+            if groundtruth_key is not None:
+                groundtruth = dis_video[groundtruth_key]
+            else:
+                if 'dmos' in dis_video:
+                    groundtruth = dis_video['dmos']
+                elif 'mos' in dis_video:
+                    groundtruth = dis_video['mos']
+                elif 'groundtruth' in dis_video:
+                    groundtruth = dis_video['groundtruth']
+                else:
+                    groundtruth = None
+
+            if 'os' in dis_video:
+                raw_groundtruth = dis_video['os']
+            else:
+                raw_groundtruth = None
+
+            if 'groundtruth_std' in dis_video:
+                groundtruth_std = dis_video['groundtruth_std']
+            else:
+                groundtruth_std = None
+
+            if 'rebuf_indices' in dis_video:
+                rebuf_indices = dis_video['rebuf_indices']
+            else:
+                rebuf_indices = None
+
+            ref_video = ref_dict[dis_video['content_id']]
+
+            ref_path = ref_video['path']
+
+            ref_yuv_fmt_ = yuv_fmt if yuv_fmt is not None else ref_dict[dis_video['content_id']]['yuv_fmt']
+            dis_yuv_fmt_ = dis_video['yuv_fmt'] if 'yuv_fmt' in dis_video else ref_yuv_fmt_
+
+            if width is not None:
+                width_ = width
+            elif 'width' in ref_video and 'width' not in dis_video:
+                width_ = ref_video['width']
+            elif 'width' in dis_video and 'width' not in ref_video:
+                width_ = dis_video['width']
+            elif 'width' in ref_video and 'width' in dis_video:
+                width_ = ref_video['width']
+            else:
+                width_ = None
+
+            if height is not None:
+                height_ = height
+            elif 'height' in ref_video and 'height' not in dis_video:
+                height_ = ref_video['height']
+            elif 'height' in dis_video and 'height' not in ref_video:
+                height_ = dis_video['height']
+            elif 'height' in ref_video and 'height' in dis_video:
+                height_ = ref_video['height']
+            else:
+                height_ = None
+
+            if quality_width is not None:
+                quality_width_ = quality_width
+            elif 'quality_width' in dis_video:
+                quality_width_ = dis_video['quality_width']
+            else:
+                quality_width_ = None
+
+            if quality_height is not None:
+                quality_height_ = quality_height
+            elif 'quality_height' in dis_video:
+                quality_height_ = dis_video['quality_height']
+            else:
+                quality_height_ = None
+
+            if resampling_type is not None:
+                resampling_type_ = resampling_type
+            elif 'resampling_type' in dis_video:
+                resampling_type_ = dis_video['resampling_type']
+            else:
+                resampling_type_ = None
+
+            if crop_cmd is not None:
+                ref_crop_cmd_ = crop_cmd
+                dis_crop_cmd_ = crop_cmd
+            else:
+                if 'crop_cmd' in ref_video:
+                    ref_crop_cmd_ = ref_video['crop_cmd']
+                else:
+                    ref_crop_cmd_ = None
+                if 'crop_cmd' in dis_video:
+                    dis_crop_cmd_ = dis_video['crop_cmd']
+                else:
+                    dis_crop_cmd_ = None
+
+            if pad_cmd is not None:
+                ref_pad_cmd_ = pad_cmd
+                dis_pad_cmd_ = pad_cmd
+            else:
+                if 'pad_cmd' in ref_video:
+                    ref_pad_cmd_ = ref_video['pad_cmd']
+                else:
+                    ref_pad_cmd_ = None
+                if 'pad_cmd' in dis_video:
+                    dis_pad_cmd_ = dis_video['pad_cmd']
+                else:
+                    dis_pad_cmd_ = None
+
+            if fps_cmd is not None:
+                ref_fps_cmd_ = fps_cmd
+                dis_fps_cmd_ = fps_cmd
+            else:
+                if 'fps_cmd' in ref_video:
+                    ref_fps_cmd_ = ref_video['fps_cmd']
+                else:
+                    ref_fps_cmd_ = None
+                if 'fps_cmd' in dis_video:
+                    dis_fps_cmd_ = dis_video['fps_cmd']
+                else:
+                    dis_fps_cmd_ = None
+
+            if duration_sec is not None:
+                duration_sec_ = duration_sec
+            elif 'duration_sec' in dis_video:
+                duration_sec_ = dis_video['duration_sec']
+            else:
+                duration_sec_ = None
+
+            if fps is not None:
+                fps_ = fps
+            elif 'fps' in dis_video:
+                fps_ = dis_video['fps']
+            else:
+                fps_ = None
+
+            if start_frame is not None:
+                start_frame_ = start_frame
+            elif 'start_frame' in dis_video:
+                start_frame_ = dis_video['start_frame']
+            else:
+                start_frame_ = None
+
+            if end_frame is not None:
+                end_frame_ = end_frame
+            elif 'end_frame' in dis_video:
+                end_frame_ = dis_video['end_frame']
+            else:
+                end_frame_ = None
+
+            if workfile_yuv_type is not None:
+                workfile_yuv_type_ = workfile_yuv_type
+            elif 'workfile_yuv_type' in dis_video:
+                workfile_yuv_type_ = dis_video['workfile_yuv_type']
+            else:
+                workfile_yuv_type_ = None
+
+            # if ref_video has resolution information, use it
+            ref_video_has_width = 'width' in ref_video
+            ref_video_has_height = 'height' in ref_video
+            if ref_video_has_width and not ref_video_has_height:
+                assert False, "Width is set in ref_video, but height is not set. " \
+                              "If one is set, then the other must be set too."
+            elif not ref_video_has_width and ref_video_has_height:
+                assert False, "Height is set in ref_video, but width is not set. " \
+                              "If one is set, then the other must be set too."
+            elif ref_video_has_width and ref_video_has_height:
+                ref_width_ = ref_video['width']
+                ref_height_ = ref_video['height']
+            else:
+                # fallback to the previously-determined common width and height
+                ref_width_ = width_
+                ref_height_ = height_
+
+            # if dis_video has resolution information, use it
+            dis_video_has_width = 'width' in dis_video
+            dis_video_has_height = 'height' in dis_video
+            if dis_video_has_width and not dis_video_has_height:
+                assert False, "Width is set in dis_video, but height is not set. " \
+                              "If one is set, then the other must be set too."
+            elif not dis_video_has_width and dis_video_has_height:
+                assert False, "Height is set in dis_video, but width is not set. " \
+                              "If one is set, then the other must be set too."
+            elif dis_video_has_width and dis_video_has_height:
+                dis_width_ = dis_video['width']
+                dis_height_ = dis_video['height']
+            else:
+                # fallback to the previously-determined common width and height
+                dis_width_ = width_
+                dis_height_ = height_
+
+            # if width and height are set for both reference and distorted, but are not equal,
+            # then we must set the quality width and height to match the resolution of reference and distorted
+            if ref_width_ is not None and ref_height_ is not None and \
+                    dis_width_ is not None and dis_height_ is not None and \
+                    (ref_width_, ref_height_) != (dis_width_, dis_height_):
+                # if they are both set and not equal, then we must set the quality width and height to match the two
+                assert quality_width_ is not None and quality_height_ is not None, \
+                    "Width and height are set for ref_video and dis_video, but they do not match and there " \
+                    "is no quality width and quality height to equalize them."
+
+            # if ref_video has resampling_type, use it; else fallback to the common one
+            ref_resampling_type_ = ref_video['resampling_type'] if 'resampling_type' in ref_video else resampling_type_
+
+            # if dis_video has resampling_type, use it; else fallback to the common one
+            dis_resampling_type_ = dis_video['resampling_type'] if 'resampling_type' in dis_video else resampling_type_
+
+            asset_dict = {'ref_yuv_type': ref_yuv_fmt_, 'dis_yuv_type': dis_yuv_fmt_}
+            if ref_width_ is not None:
+                if asset_dict['ref_yuv_type'] != 'notyuv':
+                    asset_dict['ref_width'] = ref_width_
+            if dis_width_ is not None:
+                if asset_dict['dis_yuv_type'] != 'notyuv':
+                    asset_dict['dis_width'] = dis_width_
+            if ref_height_ is not None:
+                if asset_dict['ref_yuv_type'] != 'notyuv':
+                    asset_dict['ref_height'] = ref_height_
+            if dis_height_ is not None:
+                if asset_dict['dis_yuv_type'] != 'notyuv':
+                    asset_dict['dis_height'] = dis_height_
+            if groundtruth is not None:
+                asset_dict['groundtruth'] = groundtruth
+            if raw_groundtruth is not None:
+                asset_dict['raw_groundtruth'] = raw_groundtruth
+            if groundtruth_std is not None:
+                asset_dict['groundtruth_std'] = groundtruth_std
+            if quality_width_ is not None:
+                asset_dict['quality_width'] = quality_width_
+            if quality_height_ is not None:
+                asset_dict['quality_height'] = quality_height_
+            resampling_type_set_in_both = ref_resampling_type_ is not None and dis_resampling_type_ is not None
+            # 1) separate definition present in both and same value -> use resampling_type_ key and common value
+            # why not use the separate key? for backwards compatibility since we already have resampling_type be a common thing
+            if resampling_type_set_in_both and ref_resampling_type_ == dis_resampling_type_:
+                asset_dict['resampling_type'] = ref_resampling_type_
+            # 2) separate definition present in both and different value -> use ref_resampling_type_ and dis_resampling_type_ keys and values
+            elif resampling_type_set_in_both and ref_resampling_type_ != dis_resampling_type_:
+                asset_dict['ref_resampling_type'] = ref_resampling_type_
+                asset_dict['dis_resampling_type'] = dis_resampling_type_
+            # 3) separate definition present in one -> for the one present, use corresponding key and value and use common key and value for the other one (if value there)
+            # 3a) separate definition present for ref
+            elif ref_resampling_type_ is not None and dis_resampling_type_ is None:
+                asset_dict['ref_resampling_type'] = ref_resampling_type_
+                if resampling_type_ is not None:
+                    asset_dict['dis_resampling_type'] = resampling_type_
+            # 3b) separate definition present for dis
+            elif dis_resampling_type_ is not None and ref_resampling_type_ is None:
+                asset_dict['dis_resampling_type'] = dis_resampling_type_
+                if resampling_type_ is not None:
+                    asset_dict['ref_resampling_type'] = resampling_type_
+            # 4) separate definition not present for either; use common key and value (if common value there)
+            else:
+                if resampling_type_ is not None:
+                    asset_dict['resampling_type'] = resampling_type_
+
+            if ref_crop_cmd_ is not None:
+                asset_dict['ref_crop_cmd'] = ref_crop_cmd_
+            if dis_crop_cmd_ is not None:
+                asset_dict['dis_crop_cmd'] = dis_crop_cmd_
+
+            if ref_pad_cmd_ is not None:
+                asset_dict['ref_pad_cmd'] = ref_pad_cmd_
+            if dis_pad_cmd_ is not None:
+                asset_dict['dis_pad_cmd'] = dis_pad_cmd_
+
+            if ref_fps_cmd_ is not None:
+                asset_dict['ref_fps_cmd'] = ref_fps_cmd_
+            if dis_fps_cmd_ is not None:
+                asset_dict['dis_fps_cmd'] = dis_fps_cmd_
+
+            if duration_sec_ is not None:
+                asset_dict['duration_sec'] = duration_sec_
+            if workfile_yuv_type_ is not None:
+                asset_dict['workfile_yuv_type'] = workfile_yuv_type_
+            if rebuf_indices is not None:
+                asset_dict['rebuf_indices'] = rebuf_indices
+            if fps_ is not None:
+                asset_dict['fps'] = fps_
+            if start_frame_ is not None:
+                asset_dict['start_frame'] = start_frame_
+            if end_frame_ is not None:
+                asset_dict['end_frame'] = end_frame_
+
+            if 'ref_start_frame' in ref_video:
+                asset_dict['ref_start_frame'] = ref_video['ref_start_frame']
+            if 'dis_start_frame' in dis_video:
+                asset_dict['dis_start_frame'] = dis_video['dis_start_frame']
+            if 'ref_end_frame' in ref_video:
+                asset_dict['ref_end_frame'] = ref_video['ref_end_frame']
+            if 'dis_end_frame' in dis_video:
+                asset_dict['dis_end_frame'] = dis_video['dis_end_frame']
+
+            if 'enc_width' in dis_video:
+                asset_dict['dis_enc_width'] = dis_video['enc_width']
+            if 'enc_height' in dis_video:
+                asset_dict['dis_enc_height'] = dis_video['enc_height']
+            if 'enc_bitdepth' in dis_video:
+                asset_dict['dis_enc_bitdepth'] = dis_video['enc_bitdepth']
+
+            if groundtruth is None and skip_asset_with_none_groundtruth:
+                pass
+            else:
+                asset = Asset(dataset=data_set_name,
+                              content_id=dis_video['content_id'],
+                              asset_id=dis_video['asset_id'],
+                              workdir_root=workdir_root,
+                              ref_path=ref_path,
+                              dis_path=dis_video['path'],
+                              asset_dict=asset_dict,
+                              )
+                assets.append(asset)
+        return assets
+
+
+class SubjectiveDatasetTester(object):
+
+    def __init__(self,
+                 subjective_dataset_reader,
+                 quality_runner_class,
+                 quality_runner_optional_dict=None,
+                 ax=None,
+                 result_store=FileSystemResultStore(),
+                 parallelize=True, fifo_mode=True,
+                 aggregate_method=np.mean,
+                 type='regressor',
+                 **kwargs):
+
+        self.dataset = subjective_dataset_reader.dataset
+        self.quality_runner_class = quality_runner_class
+        self.quality_runner_optional_dict = quality_runner_optional_dict
+        self.ax = ax
+        self.result_store = result_store
+        self.parallelize = parallelize
+        self.fifo_mode = fifo_mode
+        self.aggregate_method = aggregate_method
+        self.type = type
+        self.kwargs = kwargs
+        if hasattr(subjective_dataset_reader, 'kwargs'):
+            self.kwargs.update(subjective_dataset_reader.kwargs)
+
+        self.test_assets = copy.deepcopy(subjective_dataset_reader.read())
+
+        self.results = []
+        self.stats = []
+
+    def derive_assets(self):
+        self.test_raw_assets = None
+        try:
+            for test_asset in self.test_assets:
+                assert test_asset.groundtruth is not None
+        except AssertionError:
+            # no groundtruth, try do subjective modeling
+            from sureal.dataset_reader import RawDatasetReader
+            from sureal.subjective_model import DmosModel
+            subj_model_class = self.kwargs['subj_model_class'] if 'subj_model_class' in self.kwargs and self.kwargs[
+                'subj_model_class'] is not None else DmosModel
+            dataset_reader_class = self.kwargs[
+                'dataset_reader_class'] if 'dataset_reader_class' in self.kwargs else RawDatasetReader
+            subjective_model = subj_model_class(dataset_reader_class(self.dataset))
+            subjective_model.run_modeling(**self.kwargs)
+            test_dataset_aggregate = subjective_model.to_aggregated_dataset(**self.kwargs)
+            self.test_raw_assets = self.test_assets
+            self.test_assets = read_dataset(test_dataset_aggregate, **self.kwargs)
+
+    def run(self):
+        self.derive_assets()
+        if self.test_raw_assets is None:
+            assets_for_runner = self.test_assets
+        else:
+            assets_for_runner = self.test_raw_assets
+
+        if self.quality_runner_optional_dict is None:
+            self.quality_runner_optional_dict = {}
+
+        if 'model_filepath' in self.quality_runner_optional_dict and \
+                self.quality_runner_optional_dict['model_filepath'] is not None:
+            if 'model_720_filepath' in self.kwargs and self.kwargs['model_720_filepath'] is not None:
+                self.quality_runner_optional_dict['720model_filepath'] = self.kwargs['model_720_filepath']
+            if 'model_480_filepath' in self.kwargs and self.kwargs['model_480_filepath'] is not None:
+                self.quality_runner_optional_dict['480model_filepath'] = self.kwargs['model_480_filepath']
+            if 'model_2160_filepath' in self.kwargs and self.kwargs['model_2160_filepath'] is not None:
+                self.quality_runner_optional_dict['2160model_filepath'] = self.kwargs['model_2160_filepath']
+
+            if 'model_hfr_720_filepath' in self.kwargs and self.kwargs['model_hfr_720_filepath'] is not None:
+                self.quality_runner_optional_dict['hfr_720model_filepath'] = self.kwargs['model_hfr_720_filepath']
+            if 'model_hfr_480_filepath' in self.kwargs and self.kwargs['model_hfr_480_filepath'] is not None:
+                self.quality_runner_optional_dict['hfr_480model_filepath'] = self.kwargs['model_hfr_480_filepath']
+            if 'model_hfr_filepath' in self.kwargs and self.kwargs['model_hfr_filepath'] is not None:
+                self.quality_runner_optional_dict['hfr_model_filepath'] = self.kwargs['model_hfr_filepath']
+            if 'model_hfr_2160_filepath' in self.kwargs and self.kwargs['model_hfr_2160_filepath'] is not None:
+                self.quality_runner_optional_dict['hfr_2160model_filepath'] = self.kwargs['model_hfr_2160_filepath']
+
+        if 'enable_transform_score' in self.kwargs and self.kwargs['enable_transform_score'] is not None:
+            self.quality_runner_optional_dict['enable_transform_score'] = self.kwargs['enable_transform_score']
+
+        if 'disable_clip_score' in self.kwargs and self.kwargs['disable_clip_score'] is not None:
+            self.quality_runner_optional_dict['disable_clip_score'] = self.kwargs['disable_clip_score']
+
+        if 'subsample' in self.kwargs and self.kwargs['subsample'] is not None:
+            self.quality_runner_optional_dict['subsample'] = self.kwargs['subsample']
+
+        if 'additional_optional_dict' in self.kwargs and self.kwargs['additional_optional_dict'] is not None:
+            assert isinstance(self.kwargs['additional_optional_dict'], dict)
+            self.quality_runner_optional_dict.update(self.kwargs['additional_optional_dict'])
+
+        if 'processes' in self.kwargs and self.kwargs['processes'] is not None:
+            assert isinstance(self.kwargs['processes'], int)
+            processes = self.kwargs['processes']
+        else:
+            processes = None
+        if processes is not None:
+            assert self.parallelize is True, 'if processes is not None, parallelize must be True'
+
+        delete_workdir = self.kwargs['delete_workdir'] if 'delete_workdir' in self.kwargs else True
+
+        # run
+        runner = self.quality_runner_class(
+            assets_for_runner,
+            None, fifo_mode=self.fifo_mode,
+            delete_workdir=delete_workdir,
+            result_store=self.result_store,
+            optional_dict=self.quality_runner_optional_dict,
+            optional_dict2=None,
+        )
+        runner.run(parallelize=self.parallelize, processes=processes)
+        self.results = runner.results
+
+        for result in self.results:
+            result.set_score_aggregate_method(self.aggregate_method)
+
+        try:
+            model_type = runner.get_train_test_model_class()
+        except:
+            if self.type == 'regressor':
+                model_type = RegressorMixin
+            elif self.type == 'classifier':
+                model_type = ClassifierMixin
+            else:
+                assert False
+
+        split_test_indices_for_perf_ci = self.kwargs['split_test_indices_for_perf_ci'] \
+            if 'split_test_indices_for_perf_ci' in self.kwargs else False
+
+        # plot
+        groundtruths = list(map(lambda asset: asset.groundtruth, self.test_assets))
+        predictions = list(map(lambda result: result[self.quality_runner_class.get_score_key()], self.results))
+        raw_grountruths = None if self.test_raw_assets is None else \
+            list(map(lambda asset: asset.raw_groundtruth, self.test_raw_assets))
+        groundtruths_std = None if self.test_assets is None else \
+            list(map(lambda asset: asset.groundtruth_std, self.test_assets))
+        try:
+            predictions_bagging = \
+                list(map(lambda result: result[self.quality_runner_class.get_bagging_score_key()], self.results))
+            predictions_stddev = \
+                list(map(lambda result: result[self.quality_runner_class.get_stddev_score_key()], self.results))
+            predictions_ci95_low = \
+                list(map(lambda result: result[self.quality_runner_class.get_ci95_low_score_key()], self.results))
+            predictions_ci95_high = \
+                list(map(lambda result: result[self.quality_runner_class.get_ci95_high_score_key()], self.results))
+            predictions_all_models = \
+                list(map(lambda result: result[self.quality_runner_class.get_all_models_score_key()], self.results))
+
+            # need to revert the list of lists, so that the outer list has the predictions for each model separately
+            predictions_all_models = np.array(predictions_all_models).T.tolist()
+            num_models = np.shape(predictions_all_models)[0]
+
+            self.stats = model_type.get_stats(groundtruths, predictions,
+                                              ys_label_raw=raw_grountruths,
+                                              ys_label_pred_bagging=predictions_bagging,
+                                              ys_label_pred_stddev=predictions_stddev,
+                                              ys_label_pred_ci95_low=predictions_ci95_low,
+                                              ys_label_pred_ci95_high=predictions_ci95_high,
+                                              ys_label_pred_all_models=predictions_all_models,
+                                              ys_label_stddev=groundtruths_std,
+                                              split_test_indices_for_perf_ci=split_test_indices_for_perf_ci)
+        except Exception as e:
+            print('Warning: stats calculation failed, fall back to default stats calculation: {}'.format(e))
+            self.stats = model_type.get_stats(groundtruths, predictions,
+                                              ys_label_raw=raw_grountruths,
+                                              ys_label_stddev=groundtruths_std,
+                                              split_test_indices_for_perf_ci=split_test_indices_for_perf_ci)
+            num_models = 1
+
+        print('Stats on testing data: {}'.format(model_type.format_stats_for_print(self.stats)))
+
+        # printing stats if multiple models are present
+        if 'SRCC_across_model_distribution' in self.stats \
+                and 'PCC_across_model_distribution' in self.stats \
+                and 'RMSE_across_model_distribution' in self.stats:
+            print('Stats on testing data (across multiple models, using all test indices): {}'.format(
+                model_type.format_across_model_stats_for_print(model_type.extract_across_model_stats(self.stats))))
+
+        if split_test_indices_for_perf_ci:
+            print('Stats on testing data (single model, multiple test sets): {}'
+                  .format(model_type.format_stats_across_test_splits_for_print(
+                model_type.extract_across_test_splits_stats(self.stats))))
+
+        if self.ax is not None:
+            content_ids = list(map(lambda asset: asset.content_id, self.test_assets))
+
+            if 'point_label' in self.kwargs and self.kwargs['point_label'] is not None:
+                if self.kwargs['point_label'] == 'asset_id':
+                    point_labels = list(map(lambda asset: asset.asset_id, self.test_assets))
+                elif self.kwargs['point_label'] == 'dis_path':
+                    point_labels = list(map(lambda asset: get_file_name_without_extension(asset.dis_path),
+                                            self.test_assets))
+                else:
+                    raise AssertionError("Unknown point_label {}".format(self.kwargs['point_label']))
+            else:
+                point_labels = None
+
+            model_type.plot_scatter(self.ax, self.stats, content_ids=content_ids, point_labels=point_labels,
+                                    **self.kwargs)
+            self.ax.set_xlabel('True Score')
+            self.ax.set_ylabel("Predicted Score")
+            self.ax.grid()
+            self.ax.set_title("{runner}{num_models}\n{stats}".format(
+                dataset=self.test_assets[0].dataset,
+                runner=self.quality_runner_class.TYPE,
+                stats=model_type.format_stats_for_plot(self.stats),
+                num_models=", {} models".format(num_models) if num_models > 1 else "",
+            ))
+
+
 def read_dataset(dataset, **kwargs):
 
-    groundtruth_key = kwargs['groundtruth_key'] if 'groundtruth_key' in kwargs else None
-    skip_asset_with_none_groundtruth = kwargs['skip_asset_with_none_groundtruth'] \
-        if 'skip_asset_with_none_groundtruth' in kwargs else False
-    content_ids = kwargs['content_ids'] if 'content_ids' in kwargs else None
-    asset_ids = kwargs['asset_ids'] if 'asset_ids' in kwargs else None
-    workdir_root = kwargs['workdir_root'] if 'workdir_root' in kwargs else VmafConfig.workdir_path()
+    subjective_dataset_reader = SubjectiveDatasetReader(dataset, **kwargs)
 
-    # asserts, can add more to the list...
-    assert hasattr(dataset, 'dataset_name')
-    assert hasattr(dataset, 'ref_videos')
-    assert hasattr(dataset, 'dis_videos')
-
-    assert hasattr(dataset, 'yuv_fmt') or all(['yuv_fmt' in ref_video for ref_video in dataset.ref_videos])
-
-    data_set_name = dataset.dataset_name
-    ref_videos = dataset.ref_videos
-    dis_videos = dataset.dis_videos
-
-    width = dataset.width if hasattr(dataset, 'width') else None
-    height = dataset.height if hasattr(dataset, 'height') else None
-    yuv_fmt = dataset.yuv_fmt if hasattr(dataset, 'yuv_fmt') else None
-
-    quality_width = dataset.quality_width if hasattr(dataset, 'quality_width') else None
-    quality_height = dataset.quality_height if hasattr(dataset, 'quality_height') else None
-    resampling_type = dataset.resampling_type if hasattr(dataset, 'resampling_type') else None
-    crop_cmd = dataset.crop_cmd if hasattr(dataset, 'crop_cmd') else None
-    pad_cmd = dataset.pad_cmd if hasattr(dataset, 'pad_cmd') else None
-    workfile_yuv_type = dataset.workfile_yuv_type if hasattr(dataset, 'workfile_yuv_type') else None
-    duration_sec = dataset.duration_sec if hasattr(dataset, 'duration_sec') else None
-    fps = dataset.fps if hasattr(dataset, 'fps') else None
-    start_frame = dataset.start_frame if hasattr(dataset, 'start_frame') else None
-    end_frame = dataset.end_frame if hasattr(dataset, 'end_frame') else None
-
-    ref_dict = {}  # dictionary of content_id -> path for ref videos
-    for ref_video in ref_videos:
-        ref_dict[ref_video['content_id']] = ref_video
-
-    assets = []
-    for dis_video in dis_videos:
-
-        if content_ids is not None and dis_video['content_id'] not in content_ids:
-            continue
-
-        if asset_ids is not None and dis_video['asset_id'] not in asset_ids:
-            continue
-
-        if groundtruth_key is not None:
-            groundtruth = dis_video[groundtruth_key]
-        else:
-            if 'dmos' in dis_video:
-                groundtruth = dis_video['dmos']
-            elif 'mos' in dis_video:
-                groundtruth = dis_video['mos']
-            elif 'groundtruth' in dis_video:
-                groundtruth = dis_video['groundtruth']
-            else:
-                groundtruth = None
-
-        if 'os' in dis_video:
-            raw_groundtruth = dis_video['os']
-        else:
-            raw_groundtruth = None
-
-        if 'groundtruth_std' in dis_video:
-            groundtruth_std = dis_video['groundtruth_std']
-        else:
-            groundtruth_std = None
-
-        if 'rebuf_indices' in dis_video:
-            rebuf_indices = dis_video['rebuf_indices']
-        else:
-            rebuf_indices = None
-
-        ref_video = ref_dict[dis_video['content_id']]
-
-        ref_path = ref_video['path']
-
-        ref_yuv_fmt_ = yuv_fmt if yuv_fmt is not None else ref_dict[dis_video['content_id']]['yuv_fmt']
-        dis_yuv_fmt_ = dis_video['yuv_fmt'] if 'yuv_fmt' in dis_video else ref_yuv_fmt_
-
-        if width is not None:
-            width_ = width
-        elif 'width' in ref_video and 'width' not in dis_video:
-            width_ = ref_video['width']
-        elif 'width' in dis_video and 'width' not in ref_video:
-            width_ = dis_video['width']
-        elif 'width' in ref_video and 'width' in dis_video:
-            assert ref_video['width'] == dis_video['width']
-            width_ = ref_video['width']
-        else:
-            width_ = None
-
-        if height is not None:
-            height_ = height
-        elif 'height' in ref_video and 'height' not in dis_video:
-            height_ = ref_video['height']
-        elif 'height' in dis_video and 'height' not in ref_video:
-            height_ = dis_video['height']
-        elif 'height' in ref_video and 'height' in dis_video:
-            assert ref_video['height'] == dis_video['height']
-            height_ = ref_video['height']
-        else:
-            height_ = None
-
-        if quality_width is not None:
-            quality_width_ = quality_width
-        elif 'quality_width' in dis_video:
-            quality_width_ = dis_video['quality_width']
-        else:
-            quality_width_ = None
-
-        if quality_height is not None:
-            quality_height_ = quality_height
-        elif 'quality_height' in dis_video:
-            quality_height_ = dis_video['quality_height']
-        else:
-            quality_height_ = None
-
-        if resampling_type is not None:
-            resampling_type_ = resampling_type
-        elif 'resampling_type' in dis_video:
-            resampling_type_ = dis_video['resampling_type']
-        else:
-            resampling_type_ = None
-
-        if crop_cmd is not None:
-            ref_crop_cmd_ = crop_cmd
-            dis_crop_cmd_ = crop_cmd
-        else:
-            if 'crop_cmd' in ref_video:
-                ref_crop_cmd_ = ref_video['crop_cmd']
-            else:
-                ref_crop_cmd_ = None
-            if 'crop_cmd' in dis_video:
-                dis_crop_cmd_ = dis_video['crop_cmd']
-            else:
-                dis_crop_cmd_ = None
-
-        if pad_cmd is not None:
-            ref_pad_cmd_ = pad_cmd
-            dis_pad_cmd_ = pad_cmd
-        else:
-            if 'pad_cmd' in ref_video:
-                ref_pad_cmd_ = ref_video['pad_cmd']
-            else:
-                ref_pad_cmd_ = None
-            if 'pad_cmd' in dis_video:
-                dis_pad_cmd_ = dis_video['pad_cmd']
-            else:
-                dis_pad_cmd_ = None
-
-        if duration_sec is not None:
-            duration_sec_ = duration_sec
-        elif 'duration_sec' in dis_video:
-            duration_sec_ = dis_video['duration_sec']
-        else:
-            duration_sec_ = None
-
-        if fps is not None:
-            fps_ = fps
-        elif 'fps' in dis_video:
-            fps_ = dis_video['fps']
-        else:
-            fps_ = None
-
-        if start_frame is not None:
-            start_frame_ = start_frame
-        elif 'start_frame' in dis_video:
-            start_frame_ = dis_video['start_frame']
-        else:
-            start_frame_ = None
-
-        if end_frame is not None:
-            end_frame_ = end_frame
-        elif 'end_frame' in dis_video:
-            end_frame_ = dis_video['end_frame']
-        else:
-            end_frame_ = None
-
-        asset_dict = {'ref_yuv_type': ref_yuv_fmt_, 'dis_yuv_type': dis_yuv_fmt_}
-        if width_ is not None:
-            if asset_dict['ref_yuv_type'] != 'notyuv':
-                asset_dict['ref_width'] = width_
-            if asset_dict['dis_yuv_type'] != 'notyuv':
-                asset_dict['dis_width'] = width_
-        if height_ is not None:
-            if asset_dict['ref_yuv_type'] != 'notyuv':
-                asset_dict['ref_height'] = height_
-            if asset_dict['dis_yuv_type'] != 'notyuv':
-                asset_dict['dis_height'] = height_
-        if groundtruth is not None:
-            asset_dict['groundtruth'] = groundtruth
-        if raw_groundtruth is not None:
-            asset_dict['raw_groundtruth'] = raw_groundtruth
-        if groundtruth_std is not None:
-            asset_dict['groundtruth_std'] = groundtruth_std
-        if quality_width_ is not None:
-            asset_dict['quality_width'] = quality_width_
-        if quality_height_ is not None:
-            asset_dict['quality_height'] = quality_height_
-        if resampling_type_ is not None:
-            asset_dict['resampling_type'] = resampling_type_
-
-        if ref_crop_cmd_ is not None:
-            asset_dict['ref_crop_cmd'] = ref_crop_cmd_
-        if dis_crop_cmd_ is not None:
-            asset_dict['dis_crop_cmd'] = dis_crop_cmd_
-
-        if ref_pad_cmd_ is not None:
-            asset_dict['ref_pad_cmd'] = ref_pad_cmd_
-        if dis_pad_cmd_ is not None:
-            asset_dict['dis_pad_cmd'] = dis_pad_cmd_
-
-        if duration_sec_ is not None:
-            asset_dict['duration_sec'] = duration_sec_
-        if workfile_yuv_type is not None:
-            asset_dict['workfile_yuv_type'] = workfile_yuv_type
-        if rebuf_indices is not None:
-            asset_dict['rebuf_indices'] = rebuf_indices
-        if fps_ is not None:
-            asset_dict['fps'] = fps_
-        if start_frame_ is not None:
-            asset_dict['start_frame'] = start_frame_
-        if end_frame_ is not None:
-            asset_dict['end_frame'] = end_frame_
-
-        if 'ref_start_frame' in ref_video:
-            asset_dict['ref_start_frame'] = ref_video['ref_start_frame']
-        if 'dis_start_frame' in dis_video:
-            asset_dict['dis_start_frame'] = dis_video['dis_start_frame']
-        if 'ref_end_frame' in ref_video:
-            asset_dict['ref_end_frame'] = ref_video['ref_end_frame']
-        if 'dis_end_frame' in dis_video:
-            asset_dict['dis_end_frame'] = dis_video['dis_end_frame']
-
-        if 'enc_width' in dis_video:
-            asset_dict['dis_enc_width'] = dis_video['enc_width']
-        if 'enc_height' in dis_video:
-            asset_dict['dis_enc_height'] = dis_video['enc_height']
-        if 'enc_bitdepth' in dis_video:
-            asset_dict['dis_enc_bitdepth'] = dis_video['enc_bitdepth']
-
-        if groundtruth is None and skip_asset_with_none_groundtruth:
-            pass
-        else:
-            asset = Asset(dataset=data_set_name,
-                          content_id=dis_video['content_id'],
-                          asset_id=dis_video['asset_id'],
-                          workdir_root=workdir_root,
-                          ref_path=ref_path,
-                          dis_path=dis_video['path'],
-                          asset_dict=asset_dict,
-                          )
-            assets.append(asset)
-
-    return assets
-
+    return subjective_dataset_reader.read()
 
 def compare_two_quality_runners_on_dataset(
         test_dataset, first_runner_class, second_runner_class,
@@ -378,181 +706,50 @@ def compare_two_quality_runners_on_dataset(
     }
 
 
-def run_test_on_dataset(test_dataset, runner_class, ax,
-                    result_store, model_filepath,
-                    parallelize=True, fifo_mode=True,
-                    aggregate_method=np.mean,
-                    type='regressor',
-                    **kwargs):
+def run_test_on_dataset(
+        test_dataset, runner_class, ax,
+        result_store, model_filepath,
+        parallelize=True, fifo_mode=True,
+        aggregate_method=np.mean,
+        type='regressor',
+        **kwargs):
 
-    test_assets = read_dataset(test_dataset, **kwargs)
-    test_raw_assets = None
-    try:
-        for test_asset in test_assets:
-            assert test_asset.groundtruth is not None
-    except AssertionError:
-        # no groundtruth, try to do subjective modeling
-        from sureal.dataset_reader import RawDatasetReader
-        from sureal.subjective_model import DmosModel
-        subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
-        dataset_reader_class = kwargs['dataset_reader_class'] if 'dataset_reader_class' in kwargs else RawDatasetReader
-        subjective_model = subj_model_class(dataset_reader_class(test_dataset))
-        subjective_model.run_modeling(**kwargs)
-        test_dataset_aggregate = subjective_model.to_aggregated_dataset(**kwargs)
-        test_raw_assets = test_assets
-        test_assets = read_dataset(test_dataset_aggregate, **kwargs)
-
-    optional_dict = kwargs['optional_dict'] if 'optional_dict' in kwargs else None
-
-    if model_filepath is not None:
-        if not optional_dict:
-            optional_dict = {}
-        optional_dict['model_filepath'] = model_filepath
-        if 'model_720_filepath' in kwargs and kwargs['model_720_filepath'] is not None:
-            optional_dict['720model_filepath'] = kwargs['model_720_filepath']
-        if 'model_480_filepath' in kwargs and kwargs['model_480_filepath'] is not None:
-            optional_dict['480model_filepath'] = kwargs['model_480_filepath']
-        if 'model_2160_filepath' in kwargs and kwargs['model_2160_filepath'] is not None:
-            optional_dict['2160model_filepath'] = kwargs['model_2160_filepath']
-
-    if 'enable_transform_score' in kwargs and kwargs['enable_transform_score'] is not None:
-        if not optional_dict:
-            optional_dict = {}
-        optional_dict['enable_transform_score'] = kwargs['enable_transform_score']
-
-    if 'disable_clip_score' in kwargs and kwargs['disable_clip_score'] is not None:
-        if not optional_dict:
-            optional_dict = {}
-        optional_dict['disable_clip_score'] = kwargs['disable_clip_score']
-
-    if 'subsample' in kwargs and kwargs['subsample'] is not None:
-        if not optional_dict:
-            optional_dict = {}
-        optional_dict['subsample'] = kwargs['subsample']
-
-    if 'additional_optional_dict' in kwargs and kwargs['additional_optional_dict'] is not None:
-        assert isinstance(kwargs['additional_optional_dict'], dict)
-        if not optional_dict:
-            optional_dict = {}
-        optional_dict.update(kwargs['additional_optional_dict'])
-
-    if 'processes' in kwargs and kwargs['processes'] is not None:
-        assert isinstance(kwargs['processes'], int)
-        processes = kwargs['processes']
+    subjective_dataset_reader = SubjectiveDatasetReader(test_dataset, **kwargs)
+    if 'optional_dict' not in kwargs:
+        optional_dict = {}
     else:
-        processes = None
-    if processes is not None:
-        assert parallelize is True, 'if processes is not None, parallelize must be True'
+        optional_dict = kwargs['optional_dict']
+        del kwargs['optional_dict']
 
-    # run
-    runner = runner_class(
-        test_assets,
-        None, fifo_mode=fifo_mode,
-        delete_workdir=True,
-        result_store=result_store,
-        optional_dict=optional_dict,
-        optional_dict2=None,
-    )
-    runner.run(parallelize=parallelize, processes=processes)
-    results = runner.results
+    # ---- for 720model_filepath etc models, look inside SubjectiveDatasetTester ----
+    # (not the best encapsulation design)
+    if 'model_filepath' not in optional_dict:
+        optional_dict['model_filepath'] = None
 
-    for result in results:
-        result.set_score_aggregate_method(aggregate_method)
+    if model_filepath is not None and optional_dict['model_filepath'] is not None:
+        # make sure the specified model_filepath matches the one in optional_dict
+        assert optional_dict['model_filepath'] == model_filepath, "Different model_filepath specified in optional_dict"
+    elif model_filepath is not None and optional_dict['model_filepath'] is None:
+        # if only model_file is specified, assign it to the optional_dict as well
+        optional_dict['model_filepath'] = model_filepath
+    # otherwise, either both are None or the model is already specified in optional_dict
+    # -------------------------------------------------
 
-    try:
-        model_type = runner.get_train_test_model_class()
-    except:
-        if type == 'regressor':
-            model_type = RegressorMixin
-        elif type == 'classifier':
-            model_type = ClassifierMixin
-        else:
-            assert False
+    subjective_dataset_tester = SubjectiveDatasetTester(subjective_dataset_reader, runner_class,
+                                                        quality_runner_optional_dict=optional_dict, ax=ax,
+                                                        result_store=result_store, parallelize=parallelize,
+                                                        fifo_mode=fifo_mode, aggregate_method=aggregate_method,
+                                                        type=type, **kwargs)
+    subjective_dataset_tester.run()
 
-    split_test_indices_for_perf_ci = kwargs['split_test_indices_for_perf_ci'] \
-        if 'split_test_indices_for_perf_ci' in kwargs else False
-
-    # plot
-    groundtruths = list(map(lambda asset: asset.groundtruth, test_assets))
-    predictions = list(map(lambda result: result[runner_class.get_score_key()], results))
-    raw_grountruths = None if test_raw_assets is None else \
-        list(map(lambda asset: asset.raw_groundtruth, test_raw_assets))
-    groundtruths_std = None if test_assets is None else \
-        list(map(lambda asset: asset.groundtruth_std, test_assets))
-    try:
-        predictions_bagging = list(map(lambda result: result[runner_class.get_bagging_score_key()], results))
-        predictions_stddev = list(map(lambda result: result[runner_class.get_stddev_score_key()], results))
-        predictions_ci95_low = list(map(lambda result: result[runner_class.get_ci95_low_score_key()], results))
-        predictions_ci95_high = list(map(lambda result: result[runner_class.get_ci95_high_score_key()], results))
-        predictions_all_models = list(map(lambda result: result[runner_class.get_all_models_score_key()], results))
-
-        # need to revert the list of lists, so that the outer list has the predictions for each model separately
-        predictions_all_models = np.array(predictions_all_models).T.tolist()
-        num_models = np.shape(predictions_all_models)[0]
-
-        stats = model_type.get_stats(groundtruths, predictions,
-                                     ys_label_raw=raw_grountruths,
-                                     ys_label_pred_bagging=predictions_bagging,
-                                     ys_label_pred_stddev=predictions_stddev,
-                                     ys_label_pred_ci95_low=predictions_ci95_low,
-                                     ys_label_pred_ci95_high=predictions_ci95_high,
-                                     ys_label_pred_all_models=predictions_all_models,
-                                     ys_label_stddev=groundtruths_std,
-                                     split_test_indices_for_perf_ci=split_test_indices_for_perf_ci)
-    except Exception as e:
-        print('Warning: stats calculation failed, fall back to default stats calculation: {}'.format(e))
-        stats = model_type.get_stats(groundtruths, predictions,
-                                     ys_label_raw=raw_grountruths,
-                                     ys_label_stddev=groundtruths_std,
-                                     split_test_indices_for_perf_ci=split_test_indices_for_perf_ci)
-        num_models = 1
-
-    print('Stats on testing data: {}'.format(model_type.format_stats_for_print(stats)))
-
-    # printing stats if multiple models are present
-    if 'SRCC_across_model_distribution' in stats \
-            and 'PCC_across_model_distribution' in stats \
-            and 'RMSE_across_model_distribution' in stats:
-        print('Stats on testing data (across multiple models, using all test indices): {}'.format(
-            model_type.format_across_model_stats_for_print(model_type.extract_across_model_stats(stats))))
-
-    if split_test_indices_for_perf_ci:
-        print('Stats on testing data (single model, multiple test sets): {}'
-              .format(model_type.format_stats_across_test_splits_for_print(model_type.extract_across_test_splits_stats(stats))))
-
-    if ax is not None:
-        content_ids = list(map(lambda asset: asset.content_id, test_assets))
-
-        if 'point_label' in kwargs and kwargs['point_label'] is not None:
-            if kwargs['point_label'] == 'asset_id':
-                point_labels = list(map(lambda asset: asset.asset_id, test_assets))
-            elif kwargs['point_label'] == 'dis_path':
-                point_labels = list(map(lambda asset: get_file_name_without_extension(asset.dis_path), test_assets))
-            else:
-                raise AssertionError("Unknown point_label {}".format(kwargs['point_label']))
-        else:
-            point_labels = None
-
-        model_type.plot_scatter(ax, stats, content_ids=content_ids, point_labels=point_labels, **kwargs)
-        ax.set_xlabel('True Score')
-        ax.set_ylabel("Predicted Score")
-        ax.grid()
-        ax.set_title("{runner}{num_models}\n{stats}".format(
-            dataset=test_assets[0].dataset,
-            runner=runner_class.TYPE,
-            stats=model_type.format_stats_for_plot(stats),
-            num_models=", {} models".format(num_models) if num_models > 1 else "",
-        ))
-
-    return test_assets, results
-
+    return subjective_dataset_tester.test_assets, subjective_dataset_tester.results
 
 def print_matplotlib_warning():
-    print("Warning: cannot import matplotlib, no picture displayed. "
-          "If you are on Mac OS and have installed matplotlib, you "
-          "possibly need to run: \nsudo pip uninstall python-dateutil \n"
-          "sudo pip install python-dateutil==2.2 \n"
-          "Refer to: https://stackoverflow.com/questions/27630114/matplotlib-issue-on-os-x-importerror-cannot-import-name-thread")
+    print("Warning: cannot import matplotlib, no picture displayed. " \
+          "If you are on Mac OS and have installed matplotlib, you " \
+          "possibly need to run: \nsudo pip uninstall python-dateutil \n" \
+          "sudo pip install python-dateutil==2.2 \n" \
+          "Refer to: http://stackoverflow.com/questions/27630114/matplotlib-issue-on-os-x-importerror-cannot-import-name-thread")
 
 
 def train_test_vmaf_on_dataset(train_dataset, test_dataset,
@@ -569,7 +766,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
         for train_asset in train_assets:
             assert train_asset.groundtruth is not None
     except AssertionError:
-        # no groundtruth, try to do subjective modeling
+        # no groundtruth, try do subjective modeling
         from sureal.dataset_reader import RawDatasetReader
         from sureal.subjective_model import DmosModel
         subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel
@@ -684,7 +881,7 @@ def train_test_vmaf_on_dataset(train_dataset, test_dataset,
             for test_asset in test_assets:
                 assert test_asset.groundtruth is not None
         except AssertionError:
-            # no groundtruth, try to do subjective modeling
+            # no groundtruth, try do subjective modeling
             from sureal.dataset_reader import RawDatasetReader
             from sureal.subjective_model import DmosModel
             subj_model_class = kwargs['subj_model_class'] if 'subj_model_class' in kwargs and kwargs['subj_model_class'] is not None else DmosModel

@@ -237,6 +237,157 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(assets[1].ref_start_end_frame, (100, 110))
         self.assertEqual(assets[1].dis_start_end_frame, (100, 110))
 
+    def test_read_dataset_mixed_resampling_types(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_mixed_resampling_types.py')
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertEqual(len(train_assets), 2)
+        self.assertEqual(train_assets[0].ref_resampling_type, 'bicubic')
+        self.assertEqual(train_assets[1].ref_resampling_type, 'bicubic')
+        self.assertEqual(train_assets[0].dis_resampling_type, 'lanczos')
+        self.assertEqual(train_assets[1].dis_resampling_type, 'bilinear')
+
+    def test_read_dataset_mixed_resampling_types_only_ref(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_mixed_resampling_types_only_ref.py')
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertEqual(len(train_assets), 2)
+        self.assertEqual(train_assets[0].ref_resampling_type, 'lanczos')
+        self.assertEqual(train_assets[1].ref_resampling_type, 'lanczos')
+        # bicubic default kicks in, no matter what ref has
+        self.assertEqual(train_assets[0].dis_resampling_type, 'bicubic')
+        self.assertEqual(train_assets[1].dis_resampling_type, 'bicubic')
+
+    def test_read_dataset_mixed_resampling_types_only_dis(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_mixed_resampling_types_only_dis.py')
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertEqual(len(train_assets), 2)
+        # dis has lanczos so ref gets it
+        self.assertEqual(train_assets[0].ref_resampling_type, 'lanczos')
+        # dis has bilinear so ref gets it
+        self.assertEqual(train_assets[1].ref_resampling_type, 'bilinear')
+        self.assertEqual(train_assets[0].dis_resampling_type, 'lanczos')
+        self.assertEqual(train_assets[1].dis_resampling_type, 'bilinear')
+
+    def test_read_image_dataset_notyuv_workfile_yuv_type_for_assets_0_and_3(self):
+        dataset_path = VmafConfig.test_resource_path('test_image_dataset_notyuv_workfile_yuv_type_for_assets_0_and_3.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+
+        self.assertEqual(len(assets), 4)
+        self.assertTrue(assets[0].ref_width_height is None)
+        self.assertTrue(assets[0].dis_width_height is None)
+        self.assertEqual(assets[0].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[0].workfile_yuv_type, 'yuv444p')
+        self.assertTrue(assets[1].ref_width_height is None)
+        self.assertTrue(assets[1].dis_width_height is None)
+        self.assertEqual(assets[1].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[1].workfile_yuv_type, assets[0].DEFAULT_YUV_TYPE)
+        self.assertTrue(assets[2].ref_width_height is None)
+        self.assertTrue(assets[2].dis_width_height is None)
+        self.assertEqual(assets[2].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[2].workfile_yuv_type, assets[0].DEFAULT_YUV_TYPE)
+        self.assertTrue(assets[3].ref_width_height is None)
+        self.assertTrue(assets[3].dis_width_height is None)
+        self.assertEqual(assets[3].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[3].workfile_yuv_type, 'yuv422p')
+
+    def test_read_dataset_dis_enc_width_height(self):
+        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset3.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+
+        self.assertEqual(len(assets), 3)
+
+        self.assertNotIn('dis_enc_width', assets[0].asset_dict)
+        self.assertNotIn('dis_enc_height', assets[0].asset_dict)
+        self.assertEqual(assets[1].asset_dict['dis_enc_width'], 1920)
+        self.assertEqual(assets[1].asset_dict['dis_enc_height'], 1080)
+        self.assertEqual(assets[2].asset_dict['dis_enc_width'], 1920)
+        self.assertEqual(assets[2].asset_dict['dis_enc_height'], 1080)
+
+    def test_read_dataset_ref_dis_width_height_dis_not_set_both_yuv(self):
+        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_wh_dis_not_set_yuv.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+        self.assertEqual(assets[0].asset_dict['ref_width'], 1919)
+        self.assertEqual(assets[0].asset_dict['ref_height'], 1081)
+        self.assertEqual(assets[0].asset_dict['dis_width'], 1919)
+        self.assertEqual(assets[0].asset_dict['dis_height'], 1081)
+
+    def test_read_dataset_ref_dis_width_height_ref_not_set_both_yuv(self):
+        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_wh_ref_not_set_yuv.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+        self.assertEqual(assets[0].asset_dict['ref_width'], 1921)
+        self.assertEqual(assets[0].asset_dict['ref_height'], 1079)
+        self.assertEqual(assets[0].asset_dict['dis_width'], 1921)
+        self.assertEqual(assets[0].asset_dict['dis_height'], 1079)
+
+    def test_read_dataset_all_set_both_yuv(self):
+        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_wh_all_set_yuv.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+
+        self.assertEqual(assets[0].asset_dict['ref_width'], 1919)
+        self.assertEqual(assets[0].asset_dict['ref_height'], 1081)
+        self.assertEqual(assets[0].asset_dict['dis_width'], 1921)
+        self.assertEqual(assets[0].asset_dict['dis_height'], 1079)
+
+    def test_read_dataset_all_set_no_qwh_both_yuv(self):
+        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_wh_all_set_no_qwh_yuv.py')
+        dataset = import_python_file(dataset_path)
+        with self.assertRaises(AssertionError) as e:
+            read_dataset(dataset)
+            self.assertTrue('Width and height are set for ref_video and dis_video, but they do not match '
+                            'and there is no quality width and quality height to equalize them.' in e.exception.args[0])
+
+    def test_read_dataset_ref_width_not_set_both_yuv(self):
+        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_wh_ref_width_not_set_yuv.py')
+        dataset = import_python_file(dataset_path)
+        with self.assertRaises(AssertionError) as e:
+            read_dataset(dataset)
+            self.assertTrue('Height is set in ref_video, but width is not set. If one is set, then the '
+                            'other must be set too.' in e.exception.args[0])
+
+    def test_read_dataset_ref_height_not_set_both_yuv(self):
+        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_wh_ref_height_not_set_yuv.py')
+        dataset = import_python_file(dataset_path)
+        with self.assertRaises(AssertionError) as e:
+            read_dataset(dataset)
+            self.assertTrue('Width is set in ref_video, but height is not set. If one is set, then the '
+                            'other must be set too.' in e.exception.args[0])
+
+    def test_read_dataset_dis_width_not_set_both_yuv(self):
+        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_wh_dis_width_not_set_yuv.py')
+        dataset = import_python_file(dataset_path)
+        with self.assertRaises(AssertionError) as e:
+            read_dataset(dataset)
+            self.assertTrue('Height is set in dis_video, but width is not set. If one is set, then the '
+                            'other must be set too.' in e.exception.args[0])
+
+    def test_read_dataset_dis_height_not_set_both_yuv(self):
+        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_wh_dis_height_not_set_yuv.py')
+        dataset = import_python_file(dataset_path)
+        with self.assertRaises(AssertionError) as e:
+            read_dataset(dataset)
+            self.assertTrue('Width is set in dis_video, but height is not set. If one is set, then the '
+                            'other must be set too.' in e.exception.args[0])
+
+    def test_read_dataset_all_set_notyuv(self):
+        dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_wh_all_set_notyuv.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+
+        self.assertTrue('ref_width' not in assets[0].asset_dict)
+        self.assertTrue('ref_height' not in assets[0].asset_dict)
+        self.assertTrue('dis_width' not in assets[0].asset_dict)
+        self.assertTrue('dis_height' not in assets[0].asset_dict)
+
 
 class TestTrainOnDatasetJsonFormat(unittest.TestCase):
 
