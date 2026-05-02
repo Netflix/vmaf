@@ -6,9 +6,10 @@ import shutil
 import numpy as np
 
 from vmaf.config import VmafConfig, DisplayConfig
-# from vmaf.routine import train_test_vmaf_on_dataset, read_dataset, run_test_on_dataset, generate_dataset_from_raw
-from vmaf.routine import read_dataset, generate_dataset_from_raw, compare_two_quality_runners_on_dataset
+from vmaf.routine import read_dataset, generate_dataset_from_raw, compare_two_quality_runners_on_dataset, \
+    SubjectiveDatasetReader, SubjectiveDatasetTester
 from vmaf.tools.misc import import_python_file
+from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import VmafQualityRunner, BootstrapVmafQualityRunner, PsnrQualityRunner
 from sureal.subjective_model import MosModel, SubjectiveModel
 
@@ -752,6 +753,150 @@ class TestGenerateDatasetFromRaw(unittest.TestCase):
                                   subj_model_class=MosModel)
         dataset = import_python_file(self.derived_dataset_path)
         self.assertAlmostEqual(dataset.dis_videos[0]['groundtruth'], 1.3076923076923077, places=4)
+
+
+class TestTrainOnDatasetPlot(unittest.TestCase):
+
+    def setUp(self):
+        import matplotlib.pyplot as plt
+        plt.close('all')
+        self.output_model_filepath = VmafConfig.workspace_path("model", "test_output_model.pkl")
+        self.output_dir = VmafConfig.workspace_path("output", "test_output")
+
+    def tearDown(self):
+        import matplotlib.pyplot as plt
+        if os.path.exists(self.output_model_filepath):
+            os.remove(self.output_model_filepath)
+        if os.path.exists(self.output_dir):
+            shutil.rmtree(self.output_dir)
+        plt.close('all')
+
+    def test_test_on_dataset_plot_per_content(self):
+        import matplotlib.pyplot as plt
+        from vmaf.routine import run_test_on_dataset
+        test_dataset = import_python_file(
+            VmafConfig.test_resource_path('dataset_sample.py'))
+        fig, ax = plt.subplots(1, 1, figsize=[20, 20])
+        run_test_on_dataset(test_dataset, VmafQualityRunner, ax,
+                            None, VmafConfig.model_path("vmaf_float_v0.6.1.json"),
+                            parallelize=False,
+                            fifo_mode=False,
+                            aggregate_method=None,
+                            point_label='asset_id',
+                            do_plot=['aggregate',
+                                     'per_content',
+                                     ],
+                            plot_linear_fit=True
+                            )
+
+        DisplayConfig.show(write_to_dir=self.output_dir)
+        self.assertEqual(len(glob.glob(os.path.join(self.output_dir, '*.png'))), 3)
+
+    def test_test_on_dataset_plot_groundtruth_predicted_in_parallel(self):
+        import matplotlib.pyplot as plt
+        from vmaf.routine import run_test_on_dataset
+        test_dataset = import_python_file(
+            VmafConfig.test_resource_path('dataset_sample.py'))
+        fig, ax = plt.subplots(1, 1, figsize=[20, 20])
+        run_test_on_dataset(test_dataset, VmafQualityRunner, ax,
+                            None, VmafConfig.model_path("vmaf_float_v0.6.1.json"),
+                            parallelize=False,
+                            fifo_mode=False,
+                            aggregate_method=None,
+                            point_label='asset_id',
+                            do_plot=['groundtruth_predicted_in_parallel'],
+                            plot_linear_fit=True
+                            )
+
+        DisplayConfig.show(write_to_dir=self.output_dir)
+        self.assertEqual(len(glob.glob(os.path.join(self.output_dir, '*.png'))), 1)
+
+
+class TestSubjectiveDatasetReader(unittest.TestCase):
+
+    def test_subjective_dataset_reader(self):
+
+        dataset = import_python_file(VmafConfig.test_resource_path('NFLX_dataset_public_raw.py'))
+        reader = SubjectiveDatasetReader(dataset)
+        assets = reader.read()
+
+        self.assertEqual(len(assets), 79)
+        self.assertTrue(isinstance(assets[0], Asset))
+        self.assertTrue(isinstance(assets[0].raw_groundtruth, list))
+        self.assertEqual(len(assets[0].raw_groundtruth), 26)
+
+        self.assertTrue(dataset.dataset_name, 'NFLX_public')
+        self.assertTrue(dataset.yuv_fmt, 'yuv420p')
+
+
+class TestSubjectiveDatasetTester(unittest.TestCase):
+
+    def setUp(self):
+        import matplotlib.pyplot as plt
+        plt.close('all')
+
+    def tearDown(self):
+        import matplotlib.pyplot as plt
+        plt.close('all')
+
+    def test_subjective_dataset_tester(self):
+
+        dataset = import_python_file(VmafConfig.test_resource_path('dataset_sample.py'))
+        reader = SubjectiveDatasetReader(dataset)
+        tester = SubjectiveDatasetTester(reader,
+                                         PsnrQualityRunner,
+                                         result_store=None,
+                                         parallelize=False,
+                                         fifo_mode=False)
+
+        tester.run()
+
+        self.assertAlmostEqual(tester.stats['SRCC'], 1.000, places=3)
+        self.assertAlmostEqual(tester.stats['PCC'], 0.940, places=3)
+        self.assertAlmostEqual(tester.stats['RMSE'], 8.771, places=3)
+
+    def test_subjective_dataset_tester_plotting(self):
+        import matplotlib.pyplot as plt
+
+        dataset = import_python_file(VmafConfig.test_resource_path('dataset_sample.py'))
+        reader = SubjectiveDatasetReader(dataset)
+        fig, ax = plt.subplots(1, 1, figsize=[20, 20])
+        tester = SubjectiveDatasetTester(reader,
+                                         VmafQualityRunner,
+                                         quality_runner_optional_dict={},
+                                         ax=ax,
+                                         result_store=None,
+                                         parallelize=False,
+                                         fifo_mode=False,
+                                         subj_model_class=SubjectiveModel.find_subclass('MLE_CO_AP'),
+                                         point_label='asset_id',
+                                         plot_linear_fit=True,
+                                         do_plot=['aggregate', 'per_content']
+                                         )
+
+        tester.run()
+
+        self.assertAlmostEqual(tester.stats['PCC'], 0.917, places=3)
+        self.assertAlmostEqual(tester.stats['RMSE'], 9.857, places=3)
+
+        self.assertEqual(len(plt.get_fignums()), 3)
+
+    def test_subjective_dataset_tester_specific_raw_assets(self):
+        dataset = import_python_file(VmafConfig.test_resource_path('raw_dataset_sample.py'))
+        reader = SubjectiveDatasetReader(dataset, asset_ids=[1, 2, 3])
+        tester = SubjectiveDatasetTester(reader,
+                                         PsnrQualityRunner,
+                                         result_store=None,
+                                         parallelize=False,
+                                         fifo_mode=False)
+
+        tester.run()
+
+        self.assertEqual(len(tester.test_assets), 3)
+
+        self.assertAlmostEqual(tester.stats['SRCC'], 1.000, places=3)
+        self.assertAlmostEqual(tester.stats['PCC'], 0.863, places=3)
+        self.assertAlmostEqual(tester.stats['RMSE'], 13.591, places=3)
 
 
 if __name__ == '__main__':
