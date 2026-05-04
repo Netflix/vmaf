@@ -170,10 +170,12 @@ struct dwt_model_params {
 };
 
 // 0 -> Y, 1 -> Cb, 2 -> Cr
+#ifndef __CUDACC__
 static const struct dwt_model_params dwt_7_9_YCbCr_threshold[3] = {
     {.a = 0.495, .k = 0.466, .f0 = 0.401, .g = {1.501, 1.0, 0.534, 1.0}},
     {.a = 1.633, .k = 0.353, .f0 = 0.209, .g = {1.520, 1.0, 0.502, 1.0}},
     {.a = 0.944, .k = 0.521, .f0 = 0.404, .g = {1.868, 1.0, 0.516, 1.0}}};
+#endif
 
 /*
  * The following dwt basis function amplitudes, A(lambda,theta), are taken from
