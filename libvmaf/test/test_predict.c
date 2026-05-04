@@ -266,11 +266,55 @@ static char *test_piecewise_linear_mapping()
     return NULL;
 }
 
+static char *test_post_process_feature_from_another()
+{
+    int err;
+
+    VmafModel *model;
+    VmafModelConfig cfg = {
+            .name = "vmaf",
+            .flags = VMAF_MODEL_FLAGS_DEFAULT,
+    };
+    err = vmaf_model_load(&model, &cfg, "vmaf_v0.6.1");
+    mu_assert("problem during vmaf_model_load", !err);
+
+    struct svm_node *node = malloc(sizeof(*node) * (model->n_features + 1));
+
+    for (unsigned i = 0; i < model->n_features; i++) {
+        node[i].index = i + 1;
+        if (i == 1)
+            node[i].value = model->feature[i].intercept;
+        else
+            node[i].value = (0.5 * model->feature[i].slope) + model->feature[i].intercept;
+    }
+
+    // check that the (normalized) 0 value does not get changed unexpectedly
+    err = post_process_feature_from_another(model, node, 120.0, 0.1, "adm2", "motion");
+    mu_assert("problem during post_process_feature_from_another", !err);
+
+    if (node[1].value != model->feature[1].intercept)
+        err = -EINVAL;
+    mu_assert("unexpected change to a value after post_process_feature_from_another", !err);
+
+    // check that the (normalized) 0 value changes as expected
+    err = post_process_feature_from_another(model, node, 120.0, 0.0, "adm2", "motion");
+    mu_assert("problem during post_process_feature_from_another", !err);
+
+    if (node[1].value != (60.0 * model->feature[1].slope) + model->feature[1].intercept)
+        err = -EINVAL;
+    mu_assert("wrong value after post_process_feature_from_another", !err);
+
+    vmaf_model_destroy(model);
+    free(node);
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_predict_score_at_index);
     mu_run_test(test_find_linear_function_parameters);
     mu_run_test(test_piecewise_linear_mapping);
+    mu_run_test(test_post_process_feature_from_another);
     mu_run_test(test_propagate_metadata);
     return NULL;
 }
