@@ -59,8 +59,54 @@ static char *test_barten_csf()
     return NULL;
 }
 
+static char *test_barten_watson_blend_csf_v1_0_17()
+{
+    // Test v1017 CSF coefficients for 1080p 3H
+    mu_assert("v1017 csf blend scale 0 H/V 1080p 3H", almost_equal(barten_watson_blend_csf_mae(0, 0, 3.0, 1080), 0.011249));
+    mu_assert("v1017 csf blend scale 0 D 1080p 3H", almost_equal(barten_watson_blend_csf_mae(0, 1, 3.0, 1080), 0.004097));
+    mu_assert("v1017 csf blend scale 1 H/V 1080p 3H", almost_equal(barten_watson_blend_csf_mae(1, 0, 3.0, 1080), 0.022606));
+    mu_assert("v1017 csf blend scale 1 D 1080p 3H", almost_equal(barten_watson_blend_csf_mae(1, 1, 3.0, 1080), 0.010921));
+    mu_assert("v1017 csf blend scale 2 H/V 1080p 3H", almost_equal(barten_watson_blend_csf_mae(2, 0, 3.0, 1080), 0.035930));
+    mu_assert("v1017 csf blend scale 2 D 1080p 3H", almost_equal(barten_watson_blend_csf_mae(2, 1, 3.0, 1080), 0.021430));
+    mu_assert("v1017 csf blend scale 3 H/V 1080p 3H", almost_equal(barten_watson_blend_csf_mae(3, 0, 3.0, 1080), 0.045673));
+    mu_assert("v1017 csf blend scale 3 D 1080p 3H", almost_equal(barten_watson_blend_csf_mae(3, 1, 3.0, 1080), 0.031313));
+
+    // Test v1017 CSF coefficients for 1080p 5H
+    mu_assert("v1017 csf blend scale 0 H/V 1080p 5H", almost_equal(barten_watson_blend_csf_mae(0, 0, 5.0, 1080), 0.004052));
+    mu_assert("v1017 csf blend scale 0 D 1080p 5H", almost_equal(barten_watson_blend_csf_mae(0, 1, 5.0, 1080), 0.000927));
+    mu_assert("v1017 csf blend scale 1 H/V 1080p 5H", almost_equal(barten_watson_blend_csf_mae(1, 0, 5.0, 1080), 0.013939));
+    mu_assert("v1017 csf blend scale 1 D 1080p 5H", almost_equal(barten_watson_blend_csf_mae(1, 1, 5.0, 1080), 0.005544));
+    mu_assert("v1017 csf blend scale 2 H/V 1080p 5H", almost_equal(barten_watson_blend_csf_mae(2, 0, 5.0, 1080), 0.026298));
+    mu_assert("v1017 csf blend scale 2 D 1080p 5H", almost_equal(barten_watson_blend_csf_mae(2, 1, 5.0, 1080), 0.013415));
+    mu_assert("v1017 csf blend scale 3 H/V 1080p 5H", almost_equal(barten_watson_blend_csf_mae(3, 0, 5.0, 1080), 0.038833));
+    mu_assert("v1017 csf blend scale 3 D 1080p 5H", almost_equal(barten_watson_blend_csf_mae(3, 1, 5.0, 1080), 0.024515));
+
+    // Test v1017 CSF coefficients for 2160p 3H
+    mu_assert("v1017 csf blend scale 0 H/V 2160p 3H", almost_equal(barten_watson_blend_csf_mae(0, 0, 3.0, 2160), 0.002166));
+    mu_assert("v1017 csf blend scale 0 D 2160p 3H", almost_equal(barten_watson_blend_csf_mae(0, 1, 3.0, 2160), 0.000447));
+    mu_assert("v1017 csf blend scale 1 H/V 2160p 3H", almost_equal(barten_watson_blend_csf_mae(1, 0, 3.0, 2160), 0.011249));
+    mu_assert("v1017 csf blend scale 1 D 2160p 3H", almost_equal(barten_watson_blend_csf_mae(1, 1, 3.0, 2160), 0.004097));
+    mu_assert("v1017 csf blend scale 2 H/V 2160p 3H", almost_equal(barten_watson_blend_csf_mae(2, 0, 3.0, 2160), 0.022606));
+    mu_assert("v1017 csf blend scale 2 D 2160p 3H", almost_equal(barten_watson_blend_csf_mae(2, 1, 3.0, 2160), 0.010921));
+    mu_assert("v1017 csf blend scale 3 H/V 2160p 3H", almost_equal(barten_watson_blend_csf_mae(3, 0, 3.0, 2160), 0.035930));
+    mu_assert("v1017 csf blend scale 3 D 2160p 3H", almost_equal(barten_watson_blend_csf_mae(3, 1, 3.0, 2160), 0.021430));
+
+    // Test v1017 CSF coefficients for 2160p 5H
+    mu_assert("v1017 csf blend scale 0 H/V 2160p 5H", almost_equal(barten_watson_blend_csf_mae(0, 0, 5.0, 2160), 0.000077));
+    mu_assert("v1017 csf blend scale 0 D 2160p 5H", almost_equal(barten_watson_blend_csf_mae(0, 1, 5.0, 2160), 0.000045));
+    mu_assert("v1017 csf blend scale 1 H/V 2160p 5H", almost_equal(barten_watson_blend_csf_mae(1, 0, 5.0, 2160), 0.004052));
+    mu_assert("v1017 csf blend scale 1 D 2160p 5H", almost_equal(barten_watson_blend_csf_mae(1, 1, 5.0, 2160), 0.000927));
+    mu_assert("v1017 csf blend scale 2 H/V 2160p 5H", almost_equal(barten_watson_blend_csf_mae(2, 0, 5.0, 2160), 0.013939));
+    mu_assert("v1017 csf blend scale 2 D 2160p 5H", almost_equal(barten_watson_blend_csf_mae(2, 1, 5.0, 2160), 0.005544));
+    mu_assert("v1017 csf blend scale 3 H/V 2160p 5H", almost_equal(barten_watson_blend_csf_mae(3, 0, 5.0, 2160), 0.026298));
+    mu_assert("v1017 csf blend scale 3 D 2160p 5H", almost_equal(barten_watson_blend_csf_mae(3, 1, 5.0, 2160), 0.013415));
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_barten_csf);
+    mu_run_test(test_barten_watson_blend_csf_v1_0_17);
     return NULL;
 }
