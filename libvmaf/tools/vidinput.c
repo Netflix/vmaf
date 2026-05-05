@@ -67,6 +67,10 @@ int video_input_fetch_frame(video_input *_vid,
   return (*_vid->vtbl->fetch_frame)(_vid->ctx,_vid->fin,_ycbcr,_tag);
 }
 
+int video_input_fetch_into_vmaf_picture(video_input *_vid, VmafPicture *pic) {
+  return (*_vid->vtbl->fetch_into_vmaf_picture)(_vid->ctx, _vid->fin, pic);
+}
+
 void video_input_close(video_input *_vid) {
   (*_vid->vtbl->close)(_vid->ctx);
   free(_vid->ctx);

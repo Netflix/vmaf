@@ -25,6 +25,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 #include "vidinput.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 typedef struct y4m_input y4m_input;
 
@@ -829,10 +830,59 @@ static void y4m_input_close(y4m_input *_y4m){
   free(_y4m->aux_buf);
 }
 
+static int y4m_fetch_into_vmaf_picture(y4m_input *_y4m, FILE *_fin, VmafPicture *pic) {
+  if (_y4m->convert != y4m_convert_null) {
+    fprintf(stderr, "y4m format requires conversion; direct read not supported.\n");
+    return -1;
+  }
+
+  /* Read and skip the frame header. */
+  char frame[6];
+  int ret = fread(frame, 1, 6, _fin);
+  if (ret < 6) return 0;
+  if (memcmp(frame, "FRAME", 5)) {
+    fprintf(stderr, "Loss of framing in YUV input data\n");
+    return -1;
+  }
+  if (frame[5] != '\n') {
+    char c;
+    int j;
+    for (j = 0; j < 79 && fread(&c, 1, 1, _fin) && c != '\n'; j++);
+    if (j == 79) {
+      fprintf(stderr, "Error parsing YUV frame header\n");
+      return -1;
+    }
+  }
+
+  size_t bytes_per_sample = (pic->bpc + 7) / 8;
+
+  for (unsigned i = 0; i < 3; i++) {
+    size_t row_bytes = (size_t)pic->w[i] * bytes_per_sample;
+    if (pic->stride[i] == (ptrdiff_t)row_bytes) {
+      if (fread(pic->data[i], 1, row_bytes * pic->h[i], _fin) != row_bytes * pic->h[i]) {
+        fprintf(stderr, "Error reading YUV frame data.\n");
+        return -1;
+      }
+    } else {
+      uint8_t *dst = pic->data[i];
+      for (unsigned j = 0; j < pic->h[i]; j++) {
+        if (fread(dst, 1, row_bytes, _fin) != row_bytes) {
+          fprintf(stderr, "Error reading YUV frame data.\n");
+          return -1;
+        }
+        dst += pic->stride[i];
+      }
+    }
+  }
+
+  return 1;
+}
+
 OC_EXTERN const video_input_vtbl Y4M_INPUT_VTBL={
   (raw_input_open_func)NULL,
   (video_input_open_func)y4m_input_open,
   (video_input_get_info_func)y4m_input_get_info,
   (video_input_fetch_frame_func)y4m_input_fetch_frame,
-  (video_input_close_func)y4m_input_close
+  (video_input_close_func)y4m_input_close,
+  (video_input_fetch_into_vmaf_picture_func)y4m_fetch_into_vmaf_picture
 };
