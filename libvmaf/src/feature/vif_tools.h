@@ -30,7 +30,7 @@ enum vif_scaling_method {
     vif_scale_bilinear = 3,
 };
 
-#define NUM_KERNELSCALES 21
+# define NUM_KERNELSCALES 21
 
 static const float valid_kernelscales[NUM_KERNELSCALES] = {
     1.0,           1.0f / 2.0f,    3.0f / 2.0f, 2.0f,         2.0f / 3.0f,

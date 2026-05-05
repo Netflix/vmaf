@@ -37,14 +37,12 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 #ifndef M_PI
-#define M_PI 3.14159265358979323846
+    #define M_PI 3.14159265358979323846
 #endif
 
 #ifdef VIF_OPT_FAST_LOG2 // option to replace log2 calculation with faster speed
 
-static const float log2_poly_s[9] = {-0.012671635276421, 0.064841182402670,  -0.157048836463065,
-                                     0.257167726303123,  -0.353800560300520, 0.480131410397451,
-                                     -0.721314327952201, 1.442694803896991,  0};
+static const float log2_poly_s[9] = { -0.012671635276421, 0.064841182402670, -0.157048836463065, 0.257167726303123, -0.353800560300520, 0.480131410397451, -0.721314327952201, 1.442694803896991, 0 };
 
 static float horner_s(const float *poly, float x, int n)
 {
@@ -76,8 +74,8 @@ static float log2f_approx(float x)
 
     memcpy(&u32, &x, sizeof(float));
 
-    exponent = (u32 & exp_expo_mask) >> 23;
-    mant = (u32 & exp_mant_mask) >> 0;
+    exponent  = (u32 & exp_expo_mask) >> 23;
+    mant      = (u32 & exp_mant_mask) >> 0;
     u32remain = mant | exp_zero_const;
 
     memcpy(&remain, &u32remain, sizeof(float));
@@ -92,25 +90,23 @@ static float log2f_approx(float x)
 
 #endif /* VIF_FAST_LOG2 */
 
-static int round_up_to_odd(float f)
-{
+static int round_up_to_odd(float f) {
     int ceiling = ceil(f);
     if (ceiling % 2 == 0) {
         return ceiling + 1;
-    } else {
+    }
+    else {
         return ceiling;
     }
 }
 
-static float get_gaussian_pdf(float x, float mean, float stdev)
-{
-    float num = exp(-0.5 * (x - mean) / stdev * (x - mean) / stdev);
+static float get_gaussian_pdf(float x, float mean, float stdev) {
+    float num = exp(-0.5 * (x - mean)/stdev * (x - mean)/stdev);
     float den = 1 / (stdev * sqrt(2 * M_PI));
     return num / den;
 }
 
-static void get_1d_gaussian_kernel(float *out, int size, float stdev)
-{
+static void get_1d_gaussian_kernel(float *out, int size, float stdev) {
     assert(size % 2 == 1);
 
     float sum = 0;
@@ -125,8 +121,7 @@ static void get_1d_gaussian_kernel(float *out, int size, float stdev)
     }
 }
 
-bool vif_validate_kernelscale(float kernelscale)
-{
+bool vif_validate_kernelscale(float kernelscale) {
     for (int i = 0; i < NUM_KERNELSCALES; i++) {
         if (fabsf(kernelscale - valid_kernelscales[i]) < 1e-3) {
             return true;
@@ -135,22 +130,19 @@ bool vif_validate_kernelscale(float kernelscale)
     return false;
 }
 
-int vif_get_filter_size(int scale, float kernelscale)
-{
+int vif_get_filter_size(int scale, float kernelscale) {
     assert(scale <= 4);
 
     int n = (1 << (4 - scale)) + 1;
     return MAX(round_up_to_odd(n * kernelscale), 3);
 }
 
-void vif_get_filter(float *out, int scale, float kernelscale)
-{
+void vif_get_filter(float *out, int scale, float kernelscale) {
     int window_size = vif_get_filter_size(scale, kernelscale);
     get_1d_gaussian_kernel(out, window_size, window_size / 5.0f);
 }
 
-void speed_get_antialias_filter(float *out, int scale, float kernelscale)
-{
+void speed_get_antialias_filter(float *out, int scale, float kernelscale) {
     // sigma_trick logic replication: antialias filter always has the size of scale 1 filter
     int window_size = vif_get_filter_size(1, kernelscale);
     get_1d_gaussian_kernel(out, window_size, sqrt(scale) * window_size / 5.0f);
@@ -206,52 +198,51 @@ float vif_sum_s(const float *x, int w, int h, int stride)
     return accum;
 }
 
-void vif_statistic_s(const float *mu1, const float *mu2, const float *xx_filt, const float *yy_filt,
-                     const float *xy_filt, float *num, float *den, int w, int h, int mu1_stride,
-                     int mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride,
-                     double vif_enhn_gain_limit, double vif_sigma_nsq)
+void vif_statistic_s(const float *mu1, const float *mu2, const float *xx_filt, const float *yy_filt, const float *xy_filt, float *num, float *den,
+	int w, int h, int mu1_stride, int mu2_stride, int xx_filt_stride, int yy_filt_stride, int xy_filt_stride,
+	double vif_enhn_gain_limit, double vif_sigma_nsq)
 {
-    const float sigma_max_inv = powf(vif_sigma_nsq, 2.0f) / (255.0 * 255.0);
+	const float sigma_max_inv = powf(vif_sigma_nsq, 2.0f) / (255.0*255.0);
 
-    int mu1_px_stride = mu1_stride / sizeof(float);
-    int mu2_px_stride = mu2_stride / sizeof(float);
-    int xx_filt_px_stride = xx_filt_stride / sizeof(float);
-    int yy_filt_px_stride = yy_filt_stride / sizeof(float);
-    int xy_filt_px_stride = xy_filt_stride / sizeof(float);
+	int mu1_px_stride = mu1_stride / sizeof(float);
+	int mu2_px_stride = mu2_stride / sizeof(float);
+	int xx_filt_px_stride = xx_filt_stride / sizeof(float);
+	int yy_filt_px_stride = yy_filt_stride / sizeof(float);
+	int xy_filt_px_stride = xy_filt_stride / sizeof(float);
 
-    float mu1_sq_val, mu2_sq_val, mu1_mu2_val, xx_filt_val, yy_filt_val, xy_filt_val;
-    float sigma1_sq, sigma2_sq, sigma12;
-    float num_val, den_val;
-    int i, j;
+	float mu1_sq_val, mu2_sq_val, mu1_mu2_val, xx_filt_val, yy_filt_val, xy_filt_val;
+	float sigma1_sq, sigma2_sq, sigma12;
+	float num_val, den_val;
+	int i, j;
 
     /* ==== vif_stat_mode = 'matching_c' ==== */
     // float num_log_den, num_log_num;
     /* ==== vif_stat_mode = 'matching_matlab' ==== */
-    float g, sv_sq, eps = 1.0e-10f;
-    float vif_enhn_gain_limit_f = (float)vif_enhn_gain_limit;
+	float g, sv_sq, eps = 1.0e-10f;
+	float vif_enhn_gain_limit_f = (float) vif_enhn_gain_limit;
     /* == end of vif_stat_mode = 'matching_matlab' == */
 
-    float accum_num = 0.0f;
-    float accum_den = 0.0f;
+	float accum_num = 0.0f;
+	float accum_den = 0.0f;
 
-    for (i = 0; i < h; ++i) {
-        float accum_inner_num = 0;
-        float accum_inner_den = 0;
-        for (j = 0; j < w; ++j) {
-            float mu1_val = mu1[i * mu1_px_stride + j];
-            float mu2_val = mu2[i * mu2_px_stride + j];
-            mu1_sq_val = mu1_val * mu1_val; // same name as the Matlab code vifp_mscale.m
-            mu2_sq_val = mu2_val * mu2_val;
-            mu1_mu2_val = mu1_val * mu2_val; //mu1_mu2[i * mu1_mu2_px_stride + j];
-            xx_filt_val = xx_filt[i * xx_filt_px_stride + j];
-            yy_filt_val = yy_filt[i * yy_filt_px_stride + j];
-            xy_filt_val = xy_filt[i * xy_filt_px_stride + j];
+	for (i = 0; i < h; ++i) {
+		float accum_inner_num = 0;
+		float accum_inner_den = 0;
+		for (j = 0; j < w; ++j) {
+			float mu1_val = mu1[i * mu1_px_stride + j];
+			float mu2_val = mu2[i * mu2_px_stride + j];
+			mu1_sq_val = mu1_val * mu1_val; // same name as the Matlab code vifp_mscale.m
+			mu2_sq_val = mu2_val * mu2_val;
+			mu1_mu2_val = mu1_val * mu2_val; //mu1_mu2[i * mu1_mu2_px_stride + j];
+			xx_filt_val = xx_filt[i * xx_filt_px_stride + j];
+			yy_filt_val = yy_filt[i * yy_filt_px_stride + j];
+			xy_filt_val = xy_filt[i * xy_filt_px_stride + j];
 
-            sigma1_sq = xx_filt_val - mu1_sq_val;
-            sigma2_sq = yy_filt_val - mu2_sq_val;
-            sigma12 = xy_filt_val - mu1_mu2_val;
+			sigma1_sq = xx_filt_val - mu1_sq_val;
+			sigma2_sq = yy_filt_val - mu2_sq_val;
+			sigma12 = xy_filt_val - mu1_mu2_val;
 
-            /* ==== vif_stat_mode = 'matching_c' ==== */
+			/* ==== vif_stat_mode = 'matching_c' ==== */
 
             /* if (sigma1_sq < vif_sigma_nsq) {
                 num_val = 1.0 - sigma2_sq * sigma_max_inv;
@@ -276,25 +267,25 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *xx_filt, c
             sigma1_sq = MAX(sigma1_sq, 0.0f);
             sigma2_sq = MAX(sigma2_sq, 0.0f);
 
-            g = sigma12 / (sigma1_sq + eps);
-            sv_sq = sigma2_sq - g * sigma12;
+			g = sigma12 / (sigma1_sq + eps);
+			sv_sq = sigma2_sq - g * sigma12;
 
-            if (sigma1_sq < eps) {
-                g = 0.0f;
+			if (sigma1_sq < eps) {
+			    g = 0.0f;
                 sv_sq = sigma2_sq;
                 sigma1_sq = 0.0f;
-            }
+			}
 
-            if (sigma2_sq < eps) {
-                g = 0.0f;
-                sv_sq = 0.0f;
-            }
+			if (sigma2_sq < eps) {
+			    g = 0.0f;
+			    sv_sq = 0.0f;
+			}
 
-            if (g < 0.0f) {
-                sv_sq = sigma2_sq;
-                g = 0.0f;
-            }
-            sv_sq = MAX(sv_sq, eps);
+			if (g < 0.0f) {
+			    sv_sq = sigma2_sq;
+			    g = 0.0f;
+			}
+			sv_sq = MAX(sv_sq, eps);
 
             g = MIN(g, vif_enhn_gain_limit_f);
 
@@ -313,18 +304,17 @@ void vif_statistic_s(const float *mu1, const float *mu2, const float *xx_filt, c
             /* == end of vif_stat_mode = 'matching_matlab' == */
 
             accum_inner_num += num_val;
-            accum_inner_den += den_val;
-        }
+			accum_inner_den += den_val;
+		}
 
-        accum_num += accum_inner_num;
-        accum_den += accum_inner_den;
-    }
-    num[0] = accum_num;
-    den[0] = accum_den;
+		accum_num += accum_inner_num;
+		accum_den += accum_inner_den;
+	}
+	num[0] = accum_num;
+	den[0] = accum_den;
 }
 
-void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h,
-                    int src_stride, int dst_stride, int fwidth)
+void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth)
 {
 
     int src_px_stride = src_stride / sizeof(float);
@@ -391,15 +381,14 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf,
 // Code optimized by adding intrinsic code for the functions,
 // vif_filter1d_sq and vif_filter1d_sq
 
-void vif_filter1d_sq_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h,
-                       int src_stride, int dst_stride, int fwidth)
+void vif_filter1d_sq_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth)
 {
 
-    int src_px_stride = src_stride / sizeof(float);
-    int dst_px_stride = dst_stride / sizeof(float);
+	int src_px_stride = src_stride / sizeof(float);
+	int dst_px_stride = dst_stride / sizeof(float);
 
-    /* if support avx */
-
+	/* if support avx */
+	
 #if ARCH_X86
     const unsigned flags = vmaf_get_cpu_flags();
     if ((flags & VMAF_X86_CPU_FLAG_AVX2) && fwidth <= MAX_FWIDTH_AVX_CONV) {
@@ -408,125 +397,121 @@ void vif_filter1d_sq_s(const float *f, const float *src, float *dst, float *tmpb
     }
 #endif
 
-    /* fall back */
+	/* fall back */
 
-    float *tmp = aligned_malloc(ALIGN_CEIL(w * sizeof(float)), MAX_ALIGN);
-    float fcoeff, imgcoeff;
+	float *tmp = aligned_malloc(ALIGN_CEIL(w * sizeof(float)), MAX_ALIGN);
+	float fcoeff, imgcoeff;
 
-    int i, j, fi, fj, ii, jj;
+	int i, j, fi, fj, ii, jj;
 
-    for (i = 0; i < h; ++i) {
-        /* Vertical pass. */
-        for (j = 0; j < w; ++j) {
-            float accum = 0;
+	for (i = 0; i < h; ++i) {
+		/* Vertical pass. */
+		for (j = 0; j < w; ++j) {
+			float accum = 0;
 
-            for (fi = 0; fi < fwidth; ++fi) {
-                fcoeff = f[fi];
+			for (fi = 0; fi < fwidth; ++fi) {
+				fcoeff = f[fi];
 
-                ii = i - fwidth / 2 + fi;
-                ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 2 : ii);
+				ii = i - fwidth / 2 + fi;
+				ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 2 : ii);
 
-                imgcoeff = src[ii * src_px_stride + j];
+				imgcoeff = src[ii * src_px_stride + j];
 
-                accum += fcoeff * (imgcoeff * imgcoeff);
-            }
+				accum += fcoeff * (imgcoeff * imgcoeff);
+			}
 
-            tmp[j] = accum;
-        }
+			tmp[j] = accum;
+		}
 
-        /* Horizontal pass. */
-        for (j = 0; j < w; ++j) {
-            float accum = 0;
+		/* Horizontal pass. */
+		for (j = 0; j < w; ++j) {
+			float accum = 0;
 
-            for (fj = 0; fj < fwidth; ++fj) {
-                fcoeff = f[fj];
+			for (fj = 0; fj < fwidth; ++fj) {
+				fcoeff = f[fj];
 
-                jj = j - fwidth / 2 + fj;
-                jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 2 : jj);
+				jj = j - fwidth / 2 + fj;
+				jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 2 : jj);
 
-                imgcoeff = tmp[jj];
+				imgcoeff = tmp[jj];
 
-                accum += fcoeff * imgcoeff;
-            }
+				accum += fcoeff * imgcoeff;
+			}
 
-            dst[i * dst_px_stride + j] = accum;
-        }
-    }
+			dst[i * dst_px_stride + j] = accum;
+		}
+	}
 
-    aligned_free(tmp);
+	aligned_free(tmp);
 }
 
-void vif_filter1d_xy_s(const float *f, const float *src1, const float *src2, float *dst,
-                       float *tmpbuf, int w, int h, int src1_stride, int src2_stride,
-                       int dst_stride, int fwidth)
+void vif_filter1d_xy_s(const float *f, const float *src1, const float *src2, float *dst, float *tmpbuf, int w, int h, int src1_stride, int src2_stride, int dst_stride, int fwidth)
 {
 
-    int src1_px_stride = src1_stride / sizeof(float);
-    int src2_px_stride = src2_stride / sizeof(float);
-    int dst_px_stride = dst_stride / sizeof(float);
+	int src1_px_stride = src1_stride / sizeof(float);
+	int src2_px_stride = src2_stride / sizeof(float);
+	int dst_px_stride = dst_stride / sizeof(float);
 
-    /* if support avx */
+	/* if support avx */
 
 #if ARCH_X86
     const unsigned flags = vmaf_get_cpu_flags();
     if ((flags & VMAF_X86_CPU_FLAG_AVX2) && fwidth <= MAX_FWIDTH_AVX_CONV) {
-        convolution_f32_avx_xy_s(f, fwidth, src1, src2, dst, tmpbuf, w, h, src1_px_stride,
-                                 src2_px_stride, dst_px_stride);
+        convolution_f32_avx_xy_s(f, fwidth, src1, src2, dst, tmpbuf, w, h, src1_px_stride, src2_px_stride, dst_px_stride);
         return;
     }
 #endif
 
-    /* fall back */
+	/* fall back */
 
-    float *tmp = aligned_malloc(ALIGN_CEIL(w * sizeof(float)), MAX_ALIGN);
-    float fcoeff, imgcoeff, imgcoeff1, imgcoeff2;
+	float *tmp = aligned_malloc(ALIGN_CEIL(w * sizeof(float)), MAX_ALIGN);
+	float fcoeff, imgcoeff, imgcoeff1, imgcoeff2;
 
-    int i, j, fi, fj, ii, jj;
+	int i, j, fi, fj, ii, jj;
 
-    for (i = 0; i < h; ++i) {
-        /* Vertical pass. */
-        for (j = 0; j < w; ++j) {
-            float accum = 0;
+	for (i = 0; i < h; ++i) {
+		/* Vertical pass. */
+		for (j = 0; j < w; ++j) {
+			float accum = 0;
 
-            for (fi = 0; fi < fwidth; ++fi) {
-                fcoeff = f[fi];
+			for (fi = 0; fi < fwidth; ++fi) {
+				fcoeff = f[fi];
 
-                ii = i - fwidth / 2 + fi;
-                ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 2 : ii);
+				ii = i - fwidth / 2 + fi;
+				ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 2 : ii);
 
-                imgcoeff1 = src1[ii * src1_px_stride + j];
-                imgcoeff2 = src2[ii * src2_px_stride + j];
+				imgcoeff1 = src1[ii * src1_px_stride + j];
+				imgcoeff2 = src2[ii * src2_px_stride + j];
 
-                accum += fcoeff * (imgcoeff1 * imgcoeff2);
-            }
+				accum += fcoeff * (imgcoeff1 * imgcoeff2);
+			}
 
-            tmp[j] = accum;
-        }
+			tmp[j] = accum;
+		}
 
-        /* Horizontal pass. */
-        for (j = 0; j < w; ++j) {
-            float accum = 0;
+		/* Horizontal pass. */
+		for (j = 0; j < w; ++j) {
+			float accum = 0;
 
-            for (fj = 0; fj < fwidth; ++fj) {
-                fcoeff = f[fj];
+			for (fj = 0; fj < fwidth; ++fj) {
+				fcoeff = f[fj];
 
-                jj = j - fwidth / 2 + fj;
-                jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 2 : jj);
+				jj = j - fwidth / 2 + fj;
+				jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 2 : jj);
 
-                imgcoeff = tmp[jj];
+				imgcoeff = tmp[jj];
 
-                accum += fcoeff * imgcoeff;
-            }
+				accum += fcoeff * imgcoeff;
+			}
 
-            dst[i * dst_px_stride + j] = accum;
-        }
-    }
+			dst[i * dst_px_stride + j] = accum;
+		}
+	}
 
-    aligned_free(tmp);
+	aligned_free(tmp);
 }
 
-int vif_get_scaling_method(char *scaling_method_str, enum vif_scaling_method *scale_method)
-{
+int vif_get_scaling_method(char *scaling_method_str, enum vif_scaling_method *scale_method) {
     if (!strcmp(scaling_method_str, "nearest")) {
         *scale_method = vif_scale_nearest;
     } else if (!strcmp(scaling_method_str, "bilinear")) {
@@ -536,18 +521,14 @@ int vif_get_scaling_method(char *scaling_method_str, enum vif_scaling_method *sc
     } else if (!strcmp(scaling_method_str, "lanczos4")) {
         *scale_method = vif_scale_lanczos4;
     } else {
-        vmaf_log(
-            VMAF_LOG_LEVEL_ERROR,
-            "Invalid scale method %s. Supported scale methods: [nearest, bilinear, bicubic, lanczos4]\n",
-            scaling_method_str);
+        vmaf_log(VMAF_LOG_LEVEL_ERROR, "Invalid scale method %s. Supported scale methods: [nearest, bilinear, bicubic, lanczos4]\n", scaling_method_str);
         return -EINVAL;
     }
 
     return 0;
 }
 
-static float bicubic_kernel(float t)
-{
+static float bicubic_kernel(float t) {
     float a = -0.75;
     if (t < 0) {
         t = -t;
@@ -561,14 +542,11 @@ static float bicubic_kernel(float t)
     return 0;
 }
 
-static float mirror(float i, float left, float right)
-{
+static float mirror(float i, float left, float right) {
     return (i < left ? -i : i > right ? 2 * right - i : i);
 }
 
-static float bicubic_interpolation(const float *src, int width, int height, int src_stride, float x,
-                                   float y)
-{
+static float bicubic_interpolation(const float *src, int width, int height, int src_stride, float x, float y) {
     int x0 = floor(x);
     int y0 = floor(y);
 
@@ -596,9 +574,9 @@ static float bicubic_interpolation(const float *src, int width, int height, int 
     return interp_val;
 }
 
-static void vif_scale_frame_bicubic_s(const float *src, float *dst, int src_w, int src_h,
-                                      int src_stride, int dst_w, int dst_h, int dst_stride)
-{
+static void vif_scale_frame_bicubic_s(const float *src, float *dst,
+                                      int src_w, int src_h, int src_stride,
+                                      int dst_w, int dst_h, int dst_stride) {
     // if the input and output sizes are the same
     if (src_w == dst_w && src_h == dst_h) {
         memcpy(dst, src, dst_stride * dst_h * sizeof(float));
@@ -617,19 +595,15 @@ static void vif_scale_frame_bicubic_s(const float *src, float *dst, int src_w, i
     }
 }
 
-static float lanczos4_kernel(float x, float a)
-{
-    if (x == 0.0)
-        return 1.0;
+static float lanczos4_kernel(float x, float a) {
+    if (x == 0.0) return 1.0;
     if (x > -a && x < a) {
         return a * sin(M_PI * x) * sin(M_PI * x / a) / (M_PI * M_PI * x * x);
     }
     return 0.0;
 }
 
-static float lanczos4_interpolation(const float *src, int width, int height, int src_stride,
-                                    float x, float y)
-{
+static float lanczos4_interpolation(const float *src, int width, int height, int src_stride, float x, float y) {
     int a = 4;
     int x0 = floor(x);
     int y0 = floor(y);
@@ -639,7 +613,7 @@ static float lanczos4_interpolation(const float *src, int width, int height, int
 
     float value = 0.0;
     float weight_sum = 0.0;
-
+    
     float weights_x[9];
     float weights_y[9];
     for (int i = -a; i <= a; i++) {
@@ -657,13 +631,13 @@ static float lanczos4_interpolation(const float *src, int width, int height, int
             value += src[y_index * src_stride + x_index] * weight;
         }
     }
-
+    
     return value / weight_sum;
 }
 
-static void vif_scale_frame_lanczos4_s(const float *src, float *dst, int src_w, int src_h,
-                                       int src_stride, int dst_w, int dst_h, int dst_stride)
-{
+static void vif_scale_frame_lanczos4_s(const float *src, float *dst,
+                                      int src_w, int src_h, int src_stride,
+                                      int dst_w, int dst_h, int dst_stride) {
     // if the input and output sizes are the same
     if (src_w == dst_w && src_h == dst_h) {
         memcpy(dst, src, dst_stride * dst_h * sizeof(float));
@@ -682,9 +656,7 @@ static void vif_scale_frame_lanczos4_s(const float *src, float *dst, int src_w, 
     }
 }
 
-static float bilinear_interpolation(const float *src, int width, int height, int src_stride,
-                                    float x, float y)
-{
+static float bilinear_interpolation(const float *src, int width, int height, int src_stride, float x, float y) {
     int x1 = mirror(floor(x), 0, width - 1);
     int x2 = mirror(ceil(x), 0, width - 1);
     int y1 = mirror(floor(y), 0, height - 1);
@@ -693,14 +665,17 @@ static float bilinear_interpolation(const float *src, int width, int height, int
     float dx = x - x1;
     float dy = y - y1;
 
-    return ((1 - dy) * (1 - dx) * src[y1 * src_stride + x1] +
-            (1 - dy) * dx * src[y1 * src_stride + x2] + dy * (1 - dx) * src[y2 * src_stride + x1] +
-            dy * dx * src[y2 * src_stride + x2]);
+    return (
+        (1 - dy) * (1 - dx) * src[y1 * src_stride + x1] +
+        (1 - dy) *      dx  * src[y1 * src_stride + x2] +
+             dy  * (1 - dx) * src[y2 * src_stride + x1] +
+             dy  *      dx  * src[y2 * src_stride + x2]
+    );
 }
 
-static void vif_scale_frame_bilinear_s(const float *src, float *dst, int src_w, int src_h,
-                                       int src_stride, int dst_w, int dst_h, int dst_stride)
-{
+static void vif_scale_frame_bilinear_s(const float *src, float *dst,
+                       int src_w, int src_h, int src_stride, 
+                       int dst_w, int dst_h, int dst_stride) {
     // if the input and output sizes are the same
     if (src_w == dst_w && src_h == dst_h) {
         memcpy(dst, src, dst_stride * dst_h * sizeof(float));
@@ -719,9 +694,9 @@ static void vif_scale_frame_bilinear_s(const float *src, float *dst, int src_w, 
     }
 }
 
-static void vif_scale_frame_nearest_s(const float *src, float *dst, int src_w, int src_h,
-                                      int src_stride, int dst_w, int dst_h, int dst_stride)
-{
+static void vif_scale_frame_nearest_s(const float *src, float *dst,
+                       int src_w, int src_h, int src_stride, 
+                       int dst_w, int dst_h, int dst_stride) {
     // if the input and output sizes are the same
     if (src_w == dst_w && src_h == dst_h) {
         memcpy(dst, src, dst_stride * dst_h * sizeof(float));
@@ -741,8 +716,8 @@ static void vif_scale_frame_nearest_s(const float *src, float *dst, int src_w, i
 }
 
 void vif_scale_frame_s(enum vif_scaling_method scale_method, const float *src, float *dst,
-                       int src_w, int src_h, int src_stride, int dst_w, int dst_h, int dst_stride)
-{
+                       int src_w, int src_h, int src_stride, 
+                       int dst_w, int dst_h, int dst_stride) {
     if (scale_method == vif_scale_nearest) {
         vif_scale_frame_nearest_s(src, dst, src_w, src_h, src_stride, dst_w, dst_h, dst_stride);
     } else if (scale_method == vif_scale_bilinear) {
