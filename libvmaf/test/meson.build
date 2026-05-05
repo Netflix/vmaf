@@ -153,6 +153,12 @@ test_barten_csf = executable('test_barten_csf',
     dependencies : math_lib,
 )
 
+test_motion_blend = executable('test_motion_blend',
+    ['test.c', 'test_motion_blend.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+)
+
 if float_enabled
     test_vif_tools = executable('test_vif_tools',
         ['test.c', 'test_vif_tools.c'],
@@ -224,3 +230,4 @@ test('test_framesync', test_framesync)
 test('test_propagate_metadata', test_propagate_metadata)
 test('test_adm_csf', test_adm_csf)
 test('test_barten_csf', test_barten_csf)
+test('test_motion_blend', test_motion_blend)
