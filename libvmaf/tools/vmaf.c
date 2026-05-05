@@ -146,25 +146,22 @@ static void copy_picture_data(VmafPicture *pic, video_input_ycbcr ycbcr,
     }
 }
 
-static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic, int depth)
+static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic,
+                         int depth)
 {
     int ret;
-    video_input_ycbcr ycbcr;
     video_input_info info;
-
-    ret = video_input_fetch_frame(vid, ycbcr, NULL);
-    if (ret < 1) return !ret;
-
     video_input_get_info(vid, &info);
 
 #ifdef VMAF_PICTURE_POOL
+    (void) depth;
     ret = vmaf_fetch_preallocated_picture(vmaf, pic);
     if (ret) {
         fprintf(stderr, "problem fetching picture from pool.\n");
         return -1;
     }
 #else
-    (void) vmaf;  // Unused when pool is disabled
+    (void) vmaf;
     ret = vmaf_picture_alloc(pic, pix_fmt_map(info.pixel_fmt), depth,
                              info.pic_w, info.pic_h);
     if (ret) {
@@ -173,7 +170,15 @@ static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic, 
     }
 #endif
 
-    copy_picture_data(pic, ycbcr, &info, depth);
+#ifdef USE_DIRECT_READ
+    ret = video_input_fetch_into_vmaf_picture(vid, pic);
+    if (ret < 1) return !ret;
+#else
+    video_input_ycbcr ycbcr;
+    ret = video_input_fetch_frame(vid, ycbcr, NULL);
+    if (ret < 1) return !ret;
+    copy_picture_data(pic, ycbcr, &info, info.depth);
+#endif
     return 0;
 }
 
@@ -286,7 +291,7 @@ int main(int argc, char *argv[])
             .bpc = common_bitdepth,
             .pix_fmt = pix_fmt_map(info.pixel_fmt),
         },
-        .pic_cnt = c.thread_cnt > 0 ? (c.thread_cnt + 1) * 2 : 2,
+        .pic_cnt = c.thread_cnt > 0 ? (c.thread_cnt + 1) * 2 : 3,
     };
 
     err = vmaf_preallocate_pictures(vmaf, pic_cfg);
