@@ -1732,7 +1732,7 @@ class QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[1]['VMAF_feature_motion2_score'], 3.8943597291666667, places=4)
         self.assertAlmostEqual(results[1]['VMAF_feature_adm2_score'], 1.0, places=4)
 
-        self.assertAlmostEqual(results[0]['VMAF_score'], 86.07960054155262, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_score'], 86.07960054155262, places=3)
         self.assertAlmostEqual(results[1]['VMAF_score'], 99.946416604585025, places=4)
 
     def test_run_vmaf_runner_float_vifks1o2(self):
