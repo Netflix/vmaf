@@ -703,6 +703,15 @@ class PyPsnrMaxdb100FeatureExtractor(PyPsnrFeatureExtractor):
         self.optional_dict['max_db'] = 100.0
 
 
+class PypsnrMaxdb100FeatureExtractor(PyPsnrMaxdb100FeatureExtractor):
+
+    TYPE = "Pypsnr_maxdb100_feature"
+
+    @deprecated
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 class PsnrFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "PSNR_feature"
@@ -972,6 +981,7 @@ class AnsnrFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
         ExternalProgramCaller.call_vmafexec_single_feature(
             'float_ansnr', yuv_type, ref_path, dis_path, w, h, log_file_path, logger,
             options={**optional_dict2})
+
 
 
 class SpeedChromaFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
