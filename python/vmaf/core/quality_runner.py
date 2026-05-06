@@ -18,10 +18,11 @@ from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel, \
     BootstrapLibsvmNusvrTrainTestModel
+from vmaf.core.cambi_feature_extractor import CambiFeatureExtractor, CambiFullReferenceFeatureExtractor
 from vmaf.core.feature_extractor import SsimFeatureExtractor, \
-    MsSsimFeatureExtractor, \
-    VmafFeatureExtractor, PsnrFeatureExtractor, VmafIntegerFeatureExtractor, \
-    FeatureExtractor, SpeedChromaFeatureExtractor, SpeedTemporalFeatureExtractor
+    MsSsimFeatureExtractor, SpeedChromaFeatureExtractor, PsnrFeatureExtractor, VmafFeatureExtractor, \
+    VmafIntegerFeatureExtractor, \
+    FeatureExtractor, SpeedTemporalFeatureExtractor
 from vmaf.core.vmafexec_feature_extractor import CIEDE2000FeatureExtractor
 from vmaf.tools.decorator import override
 
@@ -1189,12 +1190,12 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
     DEFAULT_MODEL_FILEPATH = vmaf.model_path("vmaf_v0.6.1.json")
 
     FEATURES = [
-                'adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
-                'adm_scale0', 'adm_scale1','adm_scale2','adm_scale3', 'motion',
-                'float_psnr', 'psnr_y', 'psnr_cb', 'psnr_cr',
-                'float_ssim', 'float_ms_ssim', 'ssim', 'ms_ssim',
-                'float_moment_ref1st', 'float_moment_dis1st', 'float_moment_ref2nd', 'float_moment_dis2nd',
-                ]
+        'adm2', 'adm3', 'motion2', 'motion3', 'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
+        'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3', 'motion', 'cambi', 'speed_chroma_uv',
+        'float_psnr', 'psnr_y', 'psnr_cb', 'psnr_cr',
+        'float_ssim', 'float_ms_ssim', 'ssim', 'ms_ssim',
+        'float_moment_ref1st', 'float_moment_dis1st', 'float_moment_ref2nd', 'float_moment_dis2nd',
+    ]
 
     @classmethod
     def get_feature_scores_key(cls, atom_feature):
@@ -1218,7 +1219,8 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
             if use_default_built_in_model:
                 models = []
         else:
-            model0 = ['name=vmaf']
+            model0 = []
+            model0.append(f'name=vmaf')
 
             if self.optional_dict is not None and 'model_filepath' in self.optional_dict:
                 model_filepath = self.optional_dict['model_filepath']
@@ -1350,14 +1352,21 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
         width = quality_width
         height = quality_height
         pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafexec(fmt)
+        if asset.dis_encode_width_height is not None:
+            enc_width, enc_height = asset.dis_encode_width_height
+        else:
+            enc_width, enc_height = None, None
+        enc_bitdepth = asset.dis_encode_bitdepth
         output = log_file_path
         exe = self._get_exec()
         logger = self.logger
 
         ExternalProgramCaller.call_vmafexec(reference, distorted, width, height, pixel_format, bitdepth,
-                                          float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
-                                          no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger,
-                                          vif_enhn_gain_limit, adm_enhn_gain_limit, motion_force_zero)
+                                            float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
+                                            no_prediction, models, subsample, n_threads, disable_avx, output, exe,
+                                            logger,
+                                            vif_enhn_gain_limit, adm_enhn_gain_limit, motion_force_zero,
+                                            enc_width, enc_height, enc_bitdepth)
 
     def _get_exec(self):
         return None  # signaling default
@@ -1454,6 +1463,12 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
         return quality_result
 
 
+if __name__ == '__main__':
+    import doctest
+
+    doctest.testmod()
+
+
 class SpeedChromaQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
     TYPE = 'SpeedChroma'
     VERSION = SpeedChromaFeatureExtractor.VERSION
@@ -1504,9 +1519,3 @@ class SpeedTemporalQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
     @override(QualityRunnerFromFeatureExtractor)
     def _get_feature_key_for_score(self):
         return 'speed_temporal'
-
-
-if __name__ == '__main__':
-    import doctest
-
-    doctest.testmod()
