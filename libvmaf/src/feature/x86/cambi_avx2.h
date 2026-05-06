@@ -22,6 +22,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+struct VmafPicture;
+void filter_mode_avx2(const struct VmafPicture *image, int width, int height, uint16_t *buffer);
+
 void cambi_increment_range_avx2(uint16_t *arr, int left, int right);
 
 void cambi_decrement_range_avx2(uint16_t *arr, int left, int right);
