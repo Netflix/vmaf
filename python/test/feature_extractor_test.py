@@ -15,16 +15,14 @@ from vmaf.tools.misc import MyTestCase
 
 from test.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing, \
     set_default_576_324_10bit_videos_for_testing, set_default_576_324_12bit_videos_for_testing, \
-    set_default_576_324_16bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b
+    set_default_576_324_16bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b, \
+    set_default_cambi_video_for_testing_b
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 
 class FeatureExtractorTest(MyTestCase):
-
-    def setUp(self) -> None:
-        super().setUp()
 
     def tearDown(self):
         if hasattr(self, 'fextractor'):
