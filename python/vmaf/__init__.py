@@ -214,7 +214,8 @@ class ExternalProgramCaller(object):
     def call_vmafexec(reference, distorted, width, height, pixel_format, bitdepth,
                     float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
                     no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger,
-                    vif_enhn_gain_limit=None, adm_enhn_gain_limit=None, motion_force_zero=False):
+                    vif_enhn_gain_limit=None, adm_enhn_gain_limit=None, motion_force_zero=False,
+                    enc_width=None, enc_height=None, enc_bitdepth=None):
 
         if exe is None:
             exe = required(ExternalProgram.vmafexec)
@@ -267,6 +268,12 @@ class ExternalProgramCaller(object):
                     assert isinstance(motion_force_zero, bool)
                     motion_force_zero = str(motion_force_zero).lower()
                     vmafexec_cmd += f':motion.motion_force_zero={motion_force_zero}:float_motion.motion_force_zero={motion_force_zero}'
+                if enc_width is not None:
+                    vmafexec_cmd += f':cambi.enc_width={enc_width}'
+                if enc_height is not None:
+                    vmafexec_cmd += f':cambi.enc_height={enc_height}'
+                if enc_bitdepth is not None:
+                    vmafexec_cmd += f':cambi.enc_bitdepth={enc_bitdepth}'
 
         assert isinstance(subsample, int) and subsample >= 1
         if subsample != 1:
