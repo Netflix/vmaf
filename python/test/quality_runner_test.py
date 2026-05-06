@@ -38,7 +38,7 @@ class QualityRunnerTest(MyTestCase):
                       ref_path="dir/refvideo.yuv", dis_path="dir/disvideo.yuv",
                       asset_dict={'width': 720, 'height': 480})
         runner = VmafLegacyQualityRunner([asset], None)
-        self.assertEqual(runner.executor_id, 'VMAF_legacy_VF0.2.7-1.1')
+        self.assertEqual(runner.executor_id, 'VMAF_legacy_VF0.2.21-1.1')
 
     def test_run_vmaf_legacy_runner(self):
 
@@ -1391,7 +1391,7 @@ class QualityRunnerTest(MyTestCase):
 
         self.runner = VmafQualityRunner(
             [asset, asset_original],
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': VmafConfig.model_path('other_models', 'vmaf_v0.6.1mfz.json')}
@@ -1424,7 +1424,7 @@ class QualityRunnerTest(MyTestCase):
             self.assertAlmostEqual(results[1]['VMAF_integer_feature_motion_score'], 1.0, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 72.3205499536087, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 97.42843608965536, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 97.42835406898242, places=4)
 
     def test_run_vmaf_runner_neg_mode(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -1922,13 +1922,13 @@ class QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[1]['VMAF_integer_feature_adm2_score'], 1.0, places=4)
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 72.3205498755804, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 97.42843609144575, places=4)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 97.42835406898269, places=4)
 
 
 class QualityRunnerVersionTest(unittest.TestCase):
 
     def test_vmaf_quality_runner_version(self):
-        self.assertEqual(VmafQualityRunner.VERSION, 'F0.2.7int-0.6.1')
+        self.assertEqual(VmafQualityRunner.VERSION, 'F0.2.21int-0.6.1')
         self.assertEqual(VmafQualityRunner.ALGO_VERSION, 4)
 
 

@@ -54,19 +54,19 @@ class ResultTest(MyTestCase):
         df_ansnr = df.loc[df['scores_key'] == 'VMAF_feature_ansnr_scores']
         df_motion = df.loc[df['scores_key'] == 'VMAF_feature_motion_scores']
         df_adm_den = df.loc[df['scores_key'] == 'VMAF_feature_adm_den_scores']
-        self.assertEqual(len(df), 38)
+        self.assertEqual(len(df), 40)
         self.assertEqual(len(df_vmaf), 1)
         self.assertEqual(len(df_adm), 1)
         self.assertEqual(len(df_vif), 1)
         self.assertEqual(len(df_ansnr), 1)
         self.assertEqual(len(df_motion), 1)
-        self.assertAlmostEqual(np.mean(df_vmaf.iloc[0]['scores']), 40.421899030550769, places=3)
+        self.assertAlmostEqual(np.mean(df_vmaf.iloc[0]['scores']), 40.422179484077304, places=4)
         self.assertAlmostEqual(np.mean(df_adm.iloc[0]['scores']), 0.78533833333333336, places=4)
         self.assertAlmostEqual(np.mean(df_vif.iloc[0]['scores']), 0.156834666667, places=4)
         self.assertAlmostEqual(np.mean(df_ansnr.iloc[0]['scores']), 7.92623066667, places=4)
         self.assertAlmostEqual(np.mean(df_motion.iloc[0]['scores']), 12.5548366667, places=4)
         self.assertAlmostEqual(np.mean(df_adm_den.iloc[0]['scores']), 2773.8912249999998, places=3)
-        self.assertAlmostEqual(np.mean(Result.get_unique_from_dataframe(df, 'VMAF_legacy_scores', 'scores')), 40.421899030550769, places=3)
+        self.assertAlmostEqual(np.mean(Result.get_unique_from_dataframe(df, 'VMAF_legacy_scores', 'scores')), 40.422179484077304, places=4)
         self.assertAlmostEqual(np.mean(Result.get_unique_from_dataframe(df, 'VMAF_feature_adm_scores', 'scores')), 0.78533833333333336, places=4)
         self.assertAlmostEqual(np.mean(Result.get_unique_from_dataframe(df, 'VMAF_feature_vif_scores', 'scores')), 0.156834666667, places=4)
         self.assertAlmostEqual(np.mean(Result.get_unique_from_dataframe(df, 'VMAF_feature_ansnr_scores', 'scores')), 7.92623066667, places=4)
@@ -79,7 +79,7 @@ class ResultTest(MyTestCase):
         self.assertEqual(
             df.iloc[0]['asset'],
             '{"asset_dict": {"height": 1080, "use_path_as_workpath": 1, "use_workpath_as_procpath": 1, "width": 1920}, "asset_id": 0, "content_id": 0, "dataset": "test", "dis_path": "checkerboard_1920_1080_10_3_1_0.yuv", "ref_path": "checkerboard_1920_1080_10_3_0_0.yuv", "workdir": ""}') # noqa
-        self.assertEqual(df.iloc[0]['executor_id'], 'VMAF_legacy_VF0.2.7-1.1')
+        self.assertEqual(df.iloc[0]['executor_id'], 'VMAF_legacy_VF0.2.21-1.1')
 
         Result._assert_asset_dataframe(df)
 
