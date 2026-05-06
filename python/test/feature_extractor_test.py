@@ -1220,6 +1220,201 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_scores'][4], 7.040274, places=4)
         self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_scores'][5], 6.881104, places=4)
         self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_score'], 6.828103625, places=4)
+
+    def test_run_vmaf_integer_fextractor_motion_five_frame_window_one_frame_input(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['start_frame'] = 0
+        asset.asset_dict['end_frame'] = 0
+        self.fextractor = VmafIntegerFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_five_frame_window': True}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_score'], 0.0, places=4)
+
+    def test_run_vmaf_integer_fextractor_motion_five_frame_window_one_frame_input_moving_avg(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['start_frame'] = 0
+        asset.asset_dict['end_frame'] = 0
+        self.fextractor = VmafIntegerFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_five_frame_window': True, 'motion_moving_average': True}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_mma_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_mma_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_mma_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_mma_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_score'], 0.0, places=4)
+
+    def test_run_vmaf_integer_fextractor_motion_five_frame_window_two_frame_input(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['start_frame'] = 0
+        asset.asset_dict['end_frame'] = 1
+        self.fextractor = VmafIntegerFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_five_frame_window': True}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_scores'][1], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_scores'][1], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_score'], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_scores'][1], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_score'], 0.0, places=4)
+
+    def test_run_vmaf_integer_fextractor_motion_five_frame_window_three_frame_input(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['start_frame'] = 0
+        asset.asset_dict['end_frame'] = 2
+        self.fextractor = VmafIntegerFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_five_frame_window': True}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_scores'][1], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_scores'][2], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_score'], 2.627165666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_scores'][1], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_scores'][2], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_score'], 2.627165666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_scores'][0], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_scores'][1], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_scores'][2], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_score'], 7.881497, places=4)
+
+    def test_run_vmaf_integer_fextractor_motion_five_frame_window_three_frame_input_moving_avg(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['start_frame'] = 0
+        asset.asset_dict['end_frame'] = 2
+        self.fextractor = VmafIntegerFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_five_frame_window': True, 'motion_moving_average': True}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_mma_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_mma_scores'][1], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_mma_scores'][2], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_mma_score'], 2.627165666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_mma_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_mma_scores'][1], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_mma_scores'][2], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_mma_score'], 2.627165666666667, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_scores'][0], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_scores'][1], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_scores'][2], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_score'], 7.881497, places=4)
+
+    def test_run_vmaf_integer_fextractor_motion_five_frame_window_four_frame_input(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['start_frame'] = 0
+        asset.asset_dict['end_frame'] = 3
+        self.fextractor = VmafIntegerFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_five_frame_window': True}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_scores'][1], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_scores'][2], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_scores'][3], 7.437578, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_score'], 3.8297687500000004, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_scores'][1], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_scores'][2], 7.437578, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_scores'][3], 7.437578, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_score'], 3.718789, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_scores'][0], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_scores'][1], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_scores'][2], 7.437578, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_scores'][3], 7.437578, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_score'], 7.659537500000001, places=4)
+
+    def test_run_vmaf_integer_fextractor_motion_five_frame_window_four_frame_input_moving_avg(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['start_frame'] = 0
+        asset.asset_dict['end_frame'] = 3
+        self.fextractor = VmafIntegerFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_five_frame_window': True, 'motion_moving_average': True}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_mma_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_mma_scores'][1], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_mma_scores'][2], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_mma_scores'][3], 7.437578, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mffw_mma_score'], 3.8297687500000004, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_mma_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_mma_scores'][1], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_mma_scores'][2], 7.437578, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_mma_scores'][3], 7.437578, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mffw_mma_score'], 3.718789, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_scores'][0], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_scores'][1], 7.881497, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_scores'][2], 7.659538, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_scores'][3], 7.437578, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mffw_mma_score'], 7.7150275, places=4)
+
     def test_run_vmaf_integer_fextractor_single_frame(self):
 
         ref_path, dis_path, asset, asset_original = set_default_cambi_video_for_testing_b()
@@ -1254,6 +1449,117 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mma_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mma_score'], 0.0, places=4)
         self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mma_score'], 0.0, places=4)
+
+    def test_run_vmaf_integer_fextractor_motion_two_frame_input(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['start_frame'] = 0
+        asset.asset_dict['end_frame'] = 1
+        self.fextractor = VmafIntegerFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_scores'][1], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_score'], 2.289721, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_scores'][1], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_score'], 2.289721, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_scores'][0], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_scores'][1], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_score'], 4.579442, places=4)
+
+    def test_run_vmaf_integer_fextractor_motion_two_frame_input_moving_avg(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['start_frame'] = 0
+        asset.asset_dict['end_frame'] = 1
+        self.fextractor = VmafIntegerFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_moving_average': True}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mma_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mma_scores'][1], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mma_score'], 2.289721, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mma_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mma_scores'][1], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mma_score'], 2.289721, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mma_scores'][0], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mma_scores'][1], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mma_score'], 4.579442, places=4)
+
+    def test_run_vmaf_integer_fextractor_motion_three_frame_input(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['start_frame'] = 0
+        asset.asset_dict['end_frame'] = 2
+        self.fextractor = VmafIntegerFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_scores'][1], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_scores'][2], 4.214324, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_score'], 2.931255333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_scores'][1], 4.214324, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_scores'][2], 4.214324, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_score'], 2.8095493333333335, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_scores'][0], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_scores'][1], 4.214324, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_scores'][2], 4.214324, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_score'], 4.336030000000001, places=4)
+
+    def test_run_vmaf_integer_fextractor_motion_three_frame_input_moving_avg(self):
+
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+
+        asset.asset_dict['start_frame'] = 0
+        asset.asset_dict['end_frame'] = 2
+        self.fextractor = VmafIntegerFeatureExtractor(
+            [asset],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_moving_average': True}
+        )
+        self.fextractor.run(parallelize=True)
+
+        results = self.fextractor.results
+
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mma_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mma_scores'][1], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mma_scores'][2], 4.214324, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion_mma_score'], 2.931255333333334, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mma_scores'][0], 0.0, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mma_scores'][1], 4.214324, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mma_scores'][2], 4.214324, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion2_mma_score'], 2.8095493333333335, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mma_scores'][0], 4.579442, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mma_scores'][1], 4.396883, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mma_scores'][2], 4.214324, places=4)
+        self.assertAlmostEqual(results[0]['VMAF_integer_feature_motion3_mma_score'], 4.396883, places=4)
+
     def test_run_vmaf_integer_fextractor_barten_csf_scale_coeffs_4d5h(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
