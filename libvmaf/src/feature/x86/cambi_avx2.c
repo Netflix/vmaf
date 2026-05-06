@@ -21,6 +21,72 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "libvmaf/picture.h"
+
+// mode3 returns the duplicate among (a, b, c) if any pair matches, otherwise
+// the unsigned min. Vectorized over 16 uint16 lanes.
+static inline __m256i mode3_avx2(__m256i a, __m256i b, __m256i c) {
+    __m256i ab_eq = _mm256_cmpeq_epi16(a, b);
+    __m256i ac_eq = _mm256_cmpeq_epi16(a, c);
+    __m256i bc_eq = _mm256_cmpeq_epi16(b, c);
+    __m256i a_dup = _mm256_or_si256(ab_eq, ac_eq);
+    __m256i min_abc = _mm256_min_epu16(_mm256_min_epu16(a, b), c);
+    // result = a_dup ? a : (bc_eq ? b : min_abc).  blendv_epi8 works at 16-bit
+    // granularity here because cmpeq_epi16 produces consistent byte patterns
+    // (both bytes 0xFF or 0x00) within each 16-bit lane.
+    __m256i res = _mm256_blendv_epi8(min_abc, b, bc_eq);
+    res = _mm256_blendv_epi8(res, a, a_dup);
+    return res;
+}
+
+static inline uint16_t mode3_scalar(uint16_t a, uint16_t b, uint16_t c) {
+    if (a == b || a == c) return a;
+    if (b == c) return b;
+    uint16_t ab = a < b ? a : b;
+    return ab < c ? ab : c;
+}
+
+void filter_mode_avx2(const VmafPicture *image, int width, int height, uint16_t *buffer) {
+    uint16_t *data = image->data[0];
+    ptrdiff_t stride = image->stride[0] >> 1;
+    int curr_line = 0;
+    for (int i = 0; i < height; i++) {
+        // Horizontal pass: buffer[curr_line] = mode3(data[j-1], data[j], data[j+1])
+        // for j in [1, width-2]; first and last column copied verbatim.
+        buffer[curr_line * width + 0] = data[i * stride + 0];
+        int j = 1;
+        // Vector loop: each iter writes buffer[j..j+15], which requires
+        // j+15 <= width-2 (the last valid mode3 column), i.e. j+16 < width-1.
+        for (; j + 16 < width - 1; j += 16) {
+            __m256i a = _mm256_loadu_si256((const __m256i*)&data[i * stride + j - 1]);
+            __m256i b = _mm256_loadu_si256((const __m256i*)&data[i * stride + j]);
+            __m256i c = _mm256_loadu_si256((const __m256i*)&data[i * stride + j + 1]);
+            _mm256_storeu_si256((__m256i*)&buffer[curr_line * width + j], mode3_avx2(a, b, c));
+        }
+        for (; j < width - 1; j++) {
+            buffer[curr_line * width + j] = mode3_scalar(
+                data[i * stride + j - 1], data[i * stride + j], data[i * stride + j + 1]);
+        }
+        buffer[curr_line * width + width - 1] = data[i * stride + width - 1];
+
+        // Vertical pass: data[i-1] = mode3(buffer[0], buffer[1], buffer[2])
+        if (i > 1) {
+            int j2 = 0;
+            for (; j2 + 16 <= width; j2 += 16) {
+                __m256i a = _mm256_loadu_si256((const __m256i*)&buffer[0 * width + j2]);
+                __m256i b = _mm256_loadu_si256((const __m256i*)&buffer[1 * width + j2]);
+                __m256i c = _mm256_loadu_si256((const __m256i*)&buffer[2 * width + j2]);
+                _mm256_storeu_si256((__m256i*)&data[(i - 1) * stride + j2], mode3_avx2(a, b, c));
+            }
+            for (; j2 < width; j2++) {
+                data[(i - 1) * stride + j2] = mode3_scalar(
+                    buffer[0 * width + j2], buffer[1 * width + j2], buffer[2 * width + j2]);
+            }
+        }
+        curr_line = (curr_line + 1 == 3 ? 0 : curr_line + 1);
+    }
+}
+
 void cambi_increment_range_avx2(uint16_t *arr, int left, int right) {
     __m256i val_vector = _mm256_set1_epi16(1);
     int col = left;
