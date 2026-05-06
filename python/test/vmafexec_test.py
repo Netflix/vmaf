@@ -1135,7 +1135,7 @@ class VmafexecQualityRunnerSubsamplingTest(MyTestCase):
 class QualityRunnerVersionTest(unittest.TestCase):
 
     def test_vmafexec_quality_runner_version(self):
-        self.assertEqual(VmafexecQualityRunner.VERSION, 'F0.2.7-0.6.1')
+        self.assertEqual(VmafexecQualityRunner.VERSION, 'F0.2.21-0.6.1')
         self.assertEqual(VmafexecQualityRunner.ALGO_VERSION, 2)
 
 
