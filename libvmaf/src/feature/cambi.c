@@ -1055,64 +1055,93 @@ static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int
     return c_value;
 }
 
+// A pixel with raw value v contributes to a histogram cell that is queried by
+// some output pixel only if some d-iteration in c_value_pixel can fire for an
+// output value v_out related to v. Tracing the gating condition (v_out <=
+// tvi_thresholds[d]) && (v_out + (d+1) > vlt_luma) over all d and all three
+// query roles (p_0, p_1, p_2) shows v needs to satisfy
+//     vlt_luma - 3*num_diffs < v <= tvi_for_diff[num_diffs - 1]
+// (where tvi_for_diff is already in adjusted = raw + num_diffs space).
+// Pixels outside this band can be skipped: the cells they would update are
+// only ever read by output pixels whose c_value would be 0 regardless. The
+// skip is therefore bit-identical.
+//
+// The two-sided bounds check is collapsed to a single unsigned compare:
+//     ((uint16_t)(v - v_band_base) >= v_band_size)
+// where v_band_base = max(0, vlt_luma - 3*num_diffs + 1) and v_band_size is
+// the count of values in the useful band. Compiler emits ~1 sub + 1 cmp per
+// pixel with no second branch, which costs less when the skip rarely fires.
+
 static FORCE_INLINE void update_histogram_subtract_edge(uint16_t *histograms, uint16_t *image, uint16_t *mask,
                                                           int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                          const uint16_t num_diffs, VmafRangeUpdater dec_range_callback) {
-    uint16_t mask_val = mask[(i - pad_size - 1) * stride + j];
-    if (mask_val) {
-        uint16_t val = image[(i - pad_size - 1) * stride + j] + num_diffs;
-        dec_range_callback(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
-    }
+                                                          const uint16_t num_diffs,
+                                                          uint16_t v_band_base, uint16_t v_band_size,
+                                                          VmafRangeUpdater dec_range_callback) {
+    if (!mask[(i - pad_size - 1) * stride + j]) return;
+    uint16_t v = image[(i - pad_size - 1) * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    uint16_t val = v + num_diffs;
+    dec_range_callback(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
 }
 
 static FORCE_INLINE void update_histogram_subtract(uint16_t *histograms, uint16_t *image, uint16_t *mask,
                                                           int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                          const uint16_t num_diffs, VmafRangeUpdater dec_range_callback) {
-    uint16_t mask_val = mask[(i - pad_size - 1) * stride + j];
-    if (mask_val) {
-        uint16_t val = image[(i - pad_size - 1) * stride + j] + num_diffs;
-        dec_range_callback(&histograms[val * width], j - pad_size, j + pad_size + 1);
-    }
+                                                          const uint16_t num_diffs,
+                                                          uint16_t v_band_base, uint16_t v_band_size,
+                                                          VmafRangeUpdater dec_range_callback) {
+    if (!mask[(i - pad_size - 1) * stride + j]) return;
+    uint16_t v = image[(i - pad_size - 1) * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    uint16_t val = v + num_diffs;
+    dec_range_callback(&histograms[val * width], j - pad_size, j + pad_size + 1);
 }
 
 static FORCE_INLINE void update_histogram_add_edge(uint16_t *histograms, uint16_t *image, uint16_t *mask,
                                                      int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                     const uint16_t num_diffs, VmafRangeUpdater inc_range_callback) {
-    uint16_t mask_val = mask[(i + pad_size) * stride + j];
-    if (mask_val) {
-        uint16_t val = image[(i + pad_size) * stride + j] + num_diffs;
-        inc_range_callback(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
-    }
+                                                     const uint16_t num_diffs,
+                                                     uint16_t v_band_base, uint16_t v_band_size,
+                                                     VmafRangeUpdater inc_range_callback) {
+    if (!mask[(i + pad_size) * stride + j]) return;
+    uint16_t v = image[(i + pad_size) * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    uint16_t val = v + num_diffs;
+    inc_range_callback(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
 }
 
 static FORCE_INLINE void update_histogram_add(uint16_t *histograms, uint16_t *image, uint16_t *mask,
                                                      int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                     const uint16_t num_diffs, VmafRangeUpdater inc_range_callback) {
-    uint16_t mask_val = mask[(i + pad_size) * stride + j];
-    if (mask_val) {
-        uint16_t val = image[(i + pad_size) * stride + j] + num_diffs;
-        inc_range_callback(&histograms[val * width], j - pad_size, j + pad_size + 1);
-    }
+                                                     const uint16_t num_diffs,
+                                                     uint16_t v_band_base, uint16_t v_band_size,
+                                                     VmafRangeUpdater inc_range_callback) {
+    if (!mask[(i + pad_size) * stride + j]) return;
+    uint16_t v = image[(i + pad_size) * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    uint16_t val = v + num_diffs;
+    inc_range_callback(&histograms[val * width], j - pad_size, j + pad_size + 1);
 }
 
 static FORCE_INLINE void update_histogram_add_edge_first_pass(uint16_t *histograms, uint16_t *image, uint16_t *mask,
                                                      int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                     const uint16_t num_diffs, VmafRangeUpdater inc_range_callback) {
-    uint16_t mask_val = mask[i * stride + j];
-    if (mask_val) {
-        uint16_t val = image[i * stride + j] + num_diffs;
-        inc_range_callback(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
-    }
+                                                     const uint16_t num_diffs,
+                                                     uint16_t v_band_base, uint16_t v_band_size,
+                                                     VmafRangeUpdater inc_range_callback) {
+    if (!mask[i * stride + j]) return;
+    uint16_t v = image[i * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    uint16_t val = v + num_diffs;
+    inc_range_callback(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
 }
 
 static FORCE_INLINE void update_histogram_add_first_pass(uint16_t *histograms, uint16_t *image, uint16_t *mask,
                                                      int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                     const uint16_t num_diffs, VmafRangeUpdater inc_range_callback) {
-    uint16_t mask_val = mask[i * stride + j];
-    if (mask_val) {
-        uint16_t val = image[i * stride + j] + num_diffs;
-        inc_range_callback(&histograms[val * width], j - pad_size, j + pad_size + 1);
-    }
+                                                     const uint16_t num_diffs,
+                                                     uint16_t v_band_base, uint16_t v_band_size,
+                                                     VmafRangeUpdater inc_range_callback) {
+    if (!mask[i * stride + j]) return;
+    uint16_t v = image[i * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    uint16_t val = v + num_diffs;
+    inc_range_callback(&histograms[val * width], j - pad_size, j + pad_size + 1);
 }
 
 static void calculate_c_values_row(float *c_values, const uint16_t *histograms, const uint16_t *image,
@@ -1151,16 +1180,24 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
     // This is done for cache optimization reasons
     memset(histograms, 0, width * num_bins * sizeof(uint16_t));
 
+    // Per-frame skip bounds for histogram updates: a raw image value v whose
+    // histogram cell would only ever be queried by output pixels with c_value
+    // forced to 0 by the tvi/vlt gate can have its update skipped. See the
+    // comment on update_histogram_subtract_edge for the derivation.
+    int v_lo_signed = (int)vlt_luma - 3 * (int)num_diffs + 1;  // smallest useful raw value
+    uint16_t v_band_base = v_lo_signed > 0 ? (uint16_t)v_lo_signed : 0;
+    uint16_t v_band_size = tvi_for_diff[num_diffs - 1] + 1 - v_band_base;
+
     // First pass: first pad_size rows
     for (int i = 0; i < pad_size; i++) {
         for (int j = 0; j < pad_size; j++) {
-            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, inc_range_callback);
         }
         for (int j = pad_size; j < width - pad_size - 1; j++) {
-            update_histogram_add_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+            update_histogram_add_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, inc_range_callback);
         }
         for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
-            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, inc_range_callback);
         }
     }
 
@@ -1168,42 +1205,42 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
     for (int i = 0; i < pad_size + 1; i++) {
         if (i + pad_size < height) {
             for (int j = 0; j < pad_size; j++) {
-                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, inc_range_callback);
             }
             for (int j = pad_size; j < width - pad_size - 1; j++) {
-                update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+                update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, inc_range_callback);
             }
             for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
-                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, inc_range_callback);
             }
         }
         calc_c_values_row_callback(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
     }
     for (int i = pad_size + 1; i < height - pad_size; i++) {
         for (int j = 0; j < pad_size; j++) {
-            update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
-            update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+            update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, dec_range_callback);
+            update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, inc_range_callback);
         }
         for (int j = pad_size; j < width - pad_size - 1; j++) {
-            update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
-            update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+            update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, dec_range_callback);
+            update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, inc_range_callback);
         }
         for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
-            update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
-            update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+            update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, dec_range_callback);
+            update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, inc_range_callback);
         }
         calc_c_values_row_callback(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
     }
     for (int i = height - pad_size; i < height; i++) {
         if (i - pad_size - 1 >= 0) {
             for (int j = 0; j < pad_size; j++) {
-                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
+                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, dec_range_callback);
             }
             for (int j = pad_size; j < width - pad_size - 1; j++) {
-                update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
+                update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, dec_range_callback);
             }
             for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
-                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
+                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, dec_range_callback);
             }
         }
         calc_c_values_row_callback(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
