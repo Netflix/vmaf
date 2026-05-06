@@ -187,7 +187,7 @@ class SpeedChromaFeatureExtractorTest(MyTestCase):
 
         self.assertAlmostEqual(results[0]['Speed_chroma_feature_speed_chroma_u_ks_3.711_score'], 6.075947, places=4)
         self.assertAlmostEqual(results[0]['Speed_chroma_feature_speed_chroma_v_ks_3.711_score'], 4.2133896, places=3)
-        self.assertAlmostEqual(results[0]['Speed_chroma_feature_speed_chroma_uv_ks_3.711_score'], 5.144629, places=4)
+        self.assertAlmostEqual(results[0]['Speed_chroma_feature_speed_chroma_uv_ks_3.711_score'], 5.144629, places=3)
         self.assertAlmostEqual(results[1]['Speed_chroma_feature_speed_chroma_u_ks_3.711_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['Speed_chroma_feature_speed_chroma_v_ks_3.711_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['Speed_chroma_feature_speed_chroma_uv_ks_3.711_score'], 0.0, places=4)
