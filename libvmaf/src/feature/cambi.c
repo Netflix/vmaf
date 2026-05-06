@@ -920,6 +920,47 @@ static FORCE_INLINE uint16_t get_mask_index(unsigned input_width, unsigned input
 * To calculate the square sums, it uses a dynamic programming algorithm based on inclusion-exclusion.
 * To save memory, it uses a DP matrix of only the necessary size, rather than the full matrix, and indexes its rows cyclically.
 */
+/*
+ * Computes one DP row using a 1D row prefix sum + element-wise add of the previous DP row.
+ * Equivalent to the SAT recurrence:
+ *   dp[r][c] = a[r][c] + dp[r-1][c] + dp[r][c-1] - dp[r-1][c-1]
+ * but rewritten as:
+ *   R[c] = a[r][c] + R[c-1]                  (1D prefix sum of derivative)
+ *   dp[r][c] = dp[r-1][c] + R[c]             (element-wise add, no inter-column dep)
+ */
+static FORCE_INLINE void compute_dp_row(uint32_t *dp_curr, const uint32_t *dp_prev,
+                                          const uint16_t *deriv, int width, int pad_size,
+                                          bool deriv_valid) {
+    uint32_t prefix = 0;
+    int dp_offset = pad_size + 1;
+    int actual_width = deriv_valid ? width : 0;
+    int j;
+    for (j = 0; j < actual_width; j++) {
+        prefix += deriv[j];
+        dp_curr[dp_offset + j] = dp_prev[dp_offset + j] + prefix;
+    }
+    int n = width + pad_size;
+    for (; j < n; j++) {
+        dp_curr[dp_offset + j] = dp_prev[dp_offset + j] + prefix;
+    }
+}
+
+/*
+ * For each output column j in [0, width), computes
+ *   result = dp_bottom[j + delta] - dp_bottom[j] - dp_top[j + delta] + dp_top[j]
+ *   mask_row[j] = (result > mask_index)
+ * where delta = 2*pad_size + 1.
+ */
+static FORCE_INLINE void compute_mask_row(uint16_t *mask_row,
+                                            const uint32_t *dp_bottom, const uint32_t *dp_top,
+                                            int width, int pad_size, uint32_t mask_index) {
+    const int delta = 2 * pad_size + 1;
+    for (int j = 0; j < width; j++) {
+        uint32_t result = dp_bottom[j + delta] + dp_top[j] - dp_bottom[j] - dp_top[j + delta];
+        mask_row[j] = (uint16_t)(result > mask_index);
+    }
+}
+
 static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *mask,
                                        uint32_t *dp, uint16_t *derivative_buffer, uint16_t mask_index,
                                        uint16_t filter_size, int width, int height, VmafDerivativeCalculator derivative_callback) {
@@ -934,19 +975,13 @@ static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *ma
 
     // Initial computation: fill dp except for the last row
     for (int i = 0; i < pad_size; i++) {
-        if (i < height) {
+        bool deriv_valid = (i < height);
+        if (deriv_valid) {
             derivative_callback(image_data, derivative_buffer, width, height, i, stride);
         }
-        for (int j = 0; j < width + pad_size; j++) {
-            int value = (i < height && j < width ? derivative_buffer[j] : 0);
-            int curr_row = i + pad_size + 1;
-            int curr_col = j + pad_size + 1;
-            dp[curr_row * dp_width + curr_col] =
-                value
-                + dp[(curr_row - 1) * dp_width + curr_col]
-                + dp[curr_row * dp_width + curr_col - 1]
-                - dp[(curr_row - 1) * dp_width + curr_col - 1];
-        }
+        int curr_row = i + pad_size + 1;
+        compute_dp_row(&dp[curr_row * dp_width], &dp[(curr_row - 1) * dp_width],
+                       derivative_buffer, width, pad_size, deriv_valid);
     }
 
     // Start from the last row in the dp matrix
@@ -956,34 +991,19 @@ static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *ma
     int bottom = (curr_compute + pad_size) % dp_height;
     int top = (curr_compute + dp_height - pad_size - 1) % dp_height;
     for (int i = pad_size; i < height + pad_size; i++) {
-        if (i < height) {
+        bool deriv_valid = (i < height);
+        if (deriv_valid) {
             derivative_callback(image_data, derivative_buffer, width, height, i, stride);
         }
-        // First compute the values of dp for curr_row
-        for (int j = 0; j < width + pad_size; j++) {
-            int value = (i < height && j < width ? derivative_buffer[j] : 0);
-            int curr_col = j + pad_size + 1;
-            dp[curr_row * dp_width + curr_col] =
-                value
-                + dp[prev_row * dp_width + curr_col]
-                + dp[curr_row * dp_width + curr_col - 1]
-                - dp[prev_row * dp_width + curr_col - 1];
-        }
+        compute_dp_row(&dp[curr_row * dp_width], &dp[prev_row * dp_width],
+                       derivative_buffer, width, pad_size, deriv_valid);
         prev_row = curr_row;
         curr_row = (curr_row + 1 == dp_height ? 0 : curr_row + 1);
 
         // Then use the values to compute the square sum for the curr_compute row.
-        for (int j = 0; j < width; j++) {
-            int curr_col = j + pad_size + 1;
-            int right = curr_col + pad_size;
-            int left = curr_col - pad_size - 1;
-            int result =
-                dp[bottom * dp_width + right]
-                - dp[bottom * dp_width + left]
-                - dp[top * dp_width + right]
-                + dp[top * dp_width + left];
-            mask_data[(i - pad_size) * stride + j] = (result > mask_index);
-        }
+        compute_mask_row(&mask_data[(i - pad_size) * stride],
+                          &dp[bottom * dp_width], &dp[top * dp_width],
+                          width, pad_size, mask_index);
         curr_compute = (curr_compute + 1 == dp_height ? 0 : curr_compute + 1);
         bottom = (bottom + 1 == dp_height ? 0 : bottom + 1);
         top = (top + 1 == dp_height ? 0 : top + 1);
