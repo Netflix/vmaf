@@ -6,7 +6,6 @@ import numpy as np
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.raw_extractor import AssetExtractor, DisYUVRawVideoExtractor
-
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 

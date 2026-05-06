@@ -4,6 +4,7 @@ from typing import List, Optional
 from vmaf.tools.misc import MyTestCase
 
 
+
 def get_tidy_mock_call_args_list(mockProcessRunner_run) -> List[str]:
     l = list()
     for i in range(len(mockProcessRunner_run.call_args_list)):
@@ -159,3 +160,4 @@ def assert_equivalent_commands(self, cmds: List[str], cmds_expected: List[str], 
         self.assertEqual(cmd3, cmd_expected3, msg=f"cmd and cmd_expected are not matched:\ncmd: {cmd}\ncmd:expected: "
                                                   f"{cmd_expected}\nprocessed cmd: {cmd3}\nprocessed cmd:expected: "
                                                   f"{cmd_expected3}")
+

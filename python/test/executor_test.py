@@ -1,7 +1,6 @@
 import unittest
 from vmaf.core.asset import Asset
 from vmaf.core.executor import Executor
-
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 

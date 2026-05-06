@@ -17,7 +17,6 @@ from vmaf.core.niqe_train_test_model import NiqeTrainTestModel
 class NiqeTrainTestModelTest(unittest.TestCase):
 
     def setUp(self):
-
         train_dataset_path = VmafConfig.test_resource_path('test_image_dataset.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
