@@ -11,8 +11,8 @@ from vmaf.config import VmafConfig
 from vmaf.core.result import Result
 from vmaf.core.result_store import FileSystemResultStore
 from vmaf.core.quality_runner import VmafLegacyQualityRunner, VmafQualityRunner
-from vmaf.tools.misc import MyTestCase
 from vmaf.tools.stats import ListStats
+from vmaf.tools.misc import MyTestCase
 
 from test.testutil import set_default_576_324_videos_for_testing
 
@@ -21,6 +21,11 @@ __license__ = "BSD+Patent"
 
 
 class ResultTest(MyTestCase):
+
+    def tearDown(self):
+        if hasattr(self, 'runner'):
+            self.runner.remove_results()
+        super().tearDown()
 
     def setUp(self):
         super().setUp()
@@ -39,11 +44,6 @@ class ResultTest(MyTestCase):
         self.runner.run()
 
         self.result = self.runner.results[0]
-
-    def tearDown(self):
-        if hasattr(self, 'runner'):
-            self.runner.remove_results()
-        super().tearDown()
 
     def test_todataframe_fromdataframe(self):
 
@@ -90,34 +90,34 @@ class ResultTest(MyTestCase):
         self.assertEqual(recon_result.asset.__class__, Asset)
 
     def test_to_score_str(self):
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 40.421899030550769, places=3)
-        self.assertAlmostEqual(self.result['VMAF_legacy_score'], 40.421899030550769, places=3)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 40.42216084498975, places=4)
+        self.assertAlmostEqual(self.result['VMAF_legacy_score'], 40.42216084498975, places=4)
         self.assertAlmostEqual(self.result.get_result('VMAF_feature_adm_score'), 0.78533833333333336, places=4)
         self.assertAlmostEqual(self.result['VMAF_feature_adm_score'], 0.78533833333333336, places=4)
         self.assertAlmostEqual(self.result['VMAF_feature_vif_score'], 0.15683466666666665, places=4)
         self.assertAlmostEqual(self.result['VMAF_feature_motion_score'], 12.5548366667, places=4)
         self.assertAlmostEqual(self.result['VMAF_feature_ansnr_score'], 7.92623066667, places=4)
         self.result.set_score_aggregate_method(np.min)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 37.573531379639725, places=3)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 37.57374203374743, places=4)
         self.result.set_score_aggregate_method(np.max)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 44.815357234059327, places=3)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 44.81541553088045, places=4)
         self.result.set_score_aggregate_method(np.median)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 38.876808477953254, places=2)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 38.87738088760398, places=4)
         self.result.set_score_aggregate_method(np.mean)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 40.421899030550769, places=3)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 40.422179484077304, places=4)
         self.result.set_score_aggregate_method(np.std)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 3.1518765879212993, places=3)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 3.1517466890090193, places=4)
         self.result.set_score_aggregate_method(np.var)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 9.9343260254864134, places=2)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 9.933564693550688, places=4)
         self.result.set_score_aggregate_method(partial(np.percentile, q=50))
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 38.876808477953254, places=2)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 38.87738088760398, places=4)
         self.result.set_score_aggregate_method(partial(np.percentile, q=80))
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 42.439937731616901, places=3)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 42.4402016735698401, places=4)
         self.result.set_score_aggregate_method(ListStats.total_variation)
-        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 6.5901873052628375, places=3)
+        self.assertAlmostEqual(self.result.get_result('VMAF_legacy_score'), 6.589854070204712, places=4)
         self.result.set_score_aggregate_method(partial(ListStats.moving_average, n=2))
-        for item in list(self.result.get_result('VMAF_legacy_score')):
-            self.assertAlmostEqual(item, 42.86773029545747, places=3)
+        for score in list(self.result.get_result('VMAF_legacy_score')):
+            self.assertAlmostEqual(score, 42.86782739689916, places=9)
 
         with self.assertRaises(KeyError):
             self.result.get_result('VVMAF_legacy_score')
@@ -125,32 +125,11 @@ class ResultTest(MyTestCase):
             self.result.get_result('VMAF_motion_score')
 
 
-class ResultFormattingTest(unittest.TestCase):
+class ResultFormattingTest(MyTestCase):
 
     def setUp(self):
-
-        # ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
-        # dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
-        # asset = Asset(dataset="test", content_id=0, asset_id=0,
-        #               workdir_root=VmafConfig.workdir_path(),
-        #               ref_path=ref_path,
-        #               dis_path=dis_path,
-        #               asset_dict={'width':1920, 'height':1080})
-        #
-        # self.runner = SsimQualityRunner(
-        #     [asset], None, fifo_mode=True,
-        #     delete_workdir=True, result_store=FileSystemResultStore(),
-        # )
-        # self.runner.run()
-        #
-        # FileSystemResultStore.save_result(self.runner.results[0], VmafConfig.test_resource_path('/ssim_result_for_test.txt')
-
+        super().setUp()
         self.result = FileSystemResultStore.load_result(VmafConfig.test_resource_path('ssim_result_for_test.txt'))
-
-    def tearDown(self):
-        # if hasattr(self, 'runner'):
-        #     self.runner.remove_results()
-        pass
 
     @unittest.skip("numerical value has changed.")
     def test_to_xml(self):
@@ -208,9 +187,10 @@ class ResultFormattingTest(unittest.TestCase):
         """))
 
 
-class ResultStoreTest(unittest.TestCase):
+class ResultStoreTest(MyTestCase):
 
     def setUp(self):
+        super().setUp()
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
         dis_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_1_0.yuv")
         asset = Asset(dataset="test", content_id=0, asset_id=0,
@@ -229,7 +209,7 @@ class ResultStoreTest(unittest.TestCase):
     def tearDown(self):
         if hasattr(self, 'result') and hasattr(self, 'result_store'):
             self.result_store.delete(self.result.asset, self.result.executor_id)
-        pass
+        super().tearDown()
 
     def test_file_system_result_store_save_load(self):
         self.result_store = FileSystemResultStore(logger=None)
@@ -243,7 +223,7 @@ class ResultStoreTest(unittest.TestCase):
         self.assertEqual(self.result, loaded_result)
 
 
-class ResultStoreTestWithNone(unittest.TestCase):
+class ResultStoreTestWithNone(MyTestCase):
 
     def test_load_result_with_none(self):
 
@@ -253,7 +233,7 @@ class ResultStoreTestWithNone(unittest.TestCase):
         self.assertEqual(result.asset.__class__, Asset)
 
 
-class ResultAggregatingTest(unittest.TestCase):
+class ResultAggregatingTest(MyTestCase):
 
     def test_from_xml_from_json_and_aggregation(self):
 
@@ -303,6 +283,10 @@ class ResultAggregatingTest(unittest.TestCase):
 
 class ScoreAggregationTest(unittest.TestCase):
 
+    def tearDown(self):
+        if hasattr(self, 'runner'):
+            self.runner.remove_results()
+
     def setUp(self):
 
         ref_path = VmafConfig.test_resource_path("yuv", "checkerboard_1920_1080_10_3_0_0.yuv")
@@ -330,21 +314,17 @@ class ScoreAggregationTest(unittest.TestCase):
                                                                        self.result.result_dict['VMAF_scores'].reshape(1, Nframes)))
         self.result.result_dict['VMAF_3D_array_scores'] = np.zeros((1, 1, 1))
 
-    def tearDown(self):
-        if hasattr(self, 'runner'):
-            self.runner.remove_results()
-
     def test_to_score_str(self):
 
         self.result.set_score_aggregate_method(np.mean)
         # the following should give same value
-        self.assertAlmostEqual(self.result['VMAF_score'], 35.0661575902223, places=2)
+        self.assertAlmostEqual(self.result['VMAF_score'], 35.070219101439314, places=4)
         # for a 2-D array, first dimension is # models and second is # frames
-        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][0], 35.0661575902223, places=2)
-        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][1], 35.0661575902223, places=2)
-        self.assertAlmostEqual(self.result['VMAF_array_score'][0], 22.97749190550349, places=2)
-        self.assertAlmostEqual(self.result['VMAF_array_score'][1], 44.79653061901706, places=1)
-        self.assertAlmostEqual(self.result['VMAF_array_score'][2], 37.424450246146364, places=1)
+        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][0], 35.070219101439314, places=4)
+        self.assertAlmostEqual(self.result['VMAF_two_models_array_score'][1], 35.070219101439314, places=4)
+        self.assertAlmostEqual(self.result['VMAF_array_score'][0], 22.97768506056642, places=4)
+        self.assertAlmostEqual(self.result['VMAF_array_score'][1], 44.80237017759658, places=4)
+        self.assertAlmostEqual(self.result['VMAF_array_score'][2], 37.43054544029577, places=4)
         # check that a 3-D array will throw assertion, score aggregation accepts only up to 2-D
         with self.assertRaises(AssertionError):
             x = self.result['VMAF_3D_array_score']
