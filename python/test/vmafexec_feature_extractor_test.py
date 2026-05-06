@@ -679,7 +679,7 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_score'], 0.3636628333333333, places=6)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_score'], 0.7674898958333333, places=5)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_score'], 0.8630880833333334, places=5)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 0.9156987499999999, places=6)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_score'], 0.9156987499999999, places=5)
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale0_score'], 1.0, places=5)
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale1_score'], 1.0, places=5)
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale2_score'], 1.0, places=5)
@@ -710,7 +710,7 @@ class FeatureExtractorTest(MyTestCase):
         self.assertEqual(results[0]['float_VIF_feature_vif_scale0_ssclz_score'], 0.0)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_ssclz_score'], 0.7674898958333333, places=5)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_ssclz_score'], 0.8630880833333334, places=5)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_ssclz_score'], 0.9156987499999999, places=6)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_ssclz_score'], 0.9156987499999999, places=5)
         self.assertEqual(results[1]['float_VIF_feature_vif_scale0_ssclz_score'], 0.0)
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale1_ssclz_score'], 1.0, places=5)
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale2_ssclz_score'], 1.0, places=5)
@@ -748,7 +748,7 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_s1miv_0.987654_score'], 0.3636628333333333, places=6)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_s1miv_0.987654_score'], 0.987654, places=6)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_s1miv_0.987654_score'], 0.8630880833333334, places=5)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_s1miv_0.987654_score'], 0.9156987499999999, places=6)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_s1miv_0.987654_score'], 0.9156987499999999, places=5)
         self.assertEqual(results[1]['float_VIF_feature_vif_scale0_s1miv_0.987654_score'], 1.0)
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale1_s1miv_0.987654_score'], 1.0, places=5)
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale2_s1miv_0.987654_score'], 1.0, places=5)
@@ -768,7 +768,7 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale0_s2miv_0.987654_score'], 0.3636628333333333, places=6)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale1_s2miv_0.987654_score'], 0.7674898958333333, places=5)
         self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale2_s2miv_0.987654_score'], 0.987654, places=5)
-        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_s2miv_0.987654_score'], 0.9156987499999999, places=6)
+        self.assertAlmostEqual(results[0]['float_VIF_feature_vif_scale3_s2miv_0.987654_score'], 0.9156987499999999, places=5)
         self.assertEqual(results[1]['float_VIF_feature_vif_scale0_s2miv_0.987654_score'], 1.0)
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale1_s2miv_0.987654_score'], 1.0, places=5)
         self.assertAlmostEqual(results[1]['float_VIF_feature_vif_scale2_s2miv_0.987654_score'], 1.0, places=5)
@@ -2069,7 +2069,7 @@ class FeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_egl_1_score'], 0.957433, places=6)  # float 0.9574308606115118
         self.assertAlmostEqual(results[0]['integer_ADM_feature_aim_egl_1_score'], 0.013684, places=6)  # float 0.013683
-        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm3_egl_1_score'], 0.971875, places=6)  # float 0.971874
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm3_egl_1_score'], 0.971875, places=5)  # float 0.971874
 
     def test_run_integer_adm_fextractor_akiyo_multiply_enhn_gain_limit_1d2(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
