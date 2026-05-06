@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from collections import defaultdict
 from xml.etree import ElementTree
 
 from vmaf.tools.decorator import override
@@ -115,7 +116,7 @@ class VmafexecFeatureExtractorMixin(object):
         tree = ElementTree.parse(log_file_path)
         root = tree.getroot()
 
-        feature_scores = [[] for _ in self.ATOM_FEATURES]
+        feature_scores = [defaultdict(list) for _ in self.ATOM_FEATURES]
         feature_nicknames = [None for _ in self.ATOM_FEATURES]
 
         for frame in root.findall('frames/frame'):
@@ -130,17 +131,22 @@ class VmafexecFeatureExtractorMixin(object):
 
                 # wildcard discovery: look for xxx features
                 feature_found = self._discover_feature_wildcard(
-                    frame, i_feature, feature, feature_scores, feature_nicknames)
+                    frame, i_feature, feature, feature_scores, feature_nicknames, atom_features=self.ATOM_FEATURES)
 
         for i_feature, feature in enumerate(self.ATOM_FEATURES):
-           if len(feature_scores[i_feature]) != 0:
-               assert len(feature_scores[i_feature]) == len(feature_scores[0])
+            if len(feature_scores[i_feature]) != 0:
+                feature_nickname_keys = feature_scores[i_feature].keys()
+                for feature_nickname_key_ind, feature_nickname_key in enumerate(feature_nickname_keys):
+                    if i_feature == 0 and feature_nickname_key_ind == 0:
+                        num_frames = len(feature_scores[i_feature][feature_nickname_key])
+                    assert len(feature_scores[i_feature][feature_nickname_key]) == num_frames
 
         feature_result = {}
         for i_feature, feature in enumerate(self.ATOM_FEATURES):
             if len(feature_scores[i_feature]) != 0:
                 assert feature_nicknames[i_feature] is not None
-                feature_result[self.get_scores_key(feature_nicknames[i_feature])] = feature_scores[i_feature]
+                for feature_nickname in feature_nicknames[i_feature]:
+                    feature_result[self.get_scores_key(feature_nickname)] = feature_scores[i_feature][feature_nickname]
 
         return feature_result
 
@@ -151,34 +157,38 @@ class VmafexecFeatureExtractorMixin(object):
         feature_found = False
         for feature_fullname in frame.attrib:
             if cls.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature] == feature_fullname:
-                feature_scores[i_feature].append(
+                feature_scores[i_feature][feature].append(
                     float(frame.attrib[feature_fullname]))
                 if feature_nicknames[i_feature] is None:
-                    feature_nicknames[i_feature] = feature
+                    feature_nicknames[i_feature] = [feature]
                 else:
-                    assert feature_nicknames[i_feature] == feature
+                    assert feature_nicknames[i_feature] == [feature]
                 feature_found = True
                 break
         return feature_found
 
     @classmethod
     def _discover_feature_wildcard(cls, frame, i_feature, feature,
-                                   feature_scores, feature_nicknames):
+                                   feature_scores, feature_nicknames, atom_features=None):
         assert hasattr(cls, 'ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT')
         feature_prefix = cls.ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT[feature] + '_'
         feature_found = False
         for feature_fullname in frame.attrib:
             if feature_fullname.startswith(feature_prefix):
-                feature_scores[i_feature].append(
-                    float(frame.attrib[feature_fullname]))
                 feature_suffix = feature_fullname[len(feature_prefix):]
                 feature_nickname = feature + '_' + feature_suffix
+                feature_nickname_matches = [atom_feature for atom_feature in atom_features
+                                            if feature_nickname.startswith(atom_feature)]
+                feature_origin = max(feature_nickname_matches, key=len)
+
                 if feature_nicknames[i_feature] is None:
-                    feature_nicknames[i_feature] = feature_nickname
-                else:
-                    assert feature_nicknames[i_feature] == feature_nickname
-                feature_found = True
-                break
+                    feature_nicknames[i_feature] = []
+                if feature_nickname == feature_origin + '_' + feature_suffix:
+                    if feature_nickname not in feature_nicknames[i_feature]:
+                        feature_nicknames[i_feature].append(feature_nickname)
+                    feature_scores[i_feature][feature_nickname].append(
+                        float(frame.attrib[feature_fullname]))
+                    feature_found = True
         return feature_found
 
 

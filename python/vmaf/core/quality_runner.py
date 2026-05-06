@@ -1,6 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod, ABC
 import re
+from collections import defaultdict
 from xml.etree import ElementTree
 import copy
 
@@ -785,12 +786,12 @@ class FeatureDiscoveryMixin(object):
         feature_found = False
         for feature_fullname in frame.attrib:
             if feature_ == feature_fullname:
-                feature_scores[i_feature].append(
+                feature_scores[i_feature][feature_origin].append(
                     float(frame.attrib[feature_fullname]))
                 if feature_nicknames[i_feature] is None:
-                    feature_nicknames[i_feature] = feature_origin
+                    feature_nicknames[i_feature] = [feature_origin]
                 else:
-                    assert feature_nicknames[i_feature] == feature_origin
+                    assert feature_nicknames[i_feature] == [feature_origin]
                 feature_found = True
                 break
         return feature_found
@@ -801,16 +802,14 @@ class FeatureDiscoveryMixin(object):
         feature_found = False
         for feature_fullname in frame.attrib:
             if feature_fullname.startswith(feature_prefix):
-                feature_scores[i_feature].append(
-                    float(frame.attrib[feature_fullname]))
                 feature_suffix = feature_fullname[len(feature_prefix):]
                 feature_nickname = feature_origin + '_' + feature_suffix
                 if feature_nicknames[i_feature] is None:
-                    feature_nicknames[i_feature] = feature_nickname
-                else:
-                    assert feature_nicknames[i_feature] == feature_nickname
+                    feature_nicknames[i_feature] = []
+                if feature_nickname not in feature_nicknames[i_feature]:
+                    feature_nicknames[i_feature].append(feature_nickname)
+                feature_scores[i_feature][feature_nickname].append(float(frame.attrib[feature_fullname]))
                 feature_found = True
-                break
         return feature_found
 
 
@@ -1372,7 +1371,7 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
         root = tree.getroot()
         scores_dict = {}
 
-        feature_scores = [[] for _ in self.FEATURES]
+        feature_scores = [defaultdict(list) for _ in self.FEATURES]
         feature_nicknames = [None for _ in self.FEATURES]
 
         if self.optional_dict is not None and 'no_prediction' in self.optional_dict:
@@ -1449,7 +1448,9 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
         for i_feature, feature in enumerate(self.FEATURES):
             if len(feature_scores[i_feature]) != 0:
                 assert feature_nicknames[i_feature] is not None
-                quality_result[self.get_feature_scores_key(feature_nicknames[i_feature])] = feature_scores[i_feature]
+                for feature_nickname in feature_nicknames[i_feature]:
+                    quality_result[self.get_feature_scores_key(feature_nickname)] = feature_scores[i_feature][
+                        feature_nickname]
         return quality_result
 
 
