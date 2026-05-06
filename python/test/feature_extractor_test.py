@@ -16,7 +16,9 @@ from vmaf.tools.misc import MyTestCase
 from test.testutil import set_default_576_324_videos_for_testing, set_default_flat_1920_1080_videos_for_testing, \
     set_default_576_324_10bit_videos_for_testing, set_default_576_324_12bit_videos_for_testing, \
     set_default_576_324_16bit_videos_for_testing, set_default_576_324_10bit_videos_for_testing_b, \
-    set_default_cambi_video_for_testing_b
+    set_default_cambi_video_for_testing_b, \
+    set_default_576_324_videos_for_testing_1frames, set_default_576_324_videos_for_testing_2frames, \
+    set_default_576_324_videos_for_testing_3frames, set_default_576_324_videos_for_testing_4frames
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -1223,10 +1225,7 @@ class FeatureExtractorTest(MyTestCase):
 
     def test_run_vmaf_integer_fextractor_motion_five_frame_window_one_frame_input(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        asset.asset_dict['start_frame'] = 0
-        asset.asset_dict['end_frame'] = 0
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_1frames()
         self.fextractor = VmafIntegerFeatureExtractor(
             [asset],
             None, fifo_mode=False,
@@ -1246,10 +1245,7 @@ class FeatureExtractorTest(MyTestCase):
 
     def test_run_vmaf_integer_fextractor_motion_five_frame_window_one_frame_input_moving_avg(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        asset.asset_dict['start_frame'] = 0
-        asset.asset_dict['end_frame'] = 0
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_1frames()
         self.fextractor = VmafIntegerFeatureExtractor(
             [asset],
             None, fifo_mode=False,
@@ -1269,10 +1265,7 @@ class FeatureExtractorTest(MyTestCase):
 
     def test_run_vmaf_integer_fextractor_motion_five_frame_window_two_frame_input(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        asset.asset_dict['start_frame'] = 0
-        asset.asset_dict['end_frame'] = 1
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_2frames()
         self.fextractor = VmafIntegerFeatureExtractor(
             [asset],
             None, fifo_mode=False,
@@ -1295,10 +1288,7 @@ class FeatureExtractorTest(MyTestCase):
 
     def test_run_vmaf_integer_fextractor_motion_five_frame_window_three_frame_input(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        asset.asset_dict['start_frame'] = 0
-        asset.asset_dict['end_frame'] = 2
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_3frames()
         self.fextractor = VmafIntegerFeatureExtractor(
             [asset],
             None, fifo_mode=False,
@@ -1324,10 +1314,7 @@ class FeatureExtractorTest(MyTestCase):
 
     def test_run_vmaf_integer_fextractor_motion_five_frame_window_three_frame_input_moving_avg(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        asset.asset_dict['start_frame'] = 0
-        asset.asset_dict['end_frame'] = 2
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_3frames()
         self.fextractor = VmafIntegerFeatureExtractor(
             [asset],
             None, fifo_mode=False,
@@ -1353,10 +1340,7 @@ class FeatureExtractorTest(MyTestCase):
 
     def test_run_vmaf_integer_fextractor_motion_five_frame_window_four_frame_input(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        asset.asset_dict['start_frame'] = 0
-        asset.asset_dict['end_frame'] = 3
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_4frames()
         self.fextractor = VmafIntegerFeatureExtractor(
             [asset],
             None, fifo_mode=False,
@@ -1385,10 +1369,7 @@ class FeatureExtractorTest(MyTestCase):
 
     def test_run_vmaf_integer_fextractor_motion_five_frame_window_four_frame_input_moving_avg(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        asset.asset_dict['start_frame'] = 0
-        asset.asset_dict['end_frame'] = 3
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_4frames()
         self.fextractor = VmafIntegerFeatureExtractor(
             [asset],
             None, fifo_mode=False,
@@ -1452,10 +1433,7 @@ class FeatureExtractorTest(MyTestCase):
 
     def test_run_vmaf_integer_fextractor_motion_two_frame_input(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        asset.asset_dict['start_frame'] = 0
-        asset.asset_dict['end_frame'] = 1
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_2frames()
         self.fextractor = VmafIntegerFeatureExtractor(
             [asset],
             None, fifo_mode=False,
@@ -1478,10 +1456,7 @@ class FeatureExtractorTest(MyTestCase):
 
     def test_run_vmaf_integer_fextractor_motion_two_frame_input_moving_avg(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        asset.asset_dict['start_frame'] = 0
-        asset.asset_dict['end_frame'] = 1
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_2frames()
         self.fextractor = VmafIntegerFeatureExtractor(
             [asset],
             None, fifo_mode=False,
@@ -1504,10 +1479,7 @@ class FeatureExtractorTest(MyTestCase):
 
     def test_run_vmaf_integer_fextractor_motion_three_frame_input(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        asset.asset_dict['start_frame'] = 0
-        asset.asset_dict['end_frame'] = 2
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_3frames()
         self.fextractor = VmafIntegerFeatureExtractor(
             [asset],
             None, fifo_mode=False,
@@ -1533,10 +1505,7 @@ class FeatureExtractorTest(MyTestCase):
 
     def test_run_vmaf_integer_fextractor_motion_three_frame_input_moving_avg(self):
 
-        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
-
-        asset.asset_dict['start_frame'] = 0
-        asset.asset_dict['end_frame'] = 2
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing_3frames()
         self.fextractor = VmafIntegerFeatureExtractor(
             [asset],
             None, fifo_mode=False,

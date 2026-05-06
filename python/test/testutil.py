@@ -61,6 +61,42 @@ def set_default_576_324_videos_for_testing_5frames():
     return ref_path, dis_path, asset, asset_original
 
 
+def set_default_576_324_videos_for_testing_1frames():
+    path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324_1frames.yuv")
+    asset = Asset(dataset="test", content_id=0, asset_id=0,
+                  workdir_root=VmafConfig.workdir_path(),
+                  ref_path=path, dis_path=path,
+                  asset_dict={'width': 576, 'height': 324})
+    return path, path, asset, asset
+
+
+def set_default_576_324_videos_for_testing_2frames():
+    path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324_2frames.yuv")
+    asset = Asset(dataset="test", content_id=0, asset_id=0,
+                  workdir_root=VmafConfig.workdir_path(),
+                  ref_path=path, dis_path=path,
+                  asset_dict={'width': 576, 'height': 324})
+    return path, path, asset, asset
+
+
+def set_default_576_324_videos_for_testing_3frames():
+    path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324_3frames.yuv")
+    asset = Asset(dataset="test", content_id=0, asset_id=0,
+                  workdir_root=VmafConfig.workdir_path(),
+                  ref_path=path, dis_path=path,
+                  asset_dict={'width': 576, 'height': 324})
+    return path, path, asset, asset
+
+
+def set_default_576_324_videos_for_testing_4frames():
+    path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324_4frames.yuv")
+    asset = Asset(dataset="test", content_id=0, asset_id=0,
+                  workdir_root=VmafConfig.workdir_path(),
+                  ref_path=path, dis_path=path,
+                  asset_dict={'width': 576, 'height': 324})
+    return path, path, asset, asset
+
+
 def set_default_speed_chroma_edge_case():
     ref_path = VmafConfig.test_resource_path("yuv", "archer_ref_frm20.yuv")
     dis_path = VmafConfig.test_resource_path("yuv", "archer_dis_frm20.yuv")
