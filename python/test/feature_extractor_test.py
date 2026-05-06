@@ -8,8 +8,8 @@ from vmaf.core.feature_extractor import VmafFeatureExtractor, \
     MomentFeatureExtractor, \
     PsnrFeatureExtractor, SsimFeatureExtractor, MsSsimFeatureExtractor, \
     VifFrameDifferenceFeatureExtractor, \
-    AnsnrFeatureExtractor, PypsnrFeatureExtractor, VmafIntegerFeatureExtractor, \
-    PypsnrMaxdb100FeatureExtractor
+    AnsnrFeatureExtractor, PyPsnrFeatureExtractor, VmafIntegerFeatureExtractor, \
+    PyPsnrMaxdb100FeatureExtractor, PypsnrFeatureExtractor
 from vmaf.core.asset import Asset
 from vmaf.tools.misc import MyTestCase
 
@@ -704,7 +704,7 @@ class FeatureExtractorTest(MyTestCase):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_16bit_videos_for_testing()
 
-        self.fextractor = PypsnrMaxdb100FeatureExtractor(
+        self.fextractor = PyPsnrMaxdb100FeatureExtractor(
             [asset, asset_original],
             None, fifo_mode=True,
             result_store=None,

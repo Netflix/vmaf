@@ -6,13 +6,17 @@ class FloatMotionFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtracto
 
     TYPE = "float_motion_feature"
     # VERSION = "1.0"
-    VERSION = "1.1"  # add debug features
+    # VERSION = "1.1"  # add debug features
+    # VERSION = "1.2"  # add motion3
+    VERSION = "1.3"  # fix filter mirroring
 
     ATOM_FEATURES = ['motion2',
+                     'motion3',
                      'motion',
                      ]
 
     ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
+        'motion3': 'motion3',
         'motion2': 'motion2',
         'motion': 'motion',
     }
@@ -44,13 +48,17 @@ class IntegerMotionFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtrac
     TYPE = "integer_motion_feature"
     # VERSION = "1.0"
     # VERSION = "1.1"  # vectorization
-    VERSION = "1.2"  # add debug features
+    # VERSION = "1.2"  # add debug features
+    # VERSION = "1.3"  # add motion3
+    VERSION = "1.4"  # fix filter mirroring
 
     ATOM_FEATURES = ['motion2',
+                     'motion3',
                      'motion',
                      ]
 
     ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
+        'motion3': 'integer_motion3',
         'motion2': 'integer_motion2',
         'motion': 'integer_motion',
     }
@@ -82,7 +90,9 @@ class FloatVifFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "float_VIF_feature"
     # VERSION = "1.0"
-    VERSION = "1.1"  # add debug features
+    # VERSION = "1.1"  # add debug features
+    # VERSION = "1.2"  # fix filter mirroring
+    VERSION = "1.3"  # compute the filter coefficients on the fly rather than precomputing
 
     ATOM_FEATURES = [
                      'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
@@ -204,9 +214,13 @@ class FloatAdmFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     TYPE = "float_ADM_feature"
     # VERSION = "1.0"
-    VERSION = "1.1"  # add debug features
+    # VERSION = "1.1"  # add debug features
+    # VERSION = "1.2"  # add adm3 feature, which combines DLM and AIM using a simple linear combination (equal weights)
+    VERSION = "1.3"  # expose AIM feature
 
     ATOM_FEATURES = ['adm2',
+                     'aim',
+                     'adm3',
                      'adm_scale0',
                      'adm_scale1',
                      'adm_scale2',
@@ -226,6 +240,8 @@ class FloatAdmFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor):
 
     ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'adm2': 'adm2',
+        'aim': 'aim',
+        'adm3': 'adm3',
         'adm_scale0': 'adm_scale0',
         'adm_scale1': 'adm_scale1',
         'adm_scale2': 'adm_scale2',
@@ -305,9 +321,13 @@ class IntegerAdmFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor
     TYPE = "integer_ADM_feature"
     # VERSION = "1.0"
     # VERSION = "1.1"  # vectorization; small numerical diff introduced by adm_enhn_gain_limit
-    VERSION = "1.2"  # add debug features
+    # VERSION = "1.2"  # add debug features
+    # VERSION = "1.3"  # adm3
+    VERSION = "1.4"  # expose AIM feature
 
     ATOM_FEATURES = ['adm2',
+                     'aim',
+                     'adm3',
                      'adm_scale0',
                      'adm_scale1',
                      'adm_scale2',
@@ -327,6 +347,8 @@ class IntegerAdmFeatureExtractor(VmafexecFeatureExtractorMixin, FeatureExtractor
 
     ATOM_FEATURES_TO_VMAFEXEC_KEY_DICT = {
         'adm2': 'integer_adm2',
+        'aim': 'integer_aim',
+        'adm3': 'integer_adm3',
         'adm_scale0': 'integer_adm_scale0',
         'adm_scale1': 'integer_adm_scale1',
         'adm_scale2': 'integer_adm_scale2',
