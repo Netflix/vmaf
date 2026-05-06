@@ -10,7 +10,8 @@ from vmaf.core.vmafexec_feature_extractor import FloatMotionFeatureExtractor, In
 from test.testutil import set_default_576_324_videos_for_testing, \
     set_default_576_324_12bit_videos_for_testing, \
     set_default_576_324_16bit_videos_for_testing, \
-    set_default_576_324_10bit_videos_for_testing
+    set_default_576_324_10bit_videos_for_testing, \
+    set_default_576_324_videos_for_testing_5frames
 from vmaf.tools.misc import MyTestCase
 
 
@@ -72,6 +73,203 @@ class FeatureExtractorTest(MyTestCase):
         self.assertEqual(len(results[0]['float_motion_feature_motion2_force_0_scores']), 48)
         self.assertEqual(len(results[1]['float_motion_feature_motion2_force_0_scores']), 48)
 
+    def test_run_float_motion_fextractor_motion_fps_weight_2d5(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': False, 'motion_fps_weight': 2.5}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mfw_2.5_scores'][0], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mfw_2.5_scores'][0], 11.448624, places=6)
+        assert len(results[0]['float_motion_feature_motion2_mfw_2.5_scores']) == \
+               len(results[0]['float_motion_feature_motion3_mfw_2.5_scores'])
+        for i in range(1, len(results[0]['float_motion_feature_motion2_mfw_2.5_scores'])):
+            self.assertEqual(results[0]['float_motion_feature_motion2_mfw_2.5_scores'][i],
+                             results[0]['float_motion_feature_motion3_mfw_2.5_scores'][i])
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mfw_2.5_score'], 9.735915666666665, places=6)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_mfw_2.5_score'], 9.735915666666665, places=6)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_motion_feature_motion_mfw_2.5_score']
+
+    def test_run_float_motion_fextractor_add_scale1(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': False, 'motion_add_scale1': True}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mdc_scores'][0], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mdc_scores'][0], 8.758978, places=6)
+        assert len(results[0]['float_motion_feature_motion2_mdc_scores']) == \
+               len(results[0]['float_motion_feature_motion3_mdc_scores'])
+        for i in range(1, len(results[0]['float_motion_feature_motion2_mdc_scores'])):
+            self.assertEqual(results[0]['float_motion_feature_motion2_mdc_scores'][i],
+                             results[0]['float_motion_feature_motion3_mdc_scores'][i])
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mdc_score'], 7.472933979166666, places=6)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_mdc_score'], 7.472933979166666, places=6)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_motion_feature_motion_mdc_score']
+
+    def test_run_float_motion_fextractor_with_blending(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_blend_factor': 0.5, 'motion_blend_offset': 3.0}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mbf_0.5_mbo_3_scores'][0], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mbf_0.5_mbo_3_scores'][0], 3.789725, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mbf_0.5_mbo_3_scores'][1], 3.607168, places=5)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mbf_0.5_mbo_3_scores'][2], 3.535807, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mbf_0.5_mbo_3_scores'][3], 3.412849, places=5)
+        assert len(results[0]['float_motion_feature_motion2_mbf_0.5_mbo_3_scores']) == \
+               len(results[0]['float_motion_feature_motion3_mbf_0.5_mbo_3_scores'])
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mbf_0.5_mbo_3_score'], 3.894366229166667, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mbf_0.5_mbo_3_score'], 3.494885791666667, places=6)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_mbf_0.5_mbo_3_score'], 3.894366229166667, places=6)
+
+    def test_run_float_motion_fextractor_no_filter(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': False, 'motion_filter_size': 1}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mfs_1_scores'][0], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mfs_1_scores'][0], 10.197686, places=6)
+        assert len(results[0]['float_motion_feature_motion2_mfs_1_scores']) == \
+               len(results[0]['float_motion_feature_motion3_mfs_1_scores'])
+        for i in range(1, len(results[0]['float_motion_feature_motion2_mfs_1_scores'])):
+            self.assertEqual(results[0]['float_motion_feature_motion2_mfs_1_scores'][i],
+                             results[0]['float_motion_feature_motion3_mfs_1_scores'][i])
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mfs_1_score'], 8.1035535, places=6)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_mfs_1_score'], 8.1035535, places=6)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_motion_feature_motion_mfs_1_score']
+
+    def test_run_float_motion_fextractor_add_uv(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': False, 'motion_add_uv': True}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mau_scores'][0], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mau_scores'][0], 5.820648, places=6)
+        assert len(results[0]['float_motion_feature_motion2_mau_scores']) == \
+               len(results[0]['float_motion_feature_motion3_mau_scores'])
+        for i in range(1, len(results[0]['float_motion_feature_motion2_mau_scores'])):
+            self.assertEqual(results[0]['float_motion_feature_motion2_mau_scores'][i],
+                             results[0]['float_motion_feature_motion3_mau_scores'][i])
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mau_score'], 5.0747014791666665, places=6)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_mau_score'], 5.0747014791666665, places=6)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_motion_feature_motion_mau_score']
+
+    def test_run_float_motion_fextractor_no_filter_add_uv(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': False, 'motion_filter_size': 1, 'motion_add_uv': True}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mau_mfs_1_scores'][0], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mau_mfs_1_scores'][0], 13.203752, places=6)
+        assert len(results[0]['float_motion_feature_motion2_mau_mfs_1_scores']) == \
+               len(results[0]['float_motion_feature_motion3_mau_mfs_1_scores'])
+        for i in range(1, len(results[0]['float_motion_feature_motion2_mau_mfs_1_scores'])):
+            self.assertEqual(results[0]['float_motion_feature_motion2_mau_mfs_1_scores'][i],
+                             results[0]['float_motion_feature_motion3_mau_mfs_1_scores'][i])
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mau_mfs_1_score'], 10.760497729166666, places=6)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_mau_mfs_1_score'], 10.760497729166666, places=6)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_motion_feature_motion_mau_mfs_1_score']
+
+    def test_run_float_motion_fextractor_yuv42210ple_no_filter_add_uv(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_10bit_videos_for_testing()
+        self.fextractor = FloatMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': False, 'motion_filter_size': 1, 'motion_add_uv': True}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mau_mfs_1_scores'][0], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mau_mfs_1_scores'][0], 13.160226, places=6)
+        assert len(results[0]['float_motion_feature_motion2_mau_mfs_1_scores']) == \
+               len(results[0]['float_motion_feature_motion3_mau_mfs_1_scores'])
+        for i in range(1, len(results[0]['float_motion_feature_motion2_mau_mfs_1_scores'])):
+            self.assertEqual(results[0]['float_motion_feature_motion2_mau_mfs_1_scores'][i],
+                             results[0]['float_motion_feature_motion3_mau_mfs_1_scores'][i])
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mau_mfs_1_score'], 10.746016395833331, places=6)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_mau_mfs_1_score'], 10.746016395833331, places=6)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_motion_feature_motion_mau_mfs_1_score']
+
+    def test_run_float_motion_fextractor_three_tap_gaussian(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': False, 'motion_filter_size': 3}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mfs_3_scores'][0], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mfs_3_scores'][0], 6.702473, places=5)
+        assert len(results[0]['float_motion_feature_motion2_mfs_3_scores']) == \
+               len(results[0]['float_motion_feature_motion3_mfs_3_scores'])
+        for i in range(1, len(results[0]['float_motion_feature_motion2_mfs_3_scores'])):
+            self.assertEqual(results[0]['float_motion_feature_motion2_mfs_3_scores'][i],
+                             results[0]['float_motion_feature_motion3_mfs_3_scores'][i])
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mfs_3_score'], 5.481617229166667, places=6)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_mfs_3_score'], 5.481617229166667, places=6)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_motion_feature_motion_mfs_3_score']
+
+    def test_run_float_motion_fextractor_three_tap_gaussian_add_uv(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': False, 'motion_filter_size': 3, 'motion_add_uv': True}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mau_mfs_3_scores'][0], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion3_mau_mfs_3_scores'][0], 8.594293, places=5)
+        assert len(results[0]['float_motion_feature_motion2_mau_mfs_3_scores']) == \
+               len(results[0]['float_motion_feature_motion3_mau_mfs_3_scores'])
+        for i in range(1, len(results[0]['float_motion_feature_motion2_mau_mfs_3_scores'])):
+            self.assertEqual(results[0]['float_motion_feature_motion2_mau_mfs_3_scores'][i],
+                             results[0]['float_motion_feature_motion3_mau_mfs_3_scores'][i])
+        self.assertAlmostEqual(results[0]['float_motion_feature_motion2_mau_mfs_3_score'], 7.235332708333332, places=6)
+        self.assertAlmostEqual(results[1]['float_motion_feature_motion2_mau_mfs_3_score'], 7.235332708333332, places=6)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_motion_feature_motion_mau_mfs_2_score']
+
     def test_run_integer_motion_fextractor(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
         self.fextractor = IntegerMotionFeatureExtractor(
@@ -101,6 +299,52 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.895345229166667, places=2)
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion_score'], 4.0498181041666665, places=2)
         self.assertAlmostEqual(results[1]['integer_motion_feature_motion_score'], 4.0498181041666665, places=2)
+
+    def test_run_integer_motion_fextractor_motion_fps_weight(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = IntegerMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'debug': False, 'motion_fps_weight': 2.5},
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_mfw_2.5_scores'][0], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mfw_2.5_scores'][0], 11.448605, places=6)
+        assert len(results[0]['integer_motion_feature_motion2_mfw_2.5_scores']) == \
+               len(results[0]['integer_motion_feature_motion3_mfw_2.5_scores'])
+        for i in range(1, len(results[0]['integer_motion_feature_motion2_mfw_2.5_scores'])):
+            self.assertEqual(results[0]['integer_motion_feature_motion2_mfw_2.5_scores'][i],
+                             results[0]['integer_motion_feature_motion3_mfw_2.5_scores'][i])
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_mfw_2.5_score'], 9.735899000000002, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_mfw_2.5_score'], 9.735899000000002, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mfw_2.5_score'], 9.974411604166667, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_mfw_2.5_score'], 9.974411604166667, places=8)
+        with self.assertRaises(KeyError):
+            s = results[0]['integer_motion_feature_motion_mfw_2.5_score']
+
+    def test_run_integer_motion_fextractor_with_blend(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = IntegerMotionFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'motion_blend_factor': 0.5, 'motion_blend_offset': 3.0},
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_mbf_0.5_mbo_3_scores'][0], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'][0], 3.789721, places=6)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'][1], 3.607162, places=6)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'][2], 3.535804, places=6)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'][3], 3.412845, places=6)
+        assert len(results[0]['integer_motion_feature_motion2_mbf_0.5_mbo_3_scores']) == \
+               len(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'])
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_mbf_0.5_mbo_3_score'], 3.8943597291666667, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_mbf_0.5_mbo_3_score'], 3.8943597291666667, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_score'], 3.494882270833333, places=8)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_mbf_0.5_mbo_3_score'], 3.494882270833333, places=8)
 
     def test_run_integer_motion_fextractor_forcing_zero(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -325,7 +569,11 @@ class FeatureExtractorTest(MyTestCase):
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_score'], 0.9345148541666667, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_aim_score'], 0.026559020833333336, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm3_score'], 0.9539779375, places=4)
         self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_score'], 1.0, places=6)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_aim_score'], 0.0, places=6)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm3_score'], 1.0, places=6)
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale0_score'], 0.9078873333333334, places=4)
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale1_score'], 0.8938705625000001, places=4)
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale2_score'], 0.9300123749999999, places=4)
@@ -345,6 +593,8 @@ class FeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_score'], 1.0, places=6)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm3_score'], 0.9539779375, places=4)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm3_score'], 1.0, places=6)
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale0_score'], 0.9078873333333334, places=4)
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale1_score'], 0.8938705625000001, places=4)
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale2_score'], 0.9300123749999999, places=4)
@@ -362,6 +612,8 @@ class FeatureExtractorTest(MyTestCase):
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_score'], 0.9345148541666667, places=4)
         self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_score'], 1.0, places=6)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm3_score'], 0.9539779375, places=4)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm3_score'], 1.0, places=6)
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale0_score'], 0.9078873333333334, places=4)
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale1_score'], 0.8938705625000001, places=4)
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale2_score'], 0.9300123749999999, places=4)
@@ -378,6 +630,98 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_den_scale2_score'], 113.49725864583333, places=4)
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_num_scale3_score'], 154.15123754166666, places=4)
         self.assertAlmostEqual(results[0]['float_ADM_feature_adm_den_scale3_score'], 159.7182974375, places=4)
+
+    def test_run_float_adm_fextractor_apply_hm_adm3(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatAdmFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'adm_adm3_apply_hm': True}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_aah_score'], 0.9345148541666667, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_aim_aah_score'], 0.026559020833333336, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm3_aah_score'], 0.0516021875, places=4)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_aah_score'], 1.0, places=6)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_aim_aah_score'], 0.0, places=6)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm3_aah_score'], 0.0, places=6)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale0_aah_score'], 0.9078873333333334, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale1_aah_score'], 0.8938705625000001, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale2_aah_score'], 0.9300123749999999, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale3_aah_score'], 0.9649663541666667, places=4)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_ADM_feature_adm_num_score']
+
+    def test_run_float_adm_fextractor_skip_aim_scale_0(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatAdmFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'adm_skip_aim_scale': 0}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_sasc_0_score'], 0.9345148541666667, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_aim_sasc_0_score'], 0.023317166666666667, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm3_sasc_0_score'], 0.9555988750000001, places=4)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_sasc_0_score'], 1.0, places=6)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_aim_sasc_0_score'], 0.0, places=6)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm3_sasc_0_score'], 1.0, places=6)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale0_sasc_0_score'], 0.9078873333333334, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale1_sasc_0_score'], 0.8938705625000001, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale2_sasc_0_score'], 0.9300123749999999, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale3_sasc_0_score'], 0.9649663541666667, places=4)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_ADM_feature_adm_num_sasc_0_score']
+
+    def test_run_float_adm_fextractor_dlm_weight_0d2(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatAdmFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'adm_dlm_weight': 0.2}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_dlmw_0.2_score'], 0.9345148541666667, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_aim_dlmw_0.2_score'], 0.026559020833333336, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm3_dlmw_0.2_score'], 0.9656557708333334, places=4)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_dlmw_0.2_score'], 1.0, places=6)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_aim_dlmw_0.2_score'], 0.0, places=6)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm3_dlmw_0.2_score'], 1.0, places=6)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale0_dlmw_0.2_score'], 0.9078873333333334, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale1_dlmw_0.2_score'], 0.8938705625000001, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale2_dlmw_0.2_score'], 0.9300123749999999, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale3_dlmw_0.2_score'], 0.9649663541666667, places=4)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_ADM_feature_adm_num_dlmw_0.2_score']
+
+    def test_run_float_adm_fextractor_dlm_weight_0d8(self):
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = FloatAdmFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'adm_dlm_weight': 0.8}
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm2_dlmw_0.8_score'], 0.9345148541666667, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_aim_dlmw_0.8_score'], 0.026559020833333336, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm3_dlmw_0.8_score'], 0.9423001249999999, places=4)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm2_dlmw_0.8_score'], 1.0, places=6)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_aim_dlmw_0.8_score'], 0.0, places=6)
+        self.assertAlmostEqual(results[1]['float_ADM_feature_adm3_dlmw_0.8_score'], 1.0, places=6)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale0_dlmw_0.8_score'], 0.9078873333333334, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale1_dlmw_0.8_score'], 0.8938705625000001, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale2_dlmw_0.8_score'], 0.9300123749999999, places=4)
+        self.assertAlmostEqual(results[0]['float_ADM_feature_adm_scale3_dlmw_0.8_score'], 0.9649663541666667, places=4)
+        with self.assertRaises(KeyError):
+            s = results[0]['float_ADM_feature_adm_num_dlmw_0.8_score']
 
     def test_run_integer_psnr_fextractor(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
