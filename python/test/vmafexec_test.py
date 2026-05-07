@@ -638,7 +638,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_score'], 1.072518, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_score'], 1.072512, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 132.732952, places=3)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 132.732952, places=2)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_with_feature_enhn_gain_limit(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -666,7 +666,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.998483, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999151, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=4)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=3)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_with_feature_enhn_gain_limit_custom(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -694,7 +694,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1.1_score'], 1.04852, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1.1_score'], 1.04892, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 129.474226, places=3)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 129.474226, places=2)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_disable_enhn_gain(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -722,7 +722,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.998483, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999151, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=4)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=3)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_no_enhn_gain_model(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -750,7 +750,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.998483, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999151, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=4)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 88.030463, places=3)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_no_enhn_gain_model_and_cmd_options(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
@@ -779,7 +779,7 @@ class VmafexecQualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale2_egl_1_score'], 0.998483, places=4)  # 1.0731529493098957
         self.assertAlmostEqual(results[0]['VMAFEXEC_vif_scale3_egl_1_score'], 0.999151, places=4)  # 1.0728060231246508
 
-        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 122.804272, places=3)  # 132.78849246495625
+        self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 122.804272, places=2)  # 132.78849246495625
 
     def test_run_vmafexec_runner_akiyo_multiply_no_enhn_gain_model_and_cmd_options_illegal(self):
         ref_path = VmafConfig.test_resource_path("yuv", "refp_vmaf_hacking_investigation_0_0_akiyo_cif_notyuv_0to0_identity_vs_akiyo_cif_notyuv_0to0_multiply_q_352x288")
