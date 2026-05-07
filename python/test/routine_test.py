@@ -3,6 +3,7 @@ import os
 import unittest
 import shutil
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from vmaf.config import VmafConfig, DisplayConfig
@@ -106,6 +107,42 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(train_assets[2].quality_width_height, (1280, 720))
         self.assertEqual(train_assets[2].dis_yuv_type, 'yuv420p10le')
 
+    def test_read_dataset_mixed_resampling_types(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_mixed_resampling_types.py')
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertEqual(len(train_assets), 2)
+        self.assertEqual(train_assets[0].ref_resampling_type, 'bicubic')
+        self.assertEqual(train_assets[1].ref_resampling_type, 'bicubic')
+        self.assertEqual(train_assets[0].dis_resampling_type, 'lanczos')
+        self.assertEqual(train_assets[1].dis_resampling_type, 'bilinear')
+
+    def test_read_dataset_mixed_resampling_types_only_ref(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_mixed_resampling_types_only_ref.py')
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertEqual(len(train_assets), 2)
+        self.assertEqual(train_assets[0].ref_resampling_type, 'lanczos')
+        self.assertEqual(train_assets[1].ref_resampling_type, 'lanczos')
+        # bicubic default kicks in, no matter what ref has
+        self.assertEqual(train_assets[0].dis_resampling_type, 'bicubic')
+        self.assertEqual(train_assets[1].dis_resampling_type, 'bicubic')
+
+    def test_read_dataset_mixed_resampling_types_only_dis(self):
+        train_dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_mixed_resampling_types_only_dis.py')
+        train_dataset = import_python_file(train_dataset_path)
+        train_assets = read_dataset(train_dataset)
+
+        self.assertEqual(len(train_assets), 2)
+        # dis has lanczos so ref gets it
+        self.assertEqual(train_assets[0].ref_resampling_type, 'lanczos')
+        # dis has bilinear so ref gets it
+        self.assertEqual(train_assets[1].ref_resampling_type, 'bilinear')
+        self.assertEqual(train_assets[0].dis_resampling_type, 'lanczos')
+        self.assertEqual(train_assets[1].dis_resampling_type, 'bilinear')
+
     def test_read_image_dataset_notyuv(self):
         dataset_path = VmafConfig.test_resource_path('test_image_dataset_notyuv.py')
         dataset = import_python_file(dataset_path)
@@ -127,6 +164,29 @@ class TestReadDataset(unittest.TestCase):
         self.assertTrue(assets[0].dis_width_height is None)
         self.assertEqual(assets[0].quality_width_height, (1920, 1080))
         self.assertEqual(assets[0].workfile_yuv_type, 'yuv444p')
+
+    def test_read_image_dataset_notyuv_workfile_yuv_type_for_assets_0_and_3(self):
+        dataset_path = VmafConfig.test_resource_path('test_image_dataset_notyuv_workfile_yuv_type_for_assets_0_and_3.py')
+        dataset = import_python_file(dataset_path)
+        assets = read_dataset(dataset)
+
+        self.assertEqual(len(assets), 4)
+        self.assertTrue(assets[0].ref_width_height is None)
+        self.assertTrue(assets[0].dis_width_height is None)
+        self.assertEqual(assets[0].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[0].workfile_yuv_type, 'yuv444p')
+        self.assertTrue(assets[1].ref_width_height is None)
+        self.assertTrue(assets[1].dis_width_height is None)
+        self.assertEqual(assets[1].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[1].workfile_yuv_type, assets[0].DEFAULT_YUV_TYPE)
+        self.assertTrue(assets[2].ref_width_height is None)
+        self.assertTrue(assets[2].dis_width_height is None)
+        self.assertEqual(assets[2].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[2].workfile_yuv_type, assets[0].DEFAULT_YUV_TYPE)
+        self.assertTrue(assets[3].ref_width_height is None)
+        self.assertTrue(assets[3].dis_width_height is None)
+        self.assertEqual(assets[3].quality_width_height, (1920, 1080))
+        self.assertEqual(assets[3].workfile_yuv_type, 'yuv422p')
 
     def test_read_dataset_basic(self):
         dataset_path = VmafConfig.test_resource_path('test_dataset.py')
@@ -238,65 +298,6 @@ class TestReadDataset(unittest.TestCase):
         self.assertEqual(assets[1].ref_start_end_frame, (100, 110))
         self.assertEqual(assets[1].dis_start_end_frame, (100, 110))
 
-    def test_read_dataset_mixed_resampling_types(self):
-        train_dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_mixed_resampling_types.py')
-        train_dataset = import_python_file(train_dataset_path)
-        train_assets = read_dataset(train_dataset)
-
-        self.assertEqual(len(train_assets), 2)
-        self.assertEqual(train_assets[0].ref_resampling_type, 'bicubic')
-        self.assertEqual(train_assets[1].ref_resampling_type, 'bicubic')
-        self.assertEqual(train_assets[0].dis_resampling_type, 'lanczos')
-        self.assertEqual(train_assets[1].dis_resampling_type, 'bilinear')
-
-    def test_read_dataset_mixed_resampling_types_only_ref(self):
-        train_dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_mixed_resampling_types_only_ref.py')
-        train_dataset = import_python_file(train_dataset_path)
-        train_assets = read_dataset(train_dataset)
-
-        self.assertEqual(len(train_assets), 2)
-        self.assertEqual(train_assets[0].ref_resampling_type, 'lanczos')
-        self.assertEqual(train_assets[1].ref_resampling_type, 'lanczos')
-        # bicubic default kicks in, no matter what ref has
-        self.assertEqual(train_assets[0].dis_resampling_type, 'bicubic')
-        self.assertEqual(train_assets[1].dis_resampling_type, 'bicubic')
-
-    def test_read_dataset_mixed_resampling_types_only_dis(self):
-        train_dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset_mixed_resampling_types_only_dis.py')
-        train_dataset = import_python_file(train_dataset_path)
-        train_assets = read_dataset(train_dataset)
-
-        self.assertEqual(len(train_assets), 2)
-        # dis has lanczos so ref gets it
-        self.assertEqual(train_assets[0].ref_resampling_type, 'lanczos')
-        # dis has bilinear so ref gets it
-        self.assertEqual(train_assets[1].ref_resampling_type, 'bilinear')
-        self.assertEqual(train_assets[0].dis_resampling_type, 'lanczos')
-        self.assertEqual(train_assets[1].dis_resampling_type, 'bilinear')
-
-    def test_read_image_dataset_notyuv_workfile_yuv_type_for_assets_0_and_3(self):
-        dataset_path = VmafConfig.test_resource_path('test_image_dataset_notyuv_workfile_yuv_type_for_assets_0_and_3.py')
-        dataset = import_python_file(dataset_path)
-        assets = read_dataset(dataset)
-
-        self.assertEqual(len(assets), 4)
-        self.assertTrue(assets[0].ref_width_height is None)
-        self.assertTrue(assets[0].dis_width_height is None)
-        self.assertEqual(assets[0].quality_width_height, (1920, 1080))
-        self.assertEqual(assets[0].workfile_yuv_type, 'yuv444p')
-        self.assertTrue(assets[1].ref_width_height is None)
-        self.assertTrue(assets[1].dis_width_height is None)
-        self.assertEqual(assets[1].quality_width_height, (1920, 1080))
-        self.assertEqual(assets[1].workfile_yuv_type, assets[0].DEFAULT_YUV_TYPE)
-        self.assertTrue(assets[2].ref_width_height is None)
-        self.assertTrue(assets[2].dis_width_height is None)
-        self.assertEqual(assets[2].quality_width_height, (1920, 1080))
-        self.assertEqual(assets[2].workfile_yuv_type, assets[0].DEFAULT_YUV_TYPE)
-        self.assertTrue(assets[3].ref_width_height is None)
-        self.assertTrue(assets[3].dis_width_height is None)
-        self.assertEqual(assets[3].quality_width_height, (1920, 1080))
-        self.assertEqual(assets[3].workfile_yuv_type, 'yuv422p')
-
     def test_read_dataset_dis_enc_width_height(self):
         dataset_path = VmafConfig.test_resource_path('test_read_dataset_dataset3.py')
         dataset = import_python_file(dataset_path)
@@ -393,11 +394,13 @@ class TestReadDataset(unittest.TestCase):
 class TestTrainOnDatasetJsonFormat(unittest.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.output_model_filepath = VmafConfig.workspace_path("model", "test_output_model.json")
 
     def tearDown(self):
         if os.path.exists(self.output_model_filepath):
             os.remove(self.output_model_filepath)
+        super().tearDown()
 
     def test_train_test_on_dataset_with_dis1st_thr(self):
         from vmaf.routine import train_test_vmaf_on_dataset
@@ -418,7 +421,7 @@ class TestTrainOnDatasetJsonFormat(unittest.TestCase):
             result_store=None,
             parallelize=False,
             logger=None,
-            fifo_mode=False,
+            fifo_mode=True,
             output_model_filepath=self.output_model_filepath,
         )
 
@@ -431,11 +434,13 @@ class TestTrainOnDatasetJsonFormat(unittest.TestCase):
 class TestTrainOnDataset(unittest.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.output_model_filepath = VmafConfig.workspace_path("model", "test_output_model.pkl")
 
     def tearDown(self):
         if os.path.exists(self.output_model_filepath):
             os.remove(self.output_model_filepath)
+        super().tearDown()
 
     def test_train_test_on_dataset_with_dis1st_thr(self):
         from vmaf.routine import train_test_vmaf_on_dataset
@@ -456,7 +461,7 @@ class TestTrainOnDataset(unittest.TestCase):
             result_store=None,
             parallelize=False,
             logger=None,
-            fifo_mode=False,
+            fifo_mode=True,
             output_model_filepath=self.output_model_filepath,
         )
 
@@ -467,7 +472,7 @@ class TestTrainOnDataset(unittest.TestCase):
 
         runner = VmafQualityRunner(
             train_assets,
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': self.output_model_filepath}
@@ -499,7 +504,7 @@ class TestTrainOnDataset(unittest.TestCase):
             result_store=None,
             parallelize=False,
             logger=None,
-            fifo_mode=False,
+            fifo_mode=True,
             output_model_filepath=self.output_model_filepath
         )
 
@@ -518,68 +523,41 @@ class TestTrainOnDataset(unittest.TestCase):
                                                    aggregate_method=None)
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=2)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 35.070219101439534, places=4)
         self.assertAlmostEqual(results[2]['VMAF_score'], 97.428042675471147, places=4)
-        self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=3)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 97.4278247185967, places=4)
         self.assertAlmostEqual(test_assets[0].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[3].groundtruth, 80, places=4)
 
-    @unittest.skip("Inconsistent numerical values.")
-    def test_compare_two_quality_runners_on_dataset(self):
-        test_dataset = import_python_file(VmafConfig.test_resource_path('dataset_sample.py'))
-        result = compare_two_quality_runners_on_dataset(
-            test_dataset, VmafQualityRunner, PsnrQualityRunner,
-            result_store=None,
-            num_resample=10,
-            seed_resample=0,
-            subj_model_class=SubjectiveModel.find_subclass('MOS'),
-            parallelize=False, fifo_mode=False)
-        self.assertAlmostEqual(np.nanmean(list(zip(*result['plcc']))[0]), 0.8655928449687122, places=4)
-        self.assertAlmostEqual(np.nanmean(list(zip(*result['plcc']))[1]), 0.9875440797696373, places=4)
-        self.assertAlmostEqual(np.nanmean(list(zip(*result['srocc']))[0]), 0.8642507701111302, places=4)
-        self.assertAlmostEqual(np.nanmean(list(zip(*result['srocc']))[1]), 1.0, places=4)
-
-        self.assertTrue(np.isnan(result['plcc_ci95_first'][0]))
-        self.assertTrue(np.isnan(result['plcc_ci95_first'][1]))
-        self.assertTrue(np.isnan(result['plcc_ci95_second'][0]))
-        self.assertTrue(np.isnan(result['plcc_ci95_second'][1]))
-        self.assertTrue(np.isnan(result['plcc_ci95_diff'][0]))
-        self.assertTrue(np.isnan(result['plcc_ci95_diff'][1]))
-
-        self.assertTrue(np.isnan(result['srocc_ci95_first'][0]))
-        self.assertTrue(np.isnan(result['srocc_ci95_first'][1]))
-        self.assertTrue(np.isnan(result['srocc_ci95_second'][0]))
-        self.assertTrue(np.isnan(result['srocc_ci95_second'][1]))
-        self.assertTrue(np.isnan(result['srocc_ci95_diff'][0]))
-        self.assertTrue(np.isnan(result['srocc_ci95_diff'][1]))
-
-    def test_test_on_dataset_plot_per_content(self):
-        from vmaf.routine import run_test_on_dataset
-        test_dataset = import_python_file(
-            VmafConfig.test_resource_path('dataset_sample.py'))
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(1, 1, figsize=[20, 20])
-        run_test_on_dataset(test_dataset, VmafQualityRunner, ax,
-                            None, VmafConfig.model_path("vmaf_float_v0.6.1.json"),
-                            parallelize=False,
-                            fifo_mode=False,
-                            aggregate_method=None,
-                            point_label='asset_id',
-                            do_plot=['aggregate',  # plots all contents in one figure
-                                     'per_content',  # plots a separate figure per content
-                                     'groundtruth_predicted_in_parallel',  # plots of groundtruth and predicted in parallel
-                                     ],
-                            plot_linear_fit=True  # adds linear fit line to each plot
-                            )
-
-        output_dir = VmafConfig.workspace_path("output", "test_output")
-        DisplayConfig.show(write_to_dir=output_dir)
-        self.assertEqual(len(glob.glob(os.path.join(output_dir, '*.png'))), 4)
-
-        if os.path.exists(output_dir):
-            shutil.rmtree(output_dir)
+    # def test_compare_two_quality_runners_on_dataset(self):
+    #     test_dataset = import_python_file(VmafConfig.test_resource_path('dataset_sample.py'))
+    #     result = compare_two_quality_runners_on_dataset(
+    #         test_dataset, VmafQualityRunner, PsnrQualityRunner,
+    #         result_store=None,
+    #         num_resample=10,
+    #         seed_resample=0,
+    #         subj_model_class=SubjectiveModel.find_subclass('MOS'),
+    #         parallelize=False, fifo_mode=False)
+    #     self.assertAlmostEqual(np.nanmean(list(zip(*result['plcc']))[0]), 0.8655928449687122, places=4)
+    #     self.assertAlmostEqual(np.nanmean(list(zip(*result['plcc']))[1]), 0.9875440797696373, places=4)
+    #     self.assertAlmostEqual(np.nanmean(list(zip(*result['srocc']))[0]), 0.8642507701111302, places=4)
+    #     self.assertAlmostEqual(np.nanmean(list(zip(*result['srocc']))[1]), 1.0, places=4)
+    #
+    #     self.assertTrue(np.isnan(result['plcc_ci95_first'][0]))
+    #     self.assertTrue(np.isnan(result['plcc_ci95_first'][1]))
+    #     self.assertTrue(np.isnan(result['plcc_ci95_second'][0]))
+    #     self.assertTrue(np.isnan(result['plcc_ci95_second'][1]))
+    #     self.assertTrue(np.isnan(result['plcc_ci95_diff'][0]))
+    #     self.assertTrue(np.isnan(result['plcc_ci95_diff'][1]))
+    #
+    #     self.assertTrue(np.isnan(result['srocc_ci95_first'][0]))
+    #     self.assertTrue(np.isnan(result['srocc_ci95_first'][1]))
+    #     self.assertTrue(np.isnan(result['srocc_ci95_second'][0]))
+    #     self.assertTrue(np.isnan(result['srocc_ci95_second'][1]))
+    #     self.assertTrue(np.isnan(result['srocc_ci95_diff'][0]))
+    #     self.assertTrue(np.isnan(result['srocc_ci95_diff'][1]))
 
     def test_test_on_dataset_bootstrap_quality_runner(self):
         from vmaf.routine import run_test_on_dataset
@@ -624,9 +602,9 @@ class TestTrainOnDataset(unittest.TestCase):
                                                    aggregate_method=None)
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=2)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 35.070219101439534, places=4)
         self.assertAlmostEqual(results[2]['VMAF_score'], 97.428042675471147, places=4)
-        self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=3)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 97.42782471859442, places=4)
         self.assertAlmostEqual(test_assets[0].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 100, places=4)
@@ -647,9 +625,9 @@ class TestTrainOnDataset(unittest.TestCase):
                                                    subj_model_class=MosModel)
 
         self.assertAlmostEqual(results[0]['VMAF_score'], 99.142659046424384, places=4)
-        self.assertAlmostEqual(results[1]['VMAF_score'], 35.066157497128764, places=2)
+        self.assertAlmostEqual(results[1]['VMAF_score'], 35.070219101439534, places=4)
         self.assertAlmostEqual(results[2]['VMAF_score'], 97.428042675471147, places=4)
-        self.assertAlmostEqual(results[3]['VMAF_score'], 97.427927701008869, places=3)
+        self.assertAlmostEqual(results[3]['VMAF_score'], 97.4278247185963, places=4)
         self.assertAlmostEqual(test_assets[0].groundtruth, 100, places=4)
         self.assertAlmostEqual(test_assets[1].groundtruth, 50, places=4)
         self.assertAlmostEqual(test_assets[2].groundtruth, 90, places=4)
@@ -680,7 +658,7 @@ class TestTrainOnDataset(unittest.TestCase):
                 result_store=None,
                 parallelize=False,
                 logger=None,
-                fifo_mode=False,
+                fifo_mode=True,
                 output_model_filepath=self.output_model_filepath,
             )
 
@@ -703,7 +681,7 @@ class TestTrainOnDataset(unittest.TestCase):
             result_store=None,
             parallelize=False,
             logger=None,
-            fifo_mode=False,
+            fifo_mode=True,
             output_model_filepath=self.output_model_filepath,
         )
 
@@ -714,7 +692,7 @@ class TestTrainOnDataset(unittest.TestCase):
 
         runner = VmafQualityRunner(
             train_assets,
-            None, fifo_mode=False,
+            None, fifo_mode=True,
             delete_workdir=True,
             result_store=None,
             optional_dict={'model_filepath': self.output_model_filepath}
@@ -731,6 +709,7 @@ class TestTrainOnDataset(unittest.TestCase):
 class TestGenerateDatasetFromRaw(unittest.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.raw_dataset_filepath = VmafConfig.resource_path("dataset", "NFLX_dataset_public_raw.py")
         self.derived_dataset_path = VmafConfig.workdir_path("test_derived_dataset.py")
         self.derived_dataset_path_pyc = VmafConfig.workdir_path("test_derived_dataset.pyc")
@@ -740,6 +719,7 @@ class TestGenerateDatasetFromRaw(unittest.TestCase):
             os.remove(self.derived_dataset_path)
         if os.path.exists(self.derived_dataset_path_pyc):
             os.remove(self.derived_dataset_path_pyc)
+        super().tearDown()
 
     def test_generate_dataset_from_raw_default(self):  # DMOS
         generate_dataset_from_raw(raw_dataset_filepath=self.raw_dataset_filepath,
@@ -758,21 +738,20 @@ class TestGenerateDatasetFromRaw(unittest.TestCase):
 class TestTrainOnDatasetPlot(unittest.TestCase):
 
     def setUp(self):
-        import matplotlib.pyplot as plt
+        super().setUp()
         plt.close('all')
         self.output_model_filepath = VmafConfig.workspace_path("model", "test_output_model.pkl")
         self.output_dir = VmafConfig.workspace_path("output", "test_output")
 
     def tearDown(self):
-        import matplotlib.pyplot as plt
         if os.path.exists(self.output_model_filepath):
             os.remove(self.output_model_filepath)
         if os.path.exists(self.output_dir):
             shutil.rmtree(self.output_dir)
         plt.close('all')
+        super().tearDown()
 
     def test_test_on_dataset_plot_per_content(self):
-        import matplotlib.pyplot as plt
         from vmaf.routine import run_test_on_dataset
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('dataset_sample.py'))
@@ -783,17 +762,16 @@ class TestTrainOnDatasetPlot(unittest.TestCase):
                             fifo_mode=False,
                             aggregate_method=None,
                             point_label='asset_id',
-                            do_plot=['aggregate',
-                                     'per_content',
+                            do_plot=['aggregate',  # plots all contents in one figure
+                                     'per_content',  # plots a separate figure per content
                                      ],
-                            plot_linear_fit=True
+                            plot_linear_fit=True  # adds linear fit line to each plot
                             )
 
         DisplayConfig.show(write_to_dir=self.output_dir)
         self.assertEqual(len(glob.glob(os.path.join(self.output_dir, '*.png'))), 3)
 
     def test_test_on_dataset_plot_groundtruth_predicted_in_parallel(self):
-        import matplotlib.pyplot as plt
         from vmaf.routine import run_test_on_dataset
         test_dataset = import_python_file(
             VmafConfig.test_resource_path('dataset_sample.py'))
@@ -804,8 +782,10 @@ class TestTrainOnDatasetPlot(unittest.TestCase):
                             fifo_mode=False,
                             aggregate_method=None,
                             point_label='asset_id',
-                            do_plot=['groundtruth_predicted_in_parallel'],
-                            plot_linear_fit=True
+                            do_plot=[
+                                'groundtruth_predicted_in_parallel',  # plots of groundtruth and predicted in parallel
+                            ],
+                            plot_linear_fit=True  # adds linear fit line to each plot
                             )
 
         DisplayConfig.show(write_to_dir=self.output_dir)
@@ -830,14 +810,13 @@ class TestSubjectiveDatasetReader(unittest.TestCase):
 
 
 class TestSubjectiveDatasetTester(unittest.TestCase):
-
     def setUp(self):
-        import matplotlib.pyplot as plt
+        super().setUp()
         plt.close('all')
 
     def tearDown(self):
-        import matplotlib.pyplot as plt
         plt.close('all')
+        super().tearDown()
 
     def test_subjective_dataset_tester(self):
 
@@ -856,7 +835,6 @@ class TestSubjectiveDatasetTester(unittest.TestCase):
         self.assertAlmostEqual(tester.stats['RMSE'], 8.771, places=3)
 
     def test_subjective_dataset_tester_plotting(self):
-        import matplotlib.pyplot as plt
 
         dataset = import_python_file(VmafConfig.test_resource_path('dataset_sample.py'))
         reader = SubjectiveDatasetReader(dataset)
@@ -876,6 +854,7 @@ class TestSubjectiveDatasetTester(unittest.TestCase):
 
         tester.run()
 
+        # TODO: check the instability at 12th decimal place causing ordering problems
         self.assertAlmostEqual(tester.stats['PCC'], 0.917, places=3)
         self.assertAlmostEqual(tester.stats['RMSE'], 9.857, places=3)
 
