@@ -1,3 +1,39 @@
+/**
+ *
+ *  Copyright 2016-2020 Netflix, Inc.
+ *
+ *     Licensed under the BSD+Patent License (the "License");
+ *     you may not use this file except in compliance with the License.
+ *     You may obtain a copy of the License at
+ *
+ *         https://opensource.org/licenses/BSDplusPatent
+ *
+ *     Unless required by applicable law or agreed to in writing, software
+ *     distributed under the License is distributed on an "AS IS" BASIS,
+ *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *     See the License for the specific language governing permissions and
+ *     limitations under the License.
+ *
+ */
+
+#ifndef FEATURE_CAMBI_H_
+#define FEATURE_CAMBI_H_
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include "common/macros.h"
+
+#ifndef MAX
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#endif
+#ifndef MIN
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#endif
+
+typedef void (*VmafRangeUpdater)(uint16_t *arr, int left, int right);
+
 // Auto-generated reciprocal LUT for cambi c_value_pixel
 // reciprocal_lut[i] = 1.0f / (float)i, with [0] = 0.0f
 #define CAMBI_RECIPROCAL_LUT_SIZE 4226
@@ -532,3 +568,121 @@ static const float reciprocal_lut[CAMBI_RECIPROCAL_LUT_SIZE] = {
     0.000237191651f, 0.000237135404f, 0.000237079184f, 0.000237022991f, 0.000236966825f, 0.000236910685f, 0.000236854571f, 0.000236798484f,
     0.000236742424f, 0.000236686391f
 };
+
+static FORCE_INLINE void update_histogram_subtract_edge(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                          int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+                                                          const uint16_t num_diffs,
+                                                          uint16_t v_band_base, uint16_t v_band_size,
+                                                          VmafRangeUpdater dec_range_callback) {
+    if (!mask[(i - pad_size - 1) * stride + j]) return;
+    uint16_t v = image[(i - pad_size - 1) * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    (void)num_diffs;
+    uint16_t row = v - v_band_base;
+    dec_range_callback(&histograms[row * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
+}
+
+static FORCE_INLINE void update_histogram_subtract(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                          int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+                                                          const uint16_t num_diffs,
+                                                          uint16_t v_band_base, uint16_t v_band_size,
+                                                          VmafRangeUpdater dec_range_callback) {
+    if (!mask[(i - pad_size - 1) * stride + j]) return;
+    uint16_t v = image[(i - pad_size - 1) * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    (void)num_diffs;
+    uint16_t row = v - v_band_base;
+    dec_range_callback(&histograms[row * width], j - pad_size, j + pad_size + 1);
+}
+
+static FORCE_INLINE void update_histogram_add_edge(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+                                                     const uint16_t num_diffs,
+                                                     uint16_t v_band_base, uint16_t v_band_size,
+                                                     VmafRangeUpdater inc_range_callback) {
+    if (!mask[(i + pad_size) * stride + j]) return;
+    uint16_t v = image[(i + pad_size) * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    (void)num_diffs;
+    uint16_t row = v - v_band_base;
+    inc_range_callback(&histograms[row * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
+}
+
+static FORCE_INLINE void update_histogram_add(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+                                                     const uint16_t num_diffs,
+                                                     uint16_t v_band_base, uint16_t v_band_size,
+                                                     VmafRangeUpdater inc_range_callback) {
+    if (!mask[(i + pad_size) * stride + j]) return;
+    uint16_t v = image[(i + pad_size) * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    (void)num_diffs;
+    uint16_t row = v - v_band_base;
+    inc_range_callback(&histograms[row * width], j - pad_size, j + pad_size + 1);
+}
+
+static FORCE_INLINE void update_histogram_add_edge_first_pass(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+                                                     const uint16_t num_diffs,
+                                                     uint16_t v_band_base, uint16_t v_band_size,
+                                                     VmafRangeUpdater inc_range_callback) {
+    if (!mask[i * stride + j]) return;
+    uint16_t v = image[i * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    (void)num_diffs;
+    uint16_t row = v - v_band_base;
+    inc_range_callback(&histograms[row * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
+}
+
+static FORCE_INLINE void update_histogram_add_first_pass(uint16_t *histograms, uint16_t *image, uint16_t *mask,
+                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+                                                     const uint16_t num_diffs,
+                                                     uint16_t v_band_base, uint16_t v_band_size,
+                                                     VmafRangeUpdater inc_range_callback) {
+    if (!mask[i * stride + j]) return;
+    uint16_t v = image[i * stride + j];
+    if ((uint16_t)(v - v_band_base) >= v_band_size) return;
+    (void)num_diffs;
+    uint16_t row = v - v_band_base;
+    inc_range_callback(&histograms[row * width], j - pad_size, j + pad_size + 1);
+}
+
+// Fused subtract-then-add for interior columns. Skips when both pixels are
+// in-band with the same value: the decrement and increment cancel exactly.
+static FORCE_INLINE void uh_slide(
+    uint16_t *histograms, uint16_t *image, uint16_t *mask,
+    int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+    uint16_t v_band_base, uint16_t v_band_size,
+    VmafRangeUpdater inc_fn, VmafRangeUpdater dec_fn) {
+
+    bool sub_valid = mask[(i - pad_size - 1) * stride + j];
+    bool add_valid = mask[(i + pad_size) * stride + j];
+    uint16_t v_sub = sub_valid ? image[(i - pad_size - 1) * stride + j] : 0;
+    uint16_t v_add = add_valid ? image[(i + pad_size) * stride + j] : 0;
+    bool sub_in = sub_valid && (uint16_t)(v_sub - v_band_base) < v_band_size;
+    bool add_in = add_valid && (uint16_t)(v_add - v_band_base) < v_band_size;
+    if (sub_in && add_in && v_sub == v_add) return;
+    if (sub_in) dec_fn(&histograms[(v_sub - v_band_base) * width], j - pad_size, j + pad_size + 1);
+    if (add_in) inc_fn(&histograms[(v_add - v_band_base) * width], j - pad_size, j + pad_size + 1);
+}
+
+// Same as uh_slide but with clamped (edge) column ranges.
+static FORCE_INLINE void uh_slide_edge(
+    uint16_t *histograms, uint16_t *image, uint16_t *mask,
+    int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
+    uint16_t v_band_base, uint16_t v_band_size,
+    VmafRangeUpdater inc_fn, VmafRangeUpdater dec_fn) {
+
+    bool sub_valid = mask[(i - pad_size - 1) * stride + j];
+    bool add_valid = mask[(i + pad_size) * stride + j];
+    uint16_t v_sub = sub_valid ? image[(i - pad_size - 1) * stride + j] : 0;
+    uint16_t v_add = add_valid ? image[(i + pad_size) * stride + j] : 0;
+    bool sub_in = sub_valid && (uint16_t)(v_sub - v_band_base) < v_band_size;
+    bool add_in = add_valid && (uint16_t)(v_add - v_band_base) < v_band_size;
+    if (sub_in && add_in && v_sub == v_add) return;
+    int left = MAX(j - pad_size, 0), right = MIN(j + pad_size + 1, width);
+    if (sub_in) dec_fn(&histograms[(v_sub - v_band_base) * width], left, right);
+    if (add_in) inc_fn(&histograms[(v_add - v_band_base) * width], left, right);
+}
+
+#endif /* FEATURE_CAMBI_H_ */
