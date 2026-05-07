@@ -4,14 +4,14 @@ import unittest
 import subprocess
 
 from vmaf.config import VmafConfig
-from vmaf.tools.misc import run_process
-from vmaf import ExternalProgram
+from vmaf.tools.misc import MyTestCase
+from vmaf import ExternalProgram, run_process
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 
-class RunProcessTest(unittest.TestCase):
+class RunProcessTest(MyTestCase):
 
     def test_run_process(self):
         ret = run_process('echo hello', shell=True)
@@ -24,9 +24,10 @@ class RunProcessTest(unittest.TestCase):
         self.assertTrue('not found' in e.exception.args[0])
 
 
-class CommandLineTest(unittest.TestCase):
+class CommandLineTest(MyTestCase):
 
     def setUp(self):
+        super().setUp()
         self.dataset_filename = VmafConfig.test_resource_path('example_dataset.py')
         self.raw_dataset_filename = VmafConfig.test_resource_path('example_raw_dataset.py')
         self.out_model_filepath = VmafConfig.workdir_path('tmp.json')
@@ -40,6 +41,7 @@ class CommandLineTest(unittest.TestCase):
             os.remove(self.out_model_filepath + '.model')
         if os.path.exists(self.batch_filename):
             os.remove(self.batch_filename)
+        super().tearDown()
 
     def test_run_testing_vmaf(self):
         exe = VmafConfig.root_path('python', 'vmaf', 'script', 'run_testing.py')
@@ -162,16 +164,18 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(ret, 0)
 
 
-class VmafexecCommandLineTest(unittest.TestCase):
+class VmafexecCommandLineTest(MyTestCase):
 
     RC_SUCCESS = 0
 
     def setUp(self) -> None:
+        super().setUp()
         self.output_file_path = tempfile.NamedTemporaryFile().name
 
     def tearDown(self) -> None:
         if os.path.exists(self.output_file_path):
             os.remove(self.output_file_path)
+        super().tearDown()
 
     def test_run_vmafexec(self):
         exe = ExternalProgram.vmafexec
@@ -217,6 +221,19 @@ class VmafexecCommandLineTest(unittest.TestCase):
         with open(self.output_file_path, 'rt') as fo:
             fc = fo.read()
             self.assertTrue('<metric name="psnr_y" min="19.019327" max="21.084954" mean="20.269606" harmonic_mean="20.258113" />' in fc)
+
+
+class VmafossexecCommandLineTest(MyTestCase):
+
+    RC_SUCCESS = 0
+    RC_VMAF_EXCEPTION = 256 - 2
+    RC_RUNTIME_ERROR = 256 - 3
+    RC_LOGIC_ERROR = 256 - 4
+    RC_SEGMENTATION_FAULT = 139
+    RC_ARGUMENT_ISSUE = 1
+    RC_MORE_ARGUMENT_ISSUE = 256 - 1
+    RC_ENOMEM = 244
+    RC_EINVAL = 234
 
 
 if __name__ == '__main__':
