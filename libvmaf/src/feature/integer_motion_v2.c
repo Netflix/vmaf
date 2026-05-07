@@ -58,7 +58,7 @@ typedef struct MotionV2State {
 static inline int mirror(int idx, int size)
 {
     if (idx < 0) return -idx;
-    if (idx >= size) return 2 * size - idx - 1;
+    if (idx >= size) return 2 * size - idx - 2;
     return idx;
 }
 
