@@ -20,8 +20,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "libvmaf/picture.h"
+#include "cambi_avx2.h"
+#include "cambi.h"
 
 // Picks every other uint16 in place: dst[i, j] = src[2i, 2j] for j in [0, width).
 // Reads always stay ahead of writes both within a row and across rows, so
@@ -316,5 +319,73 @@ void get_derivative_data_for_row_avx2(const uint16_t *image_data, uint16_t *deri
             bool vertical_derivative = image_data[row * stride + col] == image_data[(row + 1) * stride + col];
             derivative_buffer[col] =  horizontal_derivative && vertical_derivative;
         }
+    }
+}
+
+void calculate_c_values_avx2(VmafPicture *pic, const VmafPicture *mask_pic,
+                             float *c_values, uint16_t *histograms, uint16_t window_size,
+                             const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
+                             const int *diff_weights, const int *all_diffs, int width, int height) {
+    uint16_t pad_size = window_size >> 1;
+
+    int v_lo_signed = (int)vlt_luma - 3 * (int)num_diffs + 1;
+    uint16_t v_band_base = v_lo_signed > 0 ? (uint16_t)v_lo_signed : 0;
+    uint16_t v_band_size = tvi_for_diff[num_diffs - 1] + 1 - v_band_base;
+
+    uint16_t *image = pic->data[0];
+    uint16_t *mask = mask_pic->data[0];
+    ptrdiff_t stride = pic->stride[0] >> 1;
+
+    memset(c_values, 0.0, sizeof(float) * width * height);
+    memset(histograms, 0, width * v_band_size * sizeof(uint16_t));
+
+    for (int i = 0; i < pad_size; i++) {
+        for (int j = 0; j < pad_size; j++) {
+            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_increment_range_avx2);
+        }
+        for (int j = pad_size; j < width - pad_size - 1; j++) {
+            update_histogram_add_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_increment_range_avx2);
+        }
+        for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
+            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_increment_range_avx2);
+        }
+    }
+
+    for (int i = 0; i < pad_size + 1; i++) {
+        if (i + pad_size < height) {
+            for (int j = 0; j < pad_size; j++) {
+                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_increment_range_avx2);
+            }
+            for (int j = pad_size; j < width - pad_size - 1; j++) {
+                update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_increment_range_avx2);
+            }
+            for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
+                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_increment_range_avx2);
+            }
+        }
+        calculate_c_values_row_avx2(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
+    }
+    for (int i = pad_size + 1; i < height - pad_size; i++) {
+        for (int j = 0; j < pad_size; j++)
+            uh_slide_edge(histograms, image, mask, i, j, width, stride, pad_size, v_band_base, v_band_size, cambi_increment_range_avx2, cambi_decrement_range_avx2);
+        for (int j = pad_size; j < width - pad_size - 1; j++)
+            uh_slide(histograms, image, mask, i, j, width, stride, pad_size, v_band_base, v_band_size, cambi_increment_range_avx2, cambi_decrement_range_avx2);
+        for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++)
+            uh_slide_edge(histograms, image, mask, i, j, width, stride, pad_size, v_band_base, v_band_size, cambi_increment_range_avx2, cambi_decrement_range_avx2);
+        calculate_c_values_row_avx2(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
+    }
+    for (int i = height - pad_size; i < height; i++) {
+        if (i - pad_size - 1 >= 0) {
+            for (int j = 0; j < pad_size; j++) {
+                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_decrement_range_avx2);
+            }
+            for (int j = pad_size; j < width - pad_size - 1; j++) {
+                update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_decrement_range_avx2);
+            }
+            for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
+                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_decrement_range_avx2);
+            }
+        }
+        calculate_c_values_row_avx2(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
     }
 }
