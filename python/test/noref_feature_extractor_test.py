@@ -25,6 +25,7 @@ class NorefFeatureExtractorTest(unittest.TestCase):
             self.fextractor.remove_results()
             pass
 
+
     def test_noref_moment_fextractor(self):
 
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -232,14 +233,14 @@ class NorefFeatureExtractorTest(unittest.TestCase):
 
 class FeatureExtractorSaveWorkfilesTest(MyTestCase):
 
-    def setUp(self):
-        super().setUp()
-        self.result_store = FileSystemResultStore()
-
     def tearDown(self):
         if hasattr(self, 'fextractor'):
             self.fextractor.remove_results()
         super().tearDown()
+
+    def setUp(self):
+        super().setUp()
+        self.result_store = FileSystemResultStore()
 
     def test_noref_moment_fextractor(self):
 

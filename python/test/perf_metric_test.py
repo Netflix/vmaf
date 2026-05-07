@@ -7,18 +7,11 @@ import scipy.io
 from vmaf.config import VmafConfig
 from vmaf.core.perf_metric import RmsePerfMetric, SrccPerfMetric, PccPerfMetric, \
     KendallPerfMetric, AucPerfMetric, ResolvingPowerPerfMetric
-
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 
 class AggrScorePerfMetricTest(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
 
     def test_rmse_perf_metric(self):
         groundtruths = [1, 2, 3, 4]
