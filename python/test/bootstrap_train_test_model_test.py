@@ -4,20 +4,22 @@ import numpy as np
 
 from vmaf.config import VmafConfig
 from vmaf.core.noref_feature_extractor import MomentNorefFeatureExtractor
-from vmaf.routine import read_dataset
-from vmaf.tools.misc import import_python_file
 from vmaf.core.train_test_model import BootstrapLibsvmNusvrTrainTestModel, \
     BootstrapSklearnRandomForestTrainTestModel, ResidueBootstrapLibsvmNusvrTrainTestModel, \
     ResidueBootstrapRandomForestTrainTestModel
+from vmaf.routine import read_dataset
+from vmaf.tools.misc import import_python_file
+from vmaf.tools.misc import MyTestCase
+
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
 
-class BootstrapTrainTestModelTest(unittest.TestCase):
+class BootstrapTrainTestModelTest(MyTestCase):
 
     def setUp(self):
-
+        super().setUp()
         train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim2.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
@@ -25,7 +27,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         runner = MomentNorefFeatureExtractor(
             train_assets,
             None,
-            fifo_mode=True,
+            fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict=None,
@@ -39,6 +41,7 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
     def tearDown(self):
         if hasattr(self, 'model'):
             self.model.delete(self.model_filename)
+        super().tearDown()
 
     def test_train_predict_bootstrap_libsvmnusvr(self):
 
@@ -306,10 +309,10 @@ class BootstrapTrainTestModelTest(unittest.TestCase):
         self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_ci95_high'], 4.4107916666666656, places=2)
 
 
-class BootstrapTrainTestModelTestJson(unittest.TestCase):
+class BootstrapTrainTestModelTestJson(MyTestCase):
 
     def setUp(self):
-
+        super().setUp()
         train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim2.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
@@ -317,7 +320,7 @@ class BootstrapTrainTestModelTestJson(unittest.TestCase):
         runner = MomentNorefFeatureExtractor(
             train_assets,
             None,
-            fifo_mode=True,
+            fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict=None,
@@ -331,6 +334,7 @@ class BootstrapTrainTestModelTestJson(unittest.TestCase):
     def tearDown(self):
         if hasattr(self, 'model'):
             self.model.delete(self.model_filename_json, format='json')
+        super().tearDown()
 
     def test_train_save_load_predict_bootstrap_libsvmnusvr_json(self):
 
@@ -365,10 +369,10 @@ class BootstrapTrainTestModelTestJson(unittest.TestCase):
         self.assertAlmostEqual(loaded_model.evaluate_stddev(xs)['mean_ci95_high'], 4.753825575324514, places=2)
 
 
-class BootstrapTrainTestModelTestPklCombined(unittest.TestCase):
+class BootstrapTrainTestModelTestPklCombined(MyTestCase):
 
     def setUp(self):
-
+        super().setUp()
         train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim2.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
@@ -376,7 +380,7 @@ class BootstrapTrainTestModelTestPklCombined(unittest.TestCase):
         runner = MomentNorefFeatureExtractor(
             train_assets,
             None,
-            fifo_mode=True,
+            fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict=None,
@@ -387,9 +391,6 @@ class BootstrapTrainTestModelTestPklCombined(unittest.TestCase):
 
         self.model_filename_pkl = VmafConfig.workspace_path("model", "test_save_load.pkl")
 
-    def tearDown(self):
-        pass
-
     def test_train_save_load_predict_bootstrap_libsvmnusvr_pkl_combined(self):
         xys = BootstrapLibsvmNusvrTrainTestModel.get_xys_from_results(self.features)
         self.model = BootstrapLibsvmNusvrTrainTestModel({'norm_type': 'normalize'}, None)
@@ -398,10 +399,10 @@ class BootstrapTrainTestModelTestPklCombined(unittest.TestCase):
             self.model.to_file(self.model_filename_pkl, format='pkl', combined=True)
 
 
-class BootstrapTrainTestModelTestJsonCombined(unittest.TestCase):
+class BootstrapTrainTestModelTestJsonCombined(MyTestCase):
 
     def setUp(self):
-
+        super().setUp()
         train_dataset_path = VmafConfig.test_resource_path('test_image_dataset_diffdim2.py')
         train_dataset = import_python_file(train_dataset_path)
         train_assets = read_dataset(train_dataset)
@@ -409,7 +410,7 @@ class BootstrapTrainTestModelTestJsonCombined(unittest.TestCase):
         runner = MomentNorefFeatureExtractor(
             train_assets,
             None,
-            fifo_mode=True,
+            fifo_mode=False,
             delete_workdir=True,
             result_store=None,
             optional_dict=None,
@@ -423,6 +424,7 @@ class BootstrapTrainTestModelTestJsonCombined(unittest.TestCase):
     def tearDown(self):
         if hasattr(self, 'model'):
             self.model.delete(self.model_filename_json, format='json', combined=True)
+        super().tearDown()
 
     def test_train_save_load_predict_bootstrap_libsvmnusvr_json_combined(self):
 
