@@ -146,12 +146,19 @@ void calculate_c_values_row_avx2(
     const int *diff_weights, const int *all_diffs,
     const float *reciprocal_lut)
 {
+    int v_lo_signed_sc = (int)vlt_luma - 3 * (int)num_diffs + 1;
+    uint16_t v_band_base = v_lo_signed_sc > 0 ? (uint16_t)v_lo_signed_sc : 0;
+    uint16_t v_band_size = tvi_thresholds[num_diffs - 1] + 1 - v_band_base;
+
     const __m256i col_base = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
     const __m256i width_v = _mm256_set1_epi32(width);
     const __m256i num_diffs_v = _mm256_set1_epi32(num_diffs);
     const __m256i vlt_luma_v = _mm256_set1_epi32(vlt_luma);
     const __m256i lo16_mask = _mm256_set1_epi32(0xFFFF);
     const __m256i all_ones = _mm256_set1_epi32(-1);
+    const __m256i band_offset_v = _mm256_set1_epi32((int)num_diffs + (int)v_band_base);
+    const __m256i band_max_v = _mm256_set1_epi32((int)v_band_size - 1);
+    const __m256i zero = _mm256_setzero_si256();
 
     const uint16_t *image_row = &image[row * stride];
     const uint16_t *mask_row  = &mask[row * stride];
@@ -164,7 +171,7 @@ void calculate_c_values_row_avx2(
         // Load 8 mask values, promote to int32, build active mask.
         __m128i mask16 = _mm_loadu_si128((const __m128i*)&mask_row[col]);
         __m256i mask32 = _mm256_cvtepu16_epi32(mask16);
-        __m256i mask_active = _mm256_cmpgt_epi32(mask32, _mm256_setzero_si256());
+        __m256i mask_active = _mm256_cmpgt_epi32(mask32, zero);
 
         // Skip the entire chunk if no lane is active.
         if (_mm256_testz_si256(mask_active, mask_active)) {
@@ -172,14 +179,19 @@ void calculate_c_values_row_avx2(
             continue;
         }
 
-        // value = image[col + lane] + num_diffs
+        // value = image[col + lane] + num_diffs  (adjusted space, used for TVI/vlt checks)
         __m128i img16 = _mm_loadu_si128((const __m128i*)&image_row[col]);
         __m256i value_v = _mm256_add_epi32(_mm256_cvtepu16_epi32(img16), num_diffs_v);
 
+        // compact_v = value_v - band_offset, clamped to [0, band_max] for safe gathers
+        __m256i compact_v = _mm256_sub_epi32(value_v, band_offset_v);
+        compact_v = _mm256_max_epi32(compact_v, zero);
+        compact_v = _mm256_min_epi32(compact_v, band_max_v);
+
         __m256i col_v = _mm256_add_epi32(_mm256_set1_epi32(col), col_base);
 
-        // p_0 = histograms[value * width + col + lane]
-        __m256i p0_idx = _mm256_add_epi32(_mm256_mullo_epi32(value_v, width_v), col_v);
+        // p_0 = histograms[compact_v * width + col + lane]
+        __m256i p0_idx = _mm256_add_epi32(_mm256_mullo_epi32(compact_v, width_v), col_v);
         __m256i p0 = _mm256_and_si256(
             _mm256_i32gather_epi32((const int*)histograms, p0_idx, 2), lo16_mask);
 
@@ -201,16 +213,23 @@ void calculate_c_values_row_avx2(
 
             if (_mm256_testz_si256(predicate, predicate)) continue;
 
-            __m256i value_minus = _mm256_add_epi32(value_v, _mm256_set1_epi32(delta_minus));
+            // compact p1/p2 indices, clamped for safe gathers; track OOB lanes to zero them
+            __m256i compact_plus_raw = _mm256_add_epi32(compact_v, _mm256_set1_epi32(delta_plus));
+            __m256i compact_plus = _mm256_min_epi32(compact_plus_raw, band_max_v);
+
+            __m256i compact_minus_raw = _mm256_add_epi32(compact_v, _mm256_set1_epi32(delta_minus));
+            __m256i p2_inbounds = _mm256_cmpgt_epi32(compact_minus_raw, _mm256_set1_epi32(-1));
+            __m256i compact_minus = _mm256_max_epi32(compact_minus_raw, zero);
 
             // p_1 / p_2 gathers
-            __m256i p1_idx = _mm256_add_epi32(_mm256_mullo_epi32(value_plus, width_v), col_v);
+            __m256i p1_idx = _mm256_add_epi32(_mm256_mullo_epi32(compact_plus, width_v), col_v);
             __m256i p1 = _mm256_and_si256(
                 _mm256_i32gather_epi32((const int*)histograms, p1_idx, 2), lo16_mask);
 
-            __m256i p2_idx = _mm256_add_epi32(_mm256_mullo_epi32(value_minus, width_v), col_v);
+            __m256i p2_idx = _mm256_add_epi32(_mm256_mullo_epi32(compact_minus, width_v), col_v);
             __m256i p2 = _mm256_and_si256(
                 _mm256_i32gather_epi32((const int*)histograms, p2_idx, 2), lo16_mask);
+            p2 = _mm256_and_si256(p2, p2_inbounds);
 
             __m256i p_max = _mm256_max_epu32(p1, p2);
             __m256i denom = _mm256_add_epi32(p_max, p0);
@@ -238,12 +257,20 @@ void calculate_c_values_row_avx2(
     for (; col < width; col++) {
         if (mask_row[col]) {
             uint16_t value = (uint16_t)(image_row[col] + num_diffs);
-            uint16_t p_0 = histograms[value * width + col];
+            int compact_v_signed = (int)image_row[col] - (int)v_band_base;
+            if ((unsigned)compact_v_signed >= v_band_size) {
+                c_row[col] = 0.0f;
+                continue;
+            }
+            uint16_t compact_v_sc = (uint16_t)compact_v_signed;
+            uint16_t p_0 = histograms[compact_v_sc * width + col];
             float c_v = 0.0f;
             for (int d = 0; d < num_diffs; d++) {
                 if ((value <= tvi_thresholds[d]) && ((value + all_diffs[num_diffs + d + 1]) > vlt_luma)) {
-                    uint16_t p_1 = histograms[(value + all_diffs[num_diffs + d + 1]) * width + col];
-                    uint16_t p_2 = histograms[(value + all_diffs[num_diffs - d - 1]) * width + col];
+                    int idx1 = compact_v_signed + all_diffs[num_diffs + d + 1];
+                    int idx2 = compact_v_signed + all_diffs[num_diffs - d - 1];
+                    uint16_t p_1 = histograms[idx1 * width + col];
+                    uint16_t p_2 = (idx2 >= 0) ? histograms[idx2 * width + col] : 0;
                     uint16_t p_max = (p_1 > p_2) ? p_1 : p_2;
                     float val = (float)(diff_weights[d] * p_0 * p_max) * reciprocal_lut[p_max + p_0];
                     if (val > c_v) c_v = val;
