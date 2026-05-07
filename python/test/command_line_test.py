@@ -223,18 +223,5 @@ class VmafexecCommandLineTest(MyTestCase):
             self.assertTrue('<metric name="psnr_y" min="19.019327" max="21.084954" mean="20.269606" harmonic_mean="20.258113" />' in fc)
 
 
-class VmafossexecCommandLineTest(MyTestCase):
-
-    RC_SUCCESS = 0
-    RC_VMAF_EXCEPTION = 256 - 2
-    RC_RUNTIME_ERROR = 256 - 3
-    RC_LOGIC_ERROR = 256 - 4
-    RC_SEGMENTATION_FAULT = 139
-    RC_ARGUMENT_ISSUE = 1
-    RC_MORE_ARGUMENT_ISSUE = 256 - 1
-    RC_ENOMEM = 244
-    RC_EINVAL = 234
-
-
 if __name__ == '__main__':
     unittest.main(verbosity=2)
