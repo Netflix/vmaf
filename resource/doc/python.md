@@ -140,7 +140,7 @@ This will generate JSON output like:
     ...
     "aggregate": {
         "VMAF_feature_adm2_score": 0.93458780776205741, 
-        "VMAF_feature_motion2_score": 3.8953518541666665, 
+        "VMAF_feature_motion2_score": 3.8943597291666667, 
         "VMAF_feature_vif_scale0_score": 0.36342081156994926, 
         "VMAF_feature_vif_scale1_score": 0.76664738784617292, 
         "VMAF_feature_vif_scale2_score": 0.86285338927816291, 
