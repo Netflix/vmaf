@@ -397,8 +397,7 @@ static char *test_calculate_c_values()
     mu_assert("test_calculate_c_values alloc #2 error", !err);
 
     calculate_c_values(&input, &mask, combined_c_values, histograms, window_size,
-                       num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, width, height,
-                       increment_range, decrement_range, calculate_c_values_row);
+                       num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, width, height);
 
     for (unsigned i=0; i<16; i++) {
         mu_assert("calculate_c_values error ws=3",
@@ -414,8 +413,7 @@ static char *test_calculate_c_values()
     window_size = 9;
     uint16_t histograms_8x8[8*1032];
     calculate_c_values(&input_8x8, &mask_8x8, combined_c_values_8x8, histograms_8x8,
-                       window_size, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, 8, 8,
-                       increment_range, decrement_range, calculate_c_values_row);
+                       window_size, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, 8, 8);
 
     double sum = 0;
     for (unsigned i = 0; i < 64; i++) {
