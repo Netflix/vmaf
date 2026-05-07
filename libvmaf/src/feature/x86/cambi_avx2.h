@@ -23,6 +23,7 @@
 #include <stdint.h>
 
 struct VmafPicture;
+void decimate_avx2(struct VmafPicture *image, unsigned width, unsigned height);
 void filter_mode_avx2(const struct VmafPicture *image, int width, int height, uint16_t *buffer);
 
 void cambi_increment_range_avx2(uint16_t *arr, int left, int right);

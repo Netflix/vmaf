@@ -23,6 +23,32 @@
 
 #include "libvmaf/picture.h"
 
+// Picks every other uint16 in place: dst[i, j] = src[2i, 2j] for j in [0, width).
+// Reads always stay ahead of writes both within a row and across rows, so
+// in-place operation is safe. Vectorizes via uint32-mask + packus + permute.
+void decimate_avx2(VmafPicture *image, unsigned width, unsigned height) {
+    uint16_t *data = image->data[0];
+    ptrdiff_t stride = image->stride[0] >> 1;
+    const __m256i mask = _mm256_set1_epi32(0xFFFF);
+    for (unsigned i = 0; i < height; i++) {
+        const uint16_t *src = &data[2 * i * stride];
+        uint16_t *dst = &data[i * stride];
+        unsigned j = 0;
+        for (; j + 16 <= width; j += 16) {
+            __m256i v1 = _mm256_loadu_si256((const __m256i*)&src[2 * j]);
+            __m256i v2 = _mm256_loadu_si256((const __m256i*)&src[2 * j + 16]);
+            v1 = _mm256_and_si256(v1, mask);  // keep low uint16 of each uint32 pair
+            v2 = _mm256_and_si256(v2, mask);
+            __m256i packed = _mm256_packus_epi32(v1, v2);  // values <= 0xFFFF, no actual saturation
+            packed = _mm256_permute4x64_epi64(packed, 0xD8);  // 0,2,1,3 to fix lane order
+            _mm256_storeu_si256((__m256i*)&dst[j], packed);
+        }
+        for (; j < width; j++) {
+            dst[j] = src[2 * j];
+        }
+    }
+}
+
 // mode3 returns the duplicate among (a, b, c) if any pair matches, otherwise
 // the unsigned min. Vectorized over 16 uint16 lanes.
 static inline __m256i mode3_avx2(__m256i a, __m256i b, __m256i c) {

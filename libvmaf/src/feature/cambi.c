@@ -111,8 +111,10 @@ typedef void (*VmafCalcCValuesRow)(float *c_values, const uint16_t *histograms, 
                                     const int *diff_weights, const int *all_diffs,
                                     const float *reciprocal_lut);
 typedef void (*VmafFilterMode)(const VmafPicture *image, int width, int height, uint16_t *buffer);
+typedef void (*VmafDecimate)(VmafPicture *image, unsigned width, unsigned height);
 
 static void filter_mode(const VmafPicture *image, int width, int height, uint16_t *buffer);
+static void decimate(VmafPicture *image, unsigned width, unsigned height);
 
 static void calculate_c_values_row(float *c_values, const uint16_t *histograms, const uint16_t *image,
                                     const uint16_t *mask, int row, int width, ptrdiff_t stride,
@@ -148,6 +150,7 @@ typedef struct CambiState {
     VmafDerivativeCalculator derivative_callback;
     VmafCalcCValuesRow calc_c_values_row_callback;
     VmafFilterMode filter_mode_callback;
+    VmafDecimate decimate_callback;
     CambiBuffers buffers;
     VmafDictionary *feature_name_dict;
 } CambiState;
@@ -628,6 +631,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->derivative_callback = get_derivative_data_for_row;
     s->calc_c_values_row_callback = calculate_c_values_row;
     s->filter_mode_callback = filter_mode;
+    s->decimate_callback = decimate;
 
 #if ARCH_X86
     unsigned flags = vmaf_get_cpu_flags();
@@ -637,6 +641,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->derivative_callback = get_derivative_data_for_row_avx2;
         s->calc_c_values_row_callback = calculate_c_values_row_avx2;
         s->filter_mode_callback = filter_mode_avx2;
+        s->decimate_callback = decimate_avx2;
     }
 #endif
 
@@ -1344,6 +1349,7 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
                        VmafDerivativeCalculator derivative_callback,
                        VmafCalcCValuesRow calc_c_values_row_callback,
                        VmafFilterMode filter_mode_callback,
+                       VmafDecimate decimate_callback,
                        double *score, bool write_heatmaps, FILE *heatmaps_files[],
                        int width, int height, int frame, bool cambi_high_res_speedup) {
 
@@ -1359,8 +1365,8 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
         if (scale > 0 || cambi_high_res_speedup) {
             scaled_width = (scaled_width + 1) >> 1;
             scaled_height = (scaled_height + 1) >> 1;
-            decimate(image, scaled_width, scaled_height);
-            decimate(mask, scaled_width, scaled_height);
+            decimate_callback(image, scaled_width, scaled_height);
+            decimate_callback(mask, scaled_width, scaled_height);
         }
 
         filter_mode_callback(image, scaled_width, scaled_height, buffers.filter_mode_buffer);
@@ -1403,7 +1409,7 @@ static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double 
     }
     err = cambi_score(s->pics, window_size, topk, num_diffs, s->buffers.tvi_for_diff, s->vlt_luma,
                       s->buffers, s->inc_range_callback, s->dec_range_callback, s->derivative_callback,
-                      s->calc_c_values_row_callback, s->filter_mode_callback, score,
+                      s->calc_c_values_row_callback, s->filter_mode_callback, s->decimate_callback, score,
                       write_heatmaps, s->heatmaps_files, width, height, frame, (bool) s->cambi_high_res_speedup);
 
     if (err) return err;
