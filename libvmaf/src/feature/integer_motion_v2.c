@@ -39,6 +39,7 @@
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "integer_motion.h"
+#include "motion_blend_tools.h"
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -62,13 +63,61 @@ typedef struct MotionV2State {
     unsigned w, h, bpc;
     motion_pipeline_fn pipeline;
     double motion_max_val;
+    double motion_blend_factor;
+    double motion_blend_offset;
+    double motion_fps_weight;
     bool motion_five_frame_window;
+    bool motion_moving_average;
+    bool motion_force_zero;
     VmafDictionary *feature_name_dict;
 } MotionV2State;
 
 static const VmafOption options[] = {
     {
+        .name = "motion_force_zero",
+        .alias = "force_0",
+        .help = "forces motion score to be 0",
+        .offset = offsetof(MotionV2State, motion_force_zero),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_blend_factor",
+        .alias = "mbf",
+        .help = "blend motion score given an offset",
+        .offset = offsetof(MotionV2State, motion_blend_factor),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = 1.0,
+        .min = 0.0,
+        .max = 1.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_blend_offset",
+        .alias = "mbo",
+        .help = "blend motion score starting from this offset",
+        .offset = offsetof(MotionV2State, motion_blend_offset),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = 40.0,
+        .min = 0.0,
+        .max = 1000.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_fps_weight",
+        .alias = "mfw",
+        .help = "fps-aware multiplicative weight/correction",
+        .offset = offsetof(MotionV2State, motion_fps_weight),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = 1.0,
+        .min = 0.0,
+        .max = 5.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
         .name = "motion_max_val",
+        .alias = "mmxv",
         .help = "maximum value allowed; larger values will be clipped to this value",
         .offset = offsetof(MotionV2State, motion_max_val),
         .type = VMAF_OPT_TYPE_DOUBLE,
@@ -76,13 +125,21 @@ static const VmafOption options[] = {
         .min = 0.0,
         .max = 10000.0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
-        .alias = "mmxv",
     },
     {
         .name = "motion_five_frame_window",
         .alias = "mffw",
         .help = "use five-frame temporal window",
         .offset = offsetof(MotionV2State, motion_five_frame_window),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_moving_average",
+        .alias = "mma",
+        .help = "smooth motion3 with a 2-frame moving average",
+        .offset = offsetof(MotionV2State, motion_moving_average),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
@@ -249,6 +306,12 @@ static int extract(VmafFeatureExtractor *fex,
     (void) ref_pic_90;
     (void) dist_pic_90;
 
+    if (s->motion_force_zero) {
+        return vmaf_feature_collector_append_with_dict(feature_collector,
+                s->feature_name_dict,
+                "VMAF_integer_feature_motion_v2_sad_score", 0., index);
+    }
+
     const unsigned min_idx = s->motion_five_frame_window ? 2 : 1;
     if (index < min_idx) {
         return vmaf_feature_collector_append_with_dict(feature_collector,
@@ -275,7 +338,8 @@ static int extract(VmafFeatureExtractor *fex,
 
     return vmaf_feature_collector_append_with_dict(feature_collector,
             s->feature_name_dict,
-            "VMAF_integer_feature_motion_v2_sad_score", MIN(score, s->motion_max_val), index);
+            "VMAF_integer_feature_motion_v2_sad_score",
+            MIN(score * s->motion_fps_weight, s->motion_max_val), index);
 }
 
 static int close_fex(VmafFeatureExtractor *fex)
@@ -311,6 +375,19 @@ static int flush(VmafFeatureExtractor *fex,
     const unsigned min_idx = s->motion_five_frame_window ? 2 : 1;
     if (n_frames == 0) return 1;
 
+    double stamp_value = 0.;
+    if (n_frames > min_idx) {
+        double sad_at_min_idx;
+        if (!vmaf_feature_collector_get_score(feature_collector, sad_name,
+                                              &sad_at_min_idx, min_idx)) {
+            stamp_value = MIN(motion_blend(sad_at_min_idx,
+                                           s->motion_blend_factor,
+                                           s->motion_blend_offset),
+                              s->motion_max_val);
+        }
+    }
+
+    double prev_processed = 0.;
     for (unsigned i = 0; i < n_frames; i++) {
         double motion2;
 
@@ -335,6 +412,25 @@ static int flush(VmafFeatureExtractor *fex,
         vmaf_feature_collector_append_with_dict(feature_collector,
             s->feature_name_dict,
             "VMAF_integer_feature_motion2_v2_score", motion2, i);
+
+        double motion3;
+        if (i < min_idx) {
+            motion3 = stamp_value;
+            prev_processed = stamp_value;
+        } else {
+            double processed = MIN(motion_blend(motion2,
+                                                s->motion_blend_factor,
+                                                s->motion_blend_offset),
+                                   s->motion_max_val);
+            motion3 = s->motion_moving_average
+                    ? (processed + prev_processed) / 2.0
+                    : processed;
+            prev_processed = processed;
+        }
+
+        vmaf_feature_collector_append_with_dict(feature_collector,
+            s->feature_name_dict,
+            "VMAF_integer_feature_motion3_v2_score", motion3, i);
     }
 
     return 1;
@@ -343,6 +439,7 @@ static int flush(VmafFeatureExtractor *fex,
 static const char *provided_features[] = {
     "VMAF_integer_feature_motion_v2_sad_score",
     "VMAF_integer_feature_motion2_v2_score",
+    "VMAF_integer_feature_motion3_v2_score",
     NULL
 };
 
