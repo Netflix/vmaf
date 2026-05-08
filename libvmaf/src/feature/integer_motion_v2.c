@@ -62,6 +62,7 @@ typedef struct MotionV2State {
     unsigned w, h, bpc;
     motion_pipeline_fn pipeline;
     double motion_max_val;
+    bool motion_five_frame_window;
     VmafDictionary *feature_name_dict;
 } MotionV2State;
 
@@ -76,6 +77,15 @@ static const VmafOption options[] = {
         .max = 10000.0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
         .alias = "mmxv",
+    },
+    {
+        .name = "motion_five_frame_window",
+        .alias = "mffw",
+        .help = "use five-frame temporal window",
+        .offset = offsetof(MotionV2State, motion_five_frame_window),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     { 0 }
 };
@@ -239,21 +249,25 @@ static int extract(VmafFeatureExtractor *fex,
     (void) ref_pic_90;
     (void) dist_pic_90;
 
-    if (index == 0) {
+    const unsigned min_idx = s->motion_five_frame_window ? 2 : 1;
+    if (index < min_idx) {
         return vmaf_feature_collector_append_with_dict(feature_collector,
                 s->feature_name_dict,
                 "VMAF_integer_feature_motion_v2_sad_score", 0., index);
     }
 
-    if (!fex->prev_ref.ref)
+    const VmafPicture *prev = s->motion_five_frame_window
+            ? &fex->prev_prev_ref
+            : &fex->prev_ref;
+    if (!prev->ref)
         return -EINVAL;
 
     const unsigned w = s->w;
     const unsigned h = s->h;
-    const uint8_t *prev_data = (const uint8_t *)fex->prev_ref.data[0];
+    const uint8_t *prev_data = (const uint8_t *)prev->data[0];
     const uint8_t *cur_data = (const uint8_t *)ref_pic->data[0];
 
-    uint64_t sad = s->pipeline(prev_data, fex->prev_ref.stride[0],
+    uint64_t sad = s->pipeline(prev_data, prev->stride[0],
                                cur_data, ref_pic->stride[0],
                                s->y_row, w, h, s->bpc);
 
@@ -276,6 +290,12 @@ static int flush(VmafFeatureExtractor *fex,
 {
     MotionV2State *s = fex->priv;
 
+    if (!s->feature_name_dict) {
+        s->feature_name_dict = vmaf_feature_name_dict_from_provided_features(
+                fex->provided_features, fex->options, s);
+        if (!s->feature_name_dict) return -ENOMEM;
+    }
+
     VmafDictionaryEntry *e_sad = vmaf_dictionary_get(&s->feature_name_dict,
             "VMAF_integer_feature_motion_v2_sad_score", 0);
     const char *sad_name =
@@ -287,20 +307,29 @@ static int flush(VmafFeatureExtractor *fex,
             sad_name, &dummy, n_frames))
         n_frames++;
 
-    if (n_frames < 2) return 1;
+    const unsigned stride = s->motion_five_frame_window ? 2 : 1;
+    const unsigned min_idx = s->motion_five_frame_window ? 2 : 1;
+    if (n_frames == 0) return 1;
 
     for (unsigned i = 0; i < n_frames; i++) {
-        double score_cur, score_next;
-        vmaf_feature_collector_get_score(feature_collector,
-            sad_name, &score_cur, i);
-
         double motion2;
-        if (i + 1 < n_frames) {
-            vmaf_feature_collector_get_score(feature_collector,
-                sad_name, &score_next, i + 1);
-            motion2 = score_cur < score_next ? score_cur : score_next;
+
+        if (i < min_idx) {
+            motion2 = 0.;
+        } else if (i == n_frames - 1) {
+            vmaf_feature_collector_get_score(feature_collector, sad_name, &motion2, i);
         } else {
-            motion2 = score_cur;
+            const int lo_idx = (int)i - (int)(stride - 1);
+            const int hi_idx = (int)i + 1;
+            double hi;
+            vmaf_feature_collector_get_score(feature_collector, sad_name, &hi, hi_idx);
+            if (lo_idx >= (int)min_idx) {
+                double lo;
+                vmaf_feature_collector_get_score(feature_collector, sad_name, &lo, lo_idx);
+                motion2 = lo < hi ? lo : hi;
+            } else {
+                motion2 = hi;
+            }
         }
 
         vmaf_feature_collector_append_with_dict(feature_collector,
