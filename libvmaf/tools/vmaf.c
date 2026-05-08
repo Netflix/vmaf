@@ -68,107 +68,16 @@ static int validate_videos(video_input *vid1, video_input *vid2, bool common_bit
     return err_cnt;
 }
 
-// Copy video input data to picture buffer
-static void copy_picture_data(VmafPicture *pic, video_input_ycbcr ycbcr,
-                               video_input_info *info, int depth)
+static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic)
 {
-    if (info->depth == depth) {
-        if (info->depth == 8) {
-            for (unsigned i = 0; i < 3; i++) {
-                int xdec = i&&!(info->pixel_fmt&1);
-                int ydec = i&&!(info->pixel_fmt&2);
-                uint8_t *ycbcr_data = ycbcr[i].data +
-                    (info->pic_y >> ydec) * ycbcr[i].stride +
-                    (info->pic_x >> xdec);
-                uint8_t *pic_data = pic->data[i];
-
-                for (unsigned j = 0; j < pic->h[i]; j++) {
-                    memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
-                    pic_data += pic->stride[i];
-                    ycbcr_data += ycbcr[i].stride;
-                }
-            }
-        } else {
-            for (unsigned i = 0; i < 3; i++) {
-                int xdec = i&&!(info->pixel_fmt&1);
-                int ydec = i&&!(info->pixel_fmt&2);
-                uint16_t *ycbcr_data = (uint16_t*) ycbcr[i].data +
-                    (info->pic_y >> ydec) * (ycbcr[i].stride / 2) +
-                    (info->pic_x >> xdec);
-                uint16_t *pic_data = pic->data[i];
-
-                for (unsigned j = 0; j < pic->h[i]; j++) {
-                    memcpy(pic_data, ycbcr_data, sizeof(*pic_data) * pic->w[i]);
-                    pic_data += pic->stride[i] / 2;
-                    ycbcr_data += ycbcr[i].stride / 2;
-                }
-            }
-        }
-    } else if (depth > 8) {
-        // unequal bit-depth
-        // therefore depth must be > 8 since we do not support depth < 8
-        int left_shift = depth - info->depth;
-        if (info->depth == 8) {
-            for (unsigned i = 0; i < 3; i++) {
-                int xdec = i&&!(info->pixel_fmt&1);
-                int ydec = i&&!(info->pixel_fmt&2);
-                uint8_t *ycbcr_data = ycbcr[i].data +
-                    (info->pic_y >> ydec) * ycbcr[i].stride +
-                    (info->pic_x >> xdec);
-                uint16_t *pic_data = (uint16_t*)pic->data[i];
-
-                for (unsigned j = 0; j < pic->h[i]; j++) {
-                    for (unsigned k = 0; k < pic->w[i]; k++) {
-                        pic_data[k] = ycbcr_data[k] << left_shift;
-                    }
-                    pic_data += pic->stride[i] / 2;
-                    ycbcr_data += ycbcr[i].stride;
-                }
-            }
-        } else {
-            for (unsigned i = 0; i < 3; i++) {
-                int xdec = i&&!(info->pixel_fmt&1);
-                int ydec = i&&!(info->pixel_fmt&2);
-                uint16_t *ycbcr_data = (uint16_t*) ycbcr[i].data +
-                    (info->pic_y >> ydec) * (ycbcr[i].stride / 2) +
-                    (info->pic_x >> xdec);
-                uint16_t *pic_data = pic->data[i];
-
-                for (unsigned j = 0; j < pic->h[i]; j++) {
-                    for (unsigned k = 0; k < pic->w[i]; k++) {
-                        pic_data[k] = ycbcr_data[k] << left_shift;
-                    }
-                    pic_data += pic->stride[i] / 2;
-                    ycbcr_data += ycbcr[i].stride / 2;
-                }
-            }
-        }
-    }
-}
-
-static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic,
-                         int depth)
-{
-    int ret;
-    video_input_info info;
-    video_input_get_info(vid, &info);
-
-    (void) depth;
-    ret = vmaf_fetch_preallocated_picture(vmaf, pic);
+    int ret = vmaf_fetch_preallocated_picture(vmaf, pic);
     if (ret) {
         fprintf(stderr, "problem fetching picture from pool.\n");
         return -1;
     }
 
-#ifdef USE_DIRECT_READ
     ret = video_input_fetch_into_vmaf_picture(vid, pic);
     if (ret < 1) return !ret;
-#else
-    video_input_ycbcr ycbcr;
-    ret = video_input_fetch_frame(vid, ycbcr, NULL);
-    if (ret < 1) return !ret;
-    copy_picture_data(pic, ycbcr, &info, info.depth);
-#endif
     return 0;
 }
 
@@ -413,10 +322,10 @@ int main(int argc, char *argv[])
     VmafPicture pic_ref, pic_dist;
 
     for (unsigned i = 0; i < c.frame_skip_ref; i++)
-        fetch_picture(vmaf, &vid_ref, &pic_ref, common_bitdepth);
+        fetch_picture(vmaf, &vid_ref, &pic_ref);
 
     for (unsigned i = 0; i < c.frame_skip_dist; i++)
-        fetch_picture(vmaf, &vid_dist, &pic_dist, common_bitdepth);
+        fetch_picture(vmaf, &vid_dist, &pic_dist);
 
     float fps = 0.;
     const time_t t0 = clock();
@@ -427,8 +336,8 @@ int main(int argc, char *argv[])
             break;
 
         VmafPicture pic_ref, pic_dist;
-        int ret1 = fetch_picture(vmaf, &vid_ref, &pic_ref, common_bitdepth);
-        int ret2 = fetch_picture(vmaf, &vid_dist, &pic_dist, common_bitdepth);
+        int ret1 = fetch_picture(vmaf, &vid_ref, &pic_ref);
+        int ret2 = fetch_picture(vmaf, &vid_dist, &pic_dist);
 
         if (ret1 && ret2) {
             break;
