@@ -153,22 +153,12 @@ static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic,
     video_input_info info;
     video_input_get_info(vid, &info);
 
-#ifdef VMAF_PICTURE_POOL
     (void) depth;
     ret = vmaf_fetch_preallocated_picture(vmaf, pic);
     if (ret) {
         fprintf(stderr, "problem fetching picture from pool.\n");
         return -1;
     }
-#else
-    (void) vmaf;
-    ret = vmaf_picture_alloc(pic, pix_fmt_map(info.pixel_fmt), depth,
-                             info.pic_w, info.pic_h);
-    if (ret) {
-        fprintf(stderr, "problem allocating picture.\n");
-        return -1;
-    }
-#endif
 
 #ifdef USE_DIRECT_READ
     ret = video_input_fetch_into_vmaf_picture(vid, pic);
@@ -279,7 +269,6 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#ifdef VMAF_PICTURE_POOL
     // Preallocate picture pool to avoid allocation overhead
     video_input_info info;
     video_input_get_info(&vid_ref, &info);
@@ -304,7 +293,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "picture pool: %d pictures pre-allocated\n",
                 pic_cfg.pic_cnt);
     }
-#endif
 
     VmafModel **model;
     const size_t model_sz = sizeof(*model) * c.model_cnt;
