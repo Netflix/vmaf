@@ -98,7 +98,8 @@ typedef struct VmafFeatureExtractor {
     #endif
 
     VmafFrameSyncContext *framesync;
-    VmafPicture prev_ref; ///< Previous reference picture, set by framework.
+    VmafPicture prev_ref; ///< Previous reference picture (n-1), set by framework.
+    VmafPicture prev_prev_ref; ///< Reference picture from two frames ago (n-2), set by framework.
 
 } VmafFeatureExtractor;
 

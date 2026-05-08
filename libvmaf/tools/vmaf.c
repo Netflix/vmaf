@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
             .bpc = common_bitdepth,
             .pix_fmt = pix_fmt_map(info.pixel_fmt),
         },
-        .pic_cnt = c.thread_cnt > 0 ? (c.thread_cnt + 1) * 2 : 3,
+        .pic_cnt = c.thread_cnt > 0 ? (c.thread_cnt + 1) * 2 + 1 : 4,
     };
 
     err = vmaf_preallocate_pictures(vmaf, pic_cfg);
