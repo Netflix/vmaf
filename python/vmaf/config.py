@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import os
 import ssl
+import tempfile
 import urllib.request
 import urllib.error
 
@@ -19,7 +20,21 @@ def download_reactively(local_path, remote_path):
         print(f'download {local_path} from {remote_path}')
         try:
             ssl._create_default_https_context = ssl._create_unverified_context
-            urllib.request.urlretrieve(remote_path, local_path)
+            # Download to a sibling tempfile then atomically rename, so
+            # concurrent readers (e.g. pytest-xdist workers sharing the
+            # cache) cannot observe a partially-written local_path.
+            fd, tmp_path = tempfile.mkstemp(
+                dir=os.path.dirname(local_path),
+                prefix=os.path.basename(local_path) + '.',
+                suffix='.part',
+            )
+            os.close(fd)
+            try:
+                urllib.request.urlretrieve(remote_path, tmp_path)
+                os.replace(tmp_path, local_path)
+            finally:
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
         except urllib.error.HTTPError as e:
             print(f"error downloading from {remote_path}")
             raise e
