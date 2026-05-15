@@ -7,6 +7,9 @@ env:
   DEBIAN_FRONTEND: noninteractive
   LD_LIBRARY_PATH: /usr/local/lib/x86_64-linux-gnu
 
+permissions:
+  contents: read
+
 jobs:
   ffmpeg:
     strategy:
