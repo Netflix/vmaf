@@ -35005,3 +35005,33 @@ runtime or reading a schema-version sidecar (future work).
 python -m pytest ai/tests/test_extract_k150k_no_ssimulacra2.py -v
 # Expected: 3/3 PASS
 ```
+
+---
+
+## `libvmaf/test/meson.build` — register test_context and test_log (fix/meson-register-test-context-log)
+
+**Files touched**: `libvmaf/test/meson.build`.
+
+**Rebase impact**: low. Two `test()` calls added immediately before the
+existing bulk-registration block. Upstream Netflix/vmaf does not maintain
+these fork-side tests; no conflict expected on upstream sync.
+
+**Invariant to preserve on rebase**: every `executable()` defined in
+`libvmaf/test/meson.build` must have a corresponding `test()` call. After
+any merge or cherry-pick touching this file, verify with:
+
+```bash
+grep "= executable(" libvmaf/test/meson.build | \
+    sed "s/.*= executable('\([^']*\)'.*/\1/" | \
+    while read name; do
+        grep -q "test('$name'" libvmaf/test/meson.build || echo "MISSING test() for $name"
+    done
+```
+
+**Smoke-test after rebase**:
+
+```bash
+meson setup build -Denable_cuda=false -Denable_sycl=false
+ninja -C build
+meson test -C build test_context test_log   # must exit 0
+```

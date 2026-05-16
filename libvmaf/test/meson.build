@@ -848,6 +848,8 @@ test('test_metal_install_header', test_metal_install_header, suite : ['fast', 'g
 endif
 endif
 
+test('test_context', test_context, suite : ['fast'])
+test('test_log', test_log, suite : ['fast'])
 test('test_picture', test_picture, suite : ['fast'])
 test('test_feature_collector', test_feature_collector, suite : ['fast'])
 test('test_output', test_output, suite : ['fast'])
