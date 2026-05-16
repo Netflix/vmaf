@@ -453,3 +453,4 @@ ADRs may exist there for local session continuity, but the tracked
 | [ADR-0452](0452-cambi-calculate-c-values-avx512-neon.md) | Port `calculate_c_values_row` to AVX-512 (16-lane gather) and NEON (mask-zero fast-skip); bit-exact integer pipeline | Accepted | simd, cambi, perf |
 | [ADR-0453](0453-psnr-enable-chroma-gpu-parity.md) | PSNR `enable_chroma` option parity across CUDA, SYCL, Vulkan GPU backends | Accepted | cuda, sycl, vulkan, psnr, option-parity, bug |
 | [ADR-0460](0460-integer-vif-enable-chroma.md) | Add `enable_chroma` option to `integer_vif` — mirrors psnr/ssim pattern, emits per-scale Cb/Cr VIF scores | Accepted | feature, vif, chroma |
+| [ADR-0485](0485-ms-ssim-enable-db-gpu-parity.md) | Wire `enable_db` / `clip_db` into the CUDA and SYCL MS-SSIM twins | Accepted | cuda, sycl, ms-ssim, option-parity, bug, fork-local |

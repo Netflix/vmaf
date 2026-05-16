@@ -28,9 +28,11 @@
 
 #include <cerrno>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 
 extern "C" {
 #include "config.h"
@@ -111,6 +113,10 @@ struct MsSsimStateSycl {
     unsigned pending_index;
 
     VmafDictionary *feature_name_dict;
+
+    bool enable_db; /* ADR-0485: output score as dB (parity with CPU). */
+    bool clip_db;   /* ADR-0485: clamp dB to per-frame finite ceiling. */
+    double max_db;  /* ADR-0485: computed in init; INFINITY when clip_db=false. */
 };
 
 /* Period-2n mirror — matches ms_ssim_decimate.c::ms_ssim_decimate_mirror. */
@@ -273,7 +279,23 @@ static void launch_vert_lcs(sycl::queue &q, const float *h_ref_mu, const float *
 
 extern "C" {
 
-static const VmafOption options_ms_ssim_sycl[] = {{0}};
+static const VmafOption options_ms_ssim_sycl[] = {
+    {
+        .name = "enable_db",
+        .help = "write MS-SSIM values as dB (parity with CPU float_ms_ssim / ADR-0485)",
+        .offset = offsetof(MsSsimStateSycl, enable_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val = {.b = false},
+    },
+    {
+        .name = "clip_db",
+        .help = "clip dB scores to a finite ceiling (parity with CPU float_ms_ssim / ADR-0485)",
+        .offset = offsetof(MsSsimStateSycl, clip_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val = {.b = false},
+    },
+    {0},
+};
 
 static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc,
                          unsigned w, unsigned h)
@@ -313,6 +335,15 @@ static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     s->c1 = (K1 * L) * (K1 * L);
     s->c2 = (K2 * L) * (K2 * L);
     s->c3 = s->c2 * 0.5f;
+
+    /* ADR-0485: dB ceiling — mirrors CPU float_ms_ssim init logic. */
+    if (s->clip_db) {
+        const double peak = static_cast<double>((1u << bpc) - 1u);
+        const double mse = 0.5 / (static_cast<double>(w) * static_cast<double>(h));
+        s->max_db = std::ceil(10.0 * std::log10(peak * peak / mse));
+    } else {
+        s->max_db = std::numeric_limits<double>::infinity();
+    }
 
     if (!fex->sycl_state) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR, "ms_ssim_sycl: no SYCL state\n");
@@ -441,6 +472,12 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
     for (int i = 0; i < MS_SSIM_SCALES; i++) {
         msssim *= std::pow(l_means[i], (double)ALPHAS[i]) * std::pow(c_means[i], (double)BETAS[i]) *
                   std::pow(std::fabs(s_means[i]), (double)GAMMAS[i]);
+    }
+
+    /* ADR-0485: dB conversion — mirrors CPU float_ms_ssim::convert_to_db. */
+    if (s->enable_db) {
+        const double db_val = -10.0 * std::log10(1.0 - msssim);
+        msssim = (db_val < s->max_db) ? db_val : s->max_db;
     }
 
     return vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
