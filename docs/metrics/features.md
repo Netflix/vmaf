@@ -344,6 +344,14 @@ All three parameters are available on every backend (`adm` and `float_adm`)
 including CUDA, SYCL, and Vulkan. Setting all three to their defaults
 (`1.0`, `1.0`, `0.03125`) produces output bit-identical to upstream Netflix ADM.
 
+Two additional skip options control scale-0 handling. `adm_skip_scale0` (bool,
+default `false`) suppresses scale-0 accumulation: when set, the extractor
+emits `0.0` for scale 0 and excludes it from the combined numerator/denominator
+totals. Available on CPU (`adm`, `float_adm`) and CUDA (`integer_adm_cuda`).
+`adm_skip_aim` (integer `adm`) / `adm_skip_aim_scale` (float `float_adm`) (bool,
+default `false`) skips the AIM (Absolute-Intensity Map) computation at the
+selected scale; CPU-only.
+
 **Backends** — `adm`: AVX2, AVX-512, NEON, CUDA, SYCL, Vulkan.
 `float_adm`: AVX2, AVX-512, NEON, CUDA, SYCL, Vulkan.
 
