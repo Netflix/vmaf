@@ -38,6 +38,7 @@ extern "C" {
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "libvmaf/picture.h"
+#include "log.h"
 
 #include "../../metal/common.h"
 #include "../../metal/kernel_template.h"
@@ -56,6 +57,7 @@ typedef struct FloatSsimStateMetal {
     void *pso_vert;                  /* float_ssim_vert_combine (pass 1) */
     void *hbuf_buf;                  /* intermediate 5-plane buffer */
 
+    int     scale_override; /* user-supplied scale (0=auto); v1 requires scale=1 */
     float   c1;
     float   c2;
     float   scaler;   /* raw → [0, 255.xxx] multiplier (1/scaler of raw) */
@@ -70,7 +72,56 @@ typedef struct FloatSsimStateMetal {
     VmafDictionary *feature_name_dict;
 } FloatSsimStateMetal;
 
-static const VmafOption options[] = {{0}};
+static const VmafOption options[] = {
+    {
+        .name        = "scale",
+        .help        = "decimation scale factor (0=auto, 1=no downscaling). "
+                       "v1: Metal path requires scale=1; auto-detect rejects "
+                       "scale>1 with -EINVAL.",
+        .offset      = offsetof(FloatSsimStateMetal, scale_override),
+        .type        = VMAF_OPT_TYPE_INT,
+        .default_val.i = 0,
+        .min         = 0,
+        .max         = 10,
+    },
+    {0},
+};
+
+/* ------------------------------------------------------------------ */
+/* Scale helpers — mirrors ssim_vulkan / ssim_hip pattern             */
+/* ------------------------------------------------------------------ */
+
+static int ssim_metal_round_to_int(float x)
+{
+    return (int)(x + (x < 0.0f ? -0.5f : 0.5f));
+}
+
+static int ssim_metal_compute_scale(unsigned w, unsigned h, int override_val)
+{
+    if (override_val > 0)
+        return override_val;
+    const int dim = (int)w < (int)h ? (int)w : (int)h;
+    int scaled = ssim_metal_round_to_int((float)dim / 256.0f);
+    return scaled < 1 ? 1 : scaled;
+}
+
+/* Extracted to keep init_fex_metal under the 60-line
+ * readability-function-size limit. Mirrors validate logic from the
+ * HIP and Vulkan twins. */
+static int ssim_metal_validate_scale(const FloatSsimStateMetal *s,
+                                     unsigned w, unsigned h)
+{
+    int scale = ssim_metal_compute_scale(w, h, s->scale_override);
+    if (scale != 1) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "ssim_metal: v1 supports scale=1 only "
+                 "(auto-detected scale=%d at %ux%u). "
+                 "Pin --feature float_ssim_metal:scale=1 if intended.\n",
+                 scale, w, h);
+        return -EINVAL;
+    }
+    return 0;
+}
 
 static int build_pipelines(FloatSsimStateMetal *s, id<MTLDevice> device)
 {
@@ -106,6 +157,9 @@ static int init_fex_metal(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fm
     (void)pix_fmt;
     FloatSsimStateMetal *s = (FloatSsimStateMetal *)fex->priv;
 
+    int err = ssim_metal_validate_scale(s, w, h);
+    if (err != 0) { return err; }
+
     s->frame_w = w;
     s->frame_h = h;
     s->bpc     = bpc;
@@ -119,7 +173,7 @@ static int init_fex_metal(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fm
     else if (bpc == 12u) { s->scaler = 16.0f; }
     else                 { s->scaler = 256.0f; }
 
-    int err = vmaf_metal_context_new(&s->ctx, 0);
+    err = vmaf_metal_context_new(&s->ctx, 0);
     if (err != 0) { return err; }
 
     err = vmaf_metal_kernel_lifecycle_init(&s->lc, s->ctx);
