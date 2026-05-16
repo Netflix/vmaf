@@ -7,6 +7,11 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
+No rebase impact: `fix/float-vif-cuda-skip-scale0-option-wire` adds
+`vif_skip_scale0` to the `VmafOption` table in `float_vif_cuda.c`.
+This is a CUDA-only file with no upstream Netflix counterpart; no
+sync-upstream conflict is expected.
+
 No rebase impact: `fix/nvtx-cuda-dependency-guard-2026-05-16` adds a
 meson `error()` guard to `libvmaf/src/meson.build` for the
 `enable_nvtx=true` + `enable_cuda=false` combination. The guard is
