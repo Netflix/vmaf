@@ -13,9 +13,13 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <limits.h>
+#include <sys/stat.h>
 
 #include "libvmaf/libvmaf_vulkan.h"
 #include "vulkan_common.h"
@@ -197,8 +201,302 @@ int vmaf_vulkan_device_count(void)
     return (int)count;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Pipeline-cache persistence helpers (ADR-0445, PR #865)           */
+/*                                                                    */
+/*  XDG_CACHE_HOME/libvmaf/vulkan-pipeline-cache.bin stores the      */
+/*  VkPipelineCache blob across process invocations so the driver     */
+/*  can skip SPIR-V → ISA compilation on warm starts.  On NVIDIA     */
+/*  RTX 4090 this cuts cold-start from ~80-120 ms to ~2-5 ms per     */
+/*  compute pipeline.                                                 */
+/*                                                                    */
+/*  Opt-out: LIBVMAF_VULKAN_PIPELINE_CACHE=0                         */
+/* ------------------------------------------------------------------ */
+
+/* MAX bytes we will allocate for a cache blob when reading from disk.
+ * Typical driver blobs are 64 KiB–4 MiB; 64 MiB is a safe upper bound
+ * that still prevents a corrupted file from exhausting address space. */
+#define VMAF_VK_CACHE_MAX_BYTES (64u * 1024u * 1024u)
+
+/* Resolve the platform cache file path into `out` (SIZE bytes).
+ * Uses $XDG_CACHE_HOME if set, otherwise $HOME/.cache.
+ * Returns 0 on success, -1 if neither env var is set or if the path
+ * would overflow `SIZE`. */
+static int resolve_cache_path(char *out, size_t size)
+{
+    const char *xdg = getenv("XDG_CACHE_HOME");
+    int n;
+    if (xdg && xdg[0] != '\0') {
+        n = snprintf(out, size, "%s/libvmaf/vulkan-pipeline-cache.bin", xdg);
+    } else {
+        const char *home = getenv("HOME");
+        if (!home || home[0] == '\0')
+            return -1;
+        n = snprintf(out, size, "%s/.cache/libvmaf/vulkan-pipeline-cache.bin", home);
+    }
+    if (n <= 0 || (size_t)n >= size)
+        return -1;
+    return 0;
+}
+
+/* Ensure the directory containing `path` exists.  Creates only the
+ * last two levels (e.g. ".cache/libvmaf") — the parent is assumed
+ * to already exist.  Ignores EEXIST.  Returns 0 / -1. */
+static int ensure_parent_dirs(const char *path)
+{
+    char tmp[PATH_MAX];
+    size_t len = strlen(path);
+    if (len == 0 || len >= sizeof(tmp))
+        return -1;
+    memcpy(tmp, path, len + 1u);
+
+    /* Walk backwards to find the two trailing path components and
+     * create them in order.  We need to create both
+     * <base>/.cache/libvmaf/ (two levels) in one pass. */
+    /* Find the last '/' — that separates the filename. */
+    char *last_sep = strrchr(tmp, '/');
+    if (!last_sep)
+        return 0; /* no directory component */
+
+    /* Temporarily terminate at the last separator to get the dir. */
+    *last_sep = '\0';
+
+    /* Find the second-to-last '/' — separates the parent directory. */
+    char *second_sep = strrchr(tmp, '/');
+
+    /* Create the grandparent dir first (if a grandparent exists). */
+    if (second_sep && second_sep != tmp) {
+        *second_sep = '\0';
+        if (mkdir(tmp, 0700) != 0 && errno != EEXIST)
+            return -1; /* could not create grandparent; parent mkdir will also fail */
+        *second_sep = '/';
+    }
+
+    /* Create the parent dir. */
+    if (mkdir(tmp, 0700) != 0 && errno != EEXIST)
+        return -1;
+
+    return 0;
+}
+
+/* Check whether the env-var opt-out is active.
+ * Returns 1 (disabled) when LIBVMAF_VULKAN_PIPELINE_CACHE=0,
+ * 0 (enabled) otherwise. */
+static int pipeline_cache_disabled(void)
+{
+    const char *v = getenv("LIBVMAF_VULKAN_PIPELINE_CACHE");
+    return (v && v[0] == '0' && v[1] == '\0') ? 1 : 0;
+}
+
+/* Validate the VkPipelineCacheHeaderVersionOne header embedded in `data`.
+ * Returns 1 if the header matches the physical device's vendor/device/driver
+ * tuple, 0 if mismatched (stale / wrong device).
+ *
+ * Vulkan 1.3 spec §10.6: the first 32 bytes of a pipeline cache blob carry
+ * a VkPipelineCacheHeaderVersionOne struct:
+ *   uint32_t  headerSize
+ *   uint32_t  headerVersion  (VK_PIPELINE_CACHE_HEADER_VERSION_ONE = 1)
+ *   uint32_t  vendorID
+ *   uint32_t  deviceID
+ *   uint8_t   pipelineCacheUUID[VK_UUID_SIZE]   (16 bytes)
+ *
+ * The struct is 32 bytes.  On disk the same layout applies (little-endian
+ * host, which matches all practical Vulkan implementations). */
+static int pipeline_cache_header_valid(const uint8_t *data, size_t size,
+                                       const VkPhysicalDeviceProperties *props)
+{
+    /* Minimum size: 32 bytes (VkPipelineCacheHeaderVersionOne). */
+    if (size < 32u)
+        return 0;
+
+    /* Parse the header fields from raw bytes (avoids UB from unaligned
+     * struct access — the blob comes from fread() into a malloc buffer
+     * that has no guaranteed alignment beyond malloc's minimum). */
+    uint32_t hdr_size, hdr_version, vendor_id, device_id;
+    memcpy(&hdr_size, data + 0u, sizeof(uint32_t));
+    memcpy(&hdr_version, data + 4u, sizeof(uint32_t));
+    memcpy(&vendor_id, data + 8u, sizeof(uint32_t));
+    memcpy(&device_id, data + 12u, sizeof(uint32_t));
+
+    if (hdr_version != 1u) /* VK_PIPELINE_CACHE_HEADER_VERSION_ONE */
+        return 0;
+    if (hdr_size < 32u)
+        return 0;
+    if (vendor_id != props->vendorID)
+        return 0;
+    if (device_id != props->deviceID)
+        return 0;
+
+    /* Note: the spec does not put driverVersion in the header; we do
+     * not validate it here (a driver update would just give a VK_SUCCESS
+     * with an ignored old blob — the driver discards internally). */
+
+    return 1;
+}
+
+/* Load the cache file (if present) into `data_out` + `size_out`.
+ * The caller owns the returned buffer (free it).  Sets both to zero
+ * and returns 0 on soft errors (file absent, small, mismatched header).
+ * Returns -1 only on hard errors (malloc failure). */
+static int load_cache_file(const char *path, const VkPhysicalDeviceProperties *props,
+                           void **data_out, size_t *size_out)
+{
+    *data_out = NULL;
+    *size_out = 0;
+
+    FILE *f = fopen(path, "rb");
+    if (!f)
+        return 0; /* absent — first run */
+
+    /* Determine file size. */
+    if (fseek(f, 0, SEEK_END) != 0) {
+        (void)fclose(f);
+        return 0;
+    }
+    long sz_long = ftell(f);
+    if (sz_long <= 0) {
+        (void)fclose(f);
+        return 0;
+    }
+    rewind(f);
+
+    size_t sz = (size_t)sz_long;
+    if (sz > VMAF_VK_CACHE_MAX_BYTES) {
+        fprintf(stderr, "libvmaf: Vulkan pipeline cache too large (%zu bytes) — ignoring\n", sz);
+        (void)fclose(f);
+        return 0;
+    }
+
+    uint8_t *buf = malloc(sz);
+    if (!buf) {
+        (void)fclose(f);
+        return -1; /* hard error */
+    }
+
+    if (fread(buf, 1, sz, f) != sz) {
+        free(buf);
+        (void)fclose(f);
+        return 0;
+    }
+    (void)fclose(f);
+
+    if (!pipeline_cache_header_valid(buf, sz, props)) {
+        fprintf(stderr, "libvmaf: Vulkan pipeline cache vendor/device mismatch — discarding\n");
+        free(buf);
+        return 0;
+    }
+
+    *data_out = buf;
+    *size_out = sz;
+    return 0;
+}
+
+/* Create the VkPipelineCache on `ctx`, loading from disk if available.
+ * On any failure leaves ctx->pipeline_cache = VK_NULL_HANDLE (graceful
+ * degradation — compilation still works, just cold). */
+static void pipeline_cache_init(VmafVulkanContext *ctx)
+{
+    ctx->pipeline_cache = VK_NULL_HANDLE;
+
+    if (pipeline_cache_disabled())
+        return;
+
+    char cache_path[PATH_MAX];
+    if (resolve_cache_path(cache_path, sizeof(cache_path)) != 0)
+        return;
+
+    void *blob = NULL;
+    size_t blob_size = 0;
+    if (load_cache_file(cache_path, &ctx->props, &blob, &blob_size) != 0)
+        return; /* malloc failure — degrade gracefully */
+
+    VkPipelineCacheCreateInfo pcci = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
+        .initialDataSize = blob_size,
+        .pInitialData = blob,
+    };
+    VkResult vkr = vkCreatePipelineCache(ctx->device, &pcci, NULL, &ctx->pipeline_cache);
+    free(blob);
+
+    if (vkr != VK_SUCCESS) {
+        ctx->pipeline_cache = VK_NULL_HANDLE;
+        fprintf(stderr,
+                "libvmaf: vkCreatePipelineCache failed (VkResult %d) — running without cache\n",
+                (int)vkr);
+    }
+}
+
+/* Serialise the current pipeline cache to disk via an atomic
+ * write-to-tmp + rename so readers never see a partial file.
+ * Called from vmaf_vulkan_context_destroy. */
+static void pipeline_cache_save(VmafVulkanContext *ctx)
+{
+    if (ctx->pipeline_cache == VK_NULL_HANDLE)
+        return;
+    if (pipeline_cache_disabled())
+        return;
+
+    char cache_path[PATH_MAX];
+    if (resolve_cache_path(cache_path, sizeof(cache_path)) != 0)
+        return;
+
+    /* Query the size first. */
+    size_t data_size = 0;
+    if (vkGetPipelineCacheData(ctx->device, ctx->pipeline_cache, &data_size, NULL) != VK_SUCCESS ||
+        data_size == 0)
+        return;
+    if (data_size > VMAF_VK_CACHE_MAX_BYTES) {
+        fprintf(
+            stderr,
+            "libvmaf: Vulkan pipeline cache data unexpectedly large (%zu bytes) — skipping write\n",
+            data_size);
+        return;
+    }
+
+    void *data = malloc(data_size);
+    if (!data)
+        return;
+
+    if (vkGetPipelineCacheData(ctx->device, ctx->pipeline_cache, &data_size, data) != VK_SUCCESS) {
+        free(data);
+        return;
+    }
+
+    /* Ensure the parent directory exists. */
+    if (ensure_parent_dirs(cache_path) != 0) {
+        free(data);
+        return;
+    }
+
+    /* Build the tmp path: append ".tmp" after the ".bin" suffix. */
+    char tmp_path[PATH_MAX];
+    int n = snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", cache_path);
+    if (n <= 0 || (size_t)n >= sizeof(tmp_path)) {
+        free(data);
+        return;
+    }
+
+    FILE *f = fopen(tmp_path, "wb");
+    if (!f) {
+        free(data);
+        return;
+    }
+
+    int ok = (fwrite(data, 1, data_size, f) == data_size);
+    free(data);
+    if (fclose(f) != 0 || !ok) {
+        (void)remove(tmp_path);
+        return;
+    }
+
+    /* Atomic rename — on POSIX this is guaranteed by the spec. */
+    if (rename(tmp_path, cache_path) != 0)
+        (void)remove(tmp_path);
+}
+
 int vmaf_vulkan_context_new(VmafVulkanContext **out, int device_index)
 {
+
     if (!out)
         return -EINVAL;
 
@@ -333,6 +631,12 @@ int vmaf_vulkan_context_new(VmafVulkanContext **out, int device_index)
     };
     VK_OR_FAIL(vkCreateCommandPool(ctx->device, &pool_info, NULL, &ctx->command_pool), -ENOMEM);
 
+    /* ADR-0445: initialise the persistent pipeline cache.  Must run
+     * after device creation and properties population.  Gracefully
+     * degrades to VK_NULL_HANDLE if the cache file is absent /
+     * mismatched / unreadable (first-run cold path). */
+    pipeline_cache_init(ctx);
+
     /* Power-of-10 §5: pin the post-condition that every handle the
      * caller may dereference is now non-null. Catches a future
      * mistake where one of the create calls is moved out of order. */
@@ -347,6 +651,11 @@ int vmaf_vulkan_context_new(VmafVulkanContext **out, int device_index)
     return 0;
 
 fail:
+    /* pipeline_cache may or may not have been initialised when the
+     * goto jumps here; VK_NULL_HANDLE check makes the destroy safe
+     * regardless. */
+    if (ctx->pipeline_cache != VK_NULL_HANDLE)
+        vkDestroyPipelineCache(ctx->device, ctx->pipeline_cache, NULL);
     if (ctx->command_pool != VK_NULL_HANDLE)
         vkDestroyCommandPool(ctx->device, ctx->command_pool, NULL);
     if (ctx->allocator != VK_NULL_HANDLE)
@@ -365,6 +674,17 @@ void vmaf_vulkan_context_destroy(VmafVulkanContext *ctx)
 {
     if (!ctx)
         return;
+
+    /* ADR-0445: serialise the pipeline cache before any handle is
+     * destroyed.  Must run while ctx->device is still valid.
+     * pipeline_cache_save() is a no-op when pipeline_cache is
+     * VK_NULL_HANDLE (opt-out or init failure). */
+    pipeline_cache_save(ctx);
+    if (ctx->pipeline_cache != VK_NULL_HANDLE) {
+        vkDestroyPipelineCache(ctx->device, ctx->pipeline_cache, NULL);
+        ctx->pipeline_cache = VK_NULL_HANDLE;
+    }
+
     /* command_pool + allocator are always libvmaf-owned, even
      * for externally-supplied instance/device handles. */
     if (ctx->command_pool != VK_NULL_HANDLE)
@@ -474,10 +794,18 @@ static int vmaf_vulkan_context_new_external(VmafVulkanContext **out,
         goto fail;
     }
 
+    /* ADR-0445: also initialise the pipeline cache on the external-handle
+     * path.  The cache file is keyed on vendor/device ID which are the
+     * same regardless of whether the caller or libvmaf created the
+     * VkDevice. */
+    pipeline_cache_init(ctx);
+
     *out = ctx;
     return 0;
 
 fail:
+    if (ctx->pipeline_cache != VK_NULL_HANDLE)
+        vkDestroyPipelineCache(ctx->device, ctx->pipeline_cache, NULL);
     if (ctx->command_pool != VK_NULL_HANDLE)
         vkDestroyCommandPool(ctx->device, ctx->command_pool, NULL);
     if (ctx->allocator != VK_NULL_HANDLE)

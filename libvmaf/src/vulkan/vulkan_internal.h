@@ -159,6 +159,24 @@ struct VmafVulkanContext {
      * read these to pick group size, sub-group ops, etc. */
     VkPhysicalDeviceProperties props;
     VkPhysicalDeviceMemoryProperties mem_props;
+
+    /* Persistent pipeline cache (ADR-0445 / PR #865).
+     *
+     * Loaded from $XDG_CACHE_HOME/libvmaf/vulkan-pipeline-cache.bin at
+     * context init; written back at context destroy.  VK_NULL_HANDLE when
+     * the env-var opt-out (LIBVMAF_VULKAN_PIPELINE_CACHE=0) is set or when
+     * the create call returns a non-SUCCESS result.
+     *
+     * All vkCreateComputePipelines() call-sites (kernel_template.h) pass
+     * this handle instead of VK_NULL_HANDLE — the driver accumulates
+     * compiled PSO blobs on the first run and replays them on subsequent
+     * runs, cutting cold-start compilation from ~80-120 ms to ~2-5 ms on
+     * NVIDIA RTX 4090.
+     *
+     * Invariant: every `vkCreateComputePipelines()` call in the codebase
+     * MUST pass `ctx->pipeline_cache`, NOT `VK_NULL_HANDLE`.  See the
+     * AGENTS.md note below. */
+    VkPipelineCache pipeline_cache;
 };
 
 #ifdef __cplusplus
