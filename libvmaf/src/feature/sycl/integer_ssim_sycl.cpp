@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 
 extern "C" {
 #include "config.h"
@@ -99,6 +100,11 @@ struct SsimStateSycl {
     unsigned pending_index;
 
     VmafDictionary *feature_name_dict;
+
+    /* dB-domain output options (mirrors float_ssim_hip.c / float_ssim.c). */
+    bool enable_db; /* emit score as dB: -10*log10(1 - ssim) */
+    bool clip_db;   /* clamp dB output to a maximum finite value */
+    double max_db;  /* upper clamp (INFINITY when clip_db=false) */
 };
 
 static void launch_horiz(sycl::queue &q, const float *d_ref, const float *d_cmp, float *d_ref_mu,
@@ -237,6 +243,22 @@ static const VmafOption options_ssim_sycl[] = {
         .min = 0,
         .max = 10,
     },
+    {
+        .name = "enable_db",
+        .help = "convert SSIM score to dB domain: -10*log10(1-ssim)",
+        .offset = offsetof(SsimStateSycl, enable_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "clip_db",
+        .help = "clip dB output to a maximum finite value (mirrors CPU float_ssim)",
+        .offset = offsetof(SsimStateSycl, clip_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
     {0},
 };
 
@@ -273,6 +295,16 @@ static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     const float L = 255.0f, K1 = 0.01f, K2 = 0.03f;
     s->c1 = (K1 * L) * (K1 * L);
     s->c2 = (K2 * L) * (K2 * L);
+
+    /* Compute max_db cap used by clip_db (mirrors float_ssim_hip.c:init
+     * and float_ssim.c:init). */
+    if (s->clip_db) {
+        const double peak = (double)((1u << bpc) - 1u);
+        const double mse = 0.5 / ((double)w * (double)h);
+        s->max_db = std::ceil(10.0 * std::log10(peak * peak / mse));
+    } else {
+        s->max_db = std::numeric_limits<double>::infinity();
+    }
 
     if (!fex->sycl_state) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR, "ssim_sycl: no SYCL state\n");
@@ -345,6 +377,14 @@ static int submit_fex_sycl(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
     return 0;
 }
 
+/* Mirrors float_ssim_hip.c::ssim_hip_to_db and float_ssim.c::convert_to_db.
+ * Clamps to max_db when clip_db is enabled. */
+static double ssim_sycl_to_db(double ssim, double max_db)
+{
+    const double db = -10.0 * std::log10(1.0 - ssim);
+    return db < max_db ? db : max_db;
+}
+
 static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
                             VmafFeatureCollector *feature_collector)
 {
@@ -361,7 +401,10 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
     for (unsigned i = 0; i < s->wg_count; i++)
         total += (double)s->h_partials[i];
     const double n_pixels = (double)s->w_final * (double)s->h_final;
-    const double score = total / n_pixels;
+    double score = total / n_pixels;
+
+    if (s->enable_db)
+        score = ssim_sycl_to_db(score, s->max_db);
 
     return vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                                    "float_ssim", score, index);
