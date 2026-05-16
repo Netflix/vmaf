@@ -80,7 +80,6 @@
 
 #define CAMBI_VK_WG_X 16
 #define CAMBI_VK_WG_Y 16
-#define CAMBI_VK_MASK_WG_LINES 32 /* lines/cols per mask SAT WG (VK-2 fix) */
 
 /* Pipeline IDs — index into the per-pipeline arrays in CambiVkState. */
 enum CambiVkPipelineKind {
@@ -302,28 +301,6 @@ static const VmafOption options[] = {
         .min = 0,
         .max = 5,
         .alias = "mlc",
-    },
-    {
-        .name = "src_width",
-        .help = "Source width before encoding (0 = use input width). "
-                "Only meaningful when full_ref=true (future GPU extension).",
-        .offset = offsetof(CambiVkState, src_width),
-        .type = VMAF_OPT_TYPE_INT,
-        .default_val.i = 0,
-        .min = 320,
-        .max = 7680,
-        .alias = "srcw",
-    },
-    {
-        .name = "src_height",
-        .help = "Source height before encoding (0 = use input height). "
-                "Only meaningful when full_ref=true (future GPU extension).",
-        .offset = offsetof(CambiVkState, src_height),
-        .type = VMAF_OPT_TYPE_INT,
-        .default_val.i = 0,
-        .min = 200,
-        .max = 4320,
-        .alias = "srch",
     },
     {
         .name = "cambi_vis_lum_threshold",
@@ -737,12 +714,8 @@ static int cambi_vk_init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     if (s->enc_width < CAMBI_VK_MIN_WIDTH_HEIGHT && s->enc_height < CAMBI_VK_MIN_WIDTH_HEIGHT)
         return -EINVAL;
 
-    /* Respect user-supplied src_width/src_height overrides (mirrors cambi.c:602).
-     * A value of 0 means "use the actual input dimension". */
-    if (s->src_width == 0 || s->src_height == 0) {
-        s->src_width = w;
-        s->src_height = h;
-    }
+    s->src_width = w;
+    s->src_height = h;
     s->src_bpc = bpc;
     s->proc_width = (unsigned)s->enc_width;
     s->proc_height = (unsigned)s->enc_height;
@@ -1028,8 +1001,7 @@ static void cambi_vk_dispatch_mask_dp(CambiVkState *s, VkCommandBuffer cmd, unsi
         vkCmdPushConstants(cmd, s->pl_mask_dp.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                            sizeof(pc), &pc);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->pipelines[CAMBI_PL_MASK_SAT_ROW]);
-        /* 32 rows per WG; shader uses gl_GlobalInvocationID.x as row index. */
-        vkCmdDispatch(cmd, (h + CAMBI_VK_MASK_WG_LINES - 1u) / CAMBI_VK_MASK_WG_LINES, 1, 1);
+        vkCmdDispatch(cmd, h, 1, 1);
     }
     cambi_vk_barrier(cmd);
 
@@ -1052,8 +1024,7 @@ static void cambi_vk_dispatch_mask_dp(CambiVkState *s, VkCommandBuffer cmd, unsi
         vkCmdPushConstants(cmd, s->pl_mask_dp.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                            sizeof(pc), &pc);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->pipelines[CAMBI_PL_MASK_SAT_COL]);
-        /* 32 cols per WG; shader uses gl_GlobalInvocationID.x as col index. */
-        vkCmdDispatch(cmd, (w + CAMBI_VK_MASK_WG_LINES - 1u) / CAMBI_VK_MASK_WG_LINES, 1, 1);
+        vkCmdDispatch(cmd, w, 1, 1);
     }
     cambi_vk_barrier(cmd);
 

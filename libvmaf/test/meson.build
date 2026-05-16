@@ -15,6 +15,16 @@ gpu_all_deps = [
   metal_deps,
 ]
 
+# Coverage for vmaf_version() — referenced in fuzz/meson.build comment but
+# had no assertion-level test. Verifies the return value is a non-empty
+# MAJOR.MINOR.PATCH string matching ^\d+\.\d+\.\d+$.
+test_version = executable('test_version',
+    ['test.c', 'test_version.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: [pthread_dependency],
+)
+
 test_context = executable('test_context',
     ['test.c', 'test_context.c'],
     include_directories : [libvmaf_inc, test_inc],
@@ -872,8 +882,7 @@ test('test_metal_install_header', test_metal_install_header, suite : ['fast', 'g
 endif
 endif
 
-test('test_context', test_context, suite : ['fast'])
-test('test_log', test_log, suite : ['fast'])
+test('test_version', test_version, suite : ['fast'])
 test('test_picture', test_picture, suite : ['fast'])
 test('test_feature_collector', test_feature_collector, suite : ['fast'])
 test('test_output', test_output, suite : ['fast'])

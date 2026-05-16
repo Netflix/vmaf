@@ -108,7 +108,6 @@ struct VifStateSycl {
     unsigned bpc;
 
     bool debug;
-    bool vif_skip_scale0; /* host-side suppression mirrors integer_vif.c */
     double vif_enhn_gain_limit;
 
     VmafDictionary *feature_name_dict;
@@ -163,17 +162,6 @@ static const VmafOption options[] = {
         .default_val = {.d = 100.0},
         .min = 1.0,
         .max = 100.0,
-        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
-    },
-    {
-        .name = "vif_skip_scale0",
-        .help = "when set, skip scale 0 calculations",
-        .alias = "ssclz",
-        .offset = offsetof(VifStateSycl, vif_skip_scale0),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val = {.b = false},
-        .min = 0,
-        .max = 0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {
@@ -1637,6 +1625,8 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
     std::memcpy(accums, s->h_accum, sizeof(accums));
 
     // Compute VIF scores per scale (CPU)
+    double score_num = 0.0;
+    double score_den = 0.0;
     double vif_scale_num[VIF_NUM_SCALES];
     double vif_scale_den[VIF_NUM_SCALES];
 
@@ -1650,41 +1640,29 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
 
         vif_scale_num[scale] = num;
         vif_scale_den[scale] = den;
+        score_num += num;
+        score_den += den;
     }
 
-    /* vif_skip_scale0: emit 0.0 for scale0 and exclude it from the combined
-     * num/den totals — mirrors integer_vif.c write_scores() and CUDA twin. */
-    int const err0 = vmaf_feature_collector_append_with_dict(
-        feature_collector, s->feature_name_dict, "VMAF_integer_feature_vif_scale0_score",
-        s->vif_skip_scale0 ? 0.0 : vif_scale_num[0] / vif_scale_den[0], index);
-    if (err0)
-        return err0;
-
-    // Write primary per-scale features (scales 1–3 always emitted)
-    static const char *const key_names[] = {
-        "VMAF_integer_feature_vif_scale1_score",
-        "VMAF_integer_feature_vif_scale2_score",
-        "VMAF_integer_feature_vif_scale3_score",
-    };
-
-    for (int i = 1; i < VIF_NUM_SCALES; i++) {
+    // Write primary per-scale features
+    for (int i = 0; i < VIF_NUM_SCALES; i++) {
         double const score = (vif_scale_den[i] > 0.0) ? vif_scale_num[i] / vif_scale_den[i] : 1.0;
+
+        static const char *const key_names[] = {
+            "VMAF_integer_feature_vif_scale0_score",
+            "VMAF_integer_feature_vif_scale1_score",
+            "VMAF_integer_feature_vif_scale2_score",
+            "VMAF_integer_feature_vif_scale3_score",
+        };
+
         int const err = vmaf_feature_collector_append_with_dict(
-            feature_collector, s->feature_name_dict, key_names[i - 1], score, index);
+            feature_collector, s->feature_name_dict, key_names[i], score, index);
         if (err)
             return err;
     }
 
     // Debug features
     if (s->debug) {
-        /* Exclude scale 0 from combined score when vif_skip_scale0 is set. */
-        double score_num = vif_scale_num[1] + vif_scale_num[2] + vif_scale_num[3];
-        double score_den = vif_scale_den[1] + vif_scale_den[2] + vif_scale_den[3];
-        if (!s->vif_skip_scale0) {
-            score_num += vif_scale_num[0];
-            score_den += vif_scale_den[0];
-        }
-
         double const vif = (score_den > 0.0) ? score_num / score_den : 1.0;
 
         vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
@@ -1694,14 +1672,7 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
         vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                                 "integer_vif_den", score_den, index);
 
-        vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                "integer_vif_num_scale0",
-                                                s->vif_skip_scale0 ? 0.0 : vif_scale_num[0], index);
-        vmaf_feature_collector_append_with_dict(
-            feature_collector, s->feature_name_dict, "integer_vif_den_scale0",
-            s->vif_skip_scale0 ? -1.0 : vif_scale_den[0], index);
-
-        for (int i = 1; i < VIF_NUM_SCALES; i++) {
+        for (int i = 0; i < VIF_NUM_SCALES; i++) {
             char name[64];
             (void)std::snprintf(name, sizeof(name), "integer_vif_num_scale%d", i);
             vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict, name,

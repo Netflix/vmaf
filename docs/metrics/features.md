@@ -89,9 +89,8 @@ Depending on your build configuration not every backend is available — see
 ⁵ HIP backend (T7-10b) — `psnr_hip` (ADR-0241), `ciede_hip` /
 `float_moment_hip` (ADR-0257 / ADR-0258), the fifth/sixth
 host-scaffolded consumers `float_ansnr_hip` / `motion_v2_hip`
-(ADR-0266 / ADR-0267), the seventh/eighth consumers
-`float_motion_hip` / `float_ssim_hip` (ADR-0273 / ADR-0274),
-and the ninth consumer `integer_ms_ssim_hip` (ADR-0285, batch-5)
+(ADR-0266 / ADR-0267), and the seventh/eighth consumers
+`float_motion_hip` / `float_ssim_hip` (ADR-0273 / ADR-0274)
 all register at the extractor level under
 `#if HAVE_HIP` so callers asking by name get the cleaner
 "extractor found, runtime not ready (`-ENOSYS`)" surface; kernels
@@ -165,10 +164,9 @@ Operates on the Y plane only.
 
 | Option                 | Alias | Type   | Default | Range      | Effect                                                                 |
 |------------------------|-------|--------|---------|------------|------------------------------------------------------------------------|
-| `debug`                | —       | bool   | `false` | —          | Emit `vif`, `vif_num`, `vif_den`, plus per-scale numerator/denominator |
-| `vif_enhn_gain_limit`  | `egl`   | double | `1.4`   | `1.0–1.4`  | Cap enhancement-gain ratio so over-sharpened output cannot saturate    |
-| `vif_kernelscale`      | —       | double | `1.0`   | `0.1–4.0`  | Scale the Gaussian kernel std-dev — only `float_vif`                   |
-| `vif_skip_scale0`      | `ssclz` | bool   | `false` | —          | Skip scale-0 accumulation; score emits `0.0` for scale 0 and excludes it from combined num/den totals — GPU twins (CUDA, SYCL, Vulkan) honour this option |
+| `debug`                | —     | bool   | `false` | —          | Emit `vif`, `vif_num`, `vif_den`, plus per-scale numerator/denominator |
+| `vif_enhn_gain_limit`  | `egl` | double | `1.4`   | `1.0–1.4`  | Cap enhancement-gain ratio so over-sharpened output cannot saturate    |
+| `vif_kernelscale`      | —     | double | `1.0`   | `0.1–4.0`  | Scale the Gaussian kernel std-dev — only `float_vif`                   |
 
 `egl=1.0` disables the enhancement-gain path entirely (matches pre-v1.3
 behaviour).
@@ -343,14 +341,6 @@ only.
 All three parameters are available on every backend (`adm` and `float_adm`)
 including CUDA, SYCL, and Vulkan. Setting all three to their defaults
 (`1.0`, `1.0`, `0.03125`) produces output bit-identical to upstream Netflix ADM.
-
-Two additional skip options control scale-0 handling. `adm_skip_scale0` (bool,
-default `false`) suppresses scale-0 accumulation: when set, the extractor
-emits `0.0` for scale 0 and excludes it from the combined numerator/denominator
-totals. Available on CPU (`adm`, `float_adm`) and CUDA (`integer_adm_cuda`).
-`adm_skip_aim` (integer `adm`) / `adm_skip_aim_scale` (float `float_adm`) (bool,
-default `false`) skips the AIM (Absolute-Intensity Map) computation at the
-selected scale; CPU-only.
 
 **Backends** — `adm`: AVX2, AVX-512, NEON, CUDA, SYCL, Vulkan.
 `float_adm`: AVX2, AVX-512, NEON, CUDA, SYCL, Vulkan.

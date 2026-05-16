@@ -37,15 +37,3 @@ arithmetic, the resulting aligned size is 0. The allocator succeeds, and any
 pixel read is OOB. Add an early-exit `if (w == 0 || w > 32768u || ...)
 return -EINVAL;` guard at the public entry point before any arithmetic.
 Pattern: see `vmaf_picture_alloc` in [`picture.c`](picture.c). CERT INT30-C.
-
-## Bootstrap score-name invariant (ADR-0480)
-
-The four bootstrap score-name suffixes (`_bagging`, `_stddev`, `_ci_p95_lo`,
-`_ci_p95_hi`) are defined once in [`bootstrap_names.h`](bootstrap_names.h).
-Both `predict.c` (`bootstrap_append_named_scores`) and `libvmaf.c`
-(`vmaf_score_pooled_model_collection`) consume this header.
-
-**Do not** add or rename suffixes in either file without updating
-`bootstrap_names.h`.  The `BOOTSTRAP_NAME_BUF_SZ()` macro sizes the name
-buffer based on the longest suffix (`_ci_p95_lo`, 10 chars + NUL); adding a
-longer suffix without updating the macro will silently truncate the name.

@@ -88,7 +88,6 @@ struct vif_accums {
 typedef struct {
     /* Options. */
     bool debug;
-    bool vif_skip_scale0;
     double vif_enhn_gain_limit;
 
     /* Frame geometry. */
@@ -165,15 +164,6 @@ static const VmafOption options[] = {{
                                          .default_val.d = 100.0,
                                          .min = 1.0,
                                          .max = 100.0,
-                                         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
-                                     },
-                                     {
-                                         .name = "vif_skip_scale0",
-                                         .help = "when set, skip scale 0 calculations",
-                                         .alias = "ssclz",
-                                         .offset = offsetof(VifVulkanState, vif_skip_scale0),
-                                         .type = VMAF_OPT_TYPE_BOOL,
-                                         .default_val.b = false,
                                          .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
                                      },
                                      {0}};
@@ -618,10 +608,6 @@ static int reduce_and_emit(VifVulkanState *s, unsigned index, VmafFeatureCollect
                      (double)totals[i].den_non_log;
         scale_num[i] = num;
         scale_den[i] = den;
-        /* Skip scale 0 contribution when vif_skip_scale0 is set,
-         * matching integer_vif.c write_scores() parity. */
-        if (i == 0 && s->vif_skip_scale0)
-            continue;
         score_num += num;
         score_den += den;
     }
@@ -633,12 +619,7 @@ static int reduce_and_emit(VifVulkanState *s, unsigned index, VmafFeatureCollect
         "VMAF_integer_feature_vif_scale3_score",
     };
     for (int i = 0; i < VIF_NUM_SCALES; i++) {
-        double score;
-        if (i == 0 && s->vif_skip_scale0) {
-            score = 0.0;
-        } else {
-            score = (scale_den[i] > 0.0) ? scale_num[i] / scale_den[i] : 1.0;
-        }
+        double score = (scale_den[i] > 0.0) ? scale_num[i] / scale_den[i] : 1.0;
         int err = vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, key_names[i],
                                                           score, index);
         if (err)
@@ -654,13 +635,13 @@ static int reduce_and_emit(VifVulkanState *s, unsigned index, VmafFeatureCollect
         vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, "integer_vif_den",
                                                 score_den, index);
         for (int i = 0; i < VIF_NUM_SCALES; i++) {
-            double num_val = (i == 0 && s->vif_skip_scale0) ? 0.0f : scale_num[i];
-            double den_val = (i == 0 && s->vif_skip_scale0) ? -1.0f : scale_den[i];
             char name[64];
-            (void)snprintf(name, sizeof(name), "integer_vif_num_scale%d", i);
-            vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, name, num_val, index);
-            (void)snprintf(name, sizeof(name), "integer_vif_den_scale%d", i);
-            vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, name, den_val, index);
+            snprintf(name, sizeof(name), "integer_vif_num_scale%d", i);
+            vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, name, scale_num[i],
+                                                    index);
+            snprintf(name, sizeof(name), "integer_vif_den_scale%d", i);
+            vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, name, scale_den[i],
+                                                    index);
         }
     }
     return 0;

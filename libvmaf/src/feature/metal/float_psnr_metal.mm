@@ -7,15 +7,10 @@
  *
  *  Score: peak² / max(mse, 1e-10) via 10·log10, clamped to psnr_max.
  *  Peak / psnr_max table matches float_psnr_vulkan.c::init().
- *
- *  enable_chroma option: when true (default false), Cb and Cr planes are
- *  included in the aggregate MSE (equal-weight average across n_planes).
- *  Mirrors the chroma-guard pattern from psnr_vulkan.c (ADR-0453).
  */
 
 #include <errno.h>
 #include <math.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -39,26 +34,17 @@ extern const unsigned char libvmaf_metallib_start[] __asm("section$start$__TEXT$
 extern const unsigned char libvmaf_metallib_end[]   __asm("section$end$__TEXT$__metallib");
 }
 
-/* Maximum number of planes dispatched when enable_chroma is true. */
-#define FLOAT_PSNR_MAX_PLANES 3
-
 typedef struct FloatPsnrStateMetal {
     VmafMetalKernelLifecycle lc;
-    /* float partials per plane: rb[0]=Y, rb[1]=Cb, rb[2]=Cr */
-    VmafMetalKernelBuffer rb[FLOAT_PSNR_MAX_PLANES];
+    VmafMetalKernelBuffer rb;        /* float partials, grid_w × grid_h */
     VmafMetalContext *ctx;
     void *pso_8bpc;
     void *pso_16bpc;
 
-    /* Option: when true, include Cb and Cr planes in aggregate MSE.
-     * Default false — luma-only, matching CPU float_psnr.c behaviour. */
-    bool enable_chroma;
-    /* Active plane count: 1 (luma-only) or 3 (all planes). */
-    unsigned n_planes;
-
     double peak;
     double psnr_max;
-    size_t partials_count;  /* grid_w × grid_h for the luma plane */
+    size_t plane_bytes;
+    size_t partials_count;
     unsigned frame_w;
     unsigned frame_h;
     unsigned bpc;
@@ -66,17 +52,7 @@ typedef struct FloatPsnrStateMetal {
     VmafDictionary *feature_name_dict;
 } FloatPsnrStateMetal;
 
-static const VmafOption options[] = {
-    {
-        .name          = "enable_chroma",
-        .help          = "include Cb and Cr planes in aggregate MSE",
-        .alias         = NULL,
-        .offset        = offsetof(FloatPsnrStateMetal, enable_chroma),
-        .type          = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-    },
-    {0},
-};
+static const VmafOption options[] = {{0}};
 
 static int build_pipelines(FloatPsnrStateMetal *s, id<MTLDevice> device)
 {
@@ -115,19 +91,16 @@ static int init_fex_metal(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fm
     (void)pix_fmt;
     FloatPsnrStateMetal *s = (FloatPsnrStateMetal *)fex->priv;
 
-    s->frame_w = w;
-    s->frame_h = h;
-    s->bpc     = bpc;
+    s->frame_w     = w;
+    s->frame_h     = h;
+    s->bpc         = bpc;
+    s->plane_bytes = (size_t)w * h * (bpc <= 8u ? 1u : 2u);
 
     /* Peak / psnr_max table — matches float_psnr_vulkan.c::init. */
     if (bpc == 8)       { s->peak = 255.0;         s->psnr_max = 60.0; }
     else if (bpc == 10) { s->peak = 255.75;        s->psnr_max = 72.0; }
     else if (bpc == 12) { s->peak = 255.9375;      s->psnr_max = 84.0; }
     else                { s->peak = 255.99609375;  s->psnr_max = 108.0; }
-
-    /* n_planes: 1 (luma-only) unless enable_chroma is requested.
-     * Mirrors the enable_chroma guard from psnr_vulkan.c (ADR-0453). */
-    s->n_planes = s->enable_chroma ? (unsigned)FLOAT_PSNR_MAX_PLANES : 1u;
 
     int err = vmaf_metal_context_new(&s->ctx, 0);
     if (err != 0) { return err; }
@@ -139,18 +112,10 @@ static int init_fex_metal(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fm
         const size_t grid_w = (w + 15) / 16;
         const size_t grid_h = (h + 15) / 16;
         s->partials_count   = grid_w * grid_h;
-        /* Allocate a partials buffer for each active plane. */
-        for (unsigned p = 0; p < s->n_planes; ++p) {
-            err = vmaf_metal_kernel_buffer_alloc(&s->rb[p], s->ctx,
-                                                 s->partials_count * sizeof(float));
-            if (err != 0) {
-                for (unsigned q = 0; q < p; ++q) {
-                    (void)vmaf_metal_kernel_buffer_free(&s->rb[q], s->ctx);
-                }
-                goto fail_lc;
-            }
-        }
+        err = vmaf_metal_kernel_buffer_alloc(&s->rb, s->ctx,
+                                             s->partials_count * sizeof(float));
     }
+    if (err != 0) { goto fail_lc; }
 
     {
         void *dh = vmaf_metal_context_device_handle(s->ctx);
@@ -169,83 +134,13 @@ fail_pso:
     if (s->pso_8bpc)  { (void)(__bridge_transfer id<MTLComputePipelineState>)s->pso_8bpc;  s->pso_8bpc  = NULL; }
     if (s->pso_16bpc) { (void)(__bridge_transfer id<MTLComputePipelineState>)s->pso_16bpc; s->pso_16bpc = NULL; }
 fail_rb:
-    for (unsigned p = 0; p < s->n_planes; ++p) {
-        (void)vmaf_metal_kernel_buffer_free(&s->rb[p], s->ctx);
-    }
+    (void)vmaf_metal_kernel_buffer_free(&s->rb, s->ctx);
 fail_lc:
     (void)vmaf_metal_kernel_lifecycle_close(&s->lc, s->ctx);
 fail_ctx:
     vmaf_metal_context_destroy(s->ctx);
     s->ctx = NULL;
     return err;
-}
-
-/* Dispatch one plane through the float_psnr kernel. */
-static int dispatch_plane_float(FloatPsnrStateMetal *s, id<MTLDevice> device,
-                                id<MTLCommandQueue> queue,
-                                id<MTLComputePipelineState> pso,
-                                VmafPicture *ref_pic, VmafPicture *dist_pic,
-                                int plane)
-{
-    const unsigned pw = ref_pic->w[plane];
-    const unsigned ph = ref_pic->h[plane];
-    const size_t row_bytes = (size_t)pw * (s->bpc <= 8u ? 1u : 2u);
-    const size_t plane_bytes = row_bytes * ph;
-
-    id<MTLBuffer> ref_buf = [device newBufferWithLength:plane_bytes
-                                                options:MTLResourceStorageModeShared];
-    id<MTLBuffer> dis_buf = [device newBufferWithLength:plane_bytes
-                                                options:MTLResourceStorageModeShared];
-    if (ref_buf == nil || dis_buf == nil) { return -ENOMEM; }
-    {
-        uint8_t *rd = (uint8_t *)[ref_buf contents];
-        uint8_t *dd = (uint8_t *)[dis_buf contents];
-        for (unsigned y = 0; y < ph; y++) {
-            memcpy(rd + y * row_bytes,
-                   (uint8_t *)ref_pic->data[plane]  + y * ref_pic->stride[plane],
-                   row_bytes);
-            memcpy(dd + y * row_bytes,
-                   (uint8_t *)dist_pic->data[plane] + y * dist_pic->stride[plane],
-                   row_bytes);
-        }
-    }
-
-    const size_t grid_w   = (pw + 15) / 16;
-    const size_t grid_h   = (ph + 15) / 16;
-    const size_t par_size = grid_w * grid_h * sizeof(float);
-    id<MTLBuffer> par_buf = (__bridge id<MTLBuffer>)(void *)s->rb[plane].buffer;
-
-    id<MTLCommandBuffer> cmd = [queue commandBuffer];
-    if (cmd == nil) { return -ENOMEM; }
-
-    id<MTLBlitCommandEncoder> blit = [cmd blitCommandEncoder];
-    [blit fillBuffer:par_buf range:NSMakeRange(0, par_size) value:0];
-    [blit endEncoding];
-
-    id<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
-    [enc setComputePipelineState:pso];
-    [enc setBuffer:ref_buf offset:0 atIndex:0];
-    [enc setBuffer:dis_buf offset:0 atIndex:1];
-    [enc setBuffer:par_buf offset:0 atIndex:2];
-    if (s->bpc <= 8u) {
-        uint32_t st[2] = {(uint32_t)row_bytes, (uint32_t)row_bytes};
-        [enc setBytes:st length:sizeof(st) atIndex:3];
-    } else {
-        uint32_t st[4] = {(uint32_t)row_bytes, (uint32_t)row_bytes,
-                          (uint32_t)s->bpc, 0};
-        [enc setBytes:st length:sizeof(st) atIndex:3];
-    }
-    uint32_t dim[2] = {(uint32_t)pw, (uint32_t)ph};
-    [enc setBytes:dim length:sizeof(dim) atIndex:4];
-
-    MTLSize tg   = MTLSizeMake(16, 16, 1);
-    MTLSize grid = MTLSizeMake(grid_w, grid_h, 1);
-    [enc dispatchThreadgroups:grid threadsPerThreadgroup:tg];
-    [enc endEncoding];
-
-    [cmd commit];
-    [cmd waitUntilCompleted];
-    return 0;
 }
 
 static int submit_fex_metal(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
@@ -257,22 +152,61 @@ static int submit_fex_metal(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
 
     s->frame_w = ref_pic->w[0];
     s->frame_h = ref_pic->h[0];
+    const size_t row_bytes = (size_t)s->frame_w * (s->bpc <= 8u ? 1u : 2u);
 
     void *dh = vmaf_metal_context_device_handle(s->ctx);
     void *qh = vmaf_metal_context_queue_handle(s->ctx);
     if (dh == NULL || qh == NULL) { return -ENODEV; }
 
-    id<MTLDevice>       device = (__bridge id<MTLDevice>)dh;
-    id<MTLCommandQueue>  queue = (__bridge id<MTLCommandQueue>)qh;
+    id<MTLDevice>      device = (__bridge id<MTLDevice>)dh;
+    id<MTLCommandQueue> queue = (__bridge id<MTLCommandQueue>)qh;
+    id<MTLBuffer>    par_buf  = (__bridge id<MTLBuffer>)(void *)s->rb.buffer;
     id<MTLComputePipelineState> pso = (s->bpc <= 8u)
         ? (__bridge id<MTLComputePipelineState>)s->pso_8bpc
         : (__bridge id<MTLComputePipelineState>)s->pso_16bpc;
 
-    for (unsigned p = 0; p < s->n_planes; ++p) {
-        int err = dispatch_plane_float(s, device, queue, pso, ref_pic, dist_pic,
-                                      (int)p);
-        if (err != 0) { return err; }
+    /* Build ref/dis host-side staging and copy into MTLBuffers. */
+    id<MTLBuffer> ref_buf = [device newBufferWithLength:s->plane_bytes options:MTLResourceStorageModeShared];
+    id<MTLBuffer> dis_buf = [device newBufferWithLength:s->plane_bytes options:MTLResourceStorageModeShared];
+    if (ref_buf == nil || dis_buf == nil) { return -ENOMEM; }
+    {
+        uint8_t *rd = (uint8_t *)[ref_buf contents];
+        uint8_t *dd = (uint8_t *)[dis_buf contents];
+        for (unsigned y = 0; y < s->frame_h; y++) {
+            memcpy(rd + y * row_bytes, (uint8_t *)ref_pic->data[0] + y * ref_pic->stride[0], row_bytes);
+            memcpy(dd + y * row_bytes, (uint8_t *)dist_pic->data[0] + y * dist_pic->stride[0], row_bytes);
+        }
     }
+
+    id<MTLCommandBuffer> cmd = [queue commandBuffer];
+    if (cmd == nil) { return -ENOMEM; }
+
+    id<MTLBlitCommandEncoder> blit = [cmd blitCommandEncoder];
+    [blit fillBuffer:par_buf range:NSMakeRange(0, s->partials_count * sizeof(float)) value:0];
+    [blit endEncoding];
+
+    id<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
+    [enc setComputePipelineState:pso];
+    [enc setBuffer:ref_buf offset:0 atIndex:0];
+    [enc setBuffer:dis_buf offset:0 atIndex:1];
+    [enc setBuffer:par_buf offset:0 atIndex:2];
+    if (s->bpc <= 8u) {
+        uint32_t st[2] = {(uint32_t)row_bytes, (uint32_t)row_bytes};
+        [enc setBytes:st length:sizeof(st) atIndex:3];
+    } else {
+        uint32_t st[4] = {(uint32_t)row_bytes, (uint32_t)row_bytes, (uint32_t)s->bpc, 0};
+        [enc setBytes:st length:sizeof(st) atIndex:3];
+    }
+    uint32_t dim[2] = {(uint32_t)s->frame_w, (uint32_t)s->frame_h};
+    [enc setBytes:dim length:sizeof(dim) atIndex:4];
+
+    MTLSize tg   = MTLSizeMake(16, 16, 1);
+    MTLSize grid = MTLSizeMake((s->frame_w + 15) / 16, (s->frame_h + 15) / 16, 1);
+    [enc dispatchThreadgroups:grid threadsPerThreadgroup:tg];
+    [enc endEncoding];
+
+    [cmd commit];
+    [cmd waitUntilCompleted];
     return 0;
 }
 
@@ -281,29 +215,15 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
 {
     FloatPsnrStateMetal *s = (FloatPsnrStateMetal *)fex->priv;
 
-    /* Accumulate MSE across all active planes (equal-weight average).
-     * When enable_chroma=false, n_planes=1 and only luma is used, matching
-     * the original single-plane behaviour.  Chroma plane dimensions are
-     * derived assuming 4:2:0 subsampling — the same convention used by
-     * integer_psnr_metal.mm (ADR-0421). */
-    double mse_total = 0.0;
-    for (unsigned p = 0; p < s->n_planes; ++p) {
-        const float *parts = (const float *)s->rb[p].host_view;
-        const unsigned pw  = (p == 0) ? s->frame_w : (s->frame_w  + 1) / 2;
-        const unsigned ph  = (p == 0) ? s->frame_h : (s->frame_h  + 1) / 2;
-        const size_t grid_w = (pw + 15) / 16;
-        const size_t grid_h = (ph + 15) / 16;
-        const size_t cnt    = grid_w * grid_h;
-        double partial_sse  = 0.0;
-        if (parts != NULL) {
-            for (size_t i = 0; i < cnt; ++i) {
-                partial_sse += (double)parts[i];
-            }
+    const float *parts = (const float *)s->rb.host_view;
+    double mse_sum = 0.0;
+    if (parts != NULL) {
+        for (size_t i = 0; i < s->partials_count; ++i) {
+            mse_sum += (double)parts[i];
         }
-        const double n_pix = (double)pw * (double)ph;
-        mse_total += (n_pix > 0.0) ? (partial_sse / n_pix) : 0.0;
     }
-    const double mse   = mse_total / (double)s->n_planes;
+    const double n_pix = (double)s->frame_w * (double)s->frame_h;
+    const double mse   = (n_pix > 0.0) ? (mse_sum / n_pix) : 0.0;
     const double noise = (mse < 1e-10) ? 1e-10 : mse;
     double score       = 10.0 * log10((s->peak * s->peak) / noise);
     if (score > s->psnr_max) { score = s->psnr_max; }
@@ -320,10 +240,8 @@ static int close_fex_metal(VmafFeatureExtractor *fex)
     if (s->pso_16bpc) { (void)(__bridge_transfer id<MTLComputePipelineState>)s->pso_16bpc; s->pso_16bpc = NULL; }
     if (s->pso_8bpc)  { (void)(__bridge_transfer id<MTLComputePipelineState>)s->pso_8bpc;  s->pso_8bpc  = NULL; }
 
-    for (unsigned p = 0; p < s->n_planes; ++p) {
-        int err = vmaf_metal_kernel_buffer_free(&s->rb[p], s->ctx);
-        if (err != 0 && rc == 0) { rc = err; }
-    }
+    int err = vmaf_metal_kernel_buffer_free(&s->rb, s->ctx);
+    if (err != 0 && rc == 0) { rc = err; }
     if (s->feature_name_dict) { (void)vmaf_dictionary_free(&s->feature_name_dict); }
     if (s->ctx) { vmaf_metal_context_destroy(s->ctx); s->ctx = NULL; }
     return rc;
@@ -345,9 +263,6 @@ VmafFeatureExtractor vmaf_fex_float_psnr_metal = {
     .provided_features   = provided_features,
     .flags               = 0,
     .chars = {
-        /* n_dispatches_per_frame is 1 (luma only) by default; rises to
-         * FLOAT_PSNR_MAX_PLANES when enable_chroma is set at runtime.
-         * The static initialiser here reflects the default (false). */
         .n_dispatches_per_frame = 1,
         .is_reduction_only      = true,
         .min_useful_frame_area  = 1920U * 1080U,

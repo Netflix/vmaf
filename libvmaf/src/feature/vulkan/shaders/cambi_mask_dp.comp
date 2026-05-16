@@ -29,18 +29,15 @@
  *   matching the CPU's zero-padded DP array (which is `width + 2*pad`
  *   wide × `2*pad+2` rows tall, initialised to 0 with `memset`).
  *
- * PASS 0 / 1 workgroup strategy (VK-2 perf fix, 2026-05-16):
- *   - local_size_x = 32: each invocation processes one image row
- *     (PASS 0) or one image column (PASS 1) sequentially.
- *   - 32 rows/columns run in parallel across one workgroup (one
- *     warp/wavefront per WG), saturating the GPU execution units.
- *   - Host dispatches ceil(H/32) groups (PASS 0) or ceil(W/32)
- *     groups (PASS 1); out-of-bounds invocations return early.
- *   - Line index = gl_GlobalInvocationID.x.
- *   - The prefix-sum is sequential within one invocation (IIR-style
- *     accumulator), so the integer arithmetic is bit-exact regardless
- *     of the number of parallel invocations.
- *   - Raised from 1×1×1 per VK-2 in perf-audit-vulkan-sycl-2026-05-16.
+ * PASS 0 / 1 single-WG-per-line strategy:
+ *   - Each workgroup processes one image row (PASS 0) or one image
+ *     column (PASS 1). Sequential prefix-sum within the workgroup is
+ *     bit-exact (integer adds; no float reordering).
+ *   - local_size_x = 1 — one thread per row/column. The DP is integer
+ *     and the per-line work is O(W) or O(H) which is below GPU
+ *     parallelism worth chasing for cambi v1; the heavy lift is the
+ *     per-pixel scale loop (decimate / filter_mode / c_values), not
+ *     the spatial mask. Bit-exactness is the priority.
  *
  * PASS 2 per-pixel parallel strategy:
  *   - 16 × 16 workgroup, one thread per output pixel. Trivially
@@ -81,7 +78,7 @@ layout(constant_id = 3) const int PAD_SIZE = 3;
 #if PASS == 2
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 #else
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 #endif
 
 layout(set = 0, binding = 0, std430) readonly buffer In   { uint pixels[]; } src;
@@ -119,9 +116,8 @@ void write_mask_u16(int y, int x, uint v) {
 
 void main() {
     if (PASS == 0) {
-        /* Row prefix-sum: invocation i handles image row i.
-         * With local_size_x = 32, 32 rows run in parallel per WG. */
-        int row = int(gl_GlobalInvocationID.x);
+        /* Row prefix-sum across one image row (gl_WorkGroupID.x = row). */
+        int row = int(gl_WorkGroupID.x);
         if (row >= int(pc.height))
             return;
         int acc = 0;
@@ -130,9 +126,8 @@ void main() {
             write_int_out(row, col, acc);
         }
     } else if (PASS == 1) {
-        /* Column prefix-sum: invocation i handles image column i.
-         * With local_size_x = 32, 32 columns run in parallel per WG. */
-        int col = int(gl_GlobalInvocationID.x);
+        /* Column prefix-sum across one image column. */
+        int col = int(gl_WorkGroupID.x);
         if (col >= int(pc.width))
             return;
         int acc = 0;

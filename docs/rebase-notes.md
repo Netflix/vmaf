@@ -7,11 +7,6 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
-## docs/fix-state-md-pipe-escaping — docs/state.md table escaping
-
-No rebase impact: doc-only change. `docs/state.md` is fork-local and not
-present in Netflix upstream; upstream syncs do not touch it.
-
 ## fix/saliency-per-mb-eval-2026-05-15 — integer_vif enable_chroma
 
 **`libvmaf/src/feature/integer_vif.c`**: adds `enable_chroma` bool field to
@@ -21,22 +16,6 @@ keys in `provided_features`. If upstream Netflix ever adds chroma support to
 `extract_plane` helper, or rebasing it if the upstream approach differs.
 
 No rebase conflict expected on the luma path — only additive changes.
-
-## refactor/bootstrap-name-builder-dedup-2026-05-16
-
-**`libvmaf/src/bootstrap_names.h`** is a new fork-local internal header.
-If upstream Netflix ever refactors `predict.c` or `libvmaf.c` in the
-bootstrap-score-pooling area, check whether the suffix constants remain
-identical and update `bootstrap_names.h` accordingly.  No public API
-change; no rebase conflict expected in practice since upstream has not
-touched these functions since the fork diverged.
-
-**Smoke-test after rebase**:
-
-```bash
-meson setup build -Denable_cuda=false -Denable_sycl=false && ninja -C build
-meson test -C build --suite=fast 2>&1 | grep -E 'predict|model|FAIL|PASS'
-```
 
 ## fix/sycl-motion-fps-weight-vulkan-import-status-2026-05-16
 
@@ -58,6 +37,12 @@ only `dev/Containerfile`, `dev/AGENTS.md`, `docs/research/0135-*`, and
 `changelog.d/fixed/dev-mcp-container-stage-3.md`. These are all fork-local
 infra files; no upstream-shared code, headers, build files, or feature
 extractors are modified. No sync-upstream conflicts expected.
+
+---
+
+No rebase impact: `audit/t3-9b-ssimulacra2-ulp-audit` — doc-only PR (ADR-0467,
+changelog fragment, BACKLOG update). No C files touched. No upstream-shared
+paths modified.
 
 No rebase impact: `feat/tiny-ai-registry-ci-and-saliency-v2-promotion-2026-05-15`
 touches `model/tiny/registry.json` (fork-local tiny-AI registry),
@@ -35009,76 +34994,4 @@ runtime or reading a schema-version sidecar (future work).
 ```bash
 python -m pytest ai/tests/test_extract_k150k_no_ssimulacra2.py -v
 # Expected: 3/3 PASS
-```
-
----
-
-## `libvmaf/test/meson.build` — register test_context and test_log (fix/meson-register-test-context-log)
-
-**Files touched**: `libvmaf/test/meson.build`.
-
-**Rebase impact**: low. Two `test()` calls added immediately before the
-existing bulk-registration block. Upstream Netflix/vmaf does not maintain
-these fork-side tests; no conflict expected on upstream sync.
-
-**Invariant to preserve on rebase**: every `executable()` defined in
-`libvmaf/test/meson.build` must have a corresponding `test()` call. After
-any merge or cherry-pick touching this file, verify with:
-
-```bash
-grep "= executable(" libvmaf/test/meson.build | \
-    sed "s/.*= executable('\([^']*\)'.*/\1/" | \
-    while read name; do
-        grep -q "test('$name'" libvmaf/test/meson.build || echo "MISSING test() for $name"
-    done
-```
-
-**Smoke-test after rebase**:
-
-```bash
-meson setup build -Denable_cuda=false -Denable_sycl=false
-ninja -C build
-meson test -C build test_context test_log   # must exit 0
-```
-
----
-
-### Ghost `moment_vulkan.c` removed (fix/drop-ghost-moment-vulkan-c)
-
-PR #1067 re-introduced the pre-rename `moment_vulkan.c` alongside the new
-`float_moment_vulkan.c` that PR #1046 had established. The ghost file was
-deleted and `libvmaf/src/vulkan/meson.build` updated to reference
-`float_moment_vulkan.c` exclusively.
-
-**Rebase impact**: any branch that modified `moment_vulkan.c` must be
-re-targeted to `float_moment_vulkan.c` instead.
-
-**Smoke-test after rebase**:
-
-```bash
-ninja -C build && echo "no duplicate symbol error"
-```
-
----
-
-### PR #1067 clobbered four GPU feature options (fix/enable-chroma-pr1067-regression)
-
-PR #1067 (bootstrap name-builder refactor) merged a stale base that
-pre-dated four option additions and overwrote them:
-
-- `integer_psnr_metal.mm`: lost `enable_chroma` field + option entry + `n_planes` guard (PR #986)
-- `float_psnr_metal.mm`: lost `enable_chroma` + per-plane dispatch loop + `n_planes` (PR #978)
-- `psnr_vulkan.c`: ceiling division reverted to floor division for chroma geometry (PR #878)
-- `vif_vulkan.c`: lost `vif_skip_scale0` field + option entry + score-suppression guards (PR #1057)
-
-**Rebase impact**: any branch that adds options to these four files and was
-branched before PR #1067 merged must be rebased onto master (post-fix) to
-avoid re-clobbering these options.
-
-**Smoke-test after rebase**:
-
-```bash
-meson setup build -Denable_cuda=false -Denable_sycl=false --wipe
-ninja -C build
-meson test -C build --suite=fast
 ```

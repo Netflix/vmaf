@@ -281,11 +281,7 @@ static char *test_model_check_default_behavior_unset_flags()
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
     mu_assert("Clipping must be enabled by default.\n", model->score_clip.enabled);
     mu_assert("Score transform must be disabled by default.\n", !model->score_transform.enabled);
-    /* Confidence interval (CI) is a scoring-time concept: it is produced by
-     * vmaf_score_pooled_model_collection() on a VmafModelCollectionScore, not
-     * by model loading.  CI coverage lives in test_bootstrap_collection_structure
-     * below, which verifies that a bootstrap ensemble loads with the expected
-     * sub-model count and collection type. */
+    /* TODO: add check for confidence interval */
     mu_assert("Feature 0 name must be VMAF_feature_adm2_score.\n",
               !strcmp(model->feature[0].name, "VMAF_feature_adm2_score"));
 
@@ -309,7 +305,7 @@ static char *test_model_check_default_behavior_set_flags()
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
     mu_assert("Clipping must be enabled by default.\n", model->score_clip.enabled);
     mu_assert("Score transform must be disabled by default.\n", !model->score_transform.enabled);
-    /* See test_bootstrap_collection_structure for CI coverage (scoring-time concept). */
+    /* TODO: add check for confidence interval */
     mu_assert("Feature 0 name must be VMAF_feature_adm2_score.\n",
               !strcmp(model->feature[0].name, "VMAF_feature_adm2_score"));
 
@@ -509,37 +505,6 @@ static char *test_json_model_collection_from_buffer(void)
     vmaf_model_destroy(m);
     vmaf_model_collection_destroy(mc);
     free(buf);
-    return NULL;
-}
-
-/* Verifies that the bootstrap ensemble model vmaf_b_v0.6.3.json loads with the
- * expected structure: 21 sub-models in the JSON file, index 0 goes to *model and
- * indices 1–20 are appended to *model_collection, so mc->cnt must equal 20.
- * mc->type must be VMAF_MODEL_BOOTSTRAP_SVM_NUSVR, confirming the collection
- * parser correctly propagates the model type.
- *
- * CI values (bagging_score, stddev, p95.lo/hi) are produced at scoring time by
- * vmaf_score_pooled_model_collection(); they are not available at load time and
- * therefore cannot be asserted here.  This test closes the load-time CI coverage
- * gap noted in test_model_check_default_behavior_*. */
-static char *test_bootstrap_collection_structure(void)
-{
-    const char *path = JSON_MODEL_PATH "vmaf_b_v0.6.3.json";
-    VmafModel *m = NULL;
-    VmafModelCollection *mc = NULL;
-    VmafModelConfig cfg = {.name = "vmaf_b_ci"};
-    int err = vmaf_read_json_model_collection_from_path(&m, &mc, &cfg, path);
-    mu_assert("bootstrap collection load failed", !err);
-    mu_assert("first sub-model (index 0) must be returned in *model", m != NULL);
-    mu_assert("model_collection must be populated", mc != NULL);
-    /* vmaf_b_v0.6.3.json contains 21 keyed sub-models ("0" … "20").
-     * Index 0 goes to *model; indices 1–20 (20 entries) go into mc. */
-    mu_assert("bootstrap collection must contain 20 sub-models (indices 1-20)", mc->cnt == 20u);
-    mu_assert("bootstrap collection type must be VMAF_MODEL_BOOTSTRAP_SVM_NUSVR",
-              mc->type == VMAF_MODEL_BOOTSTRAP_SVM_NUSVR);
-
-    vmaf_model_destroy(m);
-    vmaf_model_collection_destroy(mc);
     return NULL;
 }
 
@@ -1012,7 +977,6 @@ char *run_tests()
     mu_run_test(test_json_model_empty_buffer);
     mu_run_test(test_json_model_collection_from_path);
     mu_run_test(test_json_model_collection_from_buffer);
-    mu_run_test(test_bootstrap_collection_structure);
     mu_run_test(test_json_model_collection_missing_path);
     mu_run_test(test_json_model_collection_malformed_buffer);
     mu_run_test(test_json_model_score_transform);

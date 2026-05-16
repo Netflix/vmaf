@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bootstrap_names.h"
 #include "dict.h"
 #include "feature/alias.h"
 #include "feature/feature_collector.h"
@@ -558,28 +557,30 @@ static int bootstrap_append_named_scores(VmafModelCollection *model_collection,
                                          VmafFeatureCollector *feature_collector, unsigned index,
                                          VmafModelCollectionScore *score)
 {
-    /* Suffix constants and BOOTSTRAP_NAME_BUF_SZ() are shared with the
-     * vmaf_score_pooled_model_collection() pooling path in libvmaf.c via
-     * bootstrap_names.h (ADR-0480). */
-    const size_t name_sz = BOOTSTRAP_NAME_BUF_SZ(model_collection->name);
+    //TODO: dedupe, vmaf_score_pooled_model_collection()
+    const char *suffix_lo = "_ci_p95_lo";
+    const char *suffix_hi = "_ci_p95_hi";
+    const char *suffix_bagging = "_bagging";
+    const char *suffix_stddev = "_stddev";
+    const size_t name_sz = strlen(model_collection->name) + strlen(suffix_lo) + 1;
     /* Heap-allocated for MSVC portability (no VLAs). */
     char *name = (char *)calloc(1u, name_sz);
     if (!name)
         return -ENOMEM;
 
     int err = 0;
-    (void)snprintf(name, name_sz, "%s%s", model_collection->name, BOOTSTRAP_SUFFIX_BAGGING);
+    (void)snprintf(name, name_sz, "%s%s", model_collection->name, suffix_bagging);
     err |= vmaf_feature_collector_append(feature_collector, name, score->bootstrap.bagging_score,
                                          index);
 
-    (void)snprintf(name, name_sz, "%s%s", model_collection->name, BOOTSTRAP_SUFFIX_STDDEV);
+    (void)snprintf(name, name_sz, "%s%s", model_collection->name, suffix_stddev);
     err |= vmaf_feature_collector_append(feature_collector, name, score->bootstrap.stddev, index);
 
-    (void)snprintf(name, name_sz, "%s%s", model_collection->name, BOOTSTRAP_SUFFIX_CI_LO);
+    (void)snprintf(name, name_sz, "%s%s", model_collection->name, suffix_lo);
     err |=
         vmaf_feature_collector_append(feature_collector, name, score->bootstrap.ci.p95.lo, index);
 
-    (void)snprintf(name, name_sz, "%s%s", model_collection->name, BOOTSTRAP_SUFFIX_CI_HI);
+    (void)snprintf(name, name_sz, "%s%s", model_collection->name, suffix_hi);
     err |=
         vmaf_feature_collector_append(feature_collector, name, score->bootstrap.ci.p95.hi, index);
 
