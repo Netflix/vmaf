@@ -10,7 +10,7 @@
  *  pipeline is invoked three times per frame against per-plane
  *  buffers and per-plane (width, height) push-constants. Chroma
  *  buffers are sized for the active subsampling
- *  (4:2:0 → w/2 × h/2, 4:2:2 → w/2 × h, 4:4:4 → w × h); the
+ *  (4:2:0 → ceil(w/2) × ceil(h/2), 4:2:2 → ceil(w/2) × h, 4:4:4 → w × h); the
  *  shader is plane-agnostic and reads its dims out of push
  *  constants.
  *
@@ -227,7 +227,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
 
     /* Per-plane geometry derived from pix_fmt. CPU reference:
      * libvmaf/src/feature/integer_psnr.c::init computes the same
-     * (ss_hor, ss_ver) split. YUV400 has chroma absent, so n_planes = 1. */
+     * (ss_hor, ss_ver) split using ceiling division (Research-0094).
+     * YUV400 has chroma absent, so n_planes = 1. */
     s->width[0] = w;
     s->height[0] = h;
     if (pix_fmt == VMAF_PIX_FMT_YUV400P) {
@@ -238,8 +239,12 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
         s->n_planes = PSNR_NUM_PLANES;
         const int ss_hor = (pix_fmt != VMAF_PIX_FMT_YUV444P);
         const int ss_ver = (pix_fmt == VMAF_PIX_FMT_YUV420P);
-        const unsigned cw = ss_hor ? (w / 2U) : w;
-        const unsigned ch = ss_ver ? (h / 2U) : h;
+        /* Ceiling division — mirrors integer_psnr.c::init and cuda/integer_psnr_cuda.c:132
+         * (Research-0094).  Floor division underestimates chroma width/height by 1 px
+         * on odd-dimension YUV420 inputs, producing a different sample count and
+         * diverging PSNR scores that break the cross-backend places=4 parity gate. */
+        const unsigned cw = (w + (unsigned)ss_hor) >> ss_hor;
+        const unsigned ch = (h + (unsigned)ss_ver) >> ss_ver;
         s->width[1] = s->width[2] = cw;
         s->height[1] = s->height[2] = ch;
     }

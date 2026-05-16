@@ -4,7 +4,8 @@
  *
  *  integer_psnr feature extractor on the Metal backend (T8-1g / ADR-0421).
  *  Dispatches `integer_psnr_kernel_{8,16}bpc` from integer_psnr.metal
- *  three times (Y, Cb, Cr planes).
+ *  for Y and optionally Cb/Cr planes (controlled by `enable_chroma`,
+ *  default true — mirrors CPU integer_psnr.c and ADR-0453 parity rule).
  *
  *  Each dispatch emits lo/hi uint32 partial SSE per WG; host reconstructs
  *  uint64 SSE, computes MSE, then PSNR.
@@ -54,13 +55,31 @@ typedef struct IntegerPsnrStateMetal {
     unsigned frame_w;
     unsigned frame_h;
     unsigned bpc;
+    unsigned n_planes;         /* 1 (luma-only) or 3 (all); set by enable_chroma */
+
+    /* `enable_chroma` option: when false, only luma is dispatched.
+     * Mirrors CPU integer_psnr.c::init's enable_chroma guard (ADR-0453). */
+    bool enable_chroma;
 
     VmafDictionary *feature_name_dict;
 } IntegerPsnrStateMetal;
 
 static const char *const psnr_name[PSNR_NUM_PLANES] = {"psnr_y", "psnr_cb", "psnr_cr"};
 
-static const VmafOption options[] = {{0}};
+static const VmafOption options[] = {
+    {
+        .name    = "enable_chroma",
+        .help    = "when set to 0, only the luma plane PSNR is computed "
+                   "(mirrors CPU integer_psnr.c, ADR-0453)",
+        .offset  = offsetof(IntegerPsnrStateMetal, enable_chroma),
+        .type    = VMAF_OPT_TYPE_BOOL,
+        .default_val = {.b = true},
+        .min     = 0,
+        .max     = 1,
+        .flags   = 0,
+    },
+    {0},
+};
 
 static int build_pipelines(IntegerPsnrStateMetal *s, id<MTLDevice> device)
 {
@@ -101,6 +120,14 @@ static int init_fex_metal(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fm
     s->bpc      = bpc;
     s->peak     = (1u << bpc) - 1u;
     s->psnr_max = (double)(6u * bpc) + 12.0;
+    s->n_planes = PSNR_NUM_PLANES;
+
+    /* Mirror CPU integer_psnr.c::init's enable_chroma guard (ADR-0453):
+     * when the caller passes enable_chroma=false, skip chroma dispatches
+     * and report only psnr_y. */
+    if (!s->enable_chroma) {
+        s->n_planes = 1U;
+    }
 
     int err = vmaf_metal_context_new(&s->ctx, 0);
     if (err != 0) { return err; }
@@ -245,8 +272,8 @@ static int submit_fex_metal(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
         ? (__bridge id<MTLComputePipelineState>)s->pso_8bpc
         : (__bridge id<MTLComputePipelineState>)s->pso_16bpc;
 
-    for (int p = 0; p < PSNR_NUM_PLANES; ++p) {
-        int err = dispatch_plane(s, device, queue, pso, ref_pic, dist_pic, p);
+    for (unsigned p = 0U; p < s->n_planes; ++p) {
+        int err = dispatch_plane(s, device, queue, pso, ref_pic, dist_pic, (int)p);
         if (err != 0) { return err; }
     }
     return 0;
@@ -258,11 +285,11 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
     IntegerPsnrStateMetal *s = (IntegerPsnrStateMetal *)fex->priv;
     const double peak_sq = (double)s->peak * (double)s->peak;
 
-    for (int p = 0; p < PSNR_NUM_PLANES; ++p) {
+    for (unsigned p = 0U; p < s->n_planes; ++p) {
         const uint32_t *lo_p = (const uint32_t *)s->rb_lo[p].host_view;
         const uint32_t *hi_p = (const uint32_t *)s->rb_hi[p].host_view;
-        const unsigned pw = (p == 0) ? s->frame_w : (s->frame_w + 1) / 2;
-        const unsigned ph = (p == 0) ? s->frame_h : (s->frame_h + 1) / 2;
+        const unsigned pw = (p == 0U) ? s->frame_w : (s->frame_w + 1U) / 2U;
+        const unsigned ph = (p == 0U) ? s->frame_h : (s->frame_h + 1U) / 2U;
         const size_t grid_w = (pw + 15) / 16;
         const size_t grid_h = (ph + 15) / 16;
         const size_t cnt    = grid_w * grid_h;
@@ -283,6 +310,7 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
 
         int err = vmaf_feature_collector_append_with_dict(
             feature_collector, s->feature_name_dict, psnr_name[p], psnr, index);
+        /* p is within [0, n_planes) ≤ PSNR_NUM_PLANES — array access is safe */
         if (err != 0) { return err; }
     }
     return 0;

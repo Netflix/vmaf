@@ -1,6 +1,7 @@
 # Fork bug-status — `docs/state.md`
 
 <!-- markdownlint-disable MD013 -->
+_Updated: 2026-05-17 (PR1067-REGRESSION-GPU-OPTIONS closed — restored `enable_chroma` in `integer_psnr_metal` and `float_psnr_metal`, ceiling-division chroma geometry in `psnr_vulkan`, and `vif_skip_scale0` in `vif_vulkan`; all four clobbered by PR #1067 merge of stale base; row added to Recently closed.)_
 _Updated: 2026-05-16 (Table pipe-escaping fixes — 3 broken `\|` occurrences in Recently Closed table rows replaced with prose or bare pipes inside backtick spans, eliminating phantom extra columns in rows FINDING-10, HP-2, and fr\_regressor\_v2\_ensemble seed-redo.)_
 _Updated: 2026-05-16 (Staleness sweep — 5 stale verified-notes corrected: PR #512 Phase-3b MERGED (T-VK-VIF-1.4-RESIDUAL-ARC); PR #469 MERGED (T6-2a-followup' path B, two rows); PR #497 MERGED 2026-05-09 — Research-0090 deferred trigger fired, now actionable; PR #443 + #444 CLOSED without merge, stale cross-refs struck.)_
 _Updated: 2026-05-16 (T-CAMBI-CUDA-HOST-PREPROCESSING-SEGV closed — `cambi_cuda` SIGSEGV on every frame fixed by downloading dist_pic GPU→host before host preprocessing; row added to Recently closed.)_
@@ -105,6 +106,7 @@ landed fix yet._
 
 ## Recently closed
 
+| **PR1067-REGRESSION-GPU-OPTIONS** | PR #1067 (bootstrap refactor) merged a stale base and overwrote four GPU option additions: `enable_chroma` in `integer_psnr_metal` (PR #986) and `float_psnr_metal` (PR #978), ceiling-division chroma geometry in `psnr_vulkan` (PR #878), and `vif_skip_scale0` in `vif_vulkan` (PR #1057). | — | this PR (`fix/enable-chroma-pr1067-regression`) | — | since PR #1067 merged |
 | **INTEGER-VIF-SYCL-SKIP-SCALE0-OPTION** | `integer_vif_sycl` had no `vif_skip_scale0` option registration; the suppression logic was also absent from `collect_fex_sycl`, so scale-0 was always included on SYCL regardless of the caller setting | — | this PR (`fix/vif-skip-scale0-sycl-parity`) | — | (since integer_vif_sycl landed) |
 | **FLOAT-VIF-CUDA-SKIP-SCALE0-OPTION** | `float_vif_cuda` implemented `vif_skip_scale0` suppression in `collect_fex_cuda` but never registered the option; the field was always `false`, so scale-0 was never suppressed on CUDA regardless of the caller setting | — | PR #1079 (`fix/float-vif-cuda-skip-scale0-option`, 2026-05-16) | — | (since float_vif_cuda landed) |
 | T-GPU-PSNR-ENABLE-CHROMA-SILENT | `psnr_cuda` / `psnr_sycl` / `psnr_vulkan` silently ignored `enable_chroma=false`, emitting full chroma on non-YUV400 sources and diverging from CPU | ADR-0453 / Research-0136 | fix/psnr-enable-chroma-gpu-parity-2026-05-16 | — | (last ~3 months)

@@ -35058,3 +35058,27 @@ re-targeted to `float_moment_vulkan.c` instead.
 ```bash
 ninja -C build && echo "no duplicate symbol error"
 ```
+
+---
+
+### PR #1067 clobbered four GPU feature options (fix/enable-chroma-pr1067-regression)
+
+PR #1067 (bootstrap name-builder refactor) merged a stale base that
+pre-dated four option additions and overwrote them:
+
+- `integer_psnr_metal.mm`: lost `enable_chroma` field + option entry + `n_planes` guard (PR #986)
+- `float_psnr_metal.mm`: lost `enable_chroma` + per-plane dispatch loop + `n_planes` (PR #978)
+- `psnr_vulkan.c`: ceiling division reverted to floor division for chroma geometry (PR #878)
+- `vif_vulkan.c`: lost `vif_skip_scale0` field + option entry + score-suppression guards (PR #1057)
+
+**Rebase impact**: any branch that adds options to these four files and was
+branched before PR #1067 merged must be rebased onto master (post-fix) to
+avoid re-clobbering these options.
+
+**Smoke-test after rebase**:
+
+```bash
+meson setup build -Denable_cuda=false -Denable_sycl=false --wipe
+ninja -C build
+meson test -C build --suite=fast
+```
