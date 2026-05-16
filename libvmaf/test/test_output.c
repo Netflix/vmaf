@@ -40,11 +40,13 @@
  *   - aggregate_metrics with multiple entries (comma separators).
  */
 
+#include <fcntl.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "test.h"
 
@@ -423,6 +425,95 @@ static char *test_json_empty_collector()
     return NULL;
 }
 
+/* Helper: create a secure temp file, write output to it via the supplied
+ * function pointer, slurp the result, then unlink.  Returns a malloc'd buffer
+ * the caller must free(), or NULL on error. */
+static char *write_via_path(VmafContext *vmaf, enum VmafOutputFormat fmt, const char *score_fmt,
+                            int *out_err)
+{
+    char tmpl[] = "/tmp/vmaf-output-test-XXXXXX";
+    int fd = mkstemp(tmpl);
+    if (fd < 0) {
+        *out_err = -1;
+        return NULL;
+    }
+    (void)close(fd); /* vmaf_write_output_with_format opens the path itself */
+
+    *out_err = vmaf_write_output_with_format(vmaf, tmpl, fmt, score_fmt);
+    if (*out_err != 0) {
+        (void)unlink(tmpl);
+        return NULL;
+    }
+
+    FILE *f = fopen(tmpl, "r");
+    if (!f) {
+        (void)unlink(tmpl);
+        *out_err = -1;
+        return NULL;
+    }
+    char *buf = slurp(f);
+    (void)fclose(f);
+    (void)unlink(tmpl);
+    return buf;
+}
+
+/* test_write_output_dispatcher: exercises the public vmaf_write_output() entry
+ * point (the thin wrapper around vmaf_write_output_with_format with a NULL
+ * score_format).  Drives the CSV path so the output is easy to assert without
+ * a model run. */
+static char *test_write_output_dispatcher()
+{
+    VmafContext *vmaf;
+    int err = seed_normal(&vmaf);
+    mu_assert("seed_normal failed", !err);
+
+    char tmpl[] = "/tmp/vmaf-output-disp-XXXXXX";
+    int fd = mkstemp(tmpl);
+    mu_assert("mkstemp failed", fd >= 0);
+    (void)close(fd);
+
+    err = vmaf_write_output(vmaf, tmpl, VMAF_OUTPUT_FORMAT_CSV);
+    mu_assert("vmaf_write_output returned non-zero", !err);
+
+    FILE *f = fopen(tmpl, "r");
+    mu_assert("fopen result file failed", f);
+    char *out = slurp(f);
+    (void)fclose(f);
+    (void)unlink(tmpl);
+    mu_assert("slurp failed", out);
+
+    mu_assert("dispatcher csv: missing 'Frame,' header", strstr(out, "Frame,"));
+    mu_assert("dispatcher csv: missing feat_a", strstr(out, "feat_a,"));
+    mu_assert("dispatcher csv: missing score 80.000000", strstr(out, "80.000000"));
+
+    free(out);
+    (void)vmaf_close(vmaf);
+    return NULL;
+}
+
+/* test_write_output_with_format: exercises vmaf_write_output_with_format()
+ * directly with a custom score_format string ("%.2f"), verifying that the
+ * format override propagates into the CSV output. */
+static char *test_write_output_with_format()
+{
+    VmafContext *vmaf;
+    int err = seed_normal(&vmaf);
+    mu_assert("seed_normal failed", !err);
+
+    int werr = 0;
+    char *out = write_via_path(vmaf, VMAF_OUTPUT_FORMAT_CSV, "%.2f", &werr);
+    mu_assert("vmaf_write_output_with_format returned non-zero", !werr);
+    mu_assert("slurp failed", out);
+
+    /* Custom format "%.2f": score 80.0 appears as "80.00", NOT "80.000000". */
+    mu_assert("with_format: expected 2-decimal score 80.00", strstr(out, "80.00"));
+    mu_assert("with_format: default 6-decimal form must be absent", !strstr(out, "80.000000"));
+
+    free(out);
+    (void)vmaf_close(vmaf);
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_csv_basic);
@@ -433,5 +524,7 @@ char *run_tests()
     mu_run_test(test_json_basic_and_format);
     mu_run_test(test_json_nan_and_inf);
     mu_run_test(test_json_empty_collector);
+    mu_run_test(test_write_output_dispatcher);
+    mu_run_test(test_write_output_with_format);
     return NULL;
 }
