@@ -165,9 +165,10 @@ Operates on the Y plane only.
 
 | Option                 | Alias | Type   | Default | Range      | Effect                                                                 |
 |------------------------|-------|--------|---------|------------|------------------------------------------------------------------------|
-| `debug`                | —     | bool   | `false` | —          | Emit `vif`, `vif_num`, `vif_den`, plus per-scale numerator/denominator |
-| `vif_enhn_gain_limit`  | `egl` | double | `1.4`   | `1.0–1.4`  | Cap enhancement-gain ratio so over-sharpened output cannot saturate    |
-| `vif_kernelscale`      | —     | double | `1.0`   | `0.1–4.0`  | Scale the Gaussian kernel std-dev — only `float_vif`                   |
+| `debug`                | —       | bool   | `false` | —          | Emit `vif`, `vif_num`, `vif_den`, plus per-scale numerator/denominator |
+| `vif_enhn_gain_limit`  | `egl`   | double | `1.4`   | `1.0–1.4`  | Cap enhancement-gain ratio so over-sharpened output cannot saturate    |
+| `vif_kernelscale`      | —       | double | `1.0`   | `0.1–4.0`  | Scale the Gaussian kernel std-dev — only `float_vif`                   |
+| `vif_skip_scale0`      | `ssclz` | bool   | `false` | —          | Skip scale-0 accumulation; score emits `0.0` for scale 0 and excludes it from combined num/den totals — GPU twins (CUDA, SYCL, Vulkan) honour this option |
 
 `egl=1.0` disables the enhancement-gain path entirely (matches pre-v1.3
 behaviour).
