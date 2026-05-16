@@ -7,6 +7,13 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
+## fix/cuda-libvmaf-fixme-clarify — CUDA FIXME/TODO comment cleanup
+
+**`libvmaf/src/libvmaf.c`**: comment-only change; replaces bare `FIXME` / `TODO`
+markers in the CUDA cleanup path with structured `DEFERRED` blocks.  No
+rebase-sensitive invariant — upstream can safely overwrite any of these comment
+blocks if their CUDA path changes.
+
 ## fix/saliency-per-mb-eval-2026-05-15 — integer_vif enable_chroma
 
 **`libvmaf/src/feature/integer_vif.c`**: adds `enable_chroma` bool field to

@@ -334,7 +334,10 @@ int vmaf_cuda_fetch_preallocated_picture(VmafContext *vmaf, VmafPicture *pic)
     if (!vmaf->cuda.ring_buffer)
         return -EINVAL;
 
-    //TODO: preallocate host pics
+    /* DEFERRED: pre-allocate host pictures into a pool mirroring the device
+     * ring buffer.  The current path allocates on every call; a pool would
+     * amortise alloc/free overhead for high-frame-rate streams.  Deferred
+     * until CUDA pipeline profiling (T8.x) confirms the latency impact. */
 
     switch (vmaf->cuda.cfg.pic_prealloc_method) {
     case VMAF_CUDA_PICTURE_PREALLOCATION_METHOD_DEVICE:
@@ -1580,7 +1583,10 @@ static int read_pictures_cuda_cleanup(VmafContext *vmaf, VmafPicture *ref_host,
                                       vmaf_cuda_picture_get_stream(ref_device)),
                         after_ref_event);
     after_ref_event:
-        //^FIXME: move to picture callback
+        /* DEFERRED: the cuEventRecord + unref sequence belongs in a picture
+         * destructor callback once the picture lifecycle API supports async
+         * teardown hooks.  Moving it there would remove the goto and let the
+         * cleanup compose with future pooled-picture designs. */
         err |= vmaf_picture_unref(ref_device);
     }
     if (dist_device->priv) {
@@ -1589,7 +1595,7 @@ static int read_pictures_cuda_cleanup(VmafContext *vmaf, VmafPicture *ref_host,
                                       vmaf_cuda_picture_get_stream(dist_device)),
                         after_dist_event);
     after_dist_event:
-        //^FIXME: move to picture callback
+        /* DEFERRED: same picture-callback refactor as after_ref_event above. */
         err |= vmaf_picture_unref(dist_device);
     }
     if (_cuda_err && !err)
