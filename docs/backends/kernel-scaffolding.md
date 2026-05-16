@@ -1,17 +1,17 @@
 # GPU per-feature kernel scaffolding templates
 
 Status: introduced 2026-04-29 ([ADR-0246](../adr/0246-gpu-kernel-template.md));
-templates only — no kernel migrations yet.
+HIP and Metal sections added 2026-05-16 ([ADR-0484](../adr/0484-kernel-scaffolding-hip-metal-doc.md)).
 
 This page documents the **per-backend kernel scaffolding templates** that
-sit alongside the CUDA, Vulkan, and HIP backend runtimes:
+sit alongside the CUDA, Vulkan, HIP, and Metal backend runtimes:
 
 - [`libvmaf/src/cuda/kernel_template.h`](../../libvmaf/src/cuda/kernel_template.h)
 - [`libvmaf/src/vulkan/kernel_template.h`](../../libvmaf/src/vulkan/kernel_template.h)
 - [`libvmaf/src/hip/kernel_template.h`](../../libvmaf/src/hip/kernel_template.h)
-  (T7-10 / [ADR-0241](../adr/0241-hip-first-consumer-psnr.md);
-  field-for-field mirror of the CUDA template, helper bodies return
-  `-ENOSYS` until the HIP runtime PR T7-10b lands)
+  (T7-10 / [ADR-0241](../adr/0241-hip-first-consumer-psnr.md))
+- [`libvmaf/src/metal/kernel_template.h`](../../libvmaf/src/metal/kernel_template.h)
+  (T8-1 / [ADR-0361](../adr/0361-metal-compute-backend.md))
 
 These headers exist to absorb the lifecycle boilerplate that every fork-added
 GPU feature kernel currently re-implements by hand. They are **template-only**:
@@ -251,6 +251,141 @@ The before/after diff for `psnr_vulkan.c` is roughly **−30 LOC** — the
 five vkCreate/vkDestroy pairs collapse into two helper calls each, and
 the cleanup `goto`-ladder loses two labels.
 
+## HIP template
+
+The HIP template mirrors the CUDA template field-for-field.
+Handle types use `uintptr_t` so the header stays free of
+`<hip/hip_runtime.h>` — the same header-purity posture as the
+public `libvmaf_hip.h` API (per [ADR-0212](../adr/0212-hip-backend-scaffold.md)).
+The reference implementation is
+[`integer_psnr_hip.c`](../../libvmaf/src/feature/hip/integer_psnr_hip.c).
+
+### Surface
+
+```c
+#include "hip/kernel_template.h"
+
+typedef struct VmafHipKernelLifecycle {
+    uintptr_t str;      /* private non-blocking stream (hipStream_t cast) */
+    uintptr_t submit;   /* recorded post-launch on picture stream          */
+    uintptr_t finished; /* recorded post-readback on str                   */
+} VmafHipKernelLifecycle;
+
+typedef struct VmafHipKernelReadback {
+    void   *device;      /* device-side accumulator (hipMallocAsync)      */
+    void   *host_pinned; /* pinned host readback slot (hipHostMalloc)      */
+    size_t  bytes;
+} VmafHipKernelReadback;
+
+int  vmaf_hip_kernel_lifecycle_init(VmafHipKernelLifecycle *, VmafHipContext *);
+int  vmaf_hip_kernel_readback_alloc(VmafHipKernelReadback *, VmafHipContext *, size_t);
+int  vmaf_hip_kernel_submit_pre_launch(VmafHipKernelLifecycle *, VmafHipContext *,
+                                       VmafHipKernelReadback *,
+                                       uintptr_t picture_stream,
+                                       uintptr_t dist_ready_event);
+int  vmaf_hip_kernel_collect_wait(VmafHipKernelLifecycle *, VmafHipContext *);
+int  vmaf_hip_kernel_lifecycle_close(VmafHipKernelLifecycle *, VmafHipContext *);
+int  vmaf_hip_kernel_readback_free(VmafHipKernelReadback *, VmafHipContext *);
+int  vmaf_hip_kernel_submit_post_record(VmafHipKernelLifecycle *, VmafHipContext *);
+```
+
+### Differences from the CUDA template
+
+| Aspect | CUDA | HIP |
+|---|---|---|
+| Handle types | `CUstream`, `CUevent` | `uintptr_t` (header-purity) |
+| Batch-drain flag | `bool drained` (ADR-0242) | Absent (not yet implemented) |
+| Helper location | `static inline` in `.h` | Out-of-line in `kernel_template.c` |
+| Stream create | `cuStreamCreateWithPriority` | `hipStreamCreateWithFlags` |
+
+The out-of-line split (declaration in `.h`, definition in `kernel_template.c`)
+exists so the runtime PR can flip bodies from `-ENOSYS` to live HIP calls
+without recompiling every consumer TU.
+
+### What stays in the kernel TU
+
+Same as the CUDA template: kernel launch parameters, module loading, host-side
+reduction, score emission, and the pinned-host buffer free.
+
+---
+
+## Metal template
+
+The Metal template follows the same async-command-queue + event lifecycle
+as HIP and CUDA, adapted for Apple Silicon's unified-memory model.
+Handle types use `uintptr_t` so the header stays free of `<Metal/Metal.h>`
+(per [ADR-0361](../adr/0361-metal-compute-backend.md)).
+The reference implementation is
+[`integer_motion_v2_metal.c`](../../libvmaf/src/feature/metal/integer_motion_v2_metal.c).
+
+### Surface
+
+```c
+#include "metal/kernel_template.h"
+
+typedef struct VmafMetalKernelLifecycle {
+    uintptr_t cmd_queue; /* private MTLCommandQueue (uintptr_t cast)        */
+    uintptr_t submit;    /* MTLSharedEvent recorded post-dispatch            */
+    uintptr_t finished;  /* MTLSharedEvent recorded post-readback            */
+} VmafMetalKernelLifecycle;
+
+typedef struct VmafMetalKernelBuffer {
+    uintptr_t buffer;    /* MTLBuffer handle (storage-mode shared)           */
+    void     *host_view; /* cached [buffer contents] for direct host loads   */
+    size_t    bytes;
+} VmafMetalKernelBuffer;
+
+int  vmaf_metal_kernel_lifecycle_init(VmafMetalKernelLifecycle *, VmafMetalContext *);
+int  vmaf_metal_kernel_buffer_alloc(VmafMetalKernelBuffer *, VmafMetalContext *, size_t);
+int  vmaf_metal_kernel_submit_pre_launch(VmafMetalKernelLifecycle *, VmafMetalContext *,
+                                         VmafMetalKernelBuffer *,
+                                         uintptr_t picture_command_buffer,
+                                         uintptr_t dist_ready_event);
+int  vmaf_metal_kernel_collect_wait(VmafMetalKernelLifecycle *, VmafMetalContext *);
+int  vmaf_metal_kernel_lifecycle_close(VmafMetalKernelLifecycle *, VmafMetalContext *);
+int  vmaf_metal_kernel_buffer_free(VmafMetalKernelBuffer *, VmafMetalContext *);
+```
+
+### Differences from the HIP template
+
+| Aspect | HIP | Metal |
+|---|---|---|
+| Readback struct | `(device, host_pinned)` pair | Single `MTLBuffer` with `host_view` |
+| Stream name | `str` | `cmd_queue` |
+| Buffer access | DMA copy to pinned host | Direct `[buffer contents]` pointer |
+| Memory model | Discrete-GPU (separate device memory) | Unified memory (Apple Silicon) |
+
+On Apple Silicon, `MTLResourceStorageModeShared` means host and GPU share the
+same physical memory. The `host_view` pointer in `VmafMetalKernelBuffer` caches
+`[buffer contents]` to avoid the Objective-C message-send overhead on every
+`collect()` call.
+
+### What stays in the kernel TU
+
+Same as CUDA and HIP: compute-encoder dispatch, MSL kernel symbol lookup,
+host-side reduction, score emission.
+
+---
+
+## Lifecycle contract (all backends)
+
+All four backends implement the same four-phase lifecycle:
+
+1. **`init()`** — allocate the command channel (stream / queue), create two
+   synchronisation primitives (submit + finished), allocate a device-side
+   accumulator buffer and a host-readable readback slot.
+2. **`submit()`** — zero the accumulator, wait for the dist-side ready signal,
+   launch the metric kernel, enqueue a DtoH copy, record the finished primitive.
+3. **`collect()`** — synchronise on the finished primitive, perform the
+   host-side reduction, emit scores.
+4. **`close()`** — drain in-flight work, destroy primitives, free buffers.
+
+The split between steps 2 and 3 allows the engine to pipeline across multiple
+frames: `submit(frame N+1)` overlaps with `collect(frame N)` on the private
+command channel.
+
+---
+
 ## Migrating an existing kernel
 
 Each kernel migration is its own PR, gated by:
@@ -278,16 +413,25 @@ Migrations are tracked as `T7-XX-followup-{a,b,c}` in `CHANGELOG.md`.
 
 ## Why per-backend (not cross-backend)
 
-Sister-agent's GPU-template scope analysis (referenced by ADR-0246)
-established that CUDA's async-stream + event model and Vulkan's
-command-buffer + fence + descriptor-pool model share **no concrete
-shape**. A cross-backend abstraction would force a lowest-common-denominator
-API that captures neither well. The per-backend split keeps each header
-honest about the platform it targets.
+The GPU-template scope analysis (referenced by ADR-0246) established that
+CUDA's async-stream + event model, Vulkan's command-buffer + fence +
+descriptor-pool model, HIP's stream + event model, and Metal's
+command-queue + shared-event model share **no concrete handle shape**. A
+cross-backend abstraction would force a lowest-common-denominator API that
+captures none of them well. The per-backend split keeps each header honest
+about the platform it targets.
+
+The four backends do share the same abstract four-phase lifecycle contract
+(init / submit / collect / close) — that contract is documented in the
+[Lifecycle contract](#lifecycle-contract-all-backends) section above and
+serves as the single source of truth for new backend authors.
 
 ## Why helper functions (not macros)
 
-Both templates use plain `static inline` functions, not preprocessor macros.
+CUDA and Vulkan use plain `static inline` functions. HIP and Metal use
+out-of-line declarations (defined in `kernel_template.c` / `kernel_template.mm`)
+so the runtime PR can flip bodies from `-ENOSYS` to live API calls without
+recompiling every consumer TU. The trade-offs for inlining are:
 The trade-offs:
 
 - **Debug stepping**: `cuda-gdb` / Nsight / RenderDoc / vkconfig step through
@@ -301,11 +445,21 @@ The trade-offs:
   `CHECK_CUDA_GOTO` / `CHECK_CUDA_RETURN`, which are macros precisely because
   their `goto label` form needs textual substitution. The kernel-template
   helpers use those macros internally.
+- **Out-of-line for HIP and Metal** (not inline): HIP and Metal lack a
+  driver-function table (the CUDA `CudaFunctions` pattern) at scaffold time,
+  so the `-ENOSYS` stub check cannot be inlined away; keeping bodies in a
+  separate TU lets the runtime PR swap them in one place.
 
 ## See also
 
-- [ADR-0246](../adr/0246-gpu-kernel-template.md) — design decision and
-  alternatives.
+- [ADR-0246](../adr/0246-gpu-kernel-template.md) — CUDA + Vulkan design decision
+  and alternatives.
+- [ADR-0241](../adr/0241-hip-first-consumer-psnr.md) — HIP template introduction
+  (T7-10).
+- [ADR-0361](../adr/0361-metal-compute-backend.md) — Metal template introduction
+  (T8-1).
+- [ADR-0484](../adr/0484-kernel-scaffolding-hip-metal-doc.md) — decision to
+  extend this doc with HIP and Metal sections.
 - [`libvmaf/src/cuda/AGENTS.md`](../../libvmaf/src/cuda/AGENTS.md) — kernel
   template invariant row.
 - [`libvmaf/src/vulkan/AGENTS.md`](../../libvmaf/src/vulkan/AGENTS.md) —
