@@ -381,4 +381,13 @@ VmafFeatureExtractor vmaf_fex_float_psnr_vulkan = {
     .priv_size = sizeof(FloatPsnrVulkanState),
     .flags = VMAF_FEATURE_EXTRACTOR_VULKAN,
     .provided_features = provided_features,
+    /* Single luma-only dispatch per frame; reduction-dominated.
+     * Mirrors the profile of psnr_vulkan at 1080p (ADR-0182 / ADR-0195). */
+    .chars =
+        {
+            .n_dispatches_per_frame = 1,
+            .is_reduction_only = true,
+            .min_useful_frame_area = 1920U * 1080U,
+            .dispatch_hint = VMAF_FEATURE_DISPATCH_AUTO,
+        },
 };
