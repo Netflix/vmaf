@@ -80,6 +80,7 @@
 
 #define CAMBI_VK_WG_X 16
 #define CAMBI_VK_WG_Y 16
+#define CAMBI_VK_MASK_WG_LINES 32 /* lines/cols per mask SAT WG (VK-2 fix) */
 
 /* Pipeline IDs — index into the per-pipeline arrays in CambiVkState. */
 enum CambiVkPipelineKind {
@@ -1027,7 +1028,8 @@ static void cambi_vk_dispatch_mask_dp(CambiVkState *s, VkCommandBuffer cmd, unsi
         vkCmdPushConstants(cmd, s->pl_mask_dp.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                            sizeof(pc), &pc);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->pipelines[CAMBI_PL_MASK_SAT_ROW]);
-        vkCmdDispatch(cmd, h, 1, 1);
+        /* 32 rows per WG; shader uses gl_GlobalInvocationID.x as row index. */
+        vkCmdDispatch(cmd, (h + CAMBI_VK_MASK_WG_LINES - 1u) / CAMBI_VK_MASK_WG_LINES, 1, 1);
     }
     cambi_vk_barrier(cmd);
 
@@ -1050,7 +1052,8 @@ static void cambi_vk_dispatch_mask_dp(CambiVkState *s, VkCommandBuffer cmd, unsi
         vkCmdPushConstants(cmd, s->pl_mask_dp.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                            sizeof(pc), &pc);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, s->pipelines[CAMBI_PL_MASK_SAT_COL]);
-        vkCmdDispatch(cmd, w, 1, 1);
+        /* 32 cols per WG; shader uses gl_GlobalInvocationID.x as col index. */
+        vkCmdDispatch(cmd, (w + CAMBI_VK_MASK_WG_LINES - 1u) / CAMBI_VK_MASK_WG_LINES, 1, 1);
     }
     cambi_vk_barrier(cmd);
 

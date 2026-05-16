@@ -10,16 +10,26 @@
  *
  * The IIR is sequential along the scan axis. We exploit the
  * "rows independent for H-pass, columns independent for V-pass"
- * separability:
- *   PASS = 0  (horizontal): one workgroup per row.
- *                           local_size_x = 1, dispatch (1, H, 1).
- *                           Single thread per row scans left→right.
- *   PASS = 1  (vertical):   one workgroup per column.
- *                           local_size_x = 1, dispatch (1, W, 1).
- *                           Single thread per column scans top→bottom.
+ * separability — 32 rows/columns run in parallel across one
+ * workgroup (one warp/wavefront per WG):
  *
- * This is correctness-first; performance follow-ups can re-bin
- * multiple rows/cols per WG once the places-2 contract holds.
+ *   PASS = 0  (horizontal): local_size_x = 32.
+ *                           Each invocation handles one row.
+ *                           Line index = gl_GlobalInvocationID.x.
+ *                           Dispatch: (ceil(H / 32), 1, 1).
+ *   PASS = 1  (vertical):   local_size_x = 32.
+ *                           Each invocation handles one column.
+ *                           Line index = gl_GlobalInvocationID.x.
+ *                           Dispatch: (ceil(W / 32), 1, 1).
+ *
+ * Bit-exactness: the IIR state is private per invocation; no
+ * cross-lane communication is needed, so the computation is
+ * order-independent across invocations. `precise` on the IIR
+ * intermediates preserves bit-exact parity with the CPU path
+ * (ADR-0214, places=4).
+ *
+ * VK-1 perf fix: raised from 1×1×1 to 32×1×1 to saturate one
+ * warp/wavefront per WG (VK-1 in perf-audit-vulkan-sycl-2026-05-16).
  *
  * Specialization constants:
  *   constant_id = 0  WIDTH   (per-scale W)
@@ -28,7 +38,7 @@
  */
 #version 460
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 layout(constant_id = 0) const int WIDTH  = 0;
 layout(constant_id = 1) const int HEIGHT = 0;
@@ -147,11 +157,13 @@ void main_vert(uint col) {
 }
 
 void main() {
-    /* Each workgroup processes one row (H-pass) or one column
-     * (V-pass). The dispatcher passes the scan-line index in
-     * gl_WorkGroupID.y for H-pass and gl_WorkGroupID.y for V-pass
-     * (so we only need 1D dispatch with .y as the line). */
-    uint line = gl_WorkGroupID.y;
+    /* Each invocation processes one row (H-pass) or one column
+     * (V-pass). With local_size_x = 32, a workgroup of 32 threads
+     * handles 32 consecutive rows/columns in parallel (one
+     * warp/wavefront per WG).
+     * Line index = gl_GlobalInvocationID.x; host dispatches
+     * ceil(H/32) or ceil(W/32) groups along X. */
+    uint line = gl_GlobalInvocationID.x;
     if (PASS == 0) {
         main_horiz(line);
     } else {
