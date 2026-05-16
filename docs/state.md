@@ -105,6 +105,7 @@ landed fix yet._
 
 ## Recently closed
 
+| **INTEGER-VIF-SYCL-SKIP-SCALE0-OPTION** | `integer_vif_sycl` had no `vif_skip_scale0` option registration; the suppression logic was also absent from `collect_fex_sycl`, so scale-0 was always included on SYCL regardless of the caller setting | — | this PR (`fix/vif-skip-scale0-sycl-parity`) | — | (since integer_vif_sycl landed) |
 | **FLOAT-VIF-CUDA-SKIP-SCALE0-OPTION** | `float_vif_cuda` implemented `vif_skip_scale0` suppression in `collect_fex_cuda` but never registered the option; the field was always `false`, so scale-0 was never suppressed on CUDA regardless of the caller setting | — | PR #1079 (`fix/float-vif-cuda-skip-scale0-option`, 2026-05-16) | — | (since float_vif_cuda landed) |
 | T-GPU-PSNR-ENABLE-CHROMA-SILENT | `psnr_cuda` / `psnr_sycl` / `psnr_vulkan` silently ignored `enable_chroma=false`, emitting full chroma on non-YUV400 sources and diverging from CPU | ADR-0453 / Research-0136 | fix/psnr-enable-chroma-gpu-parity-2026-05-16 | — | (last ~3 months)
 
