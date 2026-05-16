@@ -7,32 +7,10 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
-No rebase impact: `fix/float-vif-cuda-skip-scale0-option-wire` adds
-`vif_skip_scale0` to the `VmafOption` table in `float_vif_cuda.c`.
-This is a CUDA-only file with no upstream Netflix counterpart; no
-sync-upstream conflict is expected.
+## docs/fix-state-md-pipe-escaping — docs/state.md table escaping
 
-No rebase impact: `fix/nvtx-cuda-dependency-guard-2026-05-16` adds a
-meson `error()` guard to `libvmaf/src/meson.build` for the
-`enable_nvtx=true` + `enable_cuda=false` combination. The guard is
-fork-additive: upstream Netflix/vmaf does not enable NVTX, so no
-sync-upstream conflict is expected. If upstream ever adds their own
-NVTX guard, the merge is a no-op (both sides add the same intent).
-
-## docs/kernel-scaffolding-hip-metal-doc-dedup
-
-No rebase impact: touches only `docs/backends/kernel-scaffolding.md`,
-`docs/adr/0484-kernel-scaffolding-hip-metal-doc.md`,
-`docs/adr/README.md`, and `changelog.d/changed/kernel-scaffolding-hip-metal-doc.md`.
-These are fork-local doc files; Netflix/vmaf does not carry a kernel-scaffolding
-guide. No upstream-shared C sources, headers, or build rules are touched.
-
-## fix/cpu-symbol-visibility-2026-05-16
-
-No rebase impact: touches only `libvmaf/src/meson.build` (adding `c_args :
-vmaf_cflags_common` to `libvmaf_cpu_static_lib`). This is a fork-local build
-rule; Netflix/vmaf does not use Meson. No upstream-shared C sources, headers,
-or feature extractors are modified. No sync-upstream conflicts expected.
+No rebase impact: doc-only change. `docs/state.md` is fork-local and not
+present in Netflix upstream; upstream syncs do not touch it.
 
 ## fix/saliency-per-mb-eval-2026-05-15 — integer_vif enable_chroma
 
