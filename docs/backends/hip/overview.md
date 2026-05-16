@@ -1,7 +1,7 @@
 # HIP (AMD ROCm) compute backend
 
-> **Status (2026-05-10, batch-4 complete):** the host-side HIP runtime is
-> wired (T7-10b). Eight of eleven feature extractors now have real device
+> **Status (2026-05-16, batch-5 complete):** the host-side HIP runtime is
+> wired (T7-10b). Nine of twelve feature extractors now have real device
 > kernels; three stubs remain pending an ADM/VIF API redesign:
 >
 > | Extractor | Feature name | Governing ADR |
@@ -14,13 +14,14 @@
 > | `float_ssim_hip` | `float_ssim_hip` | ADR-0375 |
 > | `ciede_hip` | `ciede_hip` | ADR-0377 |
 > | `integer_motion_v2_hip` | `motion_v2_hip` | ADR-0377 |
+> | `integer_ms_ssim_hip` | `float_ms_ssim` | ADR-0285 |
 >
-> All eight require `enable_hip=true` + `enable_hipcc=true`.
+> All nine require `enable_hip=true` + `enable_hipcc=true`.
 > Without `enable_hipcc`, the scaffold `-ENOSYS` posture is preserved.
 > The remaining three extractors (`adm_hip`, `vif_hip`, `integer_motion_hip`)
 > remain at `-ENOSYS` pending an ADM/VIF `_init/_run/_destroy` API redesign.
 > See ADR-0372 (batch-1), ADR-0373 (batch-2), ADR-0375 (batch-3),
-> ADR-0377 (batch-4) for rationale.
+> ADR-0377 (batch-4), ADR-0285 (batch-5) for rationale.
 
 ## Building
 

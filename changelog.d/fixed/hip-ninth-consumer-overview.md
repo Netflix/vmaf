@@ -1,0 +1,1 @@
+docs(hip): update HIP backend overview to reflect ninth consumer (`integer_ms_ssim_hip`, ADR-0285, batch-5). The status block previously said "eight of eleven" and omitted the `integer_ms_ssim_hip` row; features.md footnote 5 is updated to match.

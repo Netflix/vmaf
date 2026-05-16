@@ -89,8 +89,9 @@ Depending on your build configuration not every backend is available — see
 ⁵ HIP backend (T7-10b) — `psnr_hip` (ADR-0241), `ciede_hip` /
 `float_moment_hip` (ADR-0257 / ADR-0258), the fifth/sixth
 host-scaffolded consumers `float_ansnr_hip` / `motion_v2_hip`
-(ADR-0266 / ADR-0267), and the seventh/eighth consumers
-`float_motion_hip` / `float_ssim_hip` (ADR-0273 / ADR-0274)
+(ADR-0266 / ADR-0267), the seventh/eighth consumers
+`float_motion_hip` / `float_ssim_hip` (ADR-0273 / ADR-0274),
+and the ninth consumer `integer_ms_ssim_hip` (ADR-0285, batch-5)
 all register at the extractor level under
 `#if HAVE_HIP` so callers asking by name get the cleaner
 "extractor found, runtime not ready (`-ENOSYS`)" surface; kernels
