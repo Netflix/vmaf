@@ -147,6 +147,11 @@ typedef struct MsSsimStateCuda {
                          * by construction, so n_planes is clamped to 1
                          * unless a future extension lifts that. */
     unsigned n_planes;  /* active plane count: always 1 once clamped. */
+
+    /* dB output mode: mirrors float_ms_ssim.c enable_db / clip_db options. */
+    bool enable_db; /* emit score as dB: -10*log10(1 - ms_ssim) */
+    bool clip_db;   /* clamp dB output at the peak SNR for this bpc+resolution */
+    double max_db;  /* upper clamp for dB output (INFINITY when clip_db=false) */
 } MsSsimStateCuda;
 
 static const VmafOption options[] = {
@@ -163,6 +168,20 @@ static const VmafOption options[] = {
                 "currently MS-SSIM is luma-only, so this flag is accepted but "
                 "always clamps n_planes to 1 until a chroma extension lands",
         .offset = offsetof(MsSsimStateCuda, enable_chroma),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {
+        .name = "enable_db",
+        .help = "write MS-SSIM value as dB: -10*log10(1 - ms_ssim)",
+        .offset = offsetof(MsSsimStateCuda, enable_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {
+        .name = "clip_db",
+        .help = "clip dB score at the peak SNR for the input bit-depth and resolution",
+        .offset = offsetof(MsSsimStateCuda, clip_db),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
     },
@@ -197,6 +216,15 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     s->width = w;
     s->height = h;
     s->bpc = bpc;
+
+    /* Pre-compute the dB ceiling once at init, matching float_ms_ssim.c. */
+    if (s->clip_db) {
+        const unsigned peak = (1U << bpc) - 1U;
+        const double mse = 0.5 / ((double)w * (double)h);
+        s->max_db = ceil(10.0 * log10((double)peak * (double)peak / mse));
+    } else {
+        s->max_db = INFINITY;
+    }
 
     s->scale_w[0] = w;
     s->scale_h[0] = h;
@@ -449,6 +477,12 @@ static int submit_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
     return 0;
 }
 
+/* Convert MS-SSIM score to dB, matching float_ms_ssim.c::convert_to_db(). */
+static inline double ms_ssim_to_db(double score, double max_db)
+{
+    return score >= 1.0 ? max_db : MIN(-10.0 * log10(1.0 - score), max_db);
+}
+
 static int collect_fex_cuda(VmafFeatureExtractor *fex, unsigned index,
                             VmafFeatureCollector *feature_collector)
 {
@@ -486,8 +520,10 @@ static int collect_fex_cuda(VmafFeatureExtractor *fex, unsigned index,
                   pow(fabs(s_means[i]), (double)g_gammas[i]);
     }
 
+    /* Apply dB conversion when requested, matching float_ms_ssim.c. */
+    const double score = s->enable_db ? ms_ssim_to_db(msssim, s->max_db) : msssim;
     int err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                      "float_ms_ssim", msssim, index);
+                                                      "float_ms_ssim", score, index);
     if (s->enable_lcs) {
         static const char *const l_names[MS_SSIM_SCALES] = {
             "float_ms_ssim_l_scale0", "float_ms_ssim_l_scale1", "float_ms_ssim_l_scale2",
