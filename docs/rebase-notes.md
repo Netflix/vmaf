@@ -35040,3 +35040,21 @@ meson setup build -Denable_cuda=false -Denable_sycl=false
 ninja -C build
 meson test -C build test_context test_log   # must exit 0
 ```
+
+---
+
+### Ghost `moment_vulkan.c` removed (fix/drop-ghost-moment-vulkan-c)
+
+PR #1067 re-introduced the pre-rename `moment_vulkan.c` alongside the new
+`float_moment_vulkan.c` that PR #1046 had established. The ghost file was
+deleted and `libvmaf/src/vulkan/meson.build` updated to reference
+`float_moment_vulkan.c` exclusively.
+
+**Rebase impact**: any branch that modified `moment_vulkan.c` must be
+re-targeted to `float_moment_vulkan.c` instead.
+
+**Smoke-test after rebase**:
+
+```bash
+ninja -C build && echo "no duplicate symbol error"
+```

@@ -161,7 +161,7 @@ vulkan_sources += files(
     '../feature/vulkan/motion_vulkan.c',
     '../feature/vulkan/motion_v2_vulkan.c',
     '../feature/vulkan/psnr_vulkan.c',
-    '../feature/vulkan/moment_vulkan.c',
+    '../feature/vulkan/float_moment_vulkan.c',
     '../feature/vulkan/ciede_vulkan.c',
     '../feature/vulkan/ssim_vulkan.c',
     '../feature/vulkan/ms_ssim_vulkan.c',
