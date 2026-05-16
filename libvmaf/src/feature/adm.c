@@ -41,6 +41,9 @@ typedef adm_dwt_band_t_s adm_dwt_band_t;
 
 #define adm_csf_den_scale adm_csf_den_scale_s
 #define dwt2_src_indices_filt dwt2_src_indices_filt_s
+#define adm_csf_den_scale_p3 adm_csf_den_scale_s_p3
+#define adm_cm_p3 adm_cm_s_p3
+#define adm_sum_cube_p3 adm_sum_cube_s_p3
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -228,34 +231,62 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
             adm_decouple(&ref_dwt2, &dis_dwt2, &decouple_r, &decouple_a, w, h, buf_stride,
                          buf_stride, buf_stride, buf_stride, border_factor, adm_enhn_gain_limit);
 
-            den_scale = adm_csf_den_scale(
-                &ref_dwt2, orig_h, scale, w, h, buf_stride, border_factor, adm_norm_view_dist,
-                adm_ref_display_height, adm_csf_mode, luminance_level, adm_csf_scale,
-                adm_csf_diag_scale, adm_noise_weight, adm_p_norm, adm_f1s0, adm_f1s1, adm_f1s2,
-                adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+            /* Dispatch to p3 fast-path (no powf, no inner branch) for the
+             * default adm_p_norm == 3.0 case. Generic path kept for non-default values. */
+            if (adm_p_norm == 3.0) {
+                den_scale = adm_csf_den_scale_p3(
+                    &ref_dwt2, orig_h, scale, w, h, buf_stride, border_factor, adm_norm_view_dist,
+                    adm_ref_display_height, adm_csf_mode, luminance_level, adm_csf_scale,
+                    adm_csf_diag_scale, adm_noise_weight, adm_f1s0, adm_f1s1, adm_f1s2, adm_f1s3,
+                    adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+            } else {
+                den_scale = adm_csf_den_scale(
+                    &ref_dwt2, orig_h, scale, w, h, buf_stride, border_factor, adm_norm_view_dist,
+                    adm_ref_display_height, adm_csf_mode, luminance_level, adm_csf_scale,
+                    adm_csf_diag_scale, adm_noise_weight, adm_p_norm, adm_f1s0, adm_f1s1, adm_f1s2,
+                    adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+            }
 
             adm_csf(&decouple_a, &csf_a, &csf_f, orig_h, scale, w, h, buf_stride, buf_stride,
                     border_factor, adm_norm_view_dist, adm_ref_display_height, adm_csf_mode,
                     luminance_level, adm_csf_scale, adm_csf_diag_scale, adm_f1s0, adm_f1s1,
                     adm_f1s2, adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
 
-            num_scale =
-                adm_cm(&decouple_r, &csf_f, &csf_a, w, h, buf_stride, buf_stride, buf_stride,
-                       border_factor, scale, adm_norm_view_dist, adm_ref_display_height,
-                       adm_csf_mode, luminance_level, adm_csf_scale, adm_csf_diag_scale,
-                       adm_noise_weight, adm_bypass_cm, adm_p_norm, adm_f1s0, adm_f1s1, adm_f1s2,
-                       adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+            if (adm_p_norm == 3.0) {
+                num_scale =
+                    adm_cm_p3(&decouple_r, &csf_f, &csf_a, w, h, buf_stride, buf_stride, buf_stride,
+                              border_factor, scale, adm_norm_view_dist, adm_ref_display_height,
+                              adm_csf_mode, luminance_level, adm_csf_scale, adm_csf_diag_scale,
+                              adm_noise_weight, adm_bypass_cm, adm_f1s0, adm_f1s1, adm_f1s2,
+                              adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+            } else {
+                num_scale =
+                    adm_cm(&decouple_r, &csf_f, &csf_a, w, h, buf_stride, buf_stride, buf_stride,
+                           border_factor, scale, adm_norm_view_dist, adm_ref_display_height,
+                           adm_csf_mode, luminance_level, adm_csf_scale, adm_csf_diag_scale,
+                           adm_noise_weight, adm_bypass_cm, adm_p_norm, adm_f1s0, adm_f1s1,
+                           adm_f1s2, adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+            }
 
             adm_csf(&decouple_r, &csf_f, &csf_a, orig_h, scale, w, h, buf_stride, buf_stride,
                     border_factor, adm_norm_view_dist, adm_ref_display_height, adm_csf_mode,
                     luminance_level, adm_csf_scale, adm_csf_diag_scale, adm_f1s0, adm_f1s1,
                     adm_f1s2, adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
 
-            aim_num_scale = adm_cm(
-                &decouple_a, &csf_a, &csf_f, w, h, buf_stride, buf_stride, buf_stride,
-                border_factor, scale, adm_norm_view_dist, adm_ref_display_height, adm_csf_mode,
-                luminance_level, adm_csf_scale, adm_csf_diag_scale, 0.0, adm_bypass_cm, adm_p_norm,
-                adm_f1s0, adm_f1s1, adm_f1s2, adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+            if (adm_p_norm == 3.0) {
+                aim_num_scale = adm_cm_p3(
+                    &decouple_a, &csf_a, &csf_f, w, h, buf_stride, buf_stride, buf_stride,
+                    border_factor, scale, adm_norm_view_dist, adm_ref_display_height, adm_csf_mode,
+                    luminance_level, adm_csf_scale, adm_csf_diag_scale, 0.0, adm_bypass_cm,
+                    adm_f1s0, adm_f1s1, adm_f1s2, adm_f1s3, adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+            } else {
+                aim_num_scale =
+                    adm_cm(&decouple_a, &csf_a, &csf_f, w, h, buf_stride, buf_stride, buf_stride,
+                           border_factor, scale, adm_norm_view_dist, adm_ref_display_height,
+                           adm_csf_mode, luminance_level, adm_csf_scale, adm_csf_diag_scale, 0.0,
+                           adm_bypass_cm, adm_p_norm, adm_f1s0, adm_f1s1, adm_f1s2, adm_f1s3,
+                           adm_f2s0, adm_f2s1, adm_f2s2, adm_f2s3);
+            }
 
 #ifdef ADM_OPT_DEBUG_DUMP
             snprintf(pathbuf, sizeof(pathbuf), "stage/ref[%d]_a.yuv", scale);

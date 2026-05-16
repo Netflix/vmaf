@@ -299,6 +299,28 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst,
                double adm_f1s2, double adm_f1s3, double adm_f2s0, double adm_f2s1, double adm_f2s2,
                double adm_f2s3);
 
+/* p_norm == 3.0 fast-path variants — dispatched at compute_adm call site.
+ * Eliminate all per-pixel powf() / `if (adm_p_norm == 3.0)` branches.
+ * Bit-exact to the generic variants when adm_p_norm == 3.0. */
+float adm_sum_cube_s_p3(const float *x, int w, int h, int stride, double border_factor);
+
+float adm_csf_den_scale_s_p3(const adm_dwt_band_t_s *src, int orig_h, int scale, int w, int h,
+                             int src_stride, double border_factor, double adm_norm_view_dist,
+                             int adm_ref_display_height, int adm_csf_mode, double luminance_level,
+                             double adm_csf_scale, double adm_csf_diag_scale,
+                             double adm_noise_weight, double adm_f1s0, double adm_f1s1,
+                             double adm_f1s2, double adm_f1s3, double adm_f2s0, double adm_f2s1,
+                             double adm_f2s2, double adm_f2s3);
+
+float adm_cm_s_p3(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst,
+                  const adm_dwt_band_t_s *csf_a, int w, int h, int src_stride, int dst_stride,
+                  int csf_a_stride, double border_factor, int scale, double adm_norm_view_dist,
+                  int adm_ref_display_height, int adm_csf_mode, double luminance_level,
+                  double adm_csf_scale, double adm_csf_diag_scale, double adm_noise_weight,
+                  int adm_bypass_cm, double adm_f1s0, double adm_f1s1, double adm_f1s2,
+                  double adm_f1s3, double adm_f2s0, double adm_f2s1, double adm_f2s2,
+                  double adm_f2s3);
+
 void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h);
 
 int adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w,

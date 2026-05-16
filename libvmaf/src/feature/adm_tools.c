@@ -114,6 +114,38 @@ float adm_sum_cube_s(const float *x, int w, int h, int stride, double border_fac
            powf((bottom - top) * (right - left) / 32.0f, 1.0f / adm_p_norm);
 }
 
+/* Fast-path: p_norm == 3.0 (default). No powf(), no branch in inner loop.
+ * Dispatched at compute_adm call site when adm_p_norm == 3.0.
+ * Bit-exact to adm_sum_cube_s(... adm_p_norm=3.0) — same double accumulator
+ * order (ADR-0418), same cbrtf == powf(x, 1.0f/3.0f) for positive x. */
+float adm_sum_cube_s_p3(const float *x, int w, int h, int stride, double border_factor)
+{
+    int px_stride = stride / sizeof(float);
+    int left = w * border_factor - 0.5;
+    int top = h * border_factor - 0.5;
+    int right = w - left;
+    int bottom = h - top;
+
+    int i, j;
+
+    float val;
+    /* ADR-0418: outer accumulator in `double` — see adm_sum_cube_s. */
+    double accum = 0;
+
+    for (i = top; i < bottom; ++i) {
+        double accum_inner = 0;
+
+        for (j = left; j < right; ++j) {
+            val = fabsf(x[i * px_stride + j]);
+            accum_inner += (double)val * val * val;
+        }
+
+        accum += accum_inner;
+    }
+
+    return cbrtf((float)accum) + cbrtf((bottom - top) * (right - left) / 32.0f);
+}
+
 void adm_decouple_s(const adm_dwt_band_t_s *ref, const adm_dwt_band_t_s *dis,
                     const adm_dwt_band_t_s *r, const adm_dwt_band_t_s *a, int w, int h,
                     int ref_stride, int dis_stride, int r_stride, int a_stride,
@@ -475,6 +507,115 @@ float adm_csf_den_scale_s(const adm_dwt_band_t_s *src, int orig_h, int scale, in
                   get_noise_constant(right - left, bottom - top, adm_noise_weight, adm_p_norm);
     den_scale_d = powf(accum_d, 1.0f / adm_p_norm) +
                   get_noise_constant(right - left, bottom - top, adm_noise_weight, adm_p_norm);
+
+    return (den_scale_h + den_scale_v + den_scale_d);
+}
+
+/* Fast-path: p_norm == 3.0. Removes 3 inner-loop branches from the hot path.
+ * Dispatched at compute_adm call site. Bit-exact to adm_csf_den_scale_s with
+ * adm_p_norm==3.0: cbrtf(x) == powf(x, 1.0f/3.0f) for finite non-negative x
+ * (IEEE-754 guaranteed); accumulation order is identical. */
+float adm_csf_den_scale_s_p3(const adm_dwt_band_t_s *src, int orig_h, int scale, int w, int h,
+                             int src_stride, double border_factor, double adm_norm_view_dist,
+                             int adm_ref_display_height, int adm_csf_mode, double luminance_level,
+                             double adm_csf_scale, double adm_csf_diag_scale,
+                             double adm_noise_weight, double adm_f1s0, double adm_f1s1,
+                             double adm_f1s2, double adm_f1s3, double adm_f2s0, double adm_f2s1,
+                             double adm_f2s2, double adm_f2s3)
+{
+    (void)adm_csf_mode;
+    (void)orig_h;
+
+    // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores) — ADR-0418 upstream-parity (4dcc2f7c)
+    float *src_h = src->band_h, *src_v = src->band_v, *src_d = src->band_d;
+
+    int src_px_stride = src_stride / sizeof(float);
+
+    float factor1, factor2;
+    if (adm_csf_mode == ADM_CSF_MODE_BARTEN) {
+        factor1 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height, luminance_level,
+                             adm_csf_scale);
+        factor2 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height, luminance_level,
+                             adm_csf_diag_scale);
+    } else if (adm_csf_mode == ADM_CSF_MODE_ADM) {
+        factor1 = adm_native_csf(scale, adm_norm_view_dist, adm_ref_display_height, 0);
+        factor2 = adm_native_csf(scale, adm_norm_view_dist, adm_ref_display_height, 45);
+    } else {
+        factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist,
+                                        adm_ref_display_height);
+        factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist,
+                                        adm_ref_display_height);
+    }
+    if (scale == 0) {
+        if (adm_f1s0 >= 0) {
+            factor1 = adm_f1s0;
+        }
+        if (adm_f2s0 >= 0) {
+            factor2 = adm_f2s0;
+        }
+    } else if (scale == 1) {
+        if (adm_f1s1 >= 0) {
+            factor1 = adm_f1s1;
+        }
+        if (adm_f2s1 >= 0) {
+            factor2 = adm_f2s1;
+        }
+    } else if (scale == 2) {
+        if (adm_f1s2 >= 0) {
+            factor1 = adm_f1s2;
+        }
+        if (adm_f2s2 >= 0) {
+            factor2 = adm_f2s2;
+        }
+    } else {
+        if (adm_f1s3 >= 0) {
+            factor1 = adm_f1s3;
+        }
+        if (adm_f2s3 >= 0) {
+            factor2 = adm_f2s3;
+        }
+    }
+    float rfactor[3] = {factor1, factor1, factor2};
+
+    float accum_h = 0, accum_v = 0, accum_d = 0;
+    float accum_inner_h, accum_inner_v, accum_inner_d;
+    float den_scale_h, den_scale_v, den_scale_d;
+
+    int left = w * border_factor - 0.5;
+    int top = h * border_factor - 0.5;
+    int right = w - left;
+    int bottom = h - top;
+
+    int i, j;
+
+    for (i = top; i < bottom; ++i) {
+        accum_inner_h = 0;
+        accum_inner_v = 0;
+        accum_inner_d = 0;
+        src_h = src->band_h + i * src_px_stride;
+        src_v = src->band_v + i * src_px_stride;
+        src_d = src->band_d + i * src_px_stride;
+        for (j = left; j < right; ++j) {
+            float abs_csf_o_val_h = fabsf(rfactor[0] * src_h[j]);
+            float abs_csf_o_val_v = fabsf(rfactor[1] * src_v[j]);
+            float abs_csf_o_val_d = fabsf(rfactor[2] * src_d[j]);
+
+            accum_inner_h += abs_csf_o_val_h * abs_csf_o_val_h * abs_csf_o_val_h;
+            accum_inner_v += abs_csf_o_val_v * abs_csf_o_val_v * abs_csf_o_val_v;
+            accum_inner_d += abs_csf_o_val_d * abs_csf_o_val_d * abs_csf_o_val_d;
+        }
+
+        accum_h += accum_inner_h;
+        accum_v += accum_inner_v;
+        accum_d += accum_inner_d;
+    }
+
+    den_scale_h =
+        cbrtf(accum_h) + get_noise_constant(right - left, bottom - top, adm_noise_weight, 3.0);
+    den_scale_v =
+        cbrtf(accum_v) + get_noise_constant(right - left, bottom - top, adm_noise_weight, 3.0);
+    den_scale_d =
+        cbrtf(accum_d) + get_noise_constant(right - left, bottom - top, adm_noise_weight, 3.0);
 
     return (den_scale_h + den_scale_v + den_scale_d);
 }
@@ -1025,6 +1166,478 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
                   get_noise_constant(right - left, bottom - top, adm_noise_weight, adm_p_norm);
     num_scale_d = powf(accum_d, 1.0f / adm_p_norm) +
                   get_noise_constant(right - left, bottom - top, adm_noise_weight, adm_p_norm);
+
+    return (num_scale_h + num_scale_v + num_scale_d);
+}
+
+/* Fast-path: p_norm == 3.0 (default). Eliminates all per-pixel powf() branches
+ * in the hot path of adm_cm_s. Dispatched at compute_adm call site when
+ * adm_p_norm == 3.0. Bit-exact: cbrtf(x) == powf(x, 1.0f/3.0f) for finite
+ * non-negative x (IEEE-754 guarantee); all accumulation orders are identical
+ * to adm_cm_s(..., adm_p_norm=3.0). No adm_p_norm parameter — callers must
+ * guard with `if (adm_p_norm == 3.0)` before calling this variant. */
+float adm_cm_s_p3(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *csf_f,
+                  const adm_dwt_band_t_s *csf_a, int w, int h, int src_stride, int flt_stride,
+                  int csf_a_stride, double border_factor, int scale, double adm_norm_view_dist,
+                  int adm_ref_display_height, int adm_csf_mode, double luminance_level,
+                  double adm_csf_scale, double adm_csf_diag_scale, double adm_noise_weight,
+                  int adm_bypass_cm, double adm_f1s0, double adm_f1s1, double adm_f1s2,
+                  double adm_f1s3, double adm_f2s0, double adm_f2s1, double adm_f2s2,
+                  double adm_f2s3)
+{
+    (void)flt_stride;
+    (void)adm_csf_mode;
+
+    // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
+    // 1 to 4 (from finest scale to coarsest scale).
+    float factor1, factor2;
+    if (adm_csf_mode == ADM_CSF_MODE_BARTEN) {
+        factor1 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height, luminance_level,
+                             adm_csf_scale);
+        factor2 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height, luminance_level,
+                             adm_csf_diag_scale);
+    } else if (adm_csf_mode == ADM_CSF_MODE_ADM) {
+        factor1 = adm_native_csf(scale, adm_norm_view_dist, adm_ref_display_height, 0);
+        factor2 = adm_native_csf(scale, adm_norm_view_dist, adm_ref_display_height, 45);
+    } else {
+        factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist,
+                                        adm_ref_display_height);
+        factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist,
+                                        adm_ref_display_height);
+    }
+    if (scale == 0) {
+        if (adm_f1s0 >= 0) {
+            factor1 = adm_f1s0;
+        }
+        if (adm_f2s0 >= 0) {
+            factor2 = adm_f2s0;
+        }
+    } else if (scale == 1) {
+        if (adm_f1s1 >= 0) {
+            factor1 = adm_f1s1;
+        }
+        if (adm_f2s1 >= 0) {
+            factor2 = adm_f2s1;
+        }
+    } else if (scale == 2) {
+        if (adm_f1s2 >= 0) {
+            factor1 = adm_f1s2;
+        }
+        if (adm_f2s2 >= 0) {
+            factor2 = adm_f2s2;
+        }
+    } else {
+        if (adm_f1s3 >= 0) {
+            factor1 = adm_f1s3;
+        }
+        if (adm_f2s3 >= 0) {
+            factor2 = adm_f2s3;
+        }
+    }
+    float rfactor[3] = {factor1, factor1, factor2};
+
+    const float *angles[3] = {csf_a->band_h, csf_a->band_v, csf_a->band_d};
+    const float *flt_angles[3] = {csf_f->band_h, csf_f->band_v, csf_f->band_d};
+
+    int src_px_stride = src_stride / sizeof(float);
+    int csf_px_stride = csf_a_stride / sizeof(float);
+
+    float xh, xv, xd, thr = 0.0;
+
+    float accum_h = 0, accum_v = 0, accum_d = 0;
+    float accum_inner_h, accum_inner_v, accum_inner_d;
+    float num_scale_h, num_scale_v, num_scale_d;
+
+    /* The computation of the scales is not required for the regions which lie outside the frame borders */
+    int left = w * border_factor - 0.5;
+    int top = h * border_factor - 0.5;
+    int right = w - left;
+    int bottom = h - top;
+
+    int start_col = (left > 1) ? left : 1;
+    int end_col = (right < (w - 1)) ? right : (w - 1);
+    int start_row = (top > 1) ? top : 1;
+    int end_row = (bottom < (h - 1)) ? bottom : (h - 1);
+
+    int i, j;
+
+    /* i=0,j=0 */
+    accum_inner_h = 0;
+    accum_inner_v = 0;
+    accum_inner_d = 0;
+    if ((top <= 0) && (left <= 0)) {
+        xh = src->band_h[0] * rfactor[0];
+        xv = src->band_v[0] * rfactor[1];
+        xd = src->band_d[0] * rfactor[2];
+
+        if (adm_bypass_cm == 0) {
+            ADM_CM_THRESH_S_0_0(angles, flt_angles, csf_px_stride, &thr, w, h, 0, 0);
+        }
+
+        xh = fabsf(xh) - thr;
+        xv = fabsf(xv) - thr;
+        xd = fabsf(xd) - thr;
+
+        xh = xh < 0.0f ? 0.0f : xh;
+        xv = xv < 0.0f ? 0.0f : xv;
+        xd = xd < 0.0f ? 0.0f : xd;
+
+        accum_inner_h += (xh * xh * xh);
+        accum_inner_v += (xv * xv * xv);
+        accum_inner_d += (xd * xd * xd);
+    }
+
+    /* i=0, j */
+    if (top <= 0) {
+        for (j = start_col; j < end_col; ++j) {
+            xh = src->band_h[j] * rfactor[0];
+            xv = src->band_v[j] * rfactor[1];
+            xd = src->band_d[j] * rfactor[2];
+
+            if (adm_bypass_cm == 0) {
+                ADM_CM_THRESH_S_0_J(angles, flt_angles, csf_px_stride, &thr, w, h, 0, j);
+            }
+
+            xh = fabsf(xh) - thr;
+            xv = fabsf(xv) - thr;
+            xd = fabsf(xd) - thr;
+
+            xh = xh < 0.0f ? 0.0f : xh;
+            xv = xv < 0.0f ? 0.0f : xv;
+            xd = xd < 0.0f ? 0.0f : xd;
+
+            accum_inner_h += (xh * xh * xh);
+            accum_inner_v += (xv * xv * xv);
+            accum_inner_d += (xd * xd * xd);
+        }
+    }
+
+    /* i=0,j=w-1 */
+    if ((top <= 0) && (right > (w - 1))) {
+        xh = src->band_h[w - 1] * rfactor[0];
+        xv = src->band_v[w - 1] * rfactor[1];
+        xd = src->band_d[w - 1] * rfactor[2];
+
+        if (adm_bypass_cm == 0) {
+            ADM_CM_THRESH_S_0_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, 0, (w - 1));
+        }
+
+        xh = fabsf(xh) - thr;
+        xv = fabsf(xv) - thr;
+        xd = fabsf(xd) - thr;
+
+        xh = xh < 0.0f ? 0.0f : xh;
+        xv = xv < 0.0f ? 0.0f : xv;
+        xd = xd < 0.0f ? 0.0f : xd;
+
+        accum_inner_h += (xh * xh * xh);
+        accum_inner_v += (xv * xv * xv);
+        accum_inner_d += (xd * xd * xd);
+    }
+
+    accum_h += accum_inner_h;
+    accum_v += accum_inner_v;
+    accum_d += accum_inner_d;
+
+    if ((left > 0) && (right <= (w - 1))) /* Completely within frame */
+    {
+        for (i = start_row; i < end_row; ++i) {
+            accum_inner_h = 0;
+            accum_inner_v = 0;
+            accum_inner_d = 0;
+            for (j = start_col; j < end_col; ++j) {
+                xh = src->band_h[i * src_px_stride + j] * rfactor[0];
+                xv = src->band_v[i * src_px_stride + j] * rfactor[1];
+                xd = src->band_d[i * src_px_stride + j] * rfactor[2];
+
+                if (adm_bypass_cm == 0) {
+                    ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+                }
+
+                xh = fabsf(xh) - thr;
+                xv = fabsf(xv) - thr;
+                xd = fabsf(xd) - thr;
+
+                xh = xh < 0.0f ? 0.0f : xh;
+                xv = xv < 0.0f ? 0.0f : xv;
+                xd = xd < 0.0f ? 0.0f : xd;
+
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            }
+            accum_h += accum_inner_h;
+            accum_v += accum_inner_v;
+            accum_d += accum_inner_d;
+        }
+    } else if ((left <= 0) && (right <= (w - 1))) /* Right border within frame, left outside */
+    {
+        for (i = start_row; i < end_row; ++i) {
+            accum_inner_h = 0;
+            accum_inner_v = 0;
+            accum_inner_d = 0;
+
+            /* j = 0 */
+            xh = src->band_h[i * src_px_stride] * rfactor[0];
+            xv = src->band_v[i * src_px_stride] * rfactor[1];
+            xd = src->band_d[i * src_px_stride] * rfactor[2];
+
+            if (adm_bypass_cm == 0) {
+                ADM_CM_THRESH_S_I_0(angles, flt_angles, csf_px_stride, &thr, w, h, i, 0);
+            }
+
+            xh = fabsf(xh) - thr;
+            xv = fabsf(xv) - thr;
+            xd = fabsf(xd) - thr;
+
+            xh = xh < 0.0f ? 0.0f : xh;
+            xv = xv < 0.0f ? 0.0f : xv;
+            xd = xd < 0.0f ? 0.0f : xd;
+
+            accum_inner_h += (xh * xh * xh);
+            accum_inner_v += (xv * xv * xv);
+            accum_inner_d += (xd * xd * xd);
+
+            /* j within frame */
+            for (j = start_col; j < end_col; ++j) {
+                xh = src->band_h[i * src_px_stride + j] * rfactor[0];
+                xv = src->band_v[i * src_px_stride + j] * rfactor[1];
+                xd = src->band_d[i * src_px_stride + j] * rfactor[2];
+
+                if (adm_bypass_cm == 0) {
+                    ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+                }
+
+                xh = fabsf(xh) - thr;
+                xv = fabsf(xv) - thr;
+                xd = fabsf(xd) - thr;
+
+                xh = xh < 0.0f ? 0.0f : xh;
+                xv = xv < 0.0f ? 0.0f : xv;
+                xd = xd < 0.0f ? 0.0f : xd;
+
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            }
+            accum_h += accum_inner_h;
+            accum_v += accum_inner_v;
+            accum_d += accum_inner_d;
+        }
+    } else if ((left > 0) && (right > (w - 1))) /* Left border within frame, right outside */
+    {
+        for (i = start_row; i < end_row; ++i) {
+            accum_inner_h = 0;
+            accum_inner_v = 0;
+            accum_inner_d = 0;
+            /* j within frame */
+            for (j = start_col; j < end_col; ++j) {
+                xh = src->band_h[i * src_px_stride + j] * rfactor[0];
+                xv = src->band_v[i * src_px_stride + j] * rfactor[1];
+                xd = src->band_d[i * src_px_stride + j] * rfactor[2];
+
+                if (adm_bypass_cm == 0) {
+                    ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+                }
+
+                xh = fabsf(xh) - thr;
+                xv = fabsf(xv) - thr;
+                xd = fabsf(xd) - thr;
+
+                xh = xh < 0.0f ? 0.0f : xh;
+                xv = xv < 0.0f ? 0.0f : xv;
+                xd = xd < 0.0f ? 0.0f : xd;
+
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            }
+            /* j = w-1 */
+            xh = src->band_h[i * src_px_stride + w - 1] * rfactor[0];
+            xv = src->band_v[i * src_px_stride + w - 1] * rfactor[1];
+            xd = src->band_d[i * src_px_stride + w - 1] * rfactor[2];
+
+            if (adm_bypass_cm == 0) {
+                ADM_CM_THRESH_S_I_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, i, (w - 1));
+            }
+
+            xh = fabsf(xh) - thr;
+            xv = fabsf(xv) - thr;
+            xd = fabsf(xd) - thr;
+
+            xh = xh < 0.0f ? 0.0f : xh;
+            xv = xv < 0.0f ? 0.0f : xv;
+            xd = xd < 0.0f ? 0.0f : xd;
+
+            accum_inner_h += (xh * xh * xh);
+            accum_inner_v += (xv * xv * xv);
+            accum_inner_d += (xd * xd * xd);
+
+            accum_h += accum_inner_h;
+            accum_v += accum_inner_v;
+            accum_d += accum_inner_d;
+        }
+    } else /* Both borders outside frame */
+    {
+        for (i = start_row; i < end_row; ++i) {
+            accum_inner_h = 0;
+            accum_inner_v = 0;
+            accum_inner_d = 0;
+
+            /* j = 0 */
+            xh = src->band_h[i * src_px_stride] * rfactor[0];
+            xv = src->band_v[i * src_px_stride] * rfactor[1];
+            xd = src->band_d[i * src_px_stride] * rfactor[2];
+
+            if (adm_bypass_cm == 0) {
+                ADM_CM_THRESH_S_I_0(angles, flt_angles, csf_px_stride, &thr, w, h, i, 0);
+            }
+
+            xh = fabsf(xh) - thr;
+            xv = fabsf(xv) - thr;
+            xd = fabsf(xd) - thr;
+
+            xh = xh < 0.0f ? 0.0f : xh;
+            xv = xv < 0.0f ? 0.0f : xv;
+            xd = xd < 0.0f ? 0.0f : xd;
+
+            accum_inner_h += (xh * xh * xh);
+            accum_inner_v += (xv * xv * xv);
+            accum_inner_d += (xd * xd * xd);
+
+            /* j within frame */
+            for (j = start_col; j < end_col; ++j) {
+                xh = src->band_h[i * src_px_stride + j] * rfactor[0];
+                xv = src->band_v[i * src_px_stride + j] * rfactor[1];
+                xd = src->band_d[i * src_px_stride + j] * rfactor[2];
+
+                if (adm_bypass_cm == 0) {
+                    ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_px_stride, &thr, w, h, i, j);
+                }
+
+                xh = fabsf(xh) - thr;
+                xv = fabsf(xv) - thr;
+                xd = fabsf(xd) - thr;
+
+                xh = xh < 0.0f ? 0.0f : xh;
+                xv = xv < 0.0f ? 0.0f : xv;
+                xd = xd < 0.0f ? 0.0f : xd;
+
+                accum_inner_h += (xh * xh * xh);
+                accum_inner_v += (xv * xv * xv);
+                accum_inner_d += (xd * xd * xd);
+            }
+            /* j = w-1 */
+            xh = src->band_h[i * src_px_stride + w - 1] * rfactor[0];
+            xv = src->band_v[i * src_px_stride + w - 1] * rfactor[1];
+            xd = src->band_d[i * src_px_stride + w - 1] * rfactor[2];
+
+            if (adm_bypass_cm == 0) {
+                ADM_CM_THRESH_S_I_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, i, (w - 1));
+            }
+
+            xh = fabsf(xh) - thr;
+            xv = fabsf(xv) - thr;
+            xd = fabsf(xd) - thr;
+
+            xh = xh < 0.0f ? 0.0f : xh;
+            xv = xv < 0.0f ? 0.0f : xv;
+            xd = xd < 0.0f ? 0.0f : xd;
+
+            accum_inner_h += (xh * xh * xh);
+            accum_inner_v += (xv * xv * xv);
+            accum_inner_d += (xd * xd * xd);
+
+            accum_h += accum_inner_h;
+            accum_v += accum_inner_v;
+            accum_d += accum_inner_d;
+        }
+    }
+    accum_inner_h = 0;
+    accum_inner_v = 0;
+    accum_inner_d = 0;
+
+    /* i=h-1,j=0 */
+    if ((bottom > (h - 1)) && (left <= 0)) {
+        xh = src->band_h[(h - 1) * src_px_stride] * rfactor[0];
+        xv = src->band_v[(h - 1) * src_px_stride] * rfactor[1];
+        xd = src->band_d[(h - 1) * src_px_stride] * rfactor[2];
+
+        if (adm_bypass_cm == 0) {
+            ADM_CM_THRESH_S_H_M_1_0(angles, flt_angles, csf_px_stride, &thr, w, h, (h - 1), 0);
+        }
+
+        xh = fabsf(xh) - thr;
+        xv = fabsf(xv) - thr;
+        xd = fabsf(xd) - thr;
+
+        xh = xh < 0.0f ? 0.0f : xh;
+        xv = xv < 0.0f ? 0.0f : xv;
+        xd = xd < 0.0f ? 0.0f : xd;
+
+        accum_inner_h += (xh * xh * xh);
+        accum_inner_v += (xv * xv * xv);
+        accum_inner_d += (xd * xd * xd);
+    }
+
+    /* i=h-1,j */
+    if (bottom > (h - 1)) {
+        for (j = start_col; j < end_col; ++j) {
+            xh = src->band_h[(h - 1) * src_px_stride + j] * rfactor[0];
+            xv = src->band_v[(h - 1) * src_px_stride + j] * rfactor[1];
+            xd = src->band_d[(h - 1) * src_px_stride + j] * rfactor[2];
+
+            if (adm_bypass_cm == 0) {
+                ADM_CM_THRESH_S_H_M_1_J(angles, flt_angles, csf_px_stride, &thr, w, h, (h - 1), j);
+            }
+
+            xh = fabsf(xh) - thr;
+            xv = fabsf(xv) - thr;
+            xd = fabsf(xd) - thr;
+
+            xh = xh < 0.0f ? 0.0f : xh;
+            xv = xv < 0.0f ? 0.0f : xv;
+            xd = xd < 0.0f ? 0.0f : xd;
+
+            accum_inner_h += (xh * xh * xh);
+            accum_inner_v += (xv * xv * xv);
+            accum_inner_d += (xd * xd * xd);
+        }
+    }
+
+    /* i-h-1,j=w-1 */
+    if ((bottom > (h - 1)) && (right > (w - 1))) {
+        xh = src->band_h[(h - 1) * src_px_stride + w - 1] * rfactor[0];
+        xv = src->band_v[(h - 1) * src_px_stride + w - 1] * rfactor[1];
+        xd = src->band_d[(h - 1) * src_px_stride + w - 1] * rfactor[2];
+
+        if (adm_bypass_cm == 0) {
+            ADM_CM_THRESH_S_H_M_1_W_M_1(angles, flt_angles, csf_px_stride, &thr, w, h, (h - 1),
+                                        (w - 1));
+        }
+
+        xh = fabsf(xh) - thr;
+        xv = fabsf(xv) - thr;
+        xd = fabsf(xd) - thr;
+
+        xh = xh < 0.0f ? 0.0f : xh;
+        xv = xv < 0.0f ? 0.0f : xv;
+        xd = xd < 0.0f ? 0.0f : xd;
+
+        accum_inner_h += (xh * xh * xh);
+        accum_inner_v += (xv * xv * xv);
+        accum_inner_d += (xd * xd * xd);
+    }
+    accum_h += accum_inner_h;
+    accum_v += accum_inner_v;
+    accum_d += accum_inner_d;
+
+    num_scale_h =
+        cbrtf(accum_h) + get_noise_constant(right - left, bottom - top, adm_noise_weight, 3.0);
+    num_scale_v =
+        cbrtf(accum_v) + get_noise_constant(right - left, bottom - top, adm_noise_weight, 3.0);
+    num_scale_d =
+        cbrtf(accum_d) + get_noise_constant(right - left, bottom - top, adm_noise_weight, 3.0);
 
     return (num_scale_h + num_scale_v + num_scale_d);
 }
