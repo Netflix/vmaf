@@ -1,6 +1,7 @@
 # Fork bug-status — `docs/state.md`
 
 <!-- markdownlint-disable MD013 -->
+_Updated: 2026-05-17 (T-FEX-LIST-DEDUP-REGRESSION closed — PR #1088 squash re-introduced 6 SYCL + 55 Vulkan duplicate extractor entries and silently dropped integer_ms_ssim_hip (ADR-0285) and integer_vif_metal (ADR-0436) registrations; fix/fex-list-dedup-hip-metal-restore restores all; row added to Recently closed.)_
 _Updated: 2026-05-16 (Staleness sweep — 5 stale verified-notes corrected: PR #512 Phase-3b MERGED (T-VK-VIF-1.4-RESIDUAL-ARC); PR #469 MERGED (T6-2a-followup' path B, two rows); PR #497 MERGED 2026-05-09 — Research-0090 deferred trigger fired, now actionable; PR #443 + #444 CLOSED without merge, stale cross-refs struck.)_
 _Updated: 2026-05-16 (T-CAMBI-CUDA-HOST-PREPROCESSING-SEGV closed — `cambi_cuda` SIGSEGV on every frame fixed by downloading dist_pic GPU→host before host preprocessing; row added to Recently closed.)_
 _Updated: 2026-05-16 (PR fix/sycl-motion-fps-weight-vulkan-import-status-2026-05-16 — closed T-VK-T7-29-PART-2-IMPORT-NOT-IMPL; all three Vulkan import entry points fully implemented, stale -ENOSYS header comments removed. SYCL motion_v2 gains motion_fps_weight option.)_
@@ -104,6 +105,7 @@ landed fix yet._
 
 ## Recently closed
 
+| T-FEX-LIST-DEDUP-REGRESSION | PR #1088 squash merged from a stale base, re-introducing 6 SYCL + 55 Vulkan duplicate pointer entries into `feature_extractor_list[]` and silently dropping `integer_ms_ssim_hip` (ADR-0285) and `integer_vif_metal` (ADR-0436) registrations. Both extractor names became unreachable by name-lookup without error. | no ADR (bug fix, only-one-way revert) | fix/fex-list-dedup-hip-metal-restore | — | 2026-05-17 |
 | T-GPU-PSNR-ENABLE-CHROMA-SILENT | `psnr_cuda` / `psnr_sycl` / `psnr_vulkan` silently ignored `enable_chroma=false`, emitting full chroma on non-YUV400 sources and diverging from CPU | ADR-0453 / Research-0136 | fix/psnr-enable-chroma-gpu-parity-2026-05-16 | — | (last ~3 months)
 
 _Bugs closed in the last ~90 days. Older entries roll off into

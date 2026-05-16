@@ -34995,3 +34995,32 @@ runtime or reading a schema-version sidecar (future work).
 python -m pytest ai/tests/test_extract_k150k_no_ssimulacra2.py -v
 # Expected: 3/3 PASS
 ```
+
+---
+
+## fix/fex-list-dedup-hip-metal-restore (2026-05-17)
+
+**Files touched**: `libvmaf/src/feature/feature_extractor.c`
+
+**What changed**: Restores the deduplicated SYCL (6 dupes) and Vulkan (55 dupes)
+`feature_extractor_list[]` pointer entries that PR #1085 fixed but PR #1088 re-introduced
+via stale-base squash. Also restores `integer_ms_ssim_hip` (ADR-0285) and
+`integer_vif_metal` (ADR-0436) registrations dropped by the same squash.
+
+**Rebase impact**: no rebase impact. The touched file has no upstream-Netflix equivalent
+for fork-added GPU backend entries. Pure list maintenance in a fork-local block.
+
+**Invariant to preserve on rebase**: every new GPU extractor registration that arrives via
+a GPU-backend PR must survive any squash or rebase of `feature_extractor.c`. If a
+stale-base squash drops entries, restore them in a separate PR. Audit with:
+`grep -c 'integer_ms_ssim_hip\|integer_vif_metal' libvmaf/src/feature/feature_extractor.c`
+(must return 4).
+
+**Smoke-test after rebase**:
+
+```bash
+grep -c 'integer_ms_ssim_hip\|integer_vif_metal' libvmaf/src/feature/feature_extractor.c
+# Expected: 4
+grep 'psnr_sycl' libvmaf/src/feature/feature_extractor.c | grep -v extern
+# Expected: exactly 1 line (no duplicates in the list section)
+```

@@ -144,6 +144,12 @@ extern VmafFeatureExtractor vmaf_fex_float_motion_hip;
  * `feature/cuda/integer_ssim_cuda.c` and pins the two-dispatch +
  * five intermediate float buffers shape. v1: scale=1 only. */
 extern VmafFeatureExtractor vmaf_fex_float_ssim_hip;
+/* HIP ninth-consumer kernel — ADR-0285. Mirrors the CUDA twin
+ * `feature/cuda/integer_ms_ssim_cuda.c`: 5-level pyramid,
+ * three kernels (decimate, horiz, vert_lcs), per-scale l/c/s
+ * float partial readbacks. Emits `float_ms_ssim` + optional
+ * per-scale l/c/s triples when enable_lcs=true. */
+extern VmafFeatureExtractor vmaf_fex_integer_ms_ssim_hip;
 #endif
 #if HAVE_METAL
 /* Metal feature extractors — T8-1c through T8-1j / ADR-0421.
@@ -159,6 +165,8 @@ extern VmafFeatureExtractor vmaf_fex_float_psnr_metal;
 extern VmafFeatureExtractor vmaf_fex_float_ansnr_metal;
 extern VmafFeatureExtractor vmaf_fex_float_motion_metal;
 extern VmafFeatureExtractor vmaf_fex_float_moment_metal;
+/* T8-2b: integer_vif_metal — real VIF port to Metal (ADR-0436). */
+extern VmafFeatureExtractor vmaf_fex_integer_vif_metal;
 #endif
 /* SpEED-QA NR metric scaffold — ADR-0253. */
 extern VmafFeatureExtractor vmaf_fex_speed_qa;
@@ -186,10 +194,9 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_integer_vif_sycl, &vmaf_fex_integer_adm_sycl, &vmaf_fex_integer_motion_sycl,
     &vmaf_fex_integer_motion_v2_sycl, &vmaf_fex_psnr_sycl, &vmaf_fex_float_moment_sycl,
     &vmaf_fex_ciede_sycl, &vmaf_fex_float_ssim_sycl, &vmaf_fex_float_ms_ssim_sycl,
-    &vmaf_fex_psnr_hvs_sycl, &vmaf_fex_psnr_sycl, &vmaf_fex_float_moment_sycl, &vmaf_fex_ciede_sycl,
-    &vmaf_fex_float_ssim_sycl, &vmaf_fex_float_ms_ssim_sycl, &vmaf_fex_psnr_hvs_sycl,
-    &vmaf_fex_float_ansnr_sycl, &vmaf_fex_float_psnr_sycl, &vmaf_fex_float_motion_sycl,
-    &vmaf_fex_float_vif_sycl, &vmaf_fex_ssimulacra2_sycl, &vmaf_fex_float_adm_sycl,
+    &vmaf_fex_psnr_hvs_sycl, &vmaf_fex_float_ansnr_sycl, &vmaf_fex_float_psnr_sycl,
+    &vmaf_fex_float_motion_sycl, &vmaf_fex_float_vif_sycl, &vmaf_fex_ssimulacra2_sycl,
+    &vmaf_fex_float_adm_sycl,
     /* T3-15 / ADR-0371: cambi SYCL twin (closes last CUDA→SYCL parity gap). */
     &vmaf_fex_cambi_sycl,
 #endif
@@ -202,27 +209,9 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan,
     &vmaf_fex_integer_motion_v2_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
     &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
-    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
-    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
     &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_ansnr_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
-    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
-    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_psnr_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
-    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
-    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_motion_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
-    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
-    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_vif_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
-    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
-    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_adm_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_ssimulacra2_vulkan,
+    &vmaf_fex_float_psnr_vulkan, &vmaf_fex_float_motion_vulkan, &vmaf_fex_float_vif_vulkan,
+    &vmaf_fex_float_adm_vulkan, &vmaf_fex_ssimulacra2_vulkan,
     /* T7-36 / ADR-0205: cambi Vulkan twin (Strategy II hybrid). */
     &vmaf_fex_cambi_vulkan,
 #endif
@@ -273,6 +262,12 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
      * float-partial readback); emits one feature (`float_ssim`)
      * once the runtime kernel arrives. v1 is scale=1 only. */
     &vmaf_fex_float_ssim_hip,
+    /* Ninth consumer (ADR-0285): `integer_ms_ssim_hip` mirrors
+     * `integer_ms_ssim_cuda.c`'s call graph (5-level pyramid,
+     * decimate + horiz + vert_lcs kernels, per-scale l/c/s float
+     * partial readbacks); emits `float_ms_ssim` + optional per-scale
+     * l/c/s triples once the runtime kernel arrives. */
+    &vmaf_fex_integer_ms_ssim_hip,
 #endif
 #if HAVE_METAL
     /* T8-1 first consumer (ADR-0361): registration succeeds even on
@@ -286,6 +281,8 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     /* T8-1 batch-2 additional consumers (ADR-0361): 4 float features. */
     &vmaf_fex_float_psnr_metal, &vmaf_fex_float_ansnr_metal, &vmaf_fex_float_motion_metal,
     &vmaf_fex_float_moment_metal,
+    /* T8-2b: integer_vif_metal — real VIF port to Metal (ADR-0436). */
+    &vmaf_fex_integer_vif_metal,
 #endif
     &vmaf_fex_speed_qa, &vmaf_fex_lpips, &vmaf_fex_dists_sq, &vmaf_fex_fastdvdnet_pre,
     &vmaf_fex_mobilesal, &vmaf_fex_transnet_v2, &vmaf_fex_null, NULL};
