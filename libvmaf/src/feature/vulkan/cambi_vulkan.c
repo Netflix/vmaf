@@ -303,6 +303,28 @@ static const VmafOption options[] = {
         .alias = "mlc",
     },
     {
+        .name = "src_width",
+        .help = "Source width before encoding (0 = use input width). "
+                "Only meaningful when full_ref=true (future GPU extension).",
+        .offset = offsetof(CambiVkState, src_width),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = 0,
+        .min = 320,
+        .max = 7680,
+        .alias = "srcw",
+    },
+    {
+        .name = "src_height",
+        .help = "Source height before encoding (0 = use input height). "
+                "Only meaningful when full_ref=true (future GPU extension).",
+        .offset = offsetof(CambiVkState, src_height),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = 0,
+        .min = 200,
+        .max = 4320,
+        .alias = "srch",
+    },
+    {
         .name = "cambi_vis_lum_threshold",
         .help = "Visibility luminance threshold (cd/m²)",
         .offset = offsetof(CambiVkState, cambi_vis_lum_threshold),
@@ -714,8 +736,12 @@ static int cambi_vk_init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     if (s->enc_width < CAMBI_VK_MIN_WIDTH_HEIGHT && s->enc_height < CAMBI_VK_MIN_WIDTH_HEIGHT)
         return -EINVAL;
 
-    s->src_width = w;
-    s->src_height = h;
+    /* Respect user-supplied src_width/src_height overrides (mirrors cambi.c:602).
+     * A value of 0 means "use the actual input dimension". */
+    if (s->src_width == 0 || s->src_height == 0) {
+        s->src_width = w;
+        s->src_height = h;
+    }
     s->src_bpc = bpc;
     s->proc_width = (unsigned)s->enc_width;
     s->proc_height = (unsigned)s->enc_height;
