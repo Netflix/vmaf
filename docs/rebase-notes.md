@@ -115,34 +115,6 @@ cover several PRs in one workstream; cross-link from the ID heading.
 
 ## Entries (backfilled 2026-04-18 per ADR-0108 adoption)
 
-### fix/psnr-enable-chroma-gpu-parity-2026-05-16 — PSNR `enable_chroma` option GPU parity
-
-- **Touches**: `libvmaf/src/feature/cuda/integer_psnr_cuda.c`,
-  `libvmaf/src/feature/sycl/integer_psnr_sycl.cpp`,
-  `libvmaf/src/feature/vulkan/psnr_vulkan.c`,
-  `docs/metrics/features.md`, `docs/research/0135-*`, `docs/adr/0452-*`,
-  `changelog.d/fixed/psnr-enable-chroma-cross-backend.md`,
-  `docs/research/0136-psnr-enable-chroma-cross-backend-2026-05-16.md`,
-  `docs/adr/0453-psnr-enable-chroma-gpu-parity.md`.
-- **Invariant**: The `enable_chroma` option default is `true` on all backends.
-  The `n_planes` clamp in GPU `init()` must stay in the following order:
-  (1) `pix_fmt == YUV400P` sets `n_planes = 1`; (2) `!enable_chroma && n_planes > 1`
-  also clamps to 1. If upstream Netflix ever adds option-table support to
-  the CUDA/Vulkan twins, port any new options but preserve the `enable_chroma`
-  entry and its `default_val.b = true` exactly — a default flip to `false`
-  would silently suppress chroma output and break the cross-backend parity gate.
-- **Re-test**:
-
-  ```bash
-  python3 scripts/ci/cross_backend_parity_gate.py \
-      --backends cpu cuda --features psnr --places 4
-  python3 scripts/ci/cross_backend_parity_gate.py \
-      --backends cpu cuda --features psnr --places 4 \
-      --feature-opts 'psnr=enable_chroma=false' \
-      --feature-opts 'psnr_cuda=enable_chroma=false'
-  ```
-
-
 ### fix/vmaf-tune-temporal-saliency-2026-05-15 — recommend-saliency temporal aggregation
 
 - **Touches**: `tools/vmaf-tune/src/vmaftune/saliency.py`,
@@ -282,6 +254,28 @@ cover several PRs in one workstream; cross-link from the ID heading.
   spawning ffmpeg until a PR adds explicit plane semantics.
 - **Re-test**:
   `PYTHONPATH=ai/src .venv/bin/python -m pytest ai/tests/test_frame_loader.py -q`
+
+### fix/mkdocs-strict-pre-push-2026-05-15 — mkdocs strict-mode pre-push hook
+
+- **Touches**: `scripts/git-hooks/pre-push-mkdocs-strict.sh` (new),
+  `scripts/git-hooks/pre-push` (delegation call appended),
+  `.pre-commit-config.yaml` (new `mkdocs-strict` local hook entry),
+  `docs/adr/0466-mkdocs-strict-pre-push-hook.md` (new ADR).
+- **Invariant**: The hook gate mirrors the CI `docs.yml` lane (ADR-0403):
+  `mkdocs build --strict --quiet` with the repo-root `mkdocs.yml`. Keeping
+  the hook's config-file flag pointed at `mkdocs.yml` in the repo root is
+  load-bearing — if `mkdocs.yml` is ever moved, update
+  `pre-push-mkdocs-strict.sh` in the same PR. The `SKIP=mkdocs-strict`
+  bypass token is the per-hook escape hatch; preserve it across rebases so
+  the CI-gate-mirror contract (which also respects `SKIP`) stays coherent.
+- **Re-test**:
+
+  ```shell
+  # Touch a docs file with a known-good anchor, push — hook should pass:
+  touch docs/index.md && git push
+  # Touch docs/index.md, add a broken anchor ref, push — hook should block:
+  echo "[bad](#nonexistent)" >> docs/index.md && git push
+  ```
 
 ### fix/dists-extractor-2026-05-14 — DISTS-Sq extractor smoke surface
 
@@ -34950,41 +34944,6 @@ meson test -C build --suite=fast
 
 ---
 
-## `libvmaf/test/meson.build` — suite-tagging invariant (fix/meson-suite-fast)
-
-**Files touched**: `libvmaf/test/meson.build`, `libvmaf/test/AGENTS.md`.
-
-**Rebase impact**: moderate. Upstream Netflix/vmaf periodically adds new
-`test()` calls to `libvmaf/test/meson.build` without `suite:` arguments
-(that is the upstream convention). Every upstream sync or
-`port-upstream-commit` cherry-pick that touches this file must be followed
-by:
-
-```bash
-grep "^test(" libvmaf/test/meson.build | grep -v "suite :"
-```
-
-Any output is a missing tag — add the appropriate `suite:` before merging.
-Failure to do so silently breaks `meson test -C build --suite=fast` (the
-pre-push gate) because Meson's `--suite` filter matches only tests that
-declare the named suite; untagged tests are invisible to the filter and the
-command exits 0 with zero tests run.
-
-**Invariant to preserve on rebase**: every `test(...)` call in
-`libvmaf/test/meson.build` carries a `suite:` keyword argument. The `fast`
-suite is the pre-push gate; `simd` and `gpu` are secondary selectors for
-CI matrix jobs. See `libvmaf/test/AGENTS.md` for the full tag matrix.
-
-**Smoke-test after rebase**:
-
-```bash
-meson setup build -Denable_cuda=false -Denable_sycl=false
-ninja -C build
-meson test -C build --suite=fast --list   # must print >20 tests, not 0
-```
-
----
-
 ## perf/cambi-calculate-c-values-avx512-neon-2026-05-16 (ADR-0452)
 
 **What changed**: Added `calculate_c_values_row_avx512` and
@@ -35003,35 +34962,12 @@ AVX2 ships with AVX-512 + NEON siblings in the same PR. Do not merge a
 cambi AVX2 kernel without the matching AVX-512 + NEON files and a dispatch
 update in `cambi.c`.
 
----
-
-## `perf/chug-drop-ssimulacra2-cuda-self-vs-self-2026-05-16` — K150K/CHUG self-vs-self extraction schema v2
-
-**Branch**: `perf/chug-drop-ssimulacra2-cuda-self-vs-self-2026-05-16`
-
-**Files touched**:
-`ai/scripts/extract_k150k_features.py`,
-`ai/AGENTS.md`,
-`ai/tests/test_extract_k150k_no_ssimulacra2.py`.
-
-**Rebase impact**: low. All touched files are fork-local tiny-AI
-infrastructure; upstream Netflix/vmaf does not maintain `ai/` or K150K
-extraction pipelines. No upstream-shared C/C++/headers are modified.
-
-**Invariant to preserve on rebase**: the K150K extraction script
-(`extract_k150k_features.py`) is a fork-only feature. If upstream adds
-its own `extract_features.py` or similar, keep them separate under
-different package names; do not merge them. The parquet schema v2
-(21-feature, no ssimulacra2) is now authoritative for new K150K/CHUG
-extraction runs. Existing v1 parquets (22-feature, with ssimulacra2) are
-grandfathered in; loaders must handle both by detecting feature count at
-runtime or reading a schema-version sidecar (future work).
-
 **Smoke-test after rebase**:
 
 ```bash
-python -m pytest ai/tests/test_extract_k150k_no_ssimulacra2.py -v
-# Expected: 3/3 PASS
+meson setup build -Denable_cuda=false -Denable_sycl=false
+ninja -C build
+meson test -C build --suite=fast
 ```
 
 ---

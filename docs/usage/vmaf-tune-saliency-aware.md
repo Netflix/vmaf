@@ -58,8 +58,28 @@ The shipped default model is documented in
 | `--crf` | `23` | Base quality before ROI offsets. |
 | `--saliency-offset` | `-3` | QP/quality offset applied to salient regions. |
 | `--saliency-model PATH` | shipped model | Override saliency ONNX path. |
+| `--saliency-aggregator` | `mean` | Temporal reducer for sampled per-frame saliency masks. One of `mean`, `ema`, `max`, `motion-weighted`. See [Temporal aggregation](#temporal-aggregation) below. |
+| `--saliency-ema-alpha` | `0.6` | Current-frame weight when `--saliency-aggregator=ema`. Range `(0, 1]`; higher values weight recent frames more heavily. |
 | `--ffmpeg-bin` | `ffmpeg` | FFmpeg binary. |
 | `--output PATH` | — | Encoded output. |
+
+## Temporal aggregation
+
+`--saliency-aggregator` controls how the per-frame saliency masks produced
+by `saliency_student_v1` are reduced to the single ROI pattern applied to
+the encode pass.
+
+| Aggregator | Behaviour | Use when |
+| --- | --- | --- |
+| `mean` | Per-pixel arithmetic mean across all sampled frames. Preserves the historical implementation. | Default, stable clips, and baseline comparisons. |
+| `ema` | Exponential moving average; `--saliency-ema-alpha` is the weight of the current frame. Older frames decay geometrically. | Clips with scene changes or motion bursts where the most-recent frames dominate the salient region. |
+| `max` | Per-pixel maximum over all sampled masks. | Missing a briefly salient object is worse than over-protecting background; conservative choice for sports or highlight reels. |
+| `motion-weighted` | Weighted mean where each sampled frame is weighted by its luma delta from the previous sampled frame. Still frames contribute less than high-motion frames. | Motion-heavy clips where foreground objects define the perceptually important regions. |
+
+All four reducers use the same `saliency_student_v1` ONNX weights and the
+same downstream QP-offset mapping, so changing the aggregator does not
+change the model contract or the encoder sidecar format. The default
+(`mean`) matches pre-ADR-0396 behaviour and is suitable for most clips.
 
 ## See Also
 

@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <errno.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -387,10 +388,21 @@ static double convert_score_db(double _score, double _weight)
  * adding a new ISA (AVX-512, NEON) is a one-line edit in `init()`.
  */
 typedef struct PsnrHvsState {
+    bool enable_chroma;
+    unsigned n_planes;
     double (*calc_psnrhvs)(const unsigned char *src, int systride, const unsigned char *dst,
                            int dystride, double par, int depth, int w, int h, int step,
                            float csf[8][8]);
 } PsnrHvsState;
+
+static const VmafOption options[] = {{
+                                         .name = "enable_chroma",
+                                         .help = "enable calculation for chroma channels",
+                                         .offset = offsetof(PsnrHvsState, enable_chroma),
+                                         .type = VMAF_OPT_TYPE_BOOL,
+                                         .default_val.b = false,
+                                     },
+                                     {0}};
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc, unsigned w,
                 unsigned h)
@@ -407,9 +419,10 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
         return -EINVAL;
     }
 
-    if (pix_fmt == VMAF_PIX_FMT_YUV400P) {
-        return -EINVAL;
-    }
+    if (pix_fmt == VMAF_PIX_FMT_YUV400P)
+        s->enable_chroma = false;
+
+    s->n_planes = s->enable_chroma ? 3 : 1;
 
     s->calc_psnrhvs = calc_psnrhvs;
 #if ARCH_X86 || ARCH_AARCH64
@@ -439,20 +452,19 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
     (void)ref_pic_90;
     (void)dist_pic_90;
 
-    double score[3];
-    for (unsigned i = 0; i < 3; i++) {
-        score[i] =
-            s->calc_psnrhvs(ref_pic->data[i], ref_pic->stride[i], dist_pic->data[i],
-                            dist_pic->stride[i], 1.0, ref_pic->bpc, ref_pic->w[i], ref_pic->h[i], 7,
-                            i == 0 ? csf_y :
-                            i == 1 ? csf_cb420 :
-                                     csf_cr420);
+    double score[3] = {0.0, 0.0, 0.0};
+    for (unsigned i = 0; i < s->n_planes; i++) {
+        float (*csf)[8] = i == 0 ? csf_y : i == 1 ? csf_cb420 : csf_cr420;
+        score[i] = s->calc_psnrhvs(ref_pic->data[i], ref_pic->stride[i], dist_pic->data[i],
+                                   dist_pic->stride[i], 1.0, ref_pic->bpc, ref_pic->w[i],
+                                   ref_pic->h[i], 7, csf);
 
         err |= vmaf_feature_collector_append(feature_collector, fex->provided_features[i],
                                              convert_score_db(score[i], 1.0), index);
     }
 
-    const double psnr_hvs = (score[0]) * .8 + .1 * (score[1] + score[2]);
+    const double psnr_hvs =
+        s->enable_chroma ? (score[0]) * .8 + .1 * (score[1] + score[2]) : score[0];
     err |= vmaf_feature_collector_append(feature_collector, "psnr_hvs",
                                          convert_score_db(psnr_hvs, 1.0), index);
     return err;
@@ -468,6 +480,7 @@ VmafFeatureExtractor vmaf_fex_psnr_hvs = {
     .name = "psnr_hvs",
     .init = init,
     .extract = extract,
+    .options = options,
     .priv_size = sizeof(PsnrHvsState),
     .provided_features = provided_features,
 };

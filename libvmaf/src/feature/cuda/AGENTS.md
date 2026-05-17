@@ -129,6 +129,17 @@ ciede / moment), [ADR-0188](../../../../docs/adr/0188-gpu-long-tail-batch-2.md)
   change is CUDA-only and does not require SYCL / Vulkan twin edits
   because it does not alter kernel math or emitted metrics.
 
+- **`integer_psnr_hvs_cuda.c` honours `enable_chroma` option parity** (mirrors
+  ADR-0453 on the psnr_hvs surface). The `enable_chroma` option (default
+  `false`) clamps `n_planes` to 1 in `init_fex_cuda` when set to `false`,
+  and YUV400P sources always force `n_planes=1` regardless of the option.
+  All plane loops (`upload_frame`, `launch_plane_kernels`,
+  `enqueue_partials_readback`, `collect_fex_cuda`, `close_fex_cuda`) iterate
+  over `s->n_planes`, not the compile-time constant `PSNR_HVS_NUM_PLANES`.
+  The Vulkan and SYCL twins do not yet carry this option; add it there in
+  lockstep if the combined-score formula diverges. The `collect_fex_cuda`
+  combined-score path emits luma dB only when `n_planes == 1`.
+
 - **`integer_psnr_hvs/psnr_hvs_score.cu` parallelises only the integer
   DCT passes.** The first eight CUDA threads perform the two 8-point
   DCT passes over shared memory; all float means, variance, masking,
@@ -142,7 +153,7 @@ ciede / moment), [ADR-0188](../../../../docs/adr/0188-gpu-long-tail-batch-2.md)
   (`cambi_spatial_mask_kernel`, `cambi_decimate_kernel`,
   `cambi_filter_mode_kernel`) are bit-exact w.r.t. the CPU
   implementation. The host residual calls `vmaf_cambi_calculate_c_values`
-  + `vmaf_cambi_spatial_pooling` via `cambi_internal.h`. If upstream
+  and `vmaf_cambi_spatial_pooling` via `cambi_internal.h`. If upstream
   Netflix refactors `cambi.c` and renames those entry points,
   `cambi_internal.h` **and** `cambi_vulkan.c` must be updated in the
   same PR. Never remove the `cuStreamSynchronize` calls inside

@@ -88,11 +88,28 @@ typedef struct PsnrHvsStateCuda {
     void *h_uint_ref[PSNR_HVS_NUM_PLANES];
     void *h_uint_dist[PSNR_HVS_NUM_PLANES];
 
+    /* `enable_chroma` option: when false, only luma (plane 0) is dispatched.
+     * Default false mirrors the psnr_hvs_cuda conservative posture — callers
+     * that need the full 0.8*Y + 0.1*(Cb+Cr) combined score must opt in.
+     * YUV400P sources force n_planes=1 regardless of this flag. */
+    bool enable_chroma;
+    /* Number of active planes after init-time clamping (1 or 3). */
+    unsigned n_planes;
+
     unsigned index;
     VmafDictionary *feature_name_dict;
 } PsnrHvsStateCuda;
 
-static const VmafOption options[] = {{0}};
+static const VmafOption options[] = {
+    {
+        .name = "enable_chroma",
+        .help = "enable calculation for chroma channels",
+        .offset = offsetof(PsnrHvsStateCuda, enable_chroma),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {0},
+};
 
 static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc,
                          unsigned w, unsigned h)
@@ -100,13 +117,8 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     PsnrHvsStateCuda *s = fex->priv;
 
     if (bpc > 12) {
-        vmaf_log(VMAF_LOG_LEVEL_ERROR, "psnr_hvs_cuda: invalid bitdepth (%u); bpc must be ≤ 12\n",
+        vmaf_log(VMAF_LOG_LEVEL_ERROR, "psnr_hvs_cuda: invalid bitdepth (%u); bpc must be <= 12\n",
                  bpc);
-        return -EINVAL;
-    }
-    if (pix_fmt == VMAF_PIX_FMT_YUV400P) {
-        vmaf_log(VMAF_LOG_LEVEL_ERROR,
-                 "psnr_hvs_cuda: YUV400P unsupported (psnr_hvs needs all 3 planes)\n");
         return -EINVAL;
     }
     if (w < (unsigned)PSNR_HVS_BLOCK || h < (unsigned)PSNR_HVS_BLOCK) {
@@ -120,30 +132,45 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     s->width[0] = w;
     s->height[0] = h;
-    switch (pix_fmt) {
-    case VMAF_PIX_FMT_YUV420P:
-        /* Ceiling division — mirrors picture.c fix (Research-0094). */
-        s->width[1] = s->width[2] = (w + 1u) >> 1;
-        s->height[1] = s->height[2] = (h + 1u) >> 1;
-        break;
-    case VMAF_PIX_FMT_YUV422P:
-        /* Ceiling division for horizontal subsampling only. */
-        s->width[1] = s->width[2] = (w + 1u) >> 1;
-        s->height[1] = s->height[2] = h;
-        break;
-    case VMAF_PIX_FMT_YUV444P:
-        s->width[1] = s->width[2] = w;
-        s->height[1] = s->height[2] = h;
-        break;
-    default:
-        vmaf_log(VMAF_LOG_LEVEL_ERROR, "psnr_hvs_cuda: unsupported pix_fmt\n");
-        return -EINVAL;
+    if (pix_fmt == VMAF_PIX_FMT_YUV400P) {
+        /* YUV400P: luma only regardless of enable_chroma. */
+        s->n_planes = 1U;
+        s->width[1] = s->width[2] = 0U;
+        s->height[1] = s->height[2] = 0U;
+    } else {
+        switch (pix_fmt) {
+        case VMAF_PIX_FMT_YUV420P:
+            /* Ceiling division — mirrors picture.c fix (Research-0094). */
+            s->width[1] = s->width[2] = (w + 1u) >> 1;
+            s->height[1] = s->height[2] = (h + 1u) >> 1;
+            break;
+        case VMAF_PIX_FMT_YUV422P:
+            /* Ceiling division for horizontal subsampling only. */
+            s->width[1] = s->width[2] = (w + 1u) >> 1;
+            s->height[1] = s->height[2] = h;
+            break;
+        case VMAF_PIX_FMT_YUV444P:
+            s->width[1] = s->width[2] = w;
+            s->height[1] = s->height[2] = h;
+            break;
+        default:
+            vmaf_log(VMAF_LOG_LEVEL_ERROR, "psnr_hvs_cuda: unsupported pix_fmt\n");
+            return -EINVAL;
+        }
+        s->n_planes = PSNR_HVS_NUM_PLANES;
+        /* Mirror integer_psnr_cuda.c::init's enable_chroma guard (ADR-0453):
+         * clamp to luma-only when the caller opts out of chroma. */
+        if (!s->enable_chroma) {
+            s->n_planes = 1U;
+            s->width[1] = s->width[2] = 0U;
+            s->height[1] = s->height[2] = 0U;
+        }
     }
 
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (unsigned p = 0; p < s->n_planes; p++) {
         if (s->width[p] < (unsigned)PSNR_HVS_BLOCK || s->height[p] < (unsigned)PSNR_HVS_BLOCK) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
-                     "psnr_hvs_cuda: plane %d dims %ux%u smaller than 8×8 block\n", p, s->width[p],
+                     "psnr_hvs_cuda: plane %u dims %ux%u smaller than 8x8 block\n", p, s->width[p],
                      s->height[p]);
             return -EINVAL;
         }
@@ -176,7 +203,7 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     const unsigned bpc_bytes = (s->bpc <= 8 ? 1u : 2u);
     int ret = 0;
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (unsigned p = 0; p < s->n_planes; p++) {
         const size_t plane_bytes = (size_t)s->width[p] * s->height[p] * sizeof(float);
         const size_t partials_bytes = (size_t)s->num_blocks[p] * sizeof(float);
         const size_t uint_bytes = (size_t)s->width[p] * s->height[p] * bpc_bytes;
@@ -294,8 +321,8 @@ static int upload_frame(PsnrHvsStateCuda *s, VmafFeatureExtractor *fex, VmafPict
 {
     CudaFunctions *cu_f = fex->cu_state->f;
 
-    /* Phase 1: queue all 6 D2H copies up front (no per-plane sync). */
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    /* Phase 1: queue all D2H copies up front (no per-plane sync). */
+    for (unsigned p = 0; p < s->n_planes; p++) {
         int err = issue_d2h_plane(s, fex, ref_pic, s->h_uint_ref[p], p);
         if (err)
             return err;
@@ -313,14 +340,14 @@ static int upload_frame(PsnrHvsStateCuda *s, VmafFeatureExtractor *fex, VmafPict
     if (dist_stream != ref_stream) {
         CHECK_CUDA_RETURN(cu_f, cuStreamSynchronize(dist_stream));
     }
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (unsigned p = 0; p < s->n_planes; p++) {
         convert_plane(s, ref_pic, s->h_uint_ref[p], s->h_ref[p], p);
         convert_plane(s, dist_pic, s->h_uint_dist[p], s->h_dist[p], p);
     }
 
-    /* Phase 3: queue all 6 H2Ds on the dedicated upload stream, then
+    /* Phase 3: queue all H2Ds on the dedicated upload stream, then
      * record the cross-stream event. */
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (unsigned p = 0; p < s->n_planes; p++) {
         int err = issue_h2d_plane(s, fex, s->h_ref[p], s->d_ref[p], p);
         if (err)
             return err;
@@ -338,8 +365,8 @@ static int upload_frame(PsnrHvsStateCuda *s, VmafFeatureExtractor *fex, VmafPict
 static int launch_plane_kernels(PsnrHvsStateCuda *s, VmafFeatureExtractor *fex)
 {
     CudaFunctions *cu_f = fex->cu_state->f;
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
-        int plane_arg = p;
+    for (unsigned p = 0; p < s->n_planes; p++) {
+        int plane_arg = (int)p;
         int bpc_arg = (int)s->bpc;
         unsigned width = s->width[p];
         unsigned height = s->height[p];
@@ -359,7 +386,7 @@ static int launch_plane_kernels(PsnrHvsStateCuda *s, VmafFeatureExtractor *fex)
 static int enqueue_partials_readback(PsnrHvsStateCuda *s, VmafFeatureExtractor *fex)
 {
     CudaFunctions *cu_f = fex->cu_state->f;
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (unsigned p = 0; p < s->n_planes; p++) {
         const size_t partials_bytes = (size_t)s->num_blocks[p] * sizeof(float);
         CHECK_CUDA_RETURN(cu_f,
                           cuMemcpyDtoHAsync(s->h_partials[p], (CUdeviceptr)s->d_partials[p]->data,
@@ -407,8 +434,8 @@ static int collect_fex_cuda(VmafFeatureExtractor *fex, unsigned index,
 
     /* Per-plane reduction matching CPU's float `ret` register
      * semantics (see psnr_hvs_vulkan.c for the rationale). */
-    double plane_score[PSNR_HVS_NUM_PLANES];
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    double plane_score[PSNR_HVS_NUM_PLANES] = {0.0, 0.0, 0.0};
+    for (unsigned p = 0; p < s->n_planes; p++) {
         float ret = 0.0f;
         for (unsigned i = 0; i < s->num_blocks[p]; i++)
             ret += s->h_partials[p][i];
@@ -421,11 +448,14 @@ static int collect_fex_cuda(VmafFeatureExtractor *fex, unsigned index,
     int err = 0;
     static const char *plane_features[PSNR_HVS_NUM_PLANES] = {"psnr_hvs_y", "psnr_hvs_cb",
                                                               "psnr_hvs_cr"};
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (unsigned p = 0; p < s->n_planes; p++) {
         const double db = 10.0 * (-1.0 * log10(plane_score[p]));
         err |= vmaf_feature_collector_append(feature_collector, plane_features[p], db, index);
     }
-    const double combined = 0.8 * plane_score[0] + 0.1 * (plane_score[1] + plane_score[2]);
+    /* Combined score: when chroma is disabled emit luma dB only. */
+    const double combined = (s->n_planes == 1U) ?
+                                plane_score[0] :
+                                0.8 * plane_score[0] + 0.1 * (plane_score[1] + plane_score[2]);
     const double db_combined = 10.0 * (-1.0 * log10(combined));
     err |= vmaf_feature_collector_append(feature_collector, "psnr_hvs", db_combined, index);
     return err;
@@ -456,7 +486,7 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
         s->upload_done = NULL;
     }
 
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (unsigned p = 0; p < s->n_planes; p++) {
         if (s->d_ref[p]) {
             ret |= vmaf_cuda_buffer_free(fex->cu_state, s->d_ref[p]);
             free(s->d_ref[p]);

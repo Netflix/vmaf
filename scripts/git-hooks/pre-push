@@ -99,4 +99,11 @@ EOF
   exit 1
 fi
 
+# ── mkdocs strict-mode gate (ADR-0466) ────────────────────────────────────────
+# Delegates to the single-purpose script so pre-commit can reference it directly.
+mkdocs_hook="${repo_root}/scripts/git-hooks/pre-push-mkdocs-strict.sh"
+if [ -x "${mkdocs_hook}" ]; then
+  "${mkdocs_hook}"
+fi
+
 exit 0

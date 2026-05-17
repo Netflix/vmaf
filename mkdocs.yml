@@ -291,6 +291,7 @@ nav:
       - Agent worktree discipline: development/agent-worktree-discipline.md
       - Automated rule enforcement: development/automated-rule-enforcement.md
       - PR body validator: development/pr-body-validator.md
+      - mkdocs strict pre-push hook: development/pre-push-mkdocs-strict.md
   - Reference:
       - FAQ: reference/faq.md
       - References: reference/references.md

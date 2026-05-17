@@ -228,3 +228,15 @@ repos:
         # inside the script). See docs/development/pr-body-sentinel-guide.md.
         always_run: true
         pass_filenames: false
+
+      - id: mkdocs-strict
+        name: mkdocs build --strict (ADR-0466 pre-push)
+        entry: scripts/git-hooks/pre-push-mkdocs-strict.sh
+        language: script
+        stages: [pre-push]
+        # Runs only when docs/ or mkdocs.yml are in the diff (the script
+        # self-filters). Skip gracefully when mkdocs is not installed.
+        # Override: SKIP=mkdocs-strict git push
+        # See docs/development/pre-push-mkdocs-strict.md
+        files: '^(docs/|mkdocs\.yml)'
+        pass_filenames: false
