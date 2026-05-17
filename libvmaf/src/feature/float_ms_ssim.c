@@ -24,6 +24,7 @@
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "log.h"
+#include "opt.h"
 
 #include "mem.h"
 #include "ms_ssim.h"
@@ -52,6 +53,7 @@ typedef struct MsSsimState {
     bool enable_lcs;
     bool enable_db;
     bool clip_db;
+    bool enable_chroma;
     double max_db;
 } MsSsimState;
 
@@ -74,6 +76,13 @@ static const VmafOption options[] = {
         .name = "clip_db",
         .help = "clip dB scores",
         .offset = offsetof(MsSsimState, clip_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {
+        .name = "enable_chroma",
+        .help = "enable calculation for chroma channels",
+        .offset = offsetof(MsSsimState, enable_chroma),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
     },
@@ -106,9 +115,10 @@ static void ms_ssim_init_simd_dispatch(void)
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc, unsigned w,
                 unsigned h)
 {
-    (void)pix_fmt;
-
     MsSsimState *s = fex->priv;
+
+    if (pix_fmt == VMAF_PIX_FMT_YUV400P)
+        s->enable_chroma = false;
 
     /* The 5-level MS-SSIM pyramid with an 11-tap Gaussian needs
      * every scale to satisfy min(w, h) >= 11. Starting from w, h
@@ -160,6 +170,12 @@ static double convert_to_db(double score, double max_db)
     return MIN(-10. * log10(1 - score), max_db);
 }
 
+static const char *const ms_ssim_feature_names[3] = {
+    "float_ms_ssim",
+    "float_ms_ssim_cb",
+    "float_ms_ssim_cr",
+};
+
 static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90, unsigned index,
                    VmafFeatureCollector *feature_collector)
@@ -170,55 +186,63 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
     (void)ref_pic_90;
     (void)dist_pic_90;
 
-    picture_copy(s->ref, s->float_stride, ref_pic, 0, ref_pic->bpc, 0);
-    picture_copy(s->dist, s->float_stride, dist_pic, 0, dist_pic->bpc, 0);
+    const unsigned n_planes = s->enable_chroma ? 3 : 1;
 
-    double score;
-    double l_scores[5];
-    double c_scores[5];
-    double s_scores[5];
-    err = compute_ms_ssim(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0], s->float_stride,
-                          s->float_stride, &score, l_scores, c_scores, s_scores);
-    if (err)
-        return err;
+    for (unsigned p = 0; p < n_planes; p++) {
+        const size_t plane_float_stride = ALIGN_CEIL(ref_pic->w[p] * sizeof(float));
+        picture_copy(s->ref, plane_float_stride, ref_pic, 0, ref_pic->bpc, p);
+        picture_copy(s->dist, plane_float_stride, dist_pic, 0, dist_pic->bpc, p);
 
-    if (s->enable_db)
-        score = convert_to_db(score, s->max_db);
+        double score;
+        double l_scores[5];
+        double c_scores[5];
+        double s_scores[5];
+        err = compute_ms_ssim(s->ref, s->dist, ref_pic->w[p], ref_pic->h[p], plane_float_stride,
+                              plane_float_stride, &score, l_scores, c_scores, s_scores);
+        if (err)
+            return err;
 
-    err = vmaf_feature_collector_append(feature_collector, "float_ms_ssim", score, index);
-    if (s->enable_lcs) {
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale0",
-                                             l_scores[0], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale1",
-                                             l_scores[1], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale2",
-                                             l_scores[2], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale3",
-                                             l_scores[3], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale4",
-                                             l_scores[4], index);
+        if (s->enable_db)
+            score = convert_to_db(score, s->max_db);
 
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale0",
-                                             c_scores[0], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale1",
-                                             c_scores[1], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale2",
-                                             c_scores[2], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale3",
-                                             c_scores[3], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale4",
-                                             c_scores[4], index);
+        err = vmaf_feature_collector_append(feature_collector, ms_ssim_feature_names[p], score,
+                                            index);
+        if (p == 0 && s->enable_lcs) {
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale0",
+                                                 l_scores[0], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale1",
+                                                 l_scores[1], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale2",
+                                                 l_scores[2], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale3",
+                                                 l_scores[3], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_l_scale4",
+                                                 l_scores[4], index);
 
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale0",
-                                             s_scores[0], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale1",
-                                             s_scores[1], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale2",
-                                             s_scores[2], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale3",
-                                             s_scores[3], index);
-        err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale4",
-                                             s_scores[4], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale0",
+                                                 c_scores[0], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale1",
+                                                 c_scores[1], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale2",
+                                                 c_scores[2], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale3",
+                                                 c_scores[3], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_c_scale4",
+                                                 c_scores[4], index);
+
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale0",
+                                                 s_scores[0], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale1",
+                                                 s_scores[1], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale2",
+                                                 s_scores[2], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale3",
+                                                 s_scores[3], index);
+            err |= vmaf_feature_collector_append(feature_collector, "float_ms_ssim_s_scale4",
+                                                 s_scores[4], index);
+        }
+        if (err)
+            return err;
     }
 
     return err;
@@ -234,7 +258,12 @@ static int close(VmafFeatureExtractor *fex)
     return 0;
 }
 
-static const char *provided_features[] = {"float_ms_ssim", NULL};
+static const char *provided_features[] = {
+    "float_ms_ssim",
+    "float_ms_ssim_cb",
+    "float_ms_ssim_cr",
+    NULL,
+};
 
 // extern-registered in feature_extractor.c registry
 // NOLINTNEXTLINE(misc-use-internal-linkage)
