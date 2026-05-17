@@ -301,14 +301,14 @@ float adm_cm_s(const adm_dwt_band_t_s *src, const adm_dwt_band_t_s *dst,
 
 void dwt2_src_indices_filt_s(int **src_ind_y, int **src_ind_x, int w, int h);
 
-void adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w,
-                int h, int src_stride, int dst_stride);
+int adm_dwt2_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w,
+               int h, int src_stride, int dst_stride);
 
-void adm_dwt2_lo_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w,
-                   int h, int src_stride, int dst_stride);
+int adm_dwt2_lo_s(const float *src, const adm_dwt_band_t_s *dst, int **ind_y, int **ind_x, int w,
+                  int h, int src_stride, int dst_stride);
 
-void adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int **ind_x, int w,
-                int h, int src_stride, int dst_stride);
+int adm_dwt2_d(const double *src, const adm_dwt_band_t_d *dst, int **ind_y, int **ind_x, int w,
+               int h, int src_stride, int dst_stride);
 
 /* ================= */
 /* Noise floor model */

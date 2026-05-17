@@ -49,6 +49,13 @@ ffprobe skip (Win 2 — Research-0135):
   else ``yuv420p``) or defaults to ``yuv420p``.  ffprobe remains necessary for
   clips not covered by the sidecar.
 
+tmpfs scratch (Win 3 — Research-0135):
+  When ``/dev/shm`` is writable and has >=20 GiB free, temporary YUV files
+  are written there instead of the OS temp directory.  This eliminates NVMe
+  I/O for the intermediate per-clip raw YUV (~1.5 GiB per 1080p 30 fps 240-
+  frame clip) and reduces the per-clip wall time by an estimated 5–15 s on
+  NVMe-bound hosts.  Pass ``--scratch-dir`` to override auto-selection.
+
 Parallelism (ADR-0382): clips are dispatched to a
 ``concurrent.futures.ProcessPoolExecutor`` with ``--threads-cuda`` workers
 (default 8).  Each worker independently decodes one clip to a worker-private YUV

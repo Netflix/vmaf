@@ -681,11 +681,9 @@ after a port-upstream of any of these files.
 
 - **MS-SSIM `enable_lcs` GPU implementation (T7-35, PR #207 MERGED)**
   — wires the existing CPU `enable_lcs` 15-extra-metrics through
-  CUDA + Vulkan + SYCL MS-SSIM kernels. Additional GPU flags
-  (`enable_db`, `clip_db`) shipped via PR #933 (ADR-0460). On
-  rebase: ensure all three option-metadata declarations remain
-  consistent across `float_ms_ssim_cuda`, `float_ms_ssim_sycl`,
-  and `float_ms_ssim_vulkan`.
+  CUDA + Vulkan + SYCL MS-SSIM kernels. On rebase: ensure the
+  option metadata stays declared on the GPU paths even if the
+  body is still TODO.
 - **`psnr` cross-backend `enable_chroma` option parity (ADR-0453)** —
   `psnr_cuda`, `psnr_sycl`, and `psnr_vulkan` now honour
   `enable_chroma` (default `true`) consistently with the CPU reference.
@@ -694,8 +692,16 @@ after a port-upstream of any of these files.
   default or the `n_planes` clamp logic requires a coordinated update
   across all three GPU twins. See CUDA AGENTS.md / Vulkan AGENTS.md
   invariant notes and [ADR-0453](../../../docs/adr/0453-psnr-enable-chroma-gpu-parity.md).
-- **MobileSal saliency extractor (T6-2a, PR #208 MERGED, ADR-0218;
-  smoke-only placeholder shipped, real-weights swap deferred per
+- **MobileSal saliency extractor (T6-2a, PR #208 open, ADR-0218
+  placeholder)** — first half of T6-2 (encoder-side ROI bundle).
+  DNN-backed; opens sessions through
+  [`../dnn/`](../dnn/AGENTS.md).
+- **TransNet V2 shot-boundary extractor (T6-3a + T6-3a-followup,
+  ADR-0223 + ADR-0257)** — second half of T6-2 bundle. Now ships
+  real upstream weights via NTCHW adapter (see
+  `transnet_v2.c 100-frame-window contract` invariant above).
+- **MobileSal saliency extractor (T6-2a, ADR-0218; smoke-only
+  placeholder shipped, real-weights swap deferred per
   [ADR-0257](../../../docs/adr/0257-mobilesal-real-weights-deferred.md)
   and [ADR-0265](../../../docs/adr/0265-u2netp-saliency-replacement-blocked.md))**
   — first half of T6-2 (encoder-side ROI bundle). DNN-backed;
@@ -731,6 +737,6 @@ after a port-upstream of any of these files.
   same PR per the twin-parity invariant.
 - **Upstream ports**: `feature/motion` options from `b949cebf`
   (T-NEW-1) MERGED via PR #197 (2026-04-29). `feature/speed`
-  port from `d3647c73` (`speed_chroma` + `speed_temporal`) MERGED
-  via PR #213. 32-bit ADM/cpu fallbacks (`8a289703` +
-  `1b6c3886`) MERGED via PR #212.
+  port from `d3647c73` (`speed_chroma` + `speed_temporal`) is
+  PR #213 (open). 32-bit ADM/cpu fallbacks (`8a289703` +
+  `1b6c3886`) are PR #212 (open).

@@ -172,6 +172,48 @@ HIP / Metal motion twins listed in the Twin-update table below) in the same PR.
   `submit_fex_cuda` — they guard the DtoH coherency for the host
   residual. `places=4` gate is load-bearing; do not loosen it.
 
+- **`cuLaunchKernel` `kernelParams[]` must point to the device-pointer
+  VALUE, not to a `VmafCudaBuffer` struct** (Issue #857 / fix PR). The
+  dispatch helpers in `integer_cambi_cuda.c` (`dispatch_mask`,
+  `dispatch_decimate`, `dispatch_filter_mode`) pass `&buf->data`
+  (address of the `CUdeviceptr` field) to `cuLaunchKernel`. Passing
+  `(void *)buf` (address of the struct) makes the driver read
+  `buf->size` (a host byte count) as a device pointer, causing an
+  immediate GPU invalid-address fault (SIGSEGV/SIGBUS on the host).
+  The same invariant applies to every CUDA feature extractor that
+  allocates device-side flat buffers via `vmaf_cuda_buffer_alloc`
+  and passes them directly to `cuLaunchKernel`: always use
+  `&buf->data`, never `(void *)buf`. Device-pointer arithmetic must
+  also be performed on the `CUdeviceptr` integer type directly —
+  avoid casting through `uint8_t *` (UB even though it round-trips
+  on x86-64 today).
+
+- **`integer_psnr_cuda.c` honours `enable_chroma` option parity** (ADR-0453).
+  The `enable_chroma` option (default `true`) clamps `n_planes` to 1 in
+  `init_fex_cuda` when set to `false`, matching CPU
+  `integer_psnr.c::init`'s behaviour. The clamp runs after the
+  `pix_fmt == YUV400P` guard so that YUV400 sources are always luma-only
+  regardless of the option. On rebase: if upstream Netflix adds an
+  `enable_chroma` option to the CPU path that behaves differently from the
+  fork's GPU guard, audit both and keep the GPU clamp semantically
+  equivalent. The SYCL and Vulkan twins carry the identical guard and must
+  move in lockstep with any change to this one. The cross-backend parity
+  gate at `places=4` covers both `enable_chroma=true` (default) and
+  `enable_chroma=false` paths.
+
+- **Host-side preprocessing in CUDA feature extractor `submit` callbacks
+  must download GPU→host first.** Pictures passed to a CUDA extractor's
+  `submit()` have device pointers in `data[]`; the host cannot read them
+  directly. Use `vmaf_cuda_picture_download_async` followed by
+  `cuStreamSynchronize` on the picture's private stream (obtained via
+  `vmaf_cuda_picture_get_stream`) before passing the picture to any
+  host-side function that dereferences `data[]`. The CAMBI extractor
+  (`integer_cambi_cuda.c::submit_fex_cuda`) is the canonical example
+  of this pattern (Issue #857 fix). All other CUDA extractors in this
+  directory currently keep preprocessing on the GPU and are not affected,
+  but the rule applies to any future extractor that mixes GPU input
+  pictures with host-side preprocessing.
+
 - **`integer_adm_cuda.c` must NOT include `feature/adm_options.h`
   directly.** `DEFAULT_ADM_NOISE_WEIGHT`, `DEFAULT_ADM_CSF_SCALE`,
   `DEFAULT_ADM_CSF_DIAG_SCALE`, and the full 4-member

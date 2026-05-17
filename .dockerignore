@@ -15,11 +15,29 @@ python/.tox
 .workingdir/
 .claude/
 
-# Build trees
+# Corpora / training data (can exceed 1 TB on developer hosts)
+.corpus/
+corpus/
+
+# Large testdata subdirs (bbb BigBuckBunny clips, ~4.7 GB)
+testdata/bbb/
+
+# PyTorch / AI training run artefacts
+runs/
+
+# Build trees — covers both hyphen and underscore variants
 build*/
 build-*/
+build_*/
 libvmaf/build*/
 libvmaf/build-*/
+libvmaf/build_*/
+
+# Python virtual environments
+.venv*/
+*.venv
+venv/
+.venv/
 
 # Caches
 __pycache__/

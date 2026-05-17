@@ -45,7 +45,6 @@
 typedef struct VifState {
     VifPublicState public;
     bool debug;
-    bool enable_chroma;
     bool vif_skip_scale0;
     void (*subsample_rd_8)(VifBuffer buf, unsigned w, unsigned h);
     void (*subsample_rd_16)(VifBuffer buf, unsigned w, unsigned h, int scale, int bpc);
@@ -61,16 +60,6 @@ static const VmafOption options[] = {{
                                          .offset = offsetof(VifState, debug),
                                          .type = VMAF_OPT_TYPE_BOOL,
                                          .default_val.b = false,
-                                     },
-                                     {
-                                         .name = "enable_chroma",
-                                         .help =
-                                             "when set, compute vif on chroma (Cb/Cr) planes in "
-                                             "addition to luma; forced off for YUV400",
-                                         .offset = offsetof(VifState, enable_chroma),
-                                         .type = VMAF_OPT_TYPE_BOOL,
-                                         .default_val.b = false,
-                                         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
                                      },
                                      {
                                          .name = "vif_enhn_gain_limit",
@@ -624,9 +613,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
 
     log_generate(s->public.log2_table);
 
-    if (pix_fmt == VMAF_PIX_FMT_YUV400P)
-        s->enable_chroma = false;
-
+    (void)pix_fmt;
     const bool hbd = bpc > 8;
 
     s->public.buf.stride = ALIGN_CEIL(w << hbd);
@@ -794,92 +781,60 @@ static int write_scores(VmafFeatureCollector *feature_collector, unsigned index,
     return err;
 }
 
-static const char *chroma_plane_name[2][4] = {
-    {"integer_vif_scale0_cb", "integer_vif_scale1_cb", "integer_vif_scale2_cb",
-     "integer_vif_scale3_cb"},
-    {"integer_vif_scale0_cr", "integer_vif_scale1_cr", "integer_vif_scale2_cr",
-     "integer_vif_scale3_cr"},
-};
-
-static int extract_plane(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture *dist_pic,
-                         unsigned plane, unsigned index, VmafFeatureCollector *feature_collector)
+static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture *ref_pic_90,
+                   VmafPicture *dist_pic, VmafPicture *dist_pic_90, unsigned index,
+                   VmafFeatureCollector *feature_collector)
 {
     VifState *s = fex->priv;
 
-    unsigned w = ref_pic->w[plane];
-    unsigned h = ref_pic->h[plane];
+    (void)ref_pic_90;
+    (void)dist_pic_90;
 
-    unsigned char *ref_in = ref_pic->data[plane];
-    unsigned char *dis_in = dist_pic->data[plane];
+    unsigned w = ref_pic->w[0];
+    unsigned h = dist_pic->h[0];
+
+    unsigned char *ref_in = ref_pic->data[0];
+    unsigned char *dis_in = dist_pic->data[0];
     unsigned char *ref_out = s->public.buf.ref;
     unsigned char *dis_out = s->public.buf.dis;
 
     for (unsigned i = 0; i < h; i++) {
-        memcpy(ref_out, ref_in, ref_pic->stride[plane]);
-        memcpy(dis_out, dis_in, dist_pic->stride[plane]);
-        ref_in += ref_pic->stride[plane];
-        dis_in += dist_pic->stride[plane];
+        memcpy(ref_out, ref_in, ref_pic->stride[0]);
+        memcpy(dis_out, dis_in, dist_pic->stride[0]);
+        ref_in += ref_pic->stride[0];
+        dis_in += dist_pic->stride[0];
         ref_out += s->public.buf.stride;
         dis_out += s->public.buf.stride;
     }
     pad_top_and_bottom(s->public.buf, h, vif_filter1d_width[0]);
 
-    unsigned scale_start = (plane == 0 && s->vif_skip_scale0) ? 1 : 0;
+    unsigned scale_start = 0;
+    if (s->vif_skip_scale0) {
+        scale_start = 1;
+    }
     VifScore vif_score;
-    unsigned sw = w;
-    unsigned sh = h;
     for (unsigned scale = scale_start; scale < 4; ++scale) {
         if (scale > 0) {
             if (ref_pic->bpc == 8 && scale == 1) {
-                s->subsample_rd_8(s->public.buf, sw, sh);
+                s->subsample_rd_8(s->public.buf, w, h);
             } else {
-                s->subsample_rd_16(s->public.buf, sw, sh, scale - 1, ref_pic->bpc);
+                s->subsample_rd_16(s->public.buf, w, h, scale - 1, ref_pic->bpc);
             }
 
-            sw /= 2;
-            sh /= 2;
+            w /= 2;
+            h /= 2;
         }
 
         if (ref_pic->bpc == 8 && scale == 0) {
             s->vif_statistic_8(&s->public, &vif_score.scale[scale].num, &vif_score.scale[scale].den,
-                               sw, sh);
+                               w, h);
         } else {
             s->vif_statistic_16(&s->public, &vif_score.scale[scale].num,
-                                &vif_score.scale[scale].den, sw, sh, ref_pic->bpc, scale);
+                                &vif_score.scale[scale].den, w, h, ref_pic->bpc, scale);
         }
     }
 
-    if (plane == 0)
-        return write_scores(feature_collector, index, vif_score, s);
-
-    /* chroma planes: emit per-scale ratio scores under dedicated key names */
-    int err = 0;
-    const unsigned ci = plane - 1; /* 0=Cb, 1=Cr */
-    for (unsigned scale = 0; scale < 4; ++scale) {
-        const double ratio =
-            (vif_score.scale[scale].den == 0.0f) ?
-                1.0 :
-                (double)vif_score.scale[scale].num / (double)vif_score.scale[scale].den;
-        err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                       chroma_plane_name[ci][scale], ratio, index);
-    }
-    return err;
-}
-
-static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture *ref_pic_90,
-                   VmafPicture *dist_pic, VmafPicture *dist_pic_90, unsigned index,
-                   VmafFeatureCollector *feature_collector)
-{
-    (void)ref_pic_90;
-    (void)dist_pic_90;
-
-    VifState *s = fex->priv;
-    const unsigned n_planes = s->enable_chroma ? 3 : 1;
-    int err = 0;
-    for (unsigned p = 0; p < n_planes; p++) {
-        err |= extract_plane(fex, ref_pic, dist_pic, p, index, feature_collector);
-    }
-    return err;
+    return write_scores(feature_collector, index, vif_score, s);
 }
 
 static int close(VmafFeatureExtractor *fex)
@@ -891,16 +846,22 @@ static int close(VmafFeatureExtractor *fex)
     return 0;
 }
 
-static const char *provided_features[] = {
-    "VMAF_integer_feature_vif_scale0_score", "VMAF_integer_feature_vif_scale1_score",
-    "VMAF_integer_feature_vif_scale2_score", "VMAF_integer_feature_vif_scale3_score", "integer_vif",
-    "integer_vif_num", "integer_vif_den", "integer_vif_num_scale0", "integer_vif_den_scale0",
-    "integer_vif_num_scale1", "integer_vif_den_scale1", "integer_vif_num_scale2",
-    "integer_vif_den_scale2", "integer_vif_num_scale3", "integer_vif_den_scale3",
-    /* chroma plane scores (enable_chroma=true only) */
-    "integer_vif_scale0_cb", "integer_vif_scale1_cb", "integer_vif_scale2_cb",
-    "integer_vif_scale3_cb", "integer_vif_scale0_cr", "integer_vif_scale1_cr",
-    "integer_vif_scale2_cr", "integer_vif_scale3_cr", NULL};
+static const char *provided_features[] = {"VMAF_integer_feature_vif_scale0_score",
+                                          "VMAF_integer_feature_vif_scale1_score",
+                                          "VMAF_integer_feature_vif_scale2_score",
+                                          "VMAF_integer_feature_vif_scale3_score",
+                                          "integer_vif",
+                                          "integer_vif_num",
+                                          "integer_vif_den",
+                                          "integer_vif_num_scale0",
+                                          "integer_vif_den_scale0",
+                                          "integer_vif_num_scale1",
+                                          "integer_vif_den_scale1",
+                                          "integer_vif_num_scale2",
+                                          "integer_vif_den_scale2",
+                                          "integer_vif_num_scale3",
+                                          "integer_vif_den_scale3",
+                                          NULL};
 
 VmafFeatureExtractor vmaf_fex_integer_vif = {
     .name = "vif",

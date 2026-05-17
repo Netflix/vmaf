@@ -69,6 +69,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vulkan-tools \
     mesa-vulkan-drivers \
     libglvnd-dev \
+    # GLSL shader compiler (glslc) — required by the Vulkan backend at build time
+    glslang-tools \
     # Misc
     jq \
     && rm -rf /var/lib/apt/lists/*
@@ -198,12 +200,30 @@ WORKDIR /build/vmaf
 COPY --chown=vmaf:vmaf . /build/vmaf/
 RUN chown vmaf:vmaf /build /build/vmaf
 
+# Install ONNX Runtime C++ shared library (provides pkg-config .pc file so
+# meson can find it for -Denable_dnn=enabled). ONNX Runtime is not in Ubuntu
+# apt; we pull the official Linux x86_64 tarball from GitHub releases.
+# Version must satisfy ai/pyproject.toml requirement (>=1.20,<2.0).
+ARG ORT_VERSION=1.20.1
+RUN curl -fsSL \
+        "https://github.com/microsoft/onnxruntime/releases/download/v${ORT_VERSION}/onnxruntime-linux-x64-${ORT_VERSION}.tgz" \
+        -o /tmp/ort.tgz \
+    && tar -xzf /tmp/ort.tgz -C /tmp \
+    && cp -r /tmp/onnxruntime-linux-x64-${ORT_VERSION}/include/* /usr/local/include/ \
+    && cp -r /tmp/onnxruntime-linux-x64-${ORT_VERSION}/lib/* /usr/local/lib/ \
+    && rm -rf /tmp/ort.tgz /tmp/onnxruntime-linux-x64-${ORT_VERSION} \
+    && ldconfig \
+    && printf "prefix=/usr/local\nexec_prefix=\${prefix}\nlibdir=\${exec_prefix}/lib\nincludedir=\${prefix}/include\n\nName: libonnxruntime\nDescription: ONNX Runtime C++ API\nVersion: %s\nLibs: -L\${libdir} -lonnxruntime\nCflags: -I\${includedir}\n" "${ORT_VERSION}" \
+        > /usr/local/lib/pkgconfig/libonnxruntime.pc
+
 USER vmaf
 
 # Configure with all backends enabled.
+# meson.build lives in libvmaf/ (not the repo root); pass the source dir
+# explicitly as the first positional argument to `meson setup`.
 # -Denable_metal=auto  → auto-disabled on Linux (no Metal SDK present).
 # -Denable_mcp_sse=auto → auto-disabled until POSIX socket impl is complete.
-RUN meson setup build \
+RUN meson setup build libvmaf \
         -Denable_cuda=true \
         -Denable_sycl=true \
         -Denable_vulkan=enabled \
@@ -231,6 +251,13 @@ RUN meson setup build \
 # `libvmaf_sycl`, `libvmaf_vulkan`, `vmaf_pre`, `libvmaf_tune` so the dev
 # MCP probe can shell out to a real FFmpeg toolchain end-to-end.
 USER root
+
+# Re-set pipefail shell for this stage. SHELL directives are NOT inherited
+# across FROM boundaries in multi-stage builds — each stage starts fresh
+# with /bin/sh. The gpu-sdks stage set pipefail, but libvmaf-build is a
+# new stage so we must repeat it here.
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libx264-dev libx265-dev libsvtav1-dev libaom-dev libvpx-dev libdav1d-dev \
@@ -245,9 +272,6 @@ RUN git clone --depth=1 --branch ${FFMPEG_TAG} https://git.ffmpeg.org/ffmpeg.git
 WORKDIR /build/ffmpeg
 
 # Apply every patch from ffmpeg-patches/series.txt in order.
-# hadolint ignore=DL4006 — SHELL ["/bin/bash", "-o", "pipefail"] is set in
-# the parent stage (gpu-sdks) and inherited; DL4006 does not track cross-stage
-# SHELL inheritance so a local ignore is required.
 RUN while IFS= read -r patch_name; do \
         case "${patch_name}" in \
             ""|"#"*) continue ;; \

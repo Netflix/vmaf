@@ -16,6 +16,7 @@
  *
  */
 
+#include <errno.h>
 #include <stdint.h>
 
 #include "test.h"
@@ -81,8 +82,48 @@ static char *test_thread_pool_create_enqueue_wait_and_destroy()
     return NULL;
 }
 
+/*
+ * Regression test for audit finding #7: vmaf_thread_pool_create must
+ * propagate errors from pthread_mutex_init / pthread_cond_init rather
+ * than silently ignoring them (which would leave *pool pointing at a
+ * partially-initialised struct and cause UB on the subsequent lock).
+ *
+ * We cannot inject ENOMEM from pthread_mutex_init in a pure unit test
+ * without a libc wrapper; this test therefore covers the adjacent
+ * failure paths that are directly triggerable:
+ *
+ *   - NULL pool pointer must return -EINVAL and not crash.
+ *   - Zero n_threads must return -EINVAL.
+ *   - Normal create + destroy must still work (ensures the checked-init
+ *     path does not regress the happy path).
+ */
+static char *test_thread_pool_create_guards()
+{
+    int err;
+
+    /* NULL pool pointer. */
+    err = vmaf_thread_pool_create(NULL, (VmafThreadPoolConfig){.n_threads = 1});
+    mu_assert("NULL pool arg must return -EINVAL", err == -EINVAL);
+
+    /* Zero thread count. */
+    VmafThreadPool *pool = NULL;
+    err = vmaf_thread_pool_create(&pool, (VmafThreadPoolConfig){.n_threads = 0});
+    mu_assert("zero n_threads must return -EINVAL", err == -EINVAL);
+    mu_assert("pool must remain NULL on error", pool == NULL);
+
+    /* Happy path: single thread, create and destroy. */
+    err = vmaf_thread_pool_create(&pool, (VmafThreadPoolConfig){.n_threads = 1});
+    mu_assert("single-thread create must succeed", !err);
+    mu_assert("pool must be non-NULL on success", pool != NULL);
+    err = vmaf_thread_pool_destroy(pool);
+    mu_assert("destroy must succeed", !err);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_thread_pool_create_enqueue_wait_and_destroy);
+    mu_run_test(test_thread_pool_create_guards);
     return NULL;
 }

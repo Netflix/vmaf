@@ -176,12 +176,12 @@
       "sigstore_bundle": "nr_metric_v1.onnx.sigstore.json"
     },
     {
-      "description": "Fork-trained tiny U-Net saliency student trained on DUTS-TR \u2014 production weights for the mobilesal extractor.",
+      "description": "Fork-trained tiny U-Net saliency student trained on DUTS-TR \u2014 superseded by saliency_student_v2 as the production default (2026-05-15, ADR-0444).",
       "id": "saliency_student_v1",
       "kind": "nr",
       "license": "BSD-3-Clause-Plus-Patent",
       "license_url": "https://github.com/lusoris/vmaf/blob/master/LICENSE",
-      "notes": "Fork-trained tiny U-Net (~113K params) trained from scratch on DUTS-TR (Wang et al. 2017). Drop-in for mobilesal_placeholder_v0; same input/saliency_map names + NCHW shapes. ConvTranspose stride-2 upsample (every op on the allowlist). 50ep Adam lr=1e-3 BCE+Dice bs=32 crop=256 seed=42; best val IoU=0.6558; PT<->ORT max-abs-diff=1.49e-6. DUTS images not redistributed; weights are. See docs/ai/models/saliency_student_v1.md and docs/adr/0270.",
+      "notes": "Fork-trained tiny U-Net (~113K params) on DUTS-TR. ConvTranspose stride-2 upsample. 50ep Adam lr=1e-3 BCE+Dice bs=32 seed=42; best val IoU=0.6558; PT<->ORT max-abs-diff=1.49e-6. Superseded by saliency_student_v2 (IoU 0.7105, +8.3%) as production default; retained for regression baselines. See docs/ai/models/saliency_student_v1.md and ADR-0444.",
       "onnx": "saliency_student_v1.onnx",
       "opset": 17,
       "sha256": "1edc64772498ab73ebdb17e21f49679ce5ded82534d47f557cd15fd36e1b46e7",
@@ -189,12 +189,12 @@
       "smoke": false
     },
     {
-      "description": "Fork-trained tiny U-Net saliency student trained on DUTS-TR \u2014 resize-decoder ablation (v2) on the v1 recipe.",
+      "description": "Fork-trained tiny U-Net saliency student trained on DUTS-TR \u2014 production default since 2026-05-15 (ADR-0444). Supersedes saliency_student_v1 (IoU +8.3%).",
       "id": "saliency_student_v2",
       "kind": "nr",
       "license": "BSD-3-Clause-Plus-Patent",
       "license_url": "https://github.com/lusoris/vmaf/blob/master/LICENSE",
-      "notes": "Fork-trained tiny U-Net (~124K params) trained from scratch on DUTS-TR (Wang et al. 2017). Single-variable ablation against v1: decoder upsampler swapped from ConvTranspose2d to bilinear resize + 3x3 conv. Held-out val IoU=0.7105 (gate PASS vs v1=0.6558, +0.0547 / +8.3%). Drop-in for the mobilesal extractor (same input/saliency_map names + NCHW shapes). See docs/ai/models/saliency_student_v2.md + ADR-0332 + Research-0089.",
+      "notes": "Fork-trained tiny U-Net (~124K params) trained from scratch on DUTS-TR (Wang et al. 2017). Single-variable ablation against v1: decoder upsampler swapped from ConvTranspose2d to bilinear resize + 3x3 conv. Held-out val IoU=0.7105 (gate PASS vs v1=0.6558, +0.0547 / +8.3%). Drop-in for the mobilesal extractor (same input/saliency_map names + NCHW shapes). Production default since 2026-05-15. See docs/ai/models/saliency_student_v2.md + ADR-0332 + ADR-0444 + Research-0089.",
       "onnx": "saliency_student_v2.onnx",
       "opset": 17,
       "sha256": "8cdaa6c10ab44d9b03a6a207603bd0b61f5c75a6beafdc82da57215f0a2ab2ed",

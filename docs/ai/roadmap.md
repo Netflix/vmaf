@@ -122,11 +122,13 @@ two-input DNN session and emits `dists_sq` per frame.
 
 **ONNX notes.** The upstream MobileSal swap is no longer the production
 path: ADR-0257 records the CC BY-NC-SA / Google-Drive / RGB-D blockers.
-The shipped production path is the fork-trained DUTS saliency student,
+The production path is the fork-trained DUTS saliency student,
 which keeps the same `input` / `saliency_map` tensor contract as the
-placeholder and can be selected with
-`model/tiny/saliency_student_v1.onnx`. `saliency_student_v2` is staged
-as a higher-IoU ablation pending ROI A/B validation.
+placeholder. **`saliency_student_v2` is the production default since
+2026-05-15** (IoU 0.7105 vs v1's 0.6558, +8.3%;
+[ADR-0444](../adr/0444-saliency-student-v2-production-promotion.md)).
+Use `model/tiny/saliency_student_v2.onnx` for new encodes.
+`saliency_student_v1` is retained for regression baselines.
 
 ### 2.4 Per-shot CRF predictor + TransNet V2 shot boundaries
 

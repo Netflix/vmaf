@@ -204,15 +204,23 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 
         dwt2_src_indices_filt(ind_y, ind_x, w, h);
         if ((scale == 0) && (adm_skip_scale0)) {
-            adm_dwt2_lo(curr_ref_scale, &ref_dwt2, ind_y, ind_x, w, h, curr_ref_stride, buf_stride);
-            adm_dwt2_lo(curr_dis_scale, &dis_dwt2, ind_y, ind_x, w, h, curr_dis_stride, buf_stride);
+            if (adm_dwt2_lo(curr_ref_scale, &ref_dwt2, ind_y, ind_x, w, h, curr_ref_stride,
+                            buf_stride) < 0)
+                goto fail;
+            if (adm_dwt2_lo(curr_dis_scale, &dis_dwt2, ind_y, ind_x, w, h, curr_dis_stride,
+                            buf_stride) < 0)
+                goto fail;
 
             w = (w + 1) / 2;
             h = (h + 1) / 2;
             den_scale = 1e-10; // avoid divide by zero
         } else {
-            adm_dwt2(curr_ref_scale, &ref_dwt2, ind_y, ind_x, w, h, curr_ref_stride, buf_stride);
-            adm_dwt2(curr_dis_scale, &dis_dwt2, ind_y, ind_x, w, h, curr_dis_stride, buf_stride);
+            if (adm_dwt2(curr_ref_scale, &ref_dwt2, ind_y, ind_x, w, h, curr_ref_stride,
+                         buf_stride) < 0)
+                goto fail;
+            if (adm_dwt2(curr_dis_scale, &dis_dwt2, ind_y, ind_x, w, h, curr_dis_stride,
+                         buf_stride) < 0)
+                goto fail;
 
             w = (w + 1) / 2;
             h = (h + 1) / 2;
