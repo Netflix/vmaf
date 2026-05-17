@@ -241,6 +241,10 @@ static int alloc_buffers(PsnrHvsVulkanState *s)
     return err ? -ENOMEM : 0;
 }
 
+/* Forward declaration: write_descriptor_set is called from init() below but
+ * defined later in the file. */
+static int write_descriptor_set(PsnrHvsVulkanState *s, VkDescriptorSet set, int plane);
+
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc, unsigned w,
                 unsigned h)
 {

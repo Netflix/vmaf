@@ -593,8 +593,9 @@ int vmaf_ort_infer(VmafOrtSession *sess, const float *input, const int64_t *inpu
     const char *out_names[1] = {sess->output_name};
     OrtValue *out_tensor = NULL;
 
-    st = sess->api->Run(sess->session, NULL, in_names, (const OrtValue *const *)&in_tensor, 1,
-                        out_names, 1, &out_tensor);
+    OrtStatus *st =
+        sess->api->Run(sess->session, NULL, in_names, (const OrtValue *const *)&in_tensor, 1,
+                       out_names, 1, &out_tensor);
     sess->api->ReleaseValue(in_tensor);
     free(in_scratch);
     if (st) {

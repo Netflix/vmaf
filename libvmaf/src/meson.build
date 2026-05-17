@@ -245,6 +245,10 @@ if is_hipcc_enabled and is_hip_enabled
         'motion_v2_score' : feature_src_dir + 'hip/integer_motion_v2/motion_v2_score.hip',
         # T7-10b batch-2 twelfth consumer: float_adm_score (ADR-0468).
         'float_adm_score' : feature_src_dir + 'hip/float_adm/float_adm_score.hip',
+        # integer_cambi_hip HSACO blob.
+        'cambi_score' : feature_src_dir + 'hip/integer_cambi/cambi_score.hip',
+        # integer_vif_hip HSACO (8 kernels: 4 V + 4 H per scale).
+        'vif_statistics' : feature_src_dir + 'hip/integer_vif/vif_statistics.hip',
     }
     foreach name, src : hip_kernel_sources
         hsaco_target = custom_target('hip_hsaco_' + name,

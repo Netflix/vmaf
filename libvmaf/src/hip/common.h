@@ -21,8 +21,21 @@ extern "C" {
 
 typedef struct VmafHipContext VmafHipContext;
 
-/* Forward declare HIP types for error translation. */
+/* HIP error type. Prefer the real runtime header if present (resolves
+ * hipError_t to its native enum); otherwise fall back to a scaffold int
+ * typedef so non-HIP TUs still compile. We probe via __has_include so the
+ * decision is local to this TU and doesn't depend on macros set by the build
+ * (HAVE_HIPCC is build-system level and can be inconsistent across targets,
+ * e.g. test executables that include hip/hip_runtime_api.h directly). */
+#if defined(__has_include)
+#if __has_include(<hip/hip_runtime_api.h>)
+#include <hip/hip_runtime_api.h>
+#define VMAF_HIP_HAS_RUNTIME_HEADER 1
+#endif
+#endif
+#ifndef VMAF_HIP_HAS_RUNTIME_HEADER
 typedef int hipError_t;
+#endif
 
 int vmaf_hip_context_new(VmafHipContext **ctx, int device_index);
 void vmaf_hip_context_destroy(VmafHipContext *ctx);

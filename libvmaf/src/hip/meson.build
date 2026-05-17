@@ -99,6 +99,9 @@ hip_sources += files(
     # With `enable_hipcc=true` the HSACO blob runs on device; without it
     # init() returns -ENOSYS.
     '../feature/hip/float_adm_hip.c',
+    # integer_cambi_hip: HIP port of CAMBI extractor.
+    # Registered as #if HAVE_HIP entry in feature_extractor.c.
+    '../feature/hip/integer_cambi_hip.c',
 )
 
 # T7-10b runtime linkage. ROCm ships `hip_runtime_api.h` under

@@ -260,7 +260,8 @@ static int init_fex_hip(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->bpc = bpc;
     s->peak = (1u << bpc) - 1u;
     /* psnr_max formula mirrors CPU integer_psnr.c::init min_sse==0 branch. */
-    s->psnr_max_y = (double)(6u * bpc) + 12.0;
+    for (unsigned p = 0; p < PSNR_NUM_PLANES; p++)
+        s->psnr_max[p] = (double)(6u * bpc) + 12.0;
 
     /* Per-plane readback pairs (device uint64 SSE accumulator + pinned host
      * slot). Allocate only for active planes to avoid wasting pinned memory. */
@@ -349,18 +350,19 @@ static int submit_fex_hip(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafP
      * yet — mirrors float_psnr_hip.c and the CUDA twin pre-runtime). */
     const uintptr_t pic_stream_handle = 0;
     const size_t bpp = (s->bpc <= 8u) ? 1u : 2u;
+    const size_t plane_pitch = (size_t)s->width[0] * bpp;
+    const unsigned frame_h = s->height[0];
 
     /* HtoD copy ref luma via 2D memcpy to handle arbitrary source stride. */
-    hipError_t rc =
-        hipMemcpy2DAsync(s->ref_in, (size_t)plane_pitch, ref_pic->data[0],
-                         (size_t)ref_pic->stride[0], (size_t)plane_pitch, (size_t)s->frame_h,
-                         hipMemcpyHostToDevice, (hipStream_t)pic_stream_handle);
+    hipError_t rc = hipMemcpy2DAsync(s->ref_in[0], plane_pitch, ref_pic->data[0],
+                                     (size_t)ref_pic->stride[0], plane_pitch, (size_t)frame_h,
+                                     hipMemcpyHostToDevice, (hipStream_t)pic_stream_handle);
     if (rc != hipSuccess)
         return -EIO;
 
-    rc = hipMemcpy2DAsync(s->dis_in, (size_t)plane_pitch, dist_pic->data[0],
-                          (size_t)dist_pic->stride[0], (size_t)plane_pitch, (size_t)s->frame_h,
-                          hipMemcpyHostToDevice, (hipStream_t)pic_stream_handle);
+    rc = hipMemcpy2DAsync(s->dis_in[0], plane_pitch, dist_pic->data[0], (size_t)dist_pic->stride[0],
+                          plane_pitch, (size_t)frame_h, hipMemcpyHostToDevice,
+                          (hipStream_t)pic_stream_handle);
     if (rc != hipSuccess)
         return -EIO;
 

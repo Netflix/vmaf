@@ -406,6 +406,8 @@ static int cambi_hip_init_tvi(CambiStateHip *s)
     return 0;
 }
 
+#endif /* HAVE_HIPCC — closes opener at line 305 */
+
 /* ------------------------------------------------------------------ */
 /* Module load helper (extracted to keep init under 60 lines). */
 /* ------------------------------------------------------------------ */
@@ -731,7 +733,8 @@ static int submit_fex_hip(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafP
     for (unsigned row = 0; row < s->proc_height; row++) {
         const uint8_t *src_row = (const uint8_t *)src_data + (size_t)row * (size_t)src_stride_bytes;
         const hipDeviceptr_t dst_dptr =
-            s->d_image + (hipDeviceptr_t)((size_t)row * s->proc_width * sizeof(uint16_t));
+            (hipDeviceptr_t)((uint8_t *)s->d_image +
+                             (size_t)row * s->proc_width * sizeof(uint16_t));
         hipError_t hip_rc =
             hipMemcpyHtoDAsync(dst_dptr, (void *)(uintptr_t)src_row, row_bytes, stream);
         if (hip_rc != hipSuccess)
@@ -803,14 +806,14 @@ static int submit_fex_hip(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafP
         for (unsigned row = 0; row < scaled_h; row++) {
             uint8_t *d0_row = (uint8_t *)dst0 + (size_t)row * (size_t)pic_stride_bytes;
             const hipDeviceptr_t s0_dptr =
-                d_img + (hipDeviceptr_t)((size_t)row * scaled_w * sizeof(uint16_t));
+                (hipDeviceptr_t)((uint8_t *)d_img + (size_t)row * scaled_w * sizeof(uint16_t));
             hip_rc = hipMemcpyDtoH(d0_row, s0_dptr, scaled_w * sizeof(uint16_t));
             if (hip_rc != hipSuccess)
                 return hip_err(hip_rc);
 
             uint8_t *d1_row = (uint8_t *)dst1 + (size_t)row * (size_t)pic_stride_bytes;
             const hipDeviceptr_t s1_dptr =
-                d_msk + (hipDeviceptr_t)((size_t)row * scaled_w * sizeof(uint16_t));
+                (hipDeviceptr_t)((uint8_t *)d_msk + (size_t)row * scaled_w * sizeof(uint16_t));
             hip_rc = hipMemcpyDtoH(d1_row, s1_dptr, scaled_w * sizeof(uint16_t));
             if (hip_rc != hipSuccess)
                 return hip_err(hip_rc);

@@ -141,6 +141,8 @@ typedef struct {
 
     VmafVulkanBuffer *log2_lut; /* uint32[32768] */
 
+    bool vif_skip_scale0; /* host-side suppression mirrors integer_vif.c */
+
     VmafDictionary *feature_name_dict;
 } VifVulkanState;
 

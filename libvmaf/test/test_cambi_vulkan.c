@@ -151,7 +151,7 @@ static char *test_cambi_vk_smoke(void)
     }
 
     VmafFeatureCollector *fc = NULL;
-    err = vmaf_feature_collector_init(&fc, NULL);
+    err = vmaf_feature_collector_init(&fc);
     if (err) {
         fex->close(fex);
         free(priv);
@@ -187,6 +187,7 @@ static char *test_cambi_vk_smoke(void)
 /* Test runner                                                              */
 /* ---------------------------------------------------------------------- */
 static int tests_run = 0;
+int mu_tests_run;
 
 static char *all_tests(void)
 {
