@@ -35018,6 +35018,33 @@ meson test -C build --suite=fast
     --feature-opts 'psnr_hvs_vulkan=enable_chroma=false'
 ```
 
+## `feat/hip-float-adm-real-2026-05-16` — HIP float_adm ninth consumer (ADR-0468)
+
+**Branch**: `feat/hip-float-adm-real-2026-05-16`
+
+**Files touched**:
+`libvmaf/src/feature/hip/float_adm_hip.c` (new),
+`libvmaf/src/feature/hip/float_adm_hip.h` (new),
+`libvmaf/src/feature/hip/float_adm/float_adm_score.hip` (new),
+`libvmaf/src/hip/meson.build` (add TU to `hip_sources`),
+`libvmaf/src/meson.build` (add `float_adm_score` to `hip_kernel_sources`),
+`libvmaf/src/feature/feature_extractor.c` (extern decl + `#if HAVE_HIP` list row),
+`docs/adr/0468-hip-float-adm-real-kernel.md` (new),
+`docs/adr/README.md` (index row),
+`changelog.d/added/hip-float-adm-real-kernel.md` (new).
+
+**Rebase impact**: low. All new files are fork-local HIP infrastructure; upstream
+Netflix/vmaf does not maintain a HIP backend. The only upstream-shared file touched is
+`feature_extractor.c`, where the change is limited to adding an extern declaration and a
+single list entry inside `#if HAVE_HIP` — a block upstream does not have.
+
+**Invariant to preserve on rebase**: `float_adm_hip.c` must track `float_adm_cuda.c`
+semantically. Any change to the four pipeline stages (DWT coefficients, decouple angle
+flag parenthesisation, CM threshold 8-neighbour sum, border factor) must be mirrored in
+both the CUDA and HIP TUs. The warp-size difference (CUDA=32 vs HIP=64) means the
+shared-memory partial arrays differ in size (`FADM_WARPS_PER_BLOCK = 8` vs `4`); this
+is correct and must not be unified.
+
 ---
 
 ## perf/adm-p-norm-fast-path-vif-arm64-malloc-2026-05-16 (ADR-0463)
@@ -35066,11 +35093,34 @@ after any kernel addition.
 **Smoke-test after rebase**:
 
 ```bash
-meson setup build -Denable_cuda=false -Denable_sycl=false
+meson setup build -Denable_hip=true -Denable_hipcc=false
 ninja -C build
-meson test -C build
-scripts/ci/check-dispatch-registry.sh   # must exit 0
+# Must compile without errors; vmaf_fex_float_adm_hip must be registered.
+# With a ROCm 6+ toolchain:
+meson setup build -Denable_hip=true -Denable_hipcc=true
+ninja -C build
+meson test -C build --suite=fast
 ```
+
+---
+
+### Ghost `moment_vulkan.c` removed (fix/drop-ghost-moment-vulkan-c)
+
+PR #1067 re-introduced the pre-rename `moment_vulkan.c` alongside the new
+`float_moment_vulkan.c` that PR #1046 had established. The ghost file was
+deleted and `libvmaf/src/vulkan/meson.build` updated to reference
+`float_moment_vulkan.c` exclusively.
+
+**Rebase impact**: any branch that modified `moment_vulkan.c` must be
+re-targeted to `float_moment_vulkan.c` instead.
+
+**Smoke-test after rebase**:
+
+```bash
+ninja -C build && echo "no duplicate symbol error"
+```
+
+---
 
 ## `perf/cache-rfe-hw-flags` — cache rfe_hw_flags bitmask (F2-B)
 

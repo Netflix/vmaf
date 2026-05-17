@@ -93,6 +93,12 @@ hip_sources += files(
     # four horizontal, one per scale); compiled to HSACO when
     # enable_hipcc=true. Without it init() returns -ENOSYS.
     '../feature/hip/integer_vif_hip.c',
+    # T7-10b batch-2 twelfth consumer: float_adm_hip (ADR-0468). Mirrors the
+    # CUDA twin `feature/cuda/float_adm_cuda.c` — 4-stage DWT+CSF+CM
+    # pipeline, 16 launches per frame, host double-precision reduction.
+    # With `enable_hipcc=true` the HSACO blob runs on device; without it
+    # init() returns -ENOSYS.
+    '../feature/hip/float_adm_hip.c',
 )
 
 # T7-10b runtime linkage. ROCm ships `hip_runtime_api.h` under

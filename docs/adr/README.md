@@ -453,4 +453,5 @@ ADRs may exist there for local session continuity, but the tracked
 | [ADR-0452](0452-cambi-calculate-c-values-avx512-neon.md) | Port `calculate_c_values_row` to AVX-512 (16-lane gather) and NEON (mask-zero fast-skip); bit-exact integer pipeline | Accepted | simd, cambi, perf |
 | [ADR-0453](0453-psnr-enable-chroma-gpu-parity.md) | PSNR `enable_chroma` option parity across CUDA, SYCL, Vulkan GPU backends | Accepted | cuda, sycl, vulkan, psnr, option-parity, bug |
 | [ADR-0460](0460-integer-vif-enable-chroma.md) | Add `enable_chroma` option to `integer_vif` — mirrors psnr/ssim pattern, emits per-scale Cb/Cr VIF scores | Accepted | feature, vif, chroma |
+| [ADR-0468](0468-hip-float-adm-real-kernel.md) | HIP float_adm real kernel — ninth HIP consumer; ports CUDA 4-stage DWT+CSF+CM pipeline to HIP (warp-64 reductions, hipMalloc buffers, HSACO via hipcc) | Accepted | hip, build, feature-extractor |
 | [ADR-0469](0469-float-psnr-hip-enable-chroma.md) | Wire `enable_chroma` option into `float_psnr_hip` extractor for option-parity with CUDA/SYCL/Vulkan PSNR twins | Accepted | hip, psnr, option-parity |

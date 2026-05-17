@@ -168,6 +168,12 @@ extern VmafFeatureExtractor vmaf_fex_cambi_hip;
  * init() returns -ENOSYS. Emits the same four VMAF_integer_feature_vif_scaleN
  * features as the CPU and CUDA twins. */
 extern VmafFeatureExtractor vmaf_fex_integer_vif_hip;
+/* HIP twelfth-consumer kernel — T7-10b batch-2 / ADR-0468. Mirrors
+ * `feature/cuda/float_adm_cuda.c` — 4-stage DWT+CSF+CM pipeline,
+ * 16 launches per frame, host double-precision reduction. With
+ * `enable_hipcc=true` the HSACO runs on device; without it init()
+ * returns -ENOSYS (scaffold posture). */
+extern VmafFeatureExtractor vmaf_fex_float_adm_hip;
 #endif
 #if HAVE_METAL
 /* Metal feature extractors — T8-1c through T8-1j / ADR-0421.
@@ -316,6 +322,11 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
      * per scale); with `enable_hipcc=true` the HSACO blob is loaded and
      * the kernels run on device; without it init() returns -ENOSYS. */
     &vmaf_fex_integer_vif_hip,
+    /* Twelfth consumer (ADR-0468): `float_adm_hip` mirrors
+     * `float_adm_cuda.c` — 4-stage DWT+CSF+CM pipeline, 16
+     * launches per frame (4 stages × 4 scales), host double-precision
+     * WG reduction. Emits adm2 + 4 scale scores + debug features. */
+    &vmaf_fex_float_adm_hip,
 #endif
 #if HAVE_METAL
     /* T8-1 first consumer (ADR-0361): registration succeeds even on
