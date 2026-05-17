@@ -3,23 +3,30 @@
  *  SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
  *
  *  Coverage for model-collection public API entry points that had zero
- *  C-unit-test coverage per audit-test-coverage-2026-05-16.md §2:
+ *  C-unit-test coverage per audit-test-coverage-2026-05-16.md §2, and
+ *  two further entry points identified on 2026-05-17:
  *
  *    - vmaf_model_collection_load()
  *    - vmaf_use_features_from_model_collection()
  *    - vmaf_score_at_index_model_collection()
  *    - vmaf_score_pooled_model_collection()
+ *    - vmaf_model_collection_load_from_path()   (zero coverage until this PR)
+ *    - vmaf_model_collection_feature_overload() (zero coverage until this PR)
  *
  *  Strategy: pre-import the six feature scores required by vmaf_b_v0.6.3
  *  (same features as vmaf_v0.6.1) via vmaf_import_feature_score() so no
  *  YUV frames are needed. Then exercise the scoring path through the public
  *  model-collection entry points and verify NULL-pointer guards.
+ *
+ *  JSON_MODEL_PATH is injected by meson as a c_args define pointing to the
+ *  repo's model/ directory (same pattern as test_model.c).
  */
 
 #include <errno.h>
 #include <math.h>
 
 #include "test.h"
+#include "libvmaf/feature.h"
 #include "libvmaf/libvmaf.h"
 #include "libvmaf/model.h"
 
@@ -142,9 +149,11 @@ static char *test_score_at_index_model_collection(void)
 
     /* NULL-guard checks. */
     VmafModelCollectionScore score = {0};
-    mu_assert("NULL vmaf → error", vmaf_score_at_index_model_collection(NULL, mc, &score, 0u) != 0);
-    mu_assert("NULL mc → error", vmaf_score_at_index_model_collection(vmaf, NULL, &score, 0u) != 0);
-    mu_assert("NULL score → error", vmaf_score_at_index_model_collection(vmaf, mc, NULL, 0u) != 0);
+    mu_assert("NULL vmaf -> error",
+              vmaf_score_at_index_model_collection(NULL, mc, &score, 0u) != 0);
+    mu_assert("NULL mc -> error",
+              vmaf_score_at_index_model_collection(vmaf, NULL, &score, 0u) != 0);
+    mu_assert("NULL score -> error", vmaf_score_at_index_model_collection(vmaf, mc, NULL, 0u) != 0);
 
     /* Happy path: a real score for a seeded frame. */
     err = vmaf_score_at_index_model_collection(vmaf, mc, &score, 0u);
@@ -178,13 +187,13 @@ static char *test_score_pooled_model_collection(void)
 
     /* NULL-guard checks. */
     VmafModelCollectionScore score = {0};
-    mu_assert("NULL vmaf → error",
+    mu_assert("NULL vmaf -> error",
               vmaf_score_pooled_model_collection(NULL, mc, VMAF_POOL_METHOD_MEAN, &score, 0u,
                                                  N_FRAMES - 1u) != 0);
-    mu_assert("NULL mc → error",
+    mu_assert("NULL mc -> error",
               vmaf_score_pooled_model_collection(vmaf, NULL, VMAF_POOL_METHOD_MEAN, &score, 0u,
                                                  N_FRAMES - 1u) != 0);
-    mu_assert("NULL score → error",
+    mu_assert("NULL score -> error",
               vmaf_score_pooled_model_collection(vmaf, mc, VMAF_POOL_METHOD_MEAN, NULL, 0u,
                                                  N_FRAMES - 1u) != 0);
 
@@ -204,6 +213,73 @@ static char *test_score_pooled_model_collection(void)
 
 /* ---------------------------------------------------------------------- */
 
+/*
+ * vmaf_model_collection_load_from_path — previously had ZERO test coverage.
+ *
+ * Happy path: load vmaf_b_v0.6.3.json directly from the filesystem path
+ * (JSON_MODEL_PATH is the meson c_args macro pointing at model/).
+ * Error path: non-existent path must return non-zero.
+ */
+static char *test_model_collection_load_from_path_valid(void)
+{
+    VmafModel *model = NULL;
+    VmafModelCollection *mc = NULL;
+    VmafModelConfig cfg = {0};
+    const char *path = JSON_MODEL_PATH "vmaf_b_v0.6.3.json";
+
+    int err = vmaf_model_collection_load_from_path(&model, &mc, &cfg, path);
+    mu_assert("vmaf_model_collection_load_from_path failed", err == 0);
+    mu_assert("vmaf_model_collection_load_from_path returned NULL model", model != NULL);
+    mu_assert("vmaf_model_collection_load_from_path returned NULL collection", mc != NULL);
+
+    vmaf_model_destroy(model);
+    vmaf_model_collection_destroy(mc);
+    return NULL;
+}
+
+static char *test_model_collection_load_from_path_bad_path(void)
+{
+    VmafModel *model = NULL;
+    VmafModelCollection *mc = NULL;
+    VmafModelConfig cfg = {0};
+
+    int err =
+        vmaf_model_collection_load_from_path(&model, &mc, &cfg, "/nonexistent/path/to/model.json");
+    mu_assert("bad path must return non-zero", err != 0);
+    return NULL;
+}
+
+/* ---------------------------------------------------------------------- */
+
+/*
+ * vmaf_model_collection_feature_overload — previously had ZERO test coverage.
+ *
+ * NULL-guard path: a NULL model_collection pointer must return non-zero
+ * without crashing, exercising the first guard in the implementation.
+ */
+static char *test_model_collection_feature_overload_null_guard(void)
+{
+    VmafModel *model = NULL;
+    VmafModelCollection *mc = NULL;
+    VmafModelConfig cfg = {0};
+    int err = vmaf_model_collection_load(&model, &mc, &cfg, "vmaf_b_v0.6.3");
+    mu_assert("load failed", err == 0);
+
+    VmafFeatureDictionary *opts = NULL;
+    (void)vmaf_feature_dictionary_set(&opts, "enable_temporal", "1");
+
+    /* NULL model_collection pointer -> -EINVAL per the implementation guard. */
+    err = vmaf_model_collection_feature_overload(model, NULL, "VMAF_feature_adm2", opts);
+    mu_assert("NULL mc pointer must return error", err != 0);
+
+    (void)vmaf_feature_dictionary_free(&opts);
+    vmaf_model_destroy(model);
+    vmaf_model_collection_destroy(mc);
+    return NULL;
+}
+
+/* ---------------------------------------------------------------------- */
+
 char *run_tests(void)
 {
     mu_run_test(test_model_collection_load_valid);
@@ -212,5 +288,8 @@ char *run_tests(void)
     mu_run_test(test_use_features_from_model_collection_null_mc);
     mu_run_test(test_score_at_index_model_collection);
     mu_run_test(test_score_pooled_model_collection);
+    mu_run_test(test_model_collection_load_from_path_valid);
+    mu_run_test(test_model_collection_load_from_path_bad_path);
+    mu_run_test(test_model_collection_feature_overload_null_guard);
     return NULL;
 }

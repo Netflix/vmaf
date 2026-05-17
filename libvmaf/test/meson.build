@@ -90,6 +90,19 @@ test_model = executable('test_model',
     objects : libsvm_static_lib.extract_all_objects(recursive: true),
 )
 
+# Coverage for model-collection public API: vmaf_model_collection_load,
+# vmaf_use_features_from_model_collection, vmaf_score_at_index_model_collection,
+# vmaf_score_pooled_model_collection, vmaf_model_collection_load_from_path,
+# vmaf_model_collection_feature_overload. Imports feature scores synthetically
+# via vmaf_import_feature_score() — no YUV frames required.
+test_model_collection_api = executable('test_model_collection_api',
+    ['test.c', 'test_model_collection_api.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    c_args : [vmaf_cflags_common, '-DJSON_MODEL_PATH="'+join_paths(meson.project_source_root(), '../model/')+'"'],
+    dependencies : [math_lib, pthread_dependency, thread_lib],
+)
+
 test_predict = executable('test_predict',
     ['test.c', 'test_predict.c', '../src/dict.c', '../src/metadata_handler.c',
      '../src/feature/feature_collector.c', '../src/feature/alias.c', '../src/model.c', '../src/log.c',
@@ -955,6 +968,7 @@ test('test_output', test_output, suite : ['fast'])
 test('test_public_api_score', test_public_api_score, suite : ['fast'])
 test('test_thread_pool', test_thread_pool, suite : ['fast'])
 test('test_model', test_model, suite : ['fast'])
+test('test_model_collection_api', test_model_collection_api, suite : ['fast'])
 test('test_predict', test_predict, suite : ['fast'])
 test('test_feature_extractor', test_feature_extractor, suite : ['fast'])
 test('test_dict', test_dict, suite : ['fast'])
