@@ -68,6 +68,51 @@ static enum VmafPixelFormat pix_fmt_map(int pf)
     }
 }
 
+/* Validate per-video constraints that do not require comparing the two streams:
+ * supported bitdepth range and positive (non-zero) frame dimensions. */
+static int validate_video_info(const video_input_info *info)
+{
+    int err_cnt = 0;
+
+    if (info->depth < 8 || info->depth > 16) {
+        (void)fprintf(stderr, "unsupported bitdepth: %d\n", info->depth);
+        err_cnt++;
+    }
+
+    /* A zero-width or zero-height frame will produce a divide-by-zero or
+     * zero-stride allocation in downstream code. */
+    if (info->frame_w <= 0 || info->frame_h <= 0) {
+        (void)fprintf(stderr, "non-positive dimensions: %dx%d\n", info->frame_w, info->frame_h);
+        err_cnt++;
+    }
+
+    return err_cnt;
+}
+
+/* Chroma-subsampled formats require even dimensions on the subsampled axes so
+ * that the chroma planes contain whole pixels.  PF_420 subsamples both X and
+ * Y; PF_422 subsamples X only. */
+static int validate_chroma_alignment(const video_input_info *info)
+{
+    int err_cnt = 0;
+
+    if (info->pixel_fmt == PF_420 || info->pixel_fmt == PF_422) {
+        if (info->frame_w % 2 != 0) {
+            (void)fprintf(stderr, "odd width %d not allowed for chroma-subsampled format\n",
+                          info->frame_w);
+            err_cnt++;
+        }
+    }
+    if (info->pixel_fmt == PF_420) {
+        if (info->frame_h % 2 != 0) {
+            (void)fprintf(stderr, "odd height %d not allowed for 4:2:0 format\n", info->frame_h);
+            err_cnt++;
+        }
+    }
+
+    return err_cnt;
+}
+
 static int validate_videos(video_input *vid1, video_input *vid2, bool common_bitdepth)
 {
     int err_cnt = 0;
@@ -99,12 +144,9 @@ static int validate_videos(video_input *vid1, video_input *vid2, bool common_bit
         err_cnt++;
     }
 
-    if (info1.depth < 8 || info1.depth > 16) {
-        (void)fprintf(stderr, "unsupported bitdepth: %d\n", info1.depth);
-        err_cnt++;
-    }
-
-    //TODO: more validations are possible.
+    err_cnt += validate_video_info(&info1);
+    err_cnt += validate_video_info(&info2);
+    err_cnt += validate_chroma_alignment(&info1);
 
     return err_cnt;
 }

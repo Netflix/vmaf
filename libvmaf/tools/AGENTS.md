@@ -129,3 +129,10 @@ tools/
 - [ADR-0247](../../docs/adr/0247-vmaf-roi-tool.md) — `vmaf-roi`
   sidecar (per-CTU QP offsets for x265 / SVT-AV1). Encoder format
   contract + per-CTU-mean reduction are rebase-sensitive.
+- [ADR-0461](../../docs/adr/0461-cli-validate-dimensions-chroma.md) —
+  CLI rejects non-positive and chroma-misaligned input dimensions.
+  **Validation invariant**: `validate_video_info()` and
+  `validate_chroma_alignment()` are the canonical per-stream and
+  chroma-alignment gates; if upstream Netflix adds similar checks to
+  `validate_videos()` in a sync, merge rather than duplicate — keep the
+  fork's helpers and call them from the merged body.
