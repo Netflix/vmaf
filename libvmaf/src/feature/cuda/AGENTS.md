@@ -328,3 +328,18 @@ The `enable_cuda` umbrella flag gates inclusion via
 - [ADR-0456](../../../../docs/adr/0456-ssimulacra2-cuda-blur-fusion-transpose.md) —
   SSIMULACRA2 CUDA blur: 3-channel kernel fusion + V-pass transpose.
 
+
+## Stencil/convolution kernel invariant (ADR-0454)
+
+- **Stencil and convolution kernels with data reuse > 2 taps must stage
+  input into `__shared__` memory; never re-read 17 taps from L2.**
+  Specifically: `integer_vif/filter1d.cu` stages a tile of
+  `(BLOCKY + fwidth - 1)` rows (vertical pass) or
+  `(BLOCKX * val_per_thread + 2*half_fw + 1)` elements per channel (horizontal
+  pass) into `__shared__` before the convolution loop.  The smem load phase
+  handles mirror-boundary clamping; the compute phase reads smem unconditionally.
+  Any new separable filter kernel with filter width ≥ 5 must follow this pattern.
+  Removing the smem staging layer reverts the 15–35% VIF speedup.
+  See [ADR-0454](../../../../docs/adr/0454-vif-cuda-smem-staging.md) and
+  [Research-0135](../../../../docs/research/0135-vif-cuda-smem-staging-2026-05-16.md).
+

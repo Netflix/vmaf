@@ -35213,6 +35213,26 @@ meson test -C build --suite=fast
 
 ---
 
+## `perf/vif-cuda-smem-staging-2026-05-16` (ADR-0454)
+
+**Files touched**:
+`libvmaf/src/feature/cuda/integer_vif/filter1d.cu`,
+`libvmaf/src/feature/cuda/AGENTS.md`.
+
+**Rebase impact**: low. `filter1d.cu` is a fork-local CUDA kernel file
+(Netflix/vmaf does not maintain CUDA implementations). `AGENTS.md` is
+fork-local. No upstream-shared path, public header, or build file is modified.
+
+**Invariant to preserve on rebase**: the `__shared__` smem staging in all four
+filter template functions must be preserved verbatim (see canonical note added
+to `AGENTS.md`). If a future upstream commit adds a `filter1d.cu`-equivalent
+(unlikely — Netflix does not ship GPU VIF), reconcile by keeping the smem
+staging on our side. Do not remove the `__syncthreads()` between the cooperative
+load and the compute phase — that barrier is the only thing ordering the smem
+writes from all threads before any thread reads.
+
+---
+
 ### perf/ssimulacra2-cuda-blur-fusion-transpose — 3-channel kernel fusion + V-pass transpose (ADR-0456)
 
 - **Touches**: `libvmaf/src/feature/cuda/ssimulacra2/ssimulacra2_blur.cu`,
@@ -35267,11 +35287,19 @@ host glue; Netflix upstream does not maintain GPU ADM CM kernels.
 kernel's constants are ever changed, the fused kernel's constants must be updated
 in lockstep.
 
+
 **Smoke-test after rebase**:
 
 ```bash
 meson setup build -Denable_cuda=true -Denable_sycl=false
 ninja -C build
+meson test -C build --suite=fast
+python3 scripts/ci/cross_backend_parity_gate.py \
+    --features vif --backends cpu cuda --places 4
+```
+
+---
+
 python3 scripts/ci/cross_backend_parity_gate.py --features adm --backends cpu cuda --places 4
 ```
 
@@ -35349,5 +35377,6 @@ upstream later changes the HIP PSNR submit/collect call-graph, re-check
 that the per-plane loop in `submit_fex_hip` and `collect_fex_hip` matches
 whatever new structure upstream introduces. The kernel (`psnr_score.hip`)
 is unchanged.
+
 
 

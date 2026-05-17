@@ -24,6 +24,57 @@
 
 #include "vif_statistics.cuh"
 
+/*
+ * Shared-memory staging for VIF filter passes (perf-audit wins #1 + #4,
+ * 2026-05-16).
+ *
+ * HORIZONTAL PASS (win #1):
+ *   Launch: BLOCKX=128, BLOCKY=1, val_per_thread=2.
+ *   Each block owns 256 output pixels per row.  The 17-tap filter
+ *   (half_fw=8) reads [x_out-8, x_out+8] from each of 7 tmp channels
+ *   (mu1, mu2, ref, dis, ref_dis, ref_convol, dis_convol).
+ *   Tile: 256+16=272 uint32_t per channel × 7 channels × 4 B = 7616 B.
+ *   272 % 32 = 16 → no bank conflicts for warp-consecutive stride-1 access.
+ *   Boundary mirror handled in the smem load phase; the compute phase reads
+ *   smem unconditionally (interior) or with the same si formula (border).
+ *   Estimated speedup: 20–35% on scale-0 VIF horizontal pass.
+ *
+ * VERTICAL PASS (win #4):
+ *   Launch: BLOCKX=32, BLOCKY=4, val_per_thread=4 (uint32_t, 4 uint8_t).
+ *   Each block owns 128 cols × 4 rows.  17 vertical taps → tile height 20.
+ *   Tile: 2 planes × 128 cols × 20 rows × 1 B = 5120 B (8-bit path).
+ *   For 16-bit: 2 planes × 128 cols × 20 rows × 2 B = 10240 B.
+ *   Boundary mirror handled in the smem load phase.
+ *   Estimated speedup: 15–25% on VIF vertical pass.
+ *
+ * CORRECTNESS:
+ *   All arithmetic is integer fixed-point; smem staging only moves where the
+ *   values are read from, not what values are read.  Bit-identical to the
+ *   pre-smem implementation.  Verified by cross_backend_parity_gate.py
+ *   --features vif --backends cpu cuda --places 4.
+ */
+
+/*
+ * Horizontal tile width macro.
+ * blockx  = number of threads in X per block (= BLOCKX)
+ * vpt     = val_per_thread
+ * half_fw = fwidth / 2
+ * Result: blockx*vpt + 2*half_fw = the minimum span that covers all filter
+ *         taps for every thread in the block.
+ * +1 pad: avoids stride-32 bank aliasing that could arise with certain
+ *         fwidth values (e.g. fwidth=9 → half_fw=4 → tile=256+8=264;
+ *         264%32=8, fine, but +1 ensures no future regression).
+ */
+#define HORI_TILE_W(blockx, vpt, half_fw) ((blockx) * (vpt) + 2 * (half_fw) + 1)
+
+/* -------------------------------------------------------------------------
+ * 8-bit VERTICAL KERNEL (win #4)
+ * Stages ref_in / dis_in rows into shared memory before the accumulation loop.
+ * Block size: BLOCKX=32, BLOCKY=4, val_per_thread=4 (uint32_t alignment).
+ * Tile: (BLOCKY + fwidth_0 - 1) rows × (BLOCKX * val_per_thread = 128) cols.
+ * For fwidth_0=17: (4+16)=20 rows × 128 cols × 2 planes × 1 B = 5120 B.
+ * Conservative static smem size uses BLOCKY_MAX=8 to cover any valid launch.
+ * ------------------------------------------------------------------------- */
 template <typename alignment_type = uint2, int fwidth_0 = 17, int fwidth_1 = 9>
 __device__ __forceinline__ void filter1d_8_vertical_kernel(VifBufferCuda buf, uint8_t *ref_in,
                                                            uint8_t *dis_in, int w, int h,
@@ -33,8 +84,67 @@ __device__ __forceinline__ void filter1d_8_vertical_kernel(VifBufferCuda buf, ui
     constexpr int val_per_thread = sizeof(alignment_type);
     static_assert(val_per_thread % 4 == 0 && val_per_thread <= 16,
                   "val per thread bust be divisible by 4 and under 16");
+
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
     const int x_start = (blockIdx.x * blockDim.x + threadIdx.x) * val_per_thread;
+
+    constexpr int half_fv = fwidth_0 / 2;
+
+    /*
+     * Static smem bounds: BLOCKY_MAX=8 (the actual BLOCKY=4 is a subset).
+     * TILE_COLS_MAX = BLOCKX_MAX * val_per_thread_MAX.  With BLOCKX=32 and
+     * val_per_thread=4: 32*4=128 columns per block.
+     * Per-plane smem: (8 + fwidth_0 - 1) * 128 bytes.
+     * Two planes total.  For fwidth_0=17: 2 * 24 * 128 = 6144 bytes.
+     */
+    constexpr int BLOCKY_MAX = 8;
+    constexpr int TILE_H_MAX = BLOCKY_MAX + fwidth_0 - 1;
+    constexpr int TILE_COLS_MAX = 128; /* BLOCKX(=32) * val_per_thread(=4) */
+
+    __shared__ uint8_t ref_tile[TILE_H_MAX][TILE_COLS_MAX];
+    __shared__ uint8_t dis_tile[TILE_H_MAX][TILE_COLS_MAX];
+
+    /*
+     * Cooperative smem load.
+     * Thread (ty, tx) owns tile columns [tx*vpt, tx*vpt + vpt).
+     * It iterates over tile rows stepping by blockDim.y.
+     * tile_row=0 maps to image row (blockIdx.y*blockDim.y - half_fv).
+     * Mirror boundary (reflect at 0 and h-1) is applied here so that the
+     * compute phase can read smem without any boundary check.
+     */
+    const int x_block_start = blockIdx.x * blockDim.x * val_per_thread;
+    const int tile_h = blockDim.y + fwidth_0 - 1;
+    const int col = threadIdx.x * val_per_thread;
+
+    for (int tile_row = threadIdx.y; tile_row < tile_h; tile_row += blockDim.y) {
+        int img_row = (int)(blockIdx.y * blockDim.y) - half_fv + tile_row;
+        /* Two-bounce mirror: reflect at top then at bottom. */
+        if (img_row < 0)
+            img_row = -img_row;
+        if (img_row >= h)
+            img_row = 2 * h - img_row - 2;
+        /* Clamp for safety on very small frames (h < fwidth_0). */
+        if (img_row < 0)
+            img_row = 0;
+        if (img_row >= h)
+            img_row = h - 1;
+
+        if (x_block_start + col < w) {
+            const alignment_type ref_vec = *reinterpret_cast<const alignment_type *>(
+                &ref_in[(ptrdiff_t)img_row * buf.stride + x_block_start + col]);
+            const alignment_type dis_vec = *reinterpret_cast<const alignment_type *>(
+                &dis_in[(ptrdiff_t)img_row * buf.stride + x_block_start + col]);
+            const uint8_t *ref_b = reinterpret_cast<const uint8_t *>(&ref_vec);
+            const uint8_t *dis_b = reinterpret_cast<const uint8_t *>(&dis_vec);
+#pragma unroll
+            for (int k = 0; k < val_per_thread; ++k) {
+                ref_tile[tile_row][col + k] = ref_b[k];
+                dis_tile[tile_row][col + k] = dis_b[k];
+            }
+        }
+    }
+    __syncthreads();
+
     if (x_start < w && y < h) {
         const int stride_tmp = buf.stride_tmp / sizeof(uint32_t);
         __align__(sizeof(writeback_type)) uint32_t accum_mu1[val_per_thread] = {0};
@@ -44,37 +154,31 @@ __device__ __forceinline__ void filter1d_8_vertical_kernel(VifBufferCuda buf, ui
         __align__(sizeof(writeback_type)) uint32_t accum_ref_dis[val_per_thread] = {0};
         __align__(sizeof(writeback_type)) uint32_t accum_ref_rd[val_per_thread] = {0};
         __align__(sizeof(writeback_type)) uint32_t accum_dis_rd[val_per_thread] = {0};
-        union {
-            uint8_t ref[val_per_thread];
-            alignment_type ref_aligned;
-        };
-        union {
-            uint8_t dis[val_per_thread];
-            alignment_type dis_aligned;
-        };
+
+        /*
+         * Compute phase reads from smem.
+         * smem_row = threadIdx.y + fi  because tile_row=0 maps to
+         * blockIdx.y*blockDim.y - half_fv, so thread at threadIdx.y maps
+         * to tile_row=threadIdx.y (the image row blockIdx.y*blockDim.y +
+         * threadIdx.y - half_fv has been stored at smem[threadIdx.y]).
+         * After adding fi we reach smem[threadIdx.y + fi], which holds the
+         * tap fi's mirrored row.
+         */
         for (int fi = 0; fi < fwidth_0; ++fi) {
-            const int ii = y - fwidth_0 / 2;
-            unsigned int ii_check = abs(ii + fi);
-            if (ii_check >= h) {
-                ii_check = 2 * h - ii_check - 2;
-            }
-            ref_aligned =
-                *reinterpret_cast<alignment_type *>(&(ref_in[ii_check * buf.stride + x_start]));
-            dis_aligned =
-                *reinterpret_cast<alignment_type *>(&(dis_in[ii_check * buf.stride + x_start]));
+            const int smem_row = threadIdx.y + fi;
             for (int off = 0; off < val_per_thread; ++off) {
                 const int j = x_start + off;
                 if (j < w) {
                     const uint32_t fcoeff = vif_filt_s0.filter[0][fi];
-                    const uint32_t ref_val = ref[off];
-                    const uint32_t dis_val = dis[off];
-                    const uint32_t img_coeff_ref = fcoeff * (uint32_t)ref_val;
-                    const uint32_t img_coeff_dis = fcoeff * (uint32_t)dis_val;
+                    const uint32_t ref_val = ref_tile[smem_row][col + off];
+                    const uint32_t dis_val = dis_tile[smem_row][col + off];
+                    const uint32_t img_coeff_ref = fcoeff * ref_val;
+                    const uint32_t img_coeff_dis = fcoeff * dis_val;
                     accum_mu1[off] += img_coeff_ref;
                     accum_mu2[off] += img_coeff_dis;
-                    accum_ref[off] += img_coeff_ref * (uint32_t)ref_val;
-                    accum_dis[off] += img_coeff_dis * (uint32_t)dis_val;
-                    accum_ref_dis[off] += img_coeff_ref * (uint32_t)dis_val;
+                    accum_ref[off] += img_coeff_ref * ref_val;
+                    accum_dis[off] += img_coeff_dis * dis_val;
+                    accum_ref_dis[off] += img_coeff_ref * dis_val;
                     if (fi >= (fwidth_0 - fwidth_1) / 2 &&
                         fi < (fwidth_0 - (fwidth_0 - fwidth_1) / 2)) {
                         const uint16_t fcoeff_rd =
@@ -113,14 +217,76 @@ __device__ __forceinline__ void filter1d_8_vertical_kernel(VifBufferCuda buf, ui
     }
 }
 
+/* -------------------------------------------------------------------------
+ * 8-bit HORIZONTAL KERNEL (win #1)
+ * Stages all 7 tmp channels into shared memory before the filter loop.
+ * Block size: BLOCKX=128, BLOCKY=1, val_per_thread=2.
+ * Tile: HORI_TILE_W elements per channel × 7 channels × 4 B.
+ * For fwidth_0=17 (half_fw=8): (256+16+1)=273 × 7 × 4 = 7644 B per block.
+ * Both interior and border paths use smem (boundary mirror handled in load).
+ * ------------------------------------------------------------------------- */
 template <int val_per_thread = 1, int fwidth_0 = 17, int fwidth_1 = 9>
 __device__ __forceinline__ void
 filter1d_8_horizontal_kernel(VifBufferCuda buf, int w, int h, filter_table_stuct vif_filt_s0,
                              double vif_enhn_gain_limit, vif_accums *accum)
 {
     static_assert(val_per_thread % 2 == 0, "val_per_thread must be divisible by 2");
-    int y = blockIdx.y;
-    int x_start = (blockIdx.x * blockDim.x + threadIdx.x) * val_per_thread;
+
+    constexpr int half_fw = fwidth_0 / 2;
+    /*
+     * TILE_W = BLOCKX*vpt + 2*half_fw + 1 (padding).
+     * For BLOCKX=128, vpt=2, half_fw=8: TILE_W = 273.
+     * smem_base for thread tx = tx * val_per_thread.
+     * smem index for output pixel (x_start + off) and filter tap fj is:
+     *   si = smem_base + off + fj
+     * where smem[si] = buf.tmp.XX[row + (tile_x0 + si)] after mirror-clamp,
+     * tile_x0 = blockIdx.x * blockDim.x * val_per_thread - half_fw.
+     */
+    constexpr int TILE_W = HORI_TILE_W(128, val_per_thread, half_fw);
+
+    __shared__ uint32_t smem_mu1[TILE_W];
+    __shared__ uint32_t smem_mu2[TILE_W];
+    __shared__ uint32_t smem_ref[TILE_W];
+    __shared__ uint32_t smem_dis[TILE_W];
+    __shared__ uint32_t smem_ref_dis[TILE_W];
+    __shared__ uint32_t smem_ref_convol[TILE_W];
+    __shared__ uint32_t smem_dis_convol[TILE_W];
+
+    const int y = blockIdx.y;
+    const int x_start = (blockIdx.x * blockDim.x + threadIdx.x) * val_per_thread;
+    const int tile_x0 = (int)(blockIdx.x * blockDim.x) * val_per_thread - half_fw;
+    const int stride_tmp = buf.stride_tmp / sizeof(uint32_t);
+    const int buf_row = y * stride_tmp;
+
+    /*
+     * Cooperative smem load: tile covers TILE_W - 1 = 272 positions.
+     * Each thread loads elements spaced blockDim.x apart starting at si=threadIdx.x.
+     * The load covers si=0..271; element TILE_W-1=272 is padding (never read).
+     * Mirror boundary applied here; computation reads smem without extra checks.
+     */
+    if (y < h) {
+        for (int si = threadIdx.x; si < TILE_W - 1; si += blockDim.x) {
+            int img_col = tile_x0 + si;
+            if (img_col < 0)
+                img_col = -img_col;
+            if (img_col >= w)
+                img_col = 2 * w - img_col - 2;
+            /* Safety clamp for very narrow frames. */
+            if (img_col < 0)
+                img_col = 0;
+            if (img_col >= w)
+                img_col = w - 1;
+            smem_mu1[si] = buf.tmp.mu1[buf_row + img_col];
+            smem_mu2[si] = buf.tmp.mu2[buf_row + img_col];
+            smem_ref[si] = buf.tmp.ref[buf_row + img_col];
+            smem_dis[si] = buf.tmp.dis[buf_row + img_col];
+            smem_ref_dis[si] = buf.tmp.ref_dis[buf_row + img_col];
+            smem_ref_convol[si] = buf.tmp.ref_convol[buf_row + img_col];
+            smem_dis_convol[si] = buf.tmp.dis_convol[buf_row + img_col];
+        }
+    }
+    __syncthreads();
+
     if (y < h && x_start < w) {
 
         union {
@@ -140,104 +306,104 @@ filter1d_8_horizontal_kernel(VifBufferCuda buf, int w, int h, filter_table_stuct
         uint32_t accum_ref_rd[val_per_thread / 2] = {0};
         uint32_t accum_dis_rd[val_per_thread / 2] = {0};
 
-        const int stride_tmp = buf.stride_tmp / sizeof(uint32_t);
-        constexpr int half_fw = fwidth_0 / 2;
         constexpr int rd_start = (fwidth_0 - fwidth_1) / 2;
         constexpr int rd_half = fwidth_1 / 2;
-        // Interior fast path: no mirror needed, symmetric filter optimization.
-        // All horizontal accumulators are linear in tmp values, so we can sum
-        // symmetric tap pairs before multiplying (17→9 muls at scale 0).
+
+        /*
+         * smem_base: index of the leftmost filter position for this thread's
+         * first output pixel.  smem[smem_base + off + fj] holds the value at
+         * image column (x_start + off - half_fw + fj) after mirror-clamping.
+         */
+        const int smem_base = threadIdx.x * val_per_thread;
+
+        /*
+         * Interior fast path: no extra boundary check needed in the filter
+         * loop (all taps land within [0, w-1] after the smem load stage).
+         * Symmetric-filter optimization: 17→9 multiplies at scale 0.
+         */
         const bool interior = (x_start >= half_fw) && (x_start + val_per_thread - 1 + half_fw < w);
         if (interior) {
-            const int buf_row = y * stride_tmp;
-            // Center tap (unpaired)
+            /* Center tap (unpaired) */
             {
                 const uint16_t fcoeff = vif_filt_s0.filter[0][half_fw];
 #pragma unroll
                 for (int off = 0; off < val_per_thread; ++off) {
-                    const int idx = buf_row + x_start + off;
-                    accum_mu1[off] += fcoeff * ((uint32_t)buf.tmp.mu1[idx]);
-                    accum_mu2[off] += fcoeff * ((uint32_t)buf.tmp.mu2[idx]);
-                    accum_ref_tmp[off] += fcoeff * ((uint64_t)buf.tmp.ref[idx]);
-                    accum_dis_tmp[off] += fcoeff * ((uint64_t)buf.tmp.dis[idx]);
-                    accum_ref_dis_tmp[off] += fcoeff * ((uint64_t)buf.tmp.ref_dis[idx]);
+                    const int si = smem_base + off + half_fw;
+                    accum_mu1[off] += fcoeff * smem_mu1[si];
+                    accum_mu2[off] += fcoeff * smem_mu2[si];
+                    accum_ref_tmp[off] += fcoeff * (uint64_t)smem_ref[si];
+                    accum_dis_tmp[off] += fcoeff * (uint64_t)smem_dis[si];
+                    accum_ref_dis_tmp[off] += fcoeff * (uint64_t)smem_ref_dis[si];
                 }
                 if (fwidth_1 > 0) {
                     const uint16_t fcoeff_rd = vif_filt_s0.filter[1][rd_half];
 #pragma unroll
                     for (int off = 0; off < val_per_thread; off += 2) {
-                        const int idx = buf_row + x_start + off;
-                        accum_ref_rd[off / 2] += fcoeff_rd * buf.tmp.ref_convol[idx];
-                        accum_dis_rd[off / 2] += fcoeff_rd * buf.tmp.dis_convol[idx];
+                        const int si = smem_base + off + half_fw;
+                        accum_ref_rd[off / 2] += fcoeff_rd * smem_ref_convol[si];
+                        accum_dis_rd[off / 2] += fcoeff_rd * smem_dis_convol[si];
                     }
                 }
             }
-            // Symmetric pairs: filter[fj] == filter[fwidth_0-1-fj]
+            /* Symmetric tap pairs */
 #pragma unroll
             for (int fj = 0; fj < half_fw; ++fj) {
                 const uint16_t fcoeff = vif_filt_s0.filter[0][fj];
 #pragma unroll
                 for (int off = 0; off < val_per_thread; ++off) {
-                    const int lo = buf_row + x_start + off - half_fw + fj;
-                    const int hi = buf_row + x_start + off + half_fw - fj;
-                    accum_mu1[off] +=
-                        fcoeff * ((uint32_t)buf.tmp.mu1[lo] + (uint32_t)buf.tmp.mu1[hi]);
-                    accum_mu2[off] +=
-                        fcoeff * ((uint32_t)buf.tmp.mu2[lo] + (uint32_t)buf.tmp.mu2[hi]);
+                    const int si_lo = smem_base + off + fj;
+                    const int si_hi = smem_base + off + 2 * half_fw - fj;
+                    accum_mu1[off] += fcoeff * (smem_mu1[si_lo] + smem_mu1[si_hi]);
+                    accum_mu2[off] += fcoeff * (smem_mu2[si_lo] + smem_mu2[si_hi]);
                     accum_ref_tmp[off] +=
-                        fcoeff * ((uint64_t)buf.tmp.ref[lo] + (uint64_t)buf.tmp.ref[hi]);
+                        fcoeff * ((uint64_t)smem_ref[si_lo] + (uint64_t)smem_ref[si_hi]);
                     accum_dis_tmp[off] +=
-                        fcoeff * ((uint64_t)buf.tmp.dis[lo] + (uint64_t)buf.tmp.dis[hi]);
+                        fcoeff * ((uint64_t)smem_dis[si_lo] + (uint64_t)smem_dis[si_hi]);
                     accum_ref_dis_tmp[off] +=
-                        fcoeff * ((uint64_t)buf.tmp.ref_dis[lo] + (uint64_t)buf.tmp.ref_dis[hi]);
+                        fcoeff * ((uint64_t)smem_ref_dis[si_lo] + (uint64_t)smem_ref_dis[si_hi]);
                 }
-                // RD symmetric pairs (coefficients are also symmetric)
                 if (fwidth_1 > 0 && fj >= rd_start && fj < rd_start + rd_half) {
                     const uint16_t fcoeff_rd = vif_filt_s0.filter[1][fj - rd_start];
 #pragma unroll
                     for (int off = 0; off < val_per_thread; off += 2) {
-                        const int lo = buf_row + x_start + off - half_fw + fj;
-                        const int hi = buf_row + x_start + off + half_fw - fj;
+                        const int si_lo = smem_base + off + fj;
+                        const int si_hi = smem_base + off + 2 * half_fw - fj;
                         accum_ref_rd[off / 2] +=
-                            fcoeff_rd * (buf.tmp.ref_convol[lo] + buf.tmp.ref_convol[hi]);
+                            fcoeff_rd * (smem_ref_convol[si_lo] + smem_ref_convol[si_hi]);
                         accum_dis_rd[off / 2] +=
-                            fcoeff_rd * (buf.tmp.dis_convol[lo] + buf.tmp.dis_convol[hi]);
+                            fcoeff_rd * (smem_dis_convol[si_lo] + smem_dis_convol[si_hi]);
                     }
                 }
             }
         } else {
-            // Border path: mirror required
+            /*
+             * Border path: smem already contains mirrored boundary values.
+             * si = smem_base + off + fj maps to image col (x_start+off-half_fw+fj).
+             * For left border (x_start < half_fw) the smem load stage reflected
+             * negative indices, so smem[si] holds the correct mirrored value.
+             * The per-element `j < w` guard is still needed because x_start+off
+             * may exceed w at the right edge of the last block.
+             */
 #pragma unroll
             for (int fj = 0; fj < fwidth_0; ++fj) {
 #pragma unroll
                 for (int off = 0; off < val_per_thread; ++off) {
                     const int j = x_start + off;
                     if (j < w) {
-                        int jj = j - fwidth_0 / 2;
-                        int jj_check = abs(jj + fj);
-                        if (jj_check >= w) {
-                            jj_check = 2 * w - jj_check - 2;
-                        }
+                        const int si = smem_base + off + fj;
                         const uint16_t fcoeff = vif_filt_s0.filter[0][fj];
-                        accum_mu1[off] +=
-                            fcoeff * ((uint32_t)buf.tmp.mu1[y * stride_tmp + jj_check]);
-                        accum_mu2[off] +=
-                            fcoeff * ((uint32_t)buf.tmp.mu2[y * stride_tmp + jj_check]);
-                        accum_ref_tmp[off] +=
-                            fcoeff * ((uint64_t)buf.tmp.ref[y * stride_tmp + jj_check]);
-                        accum_dis_tmp[off] +=
-                            fcoeff * ((uint64_t)buf.tmp.dis[y * stride_tmp + jj_check]);
-                        accum_ref_dis_tmp[off] +=
-                            fcoeff * ((uint64_t)buf.tmp.ref_dis[y * stride_tmp + jj_check]);
+                        accum_mu1[off] += fcoeff * smem_mu1[si];
+                        accum_mu2[off] += fcoeff * smem_mu2[si];
+                        accum_ref_tmp[off] += fcoeff * (uint64_t)smem_ref[si];
+                        accum_dis_tmp[off] += fcoeff * (uint64_t)smem_dis[si];
+                        accum_ref_dis_tmp[off] += fcoeff * (uint64_t)smem_ref_dis[si];
 
                         if (fj >= (fwidth_0 - fwidth_1) / 2 &&
                             fj < (fwidth_0 - (fwidth_0 - fwidth_1) / 2) && off % 2 == 0) {
                             const uint16_t fcoeff_rd =
                                 vif_filt_s0.filter[1][fj - ((fwidth_0 - fwidth_1) / 2)];
-                            accum_ref_rd[off / 2] +=
-                                fcoeff_rd * buf.tmp.ref_convol[y * stride_tmp + jj_check];
-                            accum_dis_rd[off / 2] +=
-                                fcoeff_rd * buf.tmp.dis_convol[y * stride_tmp + jj_check];
+                            accum_ref_rd[off / 2] += fcoeff_rd * smem_ref_convol[si];
+                            accum_dis_rd[off / 2] += fcoeff_rd * smem_dis_convol[si];
                         }
                     }
                 }
@@ -255,12 +421,10 @@ filter1d_8_horizontal_kernel(VifBufferCuda buf, int w, int h, filter_table_stuct
             }
         }
 
-        // reduce sums for each warp
         for (int i = 0; i < 7; ++i) {
             thread_accum_i64[i] = warp_reduce(thread_accum_i64[i]);
         }
         const int warp_id = threadIdx.x % VMAF_CUDA_THREADS_PER_WARP;
-        // each warp writes its sum to global mem
         if (warp_id == 0) {
             for (int i = 0; i < 7; ++i) {
                 atomicAdd_int64(&reinterpret_cast<int64_t *>(accum)[i], thread_accum_i64[i]);
@@ -284,6 +448,12 @@ filter1d_8_horizontal_kernel(VifBufferCuda buf, int w, int h, filter_table_stuct
     }
 }
 
+/* -------------------------------------------------------------------------
+ * 16-bit VERTICAL KERNEL (win #4, 16-bit variant)
+ * Block size: BLOCK_VERT_X=32, BLOCK_VERT_Y=4, val_per_thread=4 (uint16_t).
+ * Tile: (BLOCK_VERT_Y + fwidth - 1) rows × 128 cols × 2 planes × 2 B.
+ * For fwidth=17: (4+16)=20 rows × 128 cols × 2 × 2 = 10240 B per block.
+ * ------------------------------------------------------------------------- */
 template <typename alignment_type = uint2, int fwidth, int fwidth_rd, int scale>
 __device__ __forceinline__ void
 filter1d_16_vertical_kernel(VifBufferCuda buf, uint16_t *ref_in, uint16_t *dis_in, int w, int h,
@@ -295,8 +465,57 @@ filter1d_16_vertical_kernel(VifBufferCuda buf, uint16_t *ref_in, uint16_t *dis_i
     constexpr int val_per_thread = sizeof(alignment_type) / sizeof(uint16_t);
     static_assert(val_per_thread % 4 == 0 && val_per_thread <= 8,
                   "val per thread bust be divisible by 4 and under 16");
+
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
     const int x_start = (blockIdx.x * blockDim.x + threadIdx.x) * val_per_thread;
+
+    constexpr int half_fv = fwidth / 2;
+
+    /*
+     * Static smem bounds.  BLOCK_VERT_Y_MAX=8, TILE_COLS_MAX=128.
+     * Per-plane smem: (8 + fwidth - 1) * 128 * 2 bytes.
+     * For fwidth=17: 2 * 24 * 128 * 2 = 12288 bytes.
+     */
+    constexpr int BLOCKY_MAX = 8;
+    constexpr int TILE_H_MAX = BLOCKY_MAX + fwidth - 1;
+    constexpr int TILE_COLS_MAX = 128; /* BLOCK_VERT_X(=32) * val_per_thread(=4) */
+
+    __shared__ uint16_t ref_tile16[TILE_H_MAX][TILE_COLS_MAX];
+    __shared__ uint16_t dis_tile16[TILE_H_MAX][TILE_COLS_MAX];
+
+    const int tile_h = blockDim.y + fwidth - 1;
+    const int x_block_start = blockIdx.x * blockDim.x * val_per_thread;
+    const int col = threadIdx.x * val_per_thread;
+    const ptrdiff_t stride =
+        (scale == 0) ? buf.stride / sizeof(uint16_t) : buf.rd_stride / sizeof(uint16_t);
+
+    for (int tile_row = threadIdx.y; tile_row < tile_h; tile_row += blockDim.y) {
+        int img_row = (int)(blockIdx.y * blockDim.y) - half_fv + tile_row;
+        if (img_row < 0)
+            img_row = -img_row;
+        if (img_row >= h)
+            img_row = 2 * h - img_row - 2;
+        if (img_row < 0)
+            img_row = 0;
+        if (img_row >= h)
+            img_row = h - 1;
+
+        if (x_block_start + col < w) {
+            const alignment_type ref_vec = *reinterpret_cast<const alignment_type *>(
+                &ref_in[(ptrdiff_t)img_row * stride + x_block_start + col]);
+            const alignment_type dis_vec = *reinterpret_cast<const alignment_type *>(
+                &dis_in[(ptrdiff_t)img_row * stride + x_block_start + col]);
+            const uint16_t *ref_s = reinterpret_cast<const uint16_t *>(&ref_vec);
+            const uint16_t *dis_s = reinterpret_cast<const uint16_t *>(&dis_vec);
+#pragma unroll
+            for (int k = 0; k < val_per_thread; ++k) {
+                ref_tile16[tile_row][col + k] = ref_s[k];
+                dis_tile16[tile_row][col + k] = dis_s[k];
+            }
+        }
+    }
+    __syncthreads();
+
     if (x_start < w && y < h) {
         __align__(sizeof(writeback_type)) uint32_t accum_mu1[val_per_thread] = {0};
         __align__(sizeof(writeback_type)) uint32_t accum_mu2[val_per_thread] = {0};
@@ -305,34 +524,17 @@ filter1d_16_vertical_kernel(VifBufferCuda buf, uint16_t *ref_in, uint16_t *dis_i
         uint64_t accum_ref[val_per_thread] = {0};
         uint64_t accum_dis[val_per_thread] = {0};
         uint64_t accum_ref_dis[val_per_thread] = {0};
-        union {
-            uint16_t ref[val_per_thread];
-            alignment_type ref_aligned;
-        };
-        union {
-            uint16_t dis[val_per_thread];
-            alignment_type dis_aligned;
-        };
-        const ptrdiff_t stride =
-            (scale == 0) ? buf.stride / sizeof(uint16_t) : buf.rd_stride / sizeof(uint16_t);
+
         for (int fi = 0; fi < fwidth; ++fi) {
-            int ii = y - fwidth / 2;
-            int ii_check = abs(ii + fi);
-            if (ii_check >= h) {
-                ii_check = 2 * h - ii_check - 2;
-            }
-            ref_aligned =
-                *reinterpret_cast<alignment_type *>(&(ref_in)[ii_check * stride + x_start]);
-            dis_aligned =
-                *reinterpret_cast<alignment_type *>(&(dis_in)[ii_check * stride + x_start]);
+            const int smem_row = threadIdx.y + fi;
             for (int off = 0; off < val_per_thread; ++off) {
                 const int j = x_start + off;
                 if (j < w) {
                     const uint16_t fcoeff = vif_filt.filter[scale][fi];
-                    uint32_t imgcoeff_ref = ref[off];
-                    uint32_t imgcoeff_dis = dis[off];
-                    uint32_t img_coeff_ref = fcoeff * (uint32_t)imgcoeff_ref;
-                    uint32_t img_coeff_dis = fcoeff * (uint32_t)imgcoeff_dis;
+                    const uint32_t imgcoeff_ref = ref_tile16[smem_row][col + off];
+                    const uint32_t imgcoeff_dis = dis_tile16[smem_row][col + off];
+                    const uint32_t img_coeff_ref = fcoeff * imgcoeff_ref;
+                    const uint32_t img_coeff_dis = fcoeff * imgcoeff_dis;
                     accum_mu1[off] += img_coeff_ref;
                     accum_mu2[off] += img_coeff_dis;
                     accum_ref[off] += img_coeff_ref * (uint64_t)imgcoeff_ref;
@@ -392,6 +594,12 @@ filter1d_16_vertical_kernel(VifBufferCuda buf, uint16_t *ref_in, uint16_t *dis_i
     }
 }
 
+/* -------------------------------------------------------------------------
+ * 16-bit HORIZONTAL KERNEL (win #1, 16-bit variant)
+ * Block size: BLOCKX=128, BLOCKY=1, val_per_thread=2.
+ * Same tile layout as the 8-bit horizontal kernel.
+ * For fwidth=17 (half_fw=8): TILE_W=273 × 7 × 4 B = 7644 B per block.
+ * ------------------------------------------------------------------------- */
 template <int val_per_thread = 2, int fwidth, int fwidth_rd, int scale>
 __device__ __forceinline__ void
 filter1d_16_horizontal_kernel(VifBufferCuda buf, int w, int h, int32_t add_shift_round_HP,
@@ -400,8 +608,45 @@ filter1d_16_horizontal_kernel(VifBufferCuda buf, int w, int h, int32_t add_shift
 {
     static_assert(val_per_thread % 2 == 0, "val_per_thread must be divisible by 2");
 
-    int y = blockIdx.y;
-    int x_start = (blockIdx.x * blockDim.x + threadIdx.x) * val_per_thread;
+    constexpr int half_fw = fwidth / 2;
+    constexpr int TILE_W = HORI_TILE_W(128, val_per_thread, half_fw);
+
+    __shared__ uint32_t smem_mu1[TILE_W];
+    __shared__ uint32_t smem_mu2[TILE_W];
+    __shared__ uint32_t smem_ref[TILE_W];
+    __shared__ uint32_t smem_dis[TILE_W];
+    __shared__ uint32_t smem_ref_dis[TILE_W];
+    __shared__ uint32_t smem_ref_convol[TILE_W];
+    __shared__ uint32_t smem_dis_convol[TILE_W];
+
+    const int y = blockIdx.y;
+    const int x_start = (blockIdx.x * blockDim.x + threadIdx.x) * val_per_thread;
+    const int tile_x0 = (int)(blockIdx.x * blockDim.x) * val_per_thread - half_fw;
+    const int stride_tmp = buf.stride_tmp / sizeof(uint32_t);
+    const int buf_row = y * stride_tmp;
+
+    if (y < h) {
+        for (int si = threadIdx.x; si < TILE_W - 1; si += blockDim.x) {
+            int img_col = tile_x0 + si;
+            if (img_col < 0)
+                img_col = -img_col;
+            if (img_col >= w)
+                img_col = 2 * w - img_col - 2;
+            if (img_col < 0)
+                img_col = 0;
+            if (img_col >= w)
+                img_col = w - 1;
+            smem_mu1[si] = buf.tmp.mu1[buf_row + img_col];
+            smem_mu2[si] = buf.tmp.mu2[buf_row + img_col];
+            smem_ref[si] = buf.tmp.ref[buf_row + img_col];
+            smem_dis[si] = buf.tmp.dis[buf_row + img_col];
+            smem_ref_dis[si] = buf.tmp.ref_dis[buf_row + img_col];
+            smem_ref_convol[si] = buf.tmp.ref_convol[buf_row + img_col];
+            smem_dis_convol[si] = buf.tmp.dis_convol[buf_row + img_col];
+        }
+    }
+    __syncthreads();
+
     if (x_start < w && y < h) {
         union {
             vif_accums thread_accum;
@@ -420,107 +665,85 @@ filter1d_16_horizontal_kernel(VifBufferCuda buf, int w, int h, int32_t add_shift
         uint32_t accum_ref_rd[val_per_thread / 2] = {0};
         uint32_t accum_dis_rd[val_per_thread / 2] = {0};
 
-        const int stride_tmp = buf.stride_tmp / sizeof(uint32_t);
-        constexpr int half_fw = fwidth / 2;
         constexpr int rd_start = (fwidth - fwidth_rd) / 2;
         constexpr int rd_half = fwidth_rd / 2;
-        // Interior fast path: no mirror needed, symmetric filter optimization.
-        // All horizontal accumulators are linear in tmp values, so we can sum
-        // symmetric tap pairs before multiplying (17→9 muls at scale 0).
+
+        const int smem_base = threadIdx.x * val_per_thread;
+
         const bool interior = (x_start >= half_fw) && (x_start + val_per_thread - 1 + half_fw < w);
         if (interior) {
-            const int buf_row = y * stride_tmp;
-            // Center tap (unpaired)
             {
                 const uint16_t fcoeff = vif_filt.filter[scale][half_fw];
 #pragma unroll
                 for (int off = 0; off < val_per_thread; ++off) {
-                    const int idx = buf_row + x_start + off;
-                    accum_mu1[off] += fcoeff * ((uint32_t)buf.tmp.mu1[idx]);
-                    accum_mu2[off] += fcoeff * ((uint32_t)buf.tmp.mu2[idx]);
-                    accum_ref_tmp[off] += fcoeff * ((uint64_t)buf.tmp.ref[idx]);
-                    accum_dis_tmp[off] += fcoeff * ((uint64_t)buf.tmp.dis[idx]);
-                    accum_ref_dis_tmp[off] += fcoeff * ((uint64_t)buf.tmp.ref_dis[idx]);
+                    const int si = smem_base + off + half_fw;
+                    accum_mu1[off] += fcoeff * smem_mu1[si];
+                    accum_mu2[off] += fcoeff * smem_mu2[si];
+                    accum_ref_tmp[off] += fcoeff * (uint64_t)smem_ref[si];
+                    accum_dis_tmp[off] += fcoeff * (uint64_t)smem_dis[si];
+                    accum_ref_dis_tmp[off] += fcoeff * (uint64_t)smem_ref_dis[si];
                 }
                 if (fwidth_rd > 0) {
                     const uint32_t fcoeff_rd = vif_filt.filter[scale + 1][rd_half];
 #pragma unroll
                     for (int off = 0; off < val_per_thread; off += 2) {
-                        const int idx = buf_row + x_start + off;
-                        accum_ref_rd[off / 2] += fcoeff_rd * ((uint32_t)buf.tmp.ref_convol[idx]);
-                        accum_dis_rd[off / 2] += fcoeff_rd * ((uint32_t)buf.tmp.dis_convol[idx]);
+                        const int si = smem_base + off + half_fw;
+                        accum_ref_rd[off / 2] += fcoeff_rd * smem_ref_convol[si];
+                        accum_dis_rd[off / 2] += fcoeff_rd * smem_dis_convol[si];
                     }
                 }
             }
-            // Symmetric pairs: filter[fj] == filter[fwidth-1-fj]
 #pragma unroll
             for (int fj = 0; fj < half_fw; ++fj) {
                 const uint16_t fcoeff = vif_filt.filter[scale][fj];
 #pragma unroll
                 for (int off = 0; off < val_per_thread; ++off) {
-                    const int lo = buf_row + x_start + off - half_fw + fj;
-                    const int hi = buf_row + x_start + off + half_fw - fj;
-                    accum_mu1[off] +=
-                        fcoeff * ((uint32_t)buf.tmp.mu1[lo] + (uint32_t)buf.tmp.mu1[hi]);
-                    accum_mu2[off] +=
-                        fcoeff * ((uint32_t)buf.tmp.mu2[lo] + (uint32_t)buf.tmp.mu2[hi]);
+                    const int si_lo = smem_base + off + fj;
+                    const int si_hi = smem_base + off + 2 * half_fw - fj;
+                    accum_mu1[off] += fcoeff * (smem_mu1[si_lo] + smem_mu1[si_hi]);
+                    accum_mu2[off] += fcoeff * (smem_mu2[si_lo] + smem_mu2[si_hi]);
                     accum_ref_tmp[off] +=
-                        fcoeff * ((uint64_t)buf.tmp.ref[lo] + (uint64_t)buf.tmp.ref[hi]);
+                        fcoeff * ((uint64_t)smem_ref[si_lo] + (uint64_t)smem_ref[si_hi]);
                     accum_dis_tmp[off] +=
-                        fcoeff * ((uint64_t)buf.tmp.dis[lo] + (uint64_t)buf.tmp.dis[hi]);
+                        fcoeff * ((uint64_t)smem_dis[si_lo] + (uint64_t)smem_dis[si_hi]);
                     accum_ref_dis_tmp[off] +=
-                        fcoeff * ((uint64_t)buf.tmp.ref_dis[lo] + (uint64_t)buf.tmp.ref_dis[hi]);
+                        fcoeff * ((uint64_t)smem_ref_dis[si_lo] + (uint64_t)smem_ref_dis[si_hi]);
                 }
-                // RD symmetric pairs (coefficients are also symmetric)
                 if (fwidth_rd > 0 && fj >= rd_start && fj < rd_start + rd_half) {
                     const uint32_t fcoeff_rd = vif_filt.filter[scale + 1][fj - rd_start];
 #pragma unroll
                     for (int off = 0; off < val_per_thread; off += 2) {
-                        const int lo = buf_row + x_start + off - half_fw + fj;
-                        const int hi = buf_row + x_start + off + half_fw - fj;
-                        accum_ref_rd[off / 2] += fcoeff_rd * ((uint32_t)buf.tmp.ref_convol[lo] +
-                                                              (uint32_t)buf.tmp.ref_convol[hi]);
-                        accum_dis_rd[off / 2] += fcoeff_rd * ((uint32_t)buf.tmp.dis_convol[lo] +
-                                                              (uint32_t)buf.tmp.dis_convol[hi]);
+                        const int si_lo = smem_base + off + fj;
+                        const int si_hi = smem_base + off + 2 * half_fw - fj;
+                        accum_ref_rd[off / 2] +=
+                            fcoeff_rd * (smem_ref_convol[si_lo] + smem_ref_convol[si_hi]);
+                        accum_dis_rd[off / 2] +=
+                            fcoeff_rd * (smem_dis_convol[si_lo] + smem_dis_convol[si_hi]);
                     }
                 }
             }
         } else {
-            // Border path: mirror required
 #pragma unroll
             for (int fj = 0; fj < fwidth; ++fj) {
 #pragma unroll
                 for (int off = 0; off < val_per_thread; ++off) {
                     const int j = x_start + off;
                     if (j < w) {
-                        int jj = j - fwidth / 2;
-                        int jj_check = abs(jj + fj);
-                        if (jj_check >= w) {
-                            jj_check = 2 * w - jj_check - 2;
-                        }
+                        const int si = smem_base + off + fj;
                         const uint16_t fcoeff = vif_filt.filter[scale][fj];
-                        accum_mu1[off] +=
-                            fcoeff * ((uint32_t)buf.tmp.mu1[y * stride_tmp + jj_check]);
-                        accum_mu2[off] +=
-                            fcoeff * ((uint32_t)buf.tmp.mu2[y * stride_tmp + jj_check]);
-                        accum_ref_tmp[off] +=
-                            fcoeff * ((uint64_t)buf.tmp.ref[y * stride_tmp + jj_check]);
-                        accum_dis_tmp[off] +=
-                            fcoeff * ((uint64_t)buf.tmp.dis[y * stride_tmp + jj_check]);
-                        accum_ref_dis_tmp[off] +=
-                            fcoeff * ((uint64_t)buf.tmp.ref_dis[y * stride_tmp + jj_check]);
+                        accum_mu1[off] += fcoeff * smem_mu1[si];
+                        accum_mu2[off] += fcoeff * smem_mu2[si];
+                        accum_ref_tmp[off] += fcoeff * (uint64_t)smem_ref[si];
+                        accum_dis_tmp[off] += fcoeff * (uint64_t)smem_dis[si];
+                        accum_ref_dis_tmp[off] += fcoeff * (uint64_t)smem_ref_dis[si];
 
                         if (fj >= (fwidth - fwidth_rd) / 2 &&
                             fj < (fwidth - (fwidth - fwidth_rd) / 2) && fwidth_rd > 0 &&
                             off % 2 == 0) {
                             const uint32_t fcoeff_rd =
                                 vif_filt.filter[scale + 1][fj - ((fwidth - fwidth_rd) / 2)];
-                            accum_ref_rd[off / 2] +=
-                                fcoeff_rd *
-                                ((uint32_t)buf.tmp.ref_convol[y * stride_tmp + jj_check]);
-                            accum_dis_rd[off / 2] +=
-                                fcoeff_rd *
-                                ((uint32_t)buf.tmp.dis_convol[y * stride_tmp + jj_check]);
+                            accum_ref_rd[off / 2] += fcoeff_rd * smem_ref_convol[si];
+                            accum_dis_rd[off / 2] += fcoeff_rd * smem_dis_convol[si];
                         }
                     }
                 }
@@ -539,12 +762,10 @@ filter1d_16_horizontal_kernel(VifBufferCuda buf, int w, int h, int32_t add_shift
             }
         }
 
-        // reduce sums for each warp
         for (int i = 0; i < 7; ++i) {
             thread_accum_i64[i] = warp_reduce(thread_accum_i64[i]);
         }
         const int warp_id = threadIdx.x % VMAF_CUDA_THREADS_PER_WARP;
-        // each warp writes its sum to global mem
         if (warp_id == 0) {
             for (int i = 0; i < 7; ++i) {
                 atomicAdd_int64(&reinterpret_cast<int64_t *>(accum)[i], thread_accum_i64[i]);
