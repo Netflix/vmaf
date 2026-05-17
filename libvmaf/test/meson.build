@@ -881,6 +881,23 @@ test_hip_smoke = executable('test_hip_smoke',
     c_args: ['-DHAVE_HIP=1']
 )
 test('test_hip_smoke', test_hip_smoke, suite : ['fast', 'gpu'])
+
+# T3-15(c) / ADR-0219 / ADR-0214 — motion3 CPU vs. HIP parity gate.
+# The motion3 post-process (host-side moving-average over blended motion2)
+# is computed independently in integer_motion.c (CPU) and
+# integer_motion_hip.c (HIP path).  This gate asserts the two paths agree
+# to within places=4 (1e-4) at frame index 1 on a 256x144 synthetic fixture.
+# HIP-gated: skips cleanly when no AMD GPU is visible.
+test_hip_motion3_parity = executable('test_hip_motion3_parity',
+    ['test.c', 'test_hip_motion3_parity.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: [pthread_dependency, hip_deps],
+    c_args: ['-DHAVE_HIP=1']
+)
+test('test_hip_motion3_parity', test_hip_motion3_parity,
+    suite : ['gpu'],
+    timeout : 60)
 endif
 
 # ADR-0338 / T8-1: Metal (Apple Silicon) backend scaffold smoke. Same
