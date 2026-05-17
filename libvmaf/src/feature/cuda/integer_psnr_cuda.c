@@ -59,8 +59,8 @@
 #include "mem.h"
 #include "picture.h"
 #include "picture_cuda.h"
-#include "cuda_helper.cuh"
-#include "kernel_template.h"
+#include "cuda/cuda_helper.cuh"
+#include "cuda/kernel_template.h"
 
 #define PSNR_NUM_PLANES 3U
 
