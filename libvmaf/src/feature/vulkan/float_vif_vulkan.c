@@ -489,16 +489,10 @@ static void prebind_descriptor_sets(FloatVifVulkanState *s)
 
 static void cmd_storage_barrier(VkCommandBuffer cmd)
 {
-    /* Inter-scale barrier: the next dispatch_pass only reads the SSBO
-     * written by the previous pass — no atomicAdd on the destination.
-     * Tightened to SHADER_READ_BIT only (VK-5 / perf-audit 2026-05-16).
-     * float_vif accumulates into host-visible partials via the shader
-     * (non-atomic write) and the host reduces after the fence; no GPU
-     * reducer dispatch follows this barrier. */
     VkMemoryBarrier mb = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
         .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
     };
     vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &mb, 0, NULL, 0, NULL);

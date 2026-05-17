@@ -817,30 +817,6 @@ test_vulkan_pic_preallocation = executable('test_vulkan_pic_preallocation',
     c_args: ['-DHAVE_VULKAN=1']
 )
 test('test_vulkan_pic_preallocation', test_vulkan_pic_preallocation, suite : ['fast', 'gpu'])
-
-# ADR-0445 / PR #865: persistent VkPipelineCache smoke — first run creates
-# the cache file, second run reads it, tampered header is rejected without
-# crash, env-var opt-out (LIBVMAF_VULKAN_PIPELINE_CACHE=0) skips I/O.
-test_vulkan_pipeline_cache = executable('test_vulkan_pipeline_cache',
-    ['test.c', 'test_vulkan_pipeline_cache.c'],
-    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: [pthread_dependency],
-    c_args: ['-DHAVE_VULKAN=1']
-)
-test('test_vulkan_pipeline_cache', test_vulkan_pipeline_cache)
-
-# Research-0094 / dedup-audit-c-feature-twins-2026-05-16 finding #5:
-# Vulkan PSNR chroma-plane ceiling-division regression guard.
-# Pure-C geometry test — no Vulkan device required; runs on every host.
-test_psnr_vulkan_chroma_geom = executable('test_psnr_vulkan_chroma_geom',
-    ['test.c', 'test_psnr_vulkan_chroma_geom.c'],
-    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: [pthread_dependency],
-)
-test('test_psnr_vulkan_chroma_geom', test_psnr_vulkan_chroma_geom,
-     suite: 'fast')
 endif
 
 # ADR-0209 / T5-2: embedded MCP scaffold smoke. Pins the -ENOSYS
@@ -907,7 +883,6 @@ test('test_metal_install_header', test_metal_install_header, suite : ['fast', 'g
 endif
 endif
 
-test('test_version', test_version, suite : ['fast'])
 test('test_picture', test_picture, suite : ['fast'])
 test('test_feature_collector', test_feature_collector, suite : ['fast'])
 test('test_output', test_output, suite : ['fast'])

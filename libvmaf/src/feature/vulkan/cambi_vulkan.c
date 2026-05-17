@@ -807,17 +807,10 @@ static void cambi_vk_write_set(CambiVkState *s, VkDescriptorSet set, VmafVulkanB
 
 static void cambi_vk_barrier(VkCommandBuffer cmd)
 {
-    /* All three call sites (derivative→row-SAT, row-SAT→col-SAT,
-     * col-SAT→threshold-compare) are pure read-only consumers of the
-     * preceding pass's output buffer.  No atomicAdd in any of the
-     * consuming passes (cambi_preprocess / cambi_derivative /
-     * cambi_mask_dp shaders all write to a distinct output SSBO, not
-     * the one they read).  Tightened to SHADER_READ_BIT only
-     * (VK-5 / perf-audit 2026-05-16). */
     VkMemoryBarrier mb = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
         .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
     };
     vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &mb, 0, NULL, 0, NULL);

@@ -865,16 +865,10 @@ static void compute_csf_cm_shifts(unsigned hw, unsigned hh, int scale, int activ
 
 static void issue_pipeline_barrier(VkCommandBuffer cmd)
 {
-    /* Inter-DWT-stage barrier: the producing stage writes output SSBOs;
-     * the consuming stage only reads them.  dstAccessMask is read-only —
-     * no atomicAdd in the inter-stage consumer path (VK-5 / perf-audit
-     * 2026-05-16).  The separate reduce_barrier below this function
-     * keeps SHADER_WRITE because the reducer uses atomicAdd into
-     * reduced_accum (ADR-0356 / vif_reduce.comp / adm_reduce.comp). */
     VkMemoryBarrier mb = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
         .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
     };
     vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &mb, 0, NULL, 0, NULL);

@@ -580,15 +580,10 @@ static void write_descriptor_set(FloatAdmVulkanState *s, VkDescriptorSet set, in
 
 static void issue_pipeline_barrier(VkCommandBuffer cmd)
 {
-    /* Inter-DWT-stage barrier: the consuming stage only reads the
-     * producing stage's output SSBOs — no atomicAdd here.  Tightened
-     * to SHADER_READ_BIT only (VK-5 / perf-audit 2026-05-16).
-     * float_adm uses host-side reduction (no GPU reducer dispatch),
-     * so there is no second-phase reduce_barrier in this file. */
     VkMemoryBarrier mb = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
         .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
     };
     vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &mb, 0, NULL, 0, NULL);

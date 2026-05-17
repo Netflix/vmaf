@@ -540,12 +540,6 @@ def iter_rows(
 
         yield row
 
-    # Flush the cache index after the sweep completes. This batches
-    # the LRU timestamp updates from get() and put() into a single
-    # final write, avoiding O(N) index rewrites per cell.
-    if tune_cache is not None:
-        tune_cache.flush()
-
 
 def _row_for(
     *,

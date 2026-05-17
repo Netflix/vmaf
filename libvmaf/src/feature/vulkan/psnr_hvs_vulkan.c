@@ -218,11 +218,6 @@ static int alloc_buffers(PsnrHvsVulkanState *s)
     return err ? -ENOMEM : 0;
 }
 
-/* Forward declaration: write_descriptor_set is defined below upload_plane,
- * but init() calls it after alloc_buffers() to populate the pre-allocated
- * descriptor sets once (VK-6 / perf-audit 2026-05-16). */
-static int write_descriptor_set(PsnrHvsVulkanState *s, VkDescriptorSet set, int plane);
-
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc, unsigned w,
                 unsigned h)
 {
@@ -313,16 +308,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
     if (err)
         return err;
 
-    /* Pre-allocate one descriptor set per plane (3 sets total).
-     * All SSBO handles are stable from alloc_buffers() onward; write
-     * the descriptor sets here once instead of per-frame
-     * (VK-6 / perf-audit 2026-05-16; mirrors psnr_vulkan.c pattern). */
+    /* Pre-allocate one descriptor set per plane (3 sets total). */
     err = vmaf_vulkan_kernel_descriptor_sets_alloc(s->ctx, s->pl.desc_pool, s->pl.dsl,
                                                    (uint32_t)PSNR_HVS_NUM_PLANES, s->pre_sets);
     if (err)
         return err;
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++)
-        (void)write_descriptor_set(s, s->pre_sets[p], p);
 
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features, fex->options, s);
@@ -424,10 +414,10 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
             return err;
     }
 
-    /* Pre-allocated descriptor sets written once at init() — all SSBO
-     * handles (ref_in / dist_in / partials) are stable across frames;
-     * no per-frame vkUpdateDescriptorSets needed (VK-6 / perf-audit
-     * 2026-05-16; T-GPU-OPT-VK-4 / ADR-0256). */
+    /* Pre-allocated descriptor sets — just rebind the buffer
+     * pointers per frame (T-GPU-OPT-VK-4 / ADR-0256). */
+    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++)
+        write_descriptor_set(s, s->pre_sets[p], p);
 
     /* Acquire the pre-allocated cmd buffer + fence (slot 0) from
      * the submit pool. Reset + begin happens inside acquire. */

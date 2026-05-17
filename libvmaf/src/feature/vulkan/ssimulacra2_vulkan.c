@@ -942,16 +942,10 @@ static void ss2v_write_set(VkDevice dev, VkDescriptorSet set, unsigned n, VmafVu
 
 static void ss2v_barrier(VkCommandBuffer cmd)
 {
-    /* All call sites are pure read-only consumer transitions:
-     *   - mul_buf → blur H pass (blur reads mul output, writes scratch)
-     *   - blur H scratch → blur V pass (V pass reads scratch, writes output)
-     * The ssimulacra2 SSIM+EdgeDiff combine step runs host-side after
-     * the fence (ADR-0201); there is no GPU atomicAdd consumer here.
-     * Tightened to SHADER_READ_BIT only (VK-5 / perf-audit 2026-05-16). */
     VkMemoryBarrier mb = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
         .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
     };
     vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &mb, 0, NULL, 0, NULL);

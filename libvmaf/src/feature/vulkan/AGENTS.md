@@ -176,30 +176,6 @@ ADR-0234) catches drift but only after a full GPU run.
   - The `MAX_SUBGROUPS = 256` constant in the reducer shaders matches
     `local_size_x = 256`. Changing the WG size requires updating both.
 
-## Barrier and descriptor-set lifecycle invariants (VK-5 + VK-6 / perf-audit 2026-05-16)
-
-- **`dstAccessMask` must be the minimum required by the consumer.** Barriers
-  between a write dispatch and a subsequent *read-only* consumer dispatch must
-  use `dstAccessMask = VK_ACCESS_SHADER_READ_BIT` only.  The wider mask
-  `VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT` is **only correct**
-  when the consuming dispatch also writes (e.g., reducer shaders that use
-  `atomicAdd` into `reduced_accum` / `reduced_sad`).  Overbroad masks
-  suppress valid driver optimisations (e.g., cache-bypass on read-only
-  paths) and were flagged in VK-5.  Extractors that keep `SHADER_WRITE` in
-  `dstAccess`: `vif_vulkan.c` reduce_barrier, `adm_vulkan.c` reduce_barrier,
-  `motion_vulkan.c` reduce_barrier — all because the reducer uses `atomicAdd`.
-  Inter-stage barriers in `adm`, `float_adm`, `float_vif`, `cambi`, and
-  `ssimulacra2` are tightened to read-only.
-
-- **Descriptor sets that are stable across frames MUST be written in
-  `init()`, not `extract()`.** Once `alloc_buffers()` assigns the VkBuffer
-  handles they never change.  Calling `vkUpdateDescriptorSets` per frame for
-  stable bindings is a hot-path overhead — flagged in VK-6 for
-  `psnr_hvs_vulkan.c`.  Pattern reference: `psnr_vulkan.c` writes descriptor
-  sets once at `init()` after `vmaf_vulkan_kernel_descriptor_sets_alloc()`
-  and adds a forward declaration so the write function is visible from
-  `init()`.  All extractors that pre-allocate sets must follow this pattern.
-
 ## Build
 
 Vulkan feature TUs compile only when `meson setup -Denable_vulkan=true`.

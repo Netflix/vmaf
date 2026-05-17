@@ -438,17 +438,6 @@ for the option-space digest.
   adapter, set `adapter_version: str` on the dataclass; the
   registry `Protocol` already requires it. Bump the string when
   the adapter's argv shape, preset list, or quality range changes.
-- **Cache index writes must be dirty-flag + explicit flush, never
-  per-put.** The `TuneCache` defers `__index__.json` writes via an
-  in-memory dirty flag. `get()` and `put()` mark the index dirty
-  but do not write to disk; only `flush()` and `evict_lru()` write.
-  `iter_rows` calls `cache.flush()` after all rows have been
-  yielded, batching LRU timestamp updates from 100+ cache accesses
-  into a single final write. External code that directly uses
-  `TuneCache` and performs puts must call `flush()` before exiting
-  to avoid losing cache index updates on ungraceful exit. This
-  pattern eliminated ~500 ms of redundant I/O per cold sweep
-  (perf-audit-pipeline-2026-05-16, win #4).
 - **Cache content stays opaque.** The cache value is the parsed
   `(bitrate, vmaf, encode_time, score_time)` tuple plus an opaque
   `<key>.bin` blob. Do not bake cache contents into the JSONL row —

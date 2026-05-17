@@ -42,6 +42,7 @@ Usage::
 
 from __future__ import annotations
 
+import abc
 import argparse
 import json
 import os
@@ -136,17 +137,15 @@ def _dynamic_quantise(fp32_path: Path, work_dir: Path) -> Path:
 # ---------------------------------------------------------------------------
 
 
-class _Runner:
+class _Runner(abc.ABC):
     """Minimal interface: ``infer(x: np.ndarray) -> np.ndarray``."""
 
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def infer(self, x):  # pragma: no cover - abstract
-        # TODO(#842): convert _Runner to abc.ABC with @abc.abstractmethod so
-        # the abstract contract is enforced at instantiation time rather than
-        # relying on a bare raise here.
-        raise NotImplementedError
+    @abc.abstractmethod
+    def infer(self, x):
+        """Run inference; accepts an ndarray, returns an ndarray."""
 
 
 class _OrtRunner(_Runner):
