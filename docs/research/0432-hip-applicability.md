@@ -1,4 +1,4 @@
-# Research-0033: HIP (AMD ROCm) backend applicability
+# Research-0432: HIP (AMD ROCm) backend applicability
 
 - **Date**: 2026-04-29
 - **Author**: Lusoris, Claude (Anthropic)

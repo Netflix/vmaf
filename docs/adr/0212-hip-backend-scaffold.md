@@ -12,7 +12,7 @@ The fork's GPU portfolio currently covers NVIDIA (CUDA), Intel
 paths. The matrix has a load-bearing gap: AMD GPUs running ROCm have no
 first-class backend. AMD's discrete-GPU share on Linux desktops is
 non-trivial (Steam HW Survey 2026 ~15 % among Linux respondents — see
-[Research-0033](../research/0033-hip-applicability.md)) and ROCm 6.x
+[Research-0432](../research/0432-hip-applicability.md)) and ROCm 6.x
 ships a stable `hip-runtime-amd` user-space that mirrors CUDA's API
 surface closely.
 
@@ -199,7 +199,7 @@ the same syntax (`-Denable_<vendor>=true|false`).
   second-GPU-backend pattern, gating T7-10 per the BACKLOG row.
 - [ADR-0173](0173-ptq-int8-audit-impl.md) — the same audit-first
   pattern applied to the PTQ harness.
-- [Research-0033](../research/0033-hip-applicability.md) — AMD market
+- [Research-0432](../research/0432-hip-applicability.md) — AMD market
   share + ROCm Linux maturity check.
 - [`/add-gpu-backend`](../../.claude/skills/add-gpu-backend/SKILL.md) —
   the skill that produced the initial scaffold.

@@ -133,7 +133,7 @@ of the Bristol paper):
   produce ≤ ~1e-4 ULP-different VMAF scores from the CPU reference
   (within `places=4` tolerance, but observable). For competitive
   BD-rate reporting use the same backend on both columns. See
-  [`docs/research/0034-ci-pipeline-audit-2026-05.md`](../research/0034-ci-pipeline-audit-2026-05.md)
+  [`docs/research/0433-ci-pipeline-audit-2026-05.md`](../research/0433-ci-pipeline-audit-2026-05.md)
   and [ADR-0234 (proposed)](../adr/0234-gpu-gen-ulp-calibration.md) on the
   forthcoming `--gpu-calibrated` flag for cross-backend reconciliation.
 - **Too few rungs.** The PCHIP interpolant degenerates with fewer
