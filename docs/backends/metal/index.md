@@ -1,11 +1,11 @@
 # Metal (Apple Silicon) compute backend
 
-> **Status: runtime + first kernel batch.** The Metal backend now has a
-> real Apple-Silicon runtime, shared-memory `MTLBuffer` picture storage,
-> metallib embedding, and eight wired feature extractors:
+> **Status: runtime + first and second kernel batches.** The Metal
+> backend now has a real Apple-Silicon runtime, shared-memory `MTLBuffer`
+> picture storage, metallib embedding, and nine wired feature extractors:
 > `float_ansnr_metal`, `float_moment_metal`, `float_motion_metal`,
-> `float_psnr_metal`, `float_ssim_metal`, `integer_motion_metal`,
-> `integer_psnr_metal`, and `motion_v2_metal`.
+> `float_ms_ssim_metal`, `float_psnr_metal`, `float_ssim_metal`,
+> `integer_motion_metal`, `integer_psnr_metal`, and `motion_v2_metal`.
 >
 > The dispatch support predicate recognises both those extractor names
 > and their provided feature keys (`psnr_y`, `psnr_cb`, `psnr_cr`,
@@ -106,10 +106,15 @@ files.
    points return `0` on a real Apple Silicon device and `-ENODEV` on
    Intel Mac or non-Apple-Family-7 GPUs.
 3. **T8-1c…T8-1j (first kernel batch)** — `motion_v2`, float/integer
-   PSNR, float moment, float ANSNR, float/integer motion, and
-   float SSIM/MS-SSIM host dispatch + MSL kernels.
-4. **T8-1k+** — remaining kernels (VIF, ADM, CIEDE, CAMBI,
-   SSIMULACRA2, etc.) follow as their own PRs gated by the `places=4`
+   PSNR, float moment, float ANSNR, float/integer motion, and float SSIM
+   host dispatch + MSL kernels.
+4. **T8-1k** — `integer_moment_metal` (uint32 hi/lo reduction).
+5. **T8-2b** — `float_ms_ssim_metal` (ADR-0490): float-precision 5-scale
+   MS-SSIM on Metal. Three MSL kernels (`ms_ssim_decimate`, `ms_ssim_horiz`,
+   `ms_ssim_vert_lcs`); Wang (2003) weights applied host-side in double
+   precision.
+6. **T8-2c+** — remaining kernels (VIF, ADM, CIEDE, CAMBI, SSIMULACRA2,
+   etc.) follow as their own PRs gated by the `places=4`
    cross-backend-diff lane (per [ADR-0214](../../adr/0214-gpu-parity-ci-gate.md)).
 5. **`enable_metal` default flip** from `auto` to `enabled`: only
    after the kernel matrix proves bit-exactness via the `places=4`
@@ -190,5 +195,8 @@ meson test -C build test_metal_smoke
   NEON twin on Apple Silicon CPU.
 - [ADR-0214](../../adr/0214-gpu-parity-ci-gate.md) — `places=4`
   cross-backend gate; the runtime PR's incoming numerics gate.
+- [ADR-0490](../../adr/0490-float-ms-ssim-metal-port.md) —
+  `float_ms_ssim_metal` port (T8-2b): design rationale for the float
+  5-scale MS-SSIM Metal twin.
 - Apple Developer documentation — Metal-cpp,
   <https://developer.apple.com/metal/cpp/> (accessed 2026-05-09).

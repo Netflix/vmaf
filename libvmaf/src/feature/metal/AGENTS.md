@@ -81,6 +81,8 @@ a real kernel lands; they are removed from `metal_sources` in
 | `float_motion_metal.c`             | Scaffold     | replaced by float_motion_metal.mm                                       |
 | `integer_motion_metal.c`           | Scaffold     | replaced by integer_motion_metal.mm                                     |
 | `float_ssim_metal.c`               | Scaffold     | replaced by float_ssim_metal.mm                                         |
+| `float_ms_ssim.metal`             | Done (T8-2b) | `float_ms_ssim` — 5-scale pyramid, Wang weights                        |
+| `float_ms_ssim_metal.mm`          | Done (T8-2b) | host dispatch (ADR-0490)                                                |
 
 ## Rebase-sensitive invariants (motion_fps_weight)
 
@@ -98,6 +100,7 @@ a real kernel lands; they are removed from `metal_sources` in
 
 ## Governing ADRs
 
+- [ADR-0490](../../../../docs/adr/0490-float-ms-ssim-metal-port.md) — T8-2b: float_ms_ssim_metal port
 - [ADR-0421](../../../../docs/adr/0421-metal-first-kernel-motion-v2.md) — T8-1c through T8-1k batch specification
 - [ADR-0420](../../../../docs/adr/0420-metal-backend-runtime-t8-1b.md) — runtime (T8-1b), prerequisite
 - [ADR-0361](../../../../docs/adr/0361-metal-compute-backend.md) — scaffold (T8-1), origin
