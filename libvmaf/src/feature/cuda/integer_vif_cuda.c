@@ -51,6 +51,7 @@ typedef struct VifStateCuda {
     bool enable_chroma;
     unsigned n_planes;
     double vif_enhn_gain_limit;
+    bool vif_skip_scale0;
     void (*filter1d_8)(VifBufferCuda *buf, uint8_t *ref_in, uint8_t *dis_in, unsigned w, unsigned h,
                        double vif_enhn_gain_limit, CUstream stream);
     void (*filter1d_16)(VifBufferCuda *buf, uint16_t *ref_in, uint16_t *dis_in, unsigned w,
