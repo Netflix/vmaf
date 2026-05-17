@@ -56,6 +56,7 @@ jobs:
               'Cppcheck (Whole Project)',
               'Dependency Review (PR Diff)',
               'Gitleaks (Secret Scan)',
+              'Docs Build — mkdocs strict (PR gate)',
               'ShellCheck + shfmt (All *.sh)',
               'Netflix CPU Golden Tests (D24)',
               'Sanitizers — ASan + UBSan + MSan (address)',

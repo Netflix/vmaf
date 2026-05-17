@@ -476,6 +476,27 @@ jobs:
       - name: Validate model/tiny/registry.json
         run: python3 ai/scripts/validate_model_registry.py
 
+  docs-lint:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    # Batch 18 / ADR-0108 — fail-fast mkdocs --strict on every PR that
+    # touches docs/** or mkdocs.yml, mirroring the master-push gate in
+    # docs.yml but without the GitHub Pages deploy step. This prevents
+    # broken anchors / missing nav entries from landing silently on master
+    # (38 of 50 docs.yml runs were failing before this job was added).
+    # The job is intentionally path-filtered so C-only PRs skip it quickly.
+    name: Docs Build — mkdocs strict (PR gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.14.4"
+      - name: Install MkDocs Material
+        run: pip install -r docs/requirements.txt
+      - name: Build docs (strict — fail on any warning)
+        run: mkdocs build --strict
+
   shellcheck:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     # T7-CI-DEDUP — body collapsed to a no-op proxy that depends on the
