@@ -113,6 +113,7 @@ typedef struct IntegerVifStateMetal {
     unsigned frame_h;
     unsigned bpc;
     bool     debug;
+    bool     vif_skip_scale0;
     double   vif_enhn_gain_limit;
 
     VmafDictionary *feature_name_dict;
@@ -135,6 +136,17 @@ static const VmafOption options[] = {
         .default_val.d = DEFAULT_VIF_ENHN_GAIN_LIMIT,
         .min = 1.0,
         .max = DEFAULT_VIF_ENHN_GAIN_LIMIT,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "vif_skip_scale0",
+        .help = "when set, skip scale 0 calculations",
+        .alias = "ssclz",
+        .offset = offsetof(IntegerVifStateMetal, vif_skip_scale0),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .min = 0.0,
+        .max = 0.0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {0}
@@ -431,10 +443,17 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
             ((double)a->x + (double)a->num_x * 17.0) + (double)a->den_non_log);
     }
 
+    /* When vif_skip_scale0 is set, emit 0.0 for scale-0 score and exclude
+     * scale-0 num/den from the combined totals — matching integer_vif.c
+     * write_scores() parity and the CUDA/SYCL/Vulkan twins. */
+    const double scale0_score =
+        s->vif_skip_scale0 ? 0.0
+        : (scale_score[0].den != 0.0f) ? (double)scale_score[0].num / (double)scale_score[0].den
+        : 0.0;
+
     int err = 0;
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-        "VMAF_integer_feature_vif_scale0_score",
-        (scale_score[0].den != 0.0f) ? scale_score[0].num / scale_score[0].den : 0.0, index);
+        "VMAF_integer_feature_vif_scale0_score", scale0_score, index);
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
         "VMAF_integer_feature_vif_scale1_score",
         (scale_score[1].den != 0.0f) ? scale_score[1].num / scale_score[1].den : 0.0, index);
@@ -447,10 +466,12 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
 
     if (!s->debug) { return err; }
 
-    const double score_num = (double)scale_score[0].num + (double)scale_score[1].num +
-                             (double)scale_score[2].num + (double)scale_score[3].num;
-    const double score_den = (double)scale_score[0].den + (double)scale_score[1].den +
-                             (double)scale_score[2].den + (double)scale_score[3].den;
+    const double score_num = (s->vif_skip_scale0 ? 0.0 : (double)scale_score[0].num) +
+                             (double)scale_score[1].num + (double)scale_score[2].num +
+                             (double)scale_score[3].num;
+    const double score_den = (s->vif_skip_scale0 ? 0.0 : (double)scale_score[0].den) +
+                             (double)scale_score[1].den + (double)scale_score[2].den +
+                             (double)scale_score[3].den;
     const double score = (score_den == 0.0) ? 1.0 : score_num / score_den;
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
@@ -460,7 +481,16 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
         "integer_vif_den", score_den, index);
 
-    for (unsigned sc = 0; sc < VIF_SCALES; sc++) {
+    /* Debug per-scale num/den: emit 0.0 / -1.0 sentinels for scale-0 when
+     * vif_skip_scale0 is active, matching integer_vif.c and GPU twins. */
+    err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+        "integer_vif_num_scale0",
+        s->vif_skip_scale0 ? 0.0 : (double)scale_score[0].num, index);
+    err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+        "integer_vif_den_scale0",
+        s->vif_skip_scale0 ? -1.0 : (double)scale_score[0].den, index);
+
+    for (unsigned sc = 1; sc < VIF_SCALES; sc++) {
         char name_num[64], name_den[64];
         (void)snprintf(name_num, sizeof(name_num), "integer_vif_num_scale%u", sc);
         (void)snprintf(name_den, sizeof(name_den), "integer_vif_den_scale%u", sc);
