@@ -198,7 +198,7 @@ static const VmafOption options[] = {{
                                          .help = "debug mode: enable additional output",
                                          .offset = offsetof(AdmVulkanState, debug),
                                          .type = VMAF_OPT_TYPE_BOOL,
-                                         .default_val.b = true,
+                                         .default_val.b = false,
                                      },
                                      {
                                          .name = "adm_enhn_gain_limit",
@@ -985,21 +985,6 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
     if (err)
         return err;
 
-    /* Zero per-scale accumulator buffers (host-mapped). */
-    for (int scale = 0; scale < ADM_NUM_SCALES; scale++) {
-        size_t bytes = (size_t)s->wg_count[scale] * ADM_ACCUM_SLOTS_PER_WG * sizeof(int64_t);
-        memset(vmaf_vulkan_buffer_host(s->accum[scale]), 0, bytes);
-        err = vmaf_vulkan_buffer_flush(s->ctx, s->accum[scale]);
-        if (err)
-            return err;
-        /* ADR-0350: zero the reduced output (atomicAdd accumulates into it). */
-        memset(vmaf_vulkan_buffer_host(s->reduced_accum[scale]), 0,
-               (size_t)ADM_ACCUM_SLOTS_PER_WG * sizeof(int64_t));
-        err = vmaf_vulkan_buffer_flush(s->ctx, s->reduced_accum[scale]);
-        if (err)
-            return err;
-    }
-
     /* All 9 descriptor bindings are init-time-stable (the accum buffers
      * are allocated once in init() and never reallocated). No per-frame
      * vkUpdateDescriptorSets needed. (T-GPU-OPT-VK-4 / ADR-0256.) */
@@ -1019,6 +1004,28 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
     if (err)
         return err;
     VkCommandBuffer cmd = submit.cmd;
+
+    /* Zero accumulator buffers on the GPU — replaces the prior host
+     * memset + vmaf_vulkan_buffer_flush (PCIe round-trip) with an
+     * async vkCmdFillBuffer that the GPU executes before the first
+     * compute dispatch.  A TRANSFER→COMPUTE barrier follows to
+     * guarantee the zeros are visible to the shader. */
+    for (int scale = 0; scale < ADM_NUM_SCALES; scale++) {
+        vkCmdFillBuffer(cmd, (VkBuffer)vmaf_vulkan_buffer_vkhandle(s->accum[scale]), 0,
+                        VK_WHOLE_SIZE, 0u);
+        vkCmdFillBuffer(cmd, (VkBuffer)vmaf_vulkan_buffer_vkhandle(s->reduced_accum[scale]), 0,
+                        VK_WHOLE_SIZE, 0u);
+    }
+    {
+        VkMemoryBarrier fill_barrier = {
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+        };
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &fill_barrier, 0, NULL, 0,
+                             NULL);
+    }
 
     for (int scale = 0; scale < ADM_NUM_SCALES; scale++) {
         unsigned cw = s->scale_w[scale];

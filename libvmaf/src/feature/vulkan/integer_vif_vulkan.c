@@ -159,7 +159,7 @@ static const VmafOption options[] = {{
                                          .help = "debug mode: enable additional output",
                                          .offset = offsetof(VifVulkanState, debug),
                                          .type = VMAF_OPT_TYPE_BOOL,
-                                         .default_val.b = true,
+                                         .default_val.b = false,
                                      },
                                      {
                                          .name = "vif_enhn_gain_limit",
@@ -669,24 +669,6 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
     if (err)
         return err;
 
-    /* Zero the per-WG accumulator buffers (they're host-mapped). */
-    for (int scale = 0; scale < VIF_NUM_SCALES; scale++) {
-        size_t bytes = (size_t)s->scale[scale].wg_count * VIF_ACCUM_FIELDS * sizeof(int64_t);
-        memset(vmaf_vulkan_buffer_host(s->scale[scale].accum), 0, bytes);
-        err = vmaf_vulkan_buffer_flush(s->ctx, s->scale[scale].accum);
-        if (err)
-            return err;
-
-        /* ADR-0350: zero the reduced_accum output before the reduction
-         * dispatch. The reduction shader uses atomicAdd, so the output
-         * must start at zero each frame. */
-        memset(vmaf_vulkan_buffer_host(s->scale[scale].reduced_accum), 0,
-               (size_t)VIF_ACCUM_FIELDS * sizeof(int64_t));
-        err = vmaf_vulkan_buffer_flush(s->ctx, s->scale[scale].reduced_accum);
-        if (err)
-            return err;
-    }
-
     /* Pre-allocated descriptor sets — rebind per frame (VK-4). */
     for (int scale = 0; scale < VIF_NUM_SCALES; scale++) {
         write_descriptor_set(s, s->pre_sets[scale], scale);
@@ -703,6 +685,28 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
     if (err)
         return err;
     VkCommandBuffer cmd = submit.cmd;
+
+    /* Zero accumulator buffers on the GPU — replaces the prior host
+     * memset + vmaf_vulkan_buffer_flush (PCIe round-trip) with an
+     * async vkCmdFillBuffer that the GPU executes before the first
+     * compute dispatch.  A TRANSFER→COMPUTE barrier follows to
+     * guarantee the zeros are visible to the shader. */
+    for (int scale = 0; scale < VIF_NUM_SCALES; scale++) {
+        vkCmdFillBuffer(cmd, (VkBuffer)vmaf_vulkan_buffer_vkhandle(s->scale[scale].accum), 0,
+                        VK_WHOLE_SIZE, 0u);
+        vkCmdFillBuffer(cmd, (VkBuffer)vmaf_vulkan_buffer_vkhandle(s->scale[scale].reduced_accum),
+                        0, VK_WHOLE_SIZE, 0u);
+    }
+    {
+        VkMemoryBarrier fill_barrier = {
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+        };
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &fill_barrier, 0, NULL, 0,
+                             NULL);
+    }
 
     for (int scale = 0; scale < VIF_NUM_SCALES; scale++) {
         unsigned cw = s->scale[scale].w;
