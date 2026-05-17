@@ -566,6 +566,17 @@ if is_asm_enabled
                 c_args : vmaf_cflags_common + ['-DARCH_AARCH64', '-march=armv9-a+sve2', '-ffp-contract=off'],
             )
             platform_specific_cpu_objects += arm64_ssimulacra2_sve2_lib.extract_all_objects()
+
+            # ADR-0445: moment SVE2 sister TU.  VLA f32→f64 widening pattern;
+            # no scalar tail — predicated loads handle row tails natively.
+            # `-ffp-contract=off` mirrors the SSIMULACRA 2 SVE2 rationale.
+            arm64_moment_sve2_lib = static_library(
+                'arm64_moment_sve2',
+                feature_src_dir + 'arm64/moment_sve2.c',
+                include_directories : vmaf_base_include,
+                c_args : vmaf_cflags_common + ['-DARCH_AARCH64', '-march=armv9-a+sve2', '-ffp-contract=off'],
+            )
+            platform_specific_cpu_objects += arm64_moment_sve2_lib.extract_all_objects()
         endif
     endif
 

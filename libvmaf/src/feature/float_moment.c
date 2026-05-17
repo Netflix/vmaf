@@ -35,6 +35,9 @@
 
 #if ARCH_AARCH64
 #include "arm64/moment_neon.h"
+#if HAVE_SVE2
+#include "arm64/moment_sve2.h"
+#endif
 #endif
 
 typedef struct MomentState {
@@ -78,6 +81,13 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
             s->moment1 = compute_1st_moment_neon;
             s->moment2 = compute_2nd_moment_neon;
         }
+#if HAVE_SVE2
+        /* SVE2 is the best ARM path when available — override NEON. */
+        if (cpu_flags & VMAF_ARM_CPU_FLAG_SVE2) {
+            s->moment1 = compute_1st_moment_sve2;
+            s->moment2 = compute_2nd_moment_sve2;
+        }
+#endif
     }
 #endif
 

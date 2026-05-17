@@ -13,8 +13,9 @@ The SVE2 path is purely additive: when the build-time probe
 TUs compile alongside the NEON ones and the dispatch table picks
 SVE2 if the runtime probe (`getauxval(AT_HWCAP2) & HWCAP2_SVE2`)
 fires. Otherwise the binary keeps the NEON dispatch entries
-unchanged. SVE2 today covers SSIMULACRA 2 only — see
-[ADR-0213](../../adr/0213-ssimulacra2-sve2.md). Adding more SVE2
+unchanged. SVE2 today covers SSIMULACRA 2 and `float_moment` — see
+[ADR-0213](../../adr/0213-ssimulacra2-sve2.md) and
+[ADR-0461](../../adr/0461-moment-sve2-port.md). Adding more SVE2
 ports follows the same pattern; per-extractor coverage is in the
 table below.
 
@@ -60,6 +61,7 @@ matches the `Backends` column in
 | `motion_v2`    | yes         | no          | pipelined fused-blur variant                                  |
 | `float_motion` | yes         | no          | float-pipeline twin                                           |
 | `float_adm`    | yes         | no          | float-pipeline twin                                           |
+| `float_moment` | yes         | yes         | 1st/2nd moment reduction; SVE2 path uses VLA f32→f64 widening — see [ADR-0461](../../adr/0461-moment-sve2-port.md) |
 | `float_psnr`   | yes         | no          | per-plane float PSNR                                          |
 | `ciede`        | yes         | no          | YUV → CIELAB ΔE                                               |
 | `psnr`         | yes         | no          | fixed-point per-plane                                         |
@@ -88,6 +90,10 @@ features that ship a determinism contract:
 - `ms_ssim_decimate` — pinned by ADR-0125; per-lane `vfmaq_n_f32`
   with broadcast coefficients matches the scalar
   `fmaf` chain exactly.
+- `float_moment` (SVE2) — pinned by ADR-0461; tolerance-bounded
+  at 1e-7 relative (well within the snapshot `places=4` gate).
+  f64 accumulation via `svwhilelt_b64` + `svcvt_f64_f32_x` bounds
+  ULP drift to double precision even on wide SVE2 hardware.
 
 Other extractors are numerically equivalent to their scalar twins
 within `places=4` of the snapshot tolerance but do not carry an

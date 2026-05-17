@@ -52,7 +52,12 @@
 #include "feature/x86/moment_avx2.h"
 #endif
 #if ARCH_AARCH64
+#include "arm/cpu.h"
+#include "cpu.h"
 #include "feature/arm64/moment_neon.h"
+#if HAVE_SVE2
+#include "feature/arm64/moment_sve2.h"
+#endif
 #endif
 
 #define ALIGN_BYTES 32
@@ -176,6 +181,67 @@ static char *test_neon_tiny(void)
 
 #endif /* ARCH_AARCH64 */
 
+#if ARCH_AARCH64 && HAVE_SVE2
+
+/* SVE2 parity tests (ADR-0461).
+ *
+ * Tolerance: same MOMENT_REL_TOL (1e-7) as the NEON block.
+ * Residual source: the VLA f32→f64 widening gives different grouping
+ * from the NEON 4-lane pair, so small per-element ordering differences
+ * are expected; f64 accumulation keeps them within 1e-9 of scalar.
+ * Tests run only when VMAF_ARM_CPU_FLAG_SVE2 is set at runtime. */
+
+static char *check_sve2(uint32_t seed, int w, int h)
+{
+    const int stride_floats = (w + 3) & ~3;
+    const size_t bytes = (size_t)stride_floats * (size_t)h * sizeof(float);
+    const int stride_bytes = stride_floats * (int)sizeof(float);
+
+    float *buf = (float *)simd_test_aligned_malloc(bytes, ALIGN_BYTES);
+    if (!buf) {
+        return "aligned_malloc failed";
+    }
+    simd_test_fill_random_f32(buf, (size_t)stride_floats * (size_t)h, MOMENT_FILL_LO,
+                              MOMENT_FILL_HI, seed);
+
+    double s_scalar = 0.0;
+    double s_sve2 = 0.0;
+    (void)compute_1st_moment(buf, w, h, stride_bytes, &s_scalar);
+    (void)compute_1st_moment_sve2(buf, w, h, stride_bytes, &s_sve2);
+
+    double t_scalar = 0.0;
+    double t_sve2 = 0.0;
+    (void)compute_2nd_moment(buf, w, h, stride_bytes, &t_scalar);
+    (void)compute_2nd_moment_sve2(buf, w, h, stride_bytes, &t_sve2);
+
+    simd_test_aligned_free(buf);
+
+    SIMD_BITEXACT_ASSERT_RELATIVE(s_scalar, s_sve2, MOMENT_REL_TOL,
+                                  "compute_1st_moment_sve2 outside relative tolerance");
+    SIMD_BITEXACT_ASSERT_RELATIVE(t_scalar, t_sve2, MOMENT_REL_TOL,
+                                  "compute_2nd_moment_sve2 outside relative tolerance");
+    return NULL;
+}
+
+static char *test_sve2_seed_a(void)
+{
+    return check_sve2(0xdeadbeefu, TEST_W, TEST_H);
+}
+static char *test_sve2_seed_b(void)
+{
+    return check_sve2(0x12345678u, TEST_W, TEST_H);
+}
+static char *test_sve2_aligned_w(void)
+{
+    return check_sve2(0xabcdef01u, 64, 16);
+}
+static char *test_sve2_tiny(void)
+{
+    return check_sve2(0xfeedface, 5, 1);
+}
+
+#endif /* ARCH_AARCH64 && HAVE_SVE2 */
+
 char *run_tests(void)
 {
 #if ARCH_X86
@@ -191,6 +257,22 @@ char *run_tests(void)
     mu_run_test(test_neon_seed_b);
     mu_run_test(test_neon_aligned_w);
     mu_run_test(test_neon_tiny);
+#if HAVE_SVE2
+    /* SVE2 tests: only exercise the path when the CPU reports the feature.
+     * On a NEON-only host the functions still link but the tests would
+     * produce nonsense (SIGILL), so guard at runtime (ADR-0461). */
+    {
+        unsigned cpu_flags = vmaf_get_cpu_flags();
+        if (cpu_flags & VMAF_ARM_CPU_FLAG_SVE2) {
+            mu_run_test(test_sve2_seed_a);
+            mu_run_test(test_sve2_seed_b);
+            mu_run_test(test_sve2_aligned_w);
+            mu_run_test(test_sve2_tiny);
+        } else {
+            (void)fprintf(stderr, "skipping SVE2 moment tests: CPU lacks SVE2\n");
+        }
+    }
+#endif
 #else
     (void)fprintf(stderr, "skipping: arch lacks moment SIMD\n");
 #endif

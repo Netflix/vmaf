@@ -15,6 +15,7 @@ from a feature's `*_dispatch.c` based on `vmaf_get_cpu_flags_arm()`
 feature/arm64/
   <feature>_neon.{c,h}      # NEON path (aarch64 baseline; always available on ARCH_AARCH64)
   ssimulacra2_sve2.{c,h}    # SVE2 path (T7-38 / ADR-0213) — runtime-gated via HWCAP2_SVE2
+  moment_sve2.{c,h}         # SVE2 path for float_moment (ADR-0461) — VLA f32→f64 pattern
   ms_ssim_decimate_neon.*   # 9-tap LPF SIMD (one of four byte-identical TUs — see parent AGENTS.md)
 ```
 
@@ -57,6 +58,7 @@ with the matching change to the other halves in the **same PR**:
 | **MS-SSIM decimate LPF** (ADR-0125) | `ms_ssim_decimate_neon.c` + `../x86/ms_ssim_decimate_avx2.c` + `../x86/ms_ssim_decimate_avx512.c` + scalar `../ms_ssim_decimate.c`. The 9-tap filter table appears verbatim in all four. |
 | **PSNR-HVS DCT** (ADR-0160) | `psnr_hvs_neon.c` + `../x86/psnr_hvs_avx2.c` + scalar `../third_party/xiph/psnr_hvs.c`. Butterfly block byte-identical across the three; threading `ret` by pointer is load-bearing. |
 | **SSIMULACRA 2 SIMD** (ADR-0161 / 0162 / 0163 / 0213 / 0252) | `ssimulacra2_neon.c` + `ssimulacra2_sve2.c` + `../x86/ssimulacra2_avx2.c` + `../x86/ssimulacra2_avx512.c` + `ssimulacra2_host_neon.c` + `../x86/ssimulacra2_host_avx2.c` + scalar `../ssimulacra2.c` + Vulkan host-path `../vulkan/ssimulacra2_vulkan.c` |
+| **float_moment NEON + SVE2** (ADR-0461) | `moment_neon.c` + `moment_sve2.c` + `../x86/moment_avx2.c` + scalar `../moment.h`. The SVE2 path uses the VLA f32→f64 widening pattern (step by `svcntd()`, not `svcntw()`). The Darwin opt-out (ADR-0419) prevents the SVE2 path from running on Apple Silicon even if the build compiles it. |
 | **CAMBI calculate_c_values_row** (ADR-0452) | `cambi_neon.c` (`calculate_c_values_row_neon`) + `../x86/cambi_avx2.c` (`calculate_c_values_row_avx2`) + `../x86/cambi_avx512.c` (`calculate_c_values_row_avx512`) + scalar in `../cambi.c` (`calculate_c_values_row`). Every cambi inner-loop function ported to AVX2 **must** have AVX-512 + NEON siblings in the **same PR**. NEON uses vectorised mask-zero detection (vmaxvq_u16) + scalar per-pixel inner loop for bit-exact output (no gather instruction on NEON). Tested in `../../test/test_cambi_simd.c`. |
 | **Motion v2 NEON** (ADR-0145) | `motion_v2_neon.c` uses **arithmetic** right-shift (`vshrq_n_s64(v, 16)` / `vshlq_s64(v, -(int64_t)bpc)`); matches scalar. Sister `../x86/motion_v2_avx2.c` uses `_mm256_srlv_epi64` (logical) — knowingly out-of-spec until the AVX2 audit. **Do NOT port the AVX2 logical pattern here.** 4-lane stride + scalar tails on both sides of the row are load-bearing for the x_conv edge-mirror contract. |
 
@@ -65,7 +67,7 @@ The complete invariants live in [../AGENTS.md
 
 ## SVE2 invariants (T7-38, ADR-0213)
 
-`ssimulacra2_sve2.c` is the first SVE2 consumer in the fork. It is
+`ssimulacra2_sve2.c` was the first SVE2 consumer in the fork; `moment_sve2.c` (ADR-0461) is the second. It is
 **not** a free perf knob:
 
 - The kernel is locked to a fixed 4-lane predicate
@@ -86,6 +88,22 @@ The complete invariants live in [../AGENTS.md
 matmul / downsample chain, do not introduce vector `cbrtf` /
 `powf` polynomials. The SSIMULACRA 2 invariants apply identically
 to NEON and SVE2.
+
+### float_moment SVE2 invariants (ADR-0461)
+
+- **Step by `svcntd()`, NOT `svcntw()`**: `svcvt_f64_f32_x` widens only the
+  lower `svcntd()` f32 lanes.  Stepping by `svcntw()` would silently skip the
+  upper half on hardware wider than 128 bits.
+- **VLA predicate, no fixed-lane assumption**: `svwhilelt_b32/b64` handles tail
+  rows natively — no scalar tail loop.  Do NOT add a fixed 4-lane `svwhilelt_b32(0,4)`
+  as in `ssimulacra2_sve2.c`; the moment kernel requires full VLA.
+- **Every NEON kernel that performs high-resolution per-pixel reductions should
+  have a sibling SVE2 path**: the ADR-0419 Darwin opt-out must be preserved in
+  the meson.build gate (`is_sve2_supported` is forced false on Darwin).
+- **Darwin opt-out is load-bearing**: `arm/cpu.c` gates `HWCAP2_SVE2` detection
+  on `#if defined(__linux__)`.  On Apple Silicon, `VMAF_ARM_CPU_FLAG_SVE2` is
+  never set so the SVE2 dispatch in `float_moment.c` is dead code.  Do not
+  remove the `__linux__` guard.
 
 ## Adding a new NEON / SVE2 TU
 
