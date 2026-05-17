@@ -355,3 +355,172 @@ def test_describe_image_falls_back_to_metadata_only_without_extras(monkeypatch):
     msg = srv._describe_image_with_vlm(Path("/tmp/nonexistent.png"))
     assert "VLM unavailable" in msg
     assert "vmaf-mcp[vlm]" in msg
+
+
+# ─────────────────────────────────────────────────────────────────────
+# ORT InferenceSession cache (_get_ort_session)
+# ─────────────────────────────────────────────────────────────────────
+
+
+@pytestmark_eval
+def test_ort_session_cache_reuses_session_for_same_model(tmp_path):
+    """5 sequential calls with the same model path must create exactly
+    1 InferenceSession (cache hit on calls 2–5)."""
+    from collections import OrderedDict
+
+    import onnxruntime as ort
+
+    model = tmp_path / "m.onnx"
+    _make_tiny_mlp(model)
+
+    # Patch the module-level cache so this test is isolated.
+    orig_cache = srv._ort_session_cache
+    srv._ort_session_cache = OrderedDict()
+
+    creation_count = 0
+    real_init = ort.InferenceSession.__init__
+
+    def counting_init(self, *args, **kwargs):
+        nonlocal creation_count
+        creation_count += 1
+        return real_init(self, *args, **kwargs)
+
+    try:
+        ort.InferenceSession.__init__ = counting_init
+        for _ in range(5):
+            srv._get_ort_session(model)
+        assert creation_count == 1, (
+            f"Expected 1 InferenceSession created for 5 calls with the same model; "
+            f"got {creation_count}"
+        )
+    finally:
+        ort.InferenceSession.__init__ = real_init
+        srv._ort_session_cache = orig_cache
+
+
+@pytestmark_eval
+def test_ort_session_cache_creates_new_session_for_different_model(tmp_path):
+    """A 6th call with a different model path must create a 2nd session."""
+    from collections import OrderedDict
+
+    import onnxruntime as ort
+
+    model_a = tmp_path / "a.onnx"
+    model_b = tmp_path / "b.onnx"
+    _make_tiny_mlp(model_a)
+    _make_tiny_mlp(model_b)
+
+    orig_cache = srv._ort_session_cache
+    srv._ort_session_cache = OrderedDict()
+
+    creation_count = 0
+    real_init = ort.InferenceSession.__init__
+
+    def counting_init(self, *args, **kwargs):
+        nonlocal creation_count
+        creation_count += 1
+        return real_init(self, *args, **kwargs)
+
+    try:
+        ort.InferenceSession.__init__ = counting_init
+        for _ in range(5):
+            srv._get_ort_session(model_a)
+        srv._get_ort_session(model_b)
+        assert creation_count == 2, (
+            f"Expected 2 InferenceSessions (5 calls model_a + 1 call model_b); got {creation_count}"
+        )
+    finally:
+        ort.InferenceSession.__init__ = real_init
+        srv._ort_session_cache = orig_cache
+
+
+@pytestmark_eval
+def test_ort_session_cache_hit_after_eviction_round_trip(tmp_path):
+    """After filling the cache with 4 different models, a 7th call
+    back to model_a (evicted as LRU) creates a new session (cache miss,
+    not a stale hit)."""
+    from collections import OrderedDict
+
+    import onnxruntime as ort
+
+    models = [tmp_path / f"{c}.onnx" for c in "abcde"]
+    for m in models:
+        _make_tiny_mlp(m)
+
+    orig_cache = srv._ort_session_cache
+    orig_maxsize = srv._ORT_CACHE_MAXSIZE
+    srv._ort_session_cache = OrderedDict()
+    srv._ORT_CACHE_MAXSIZE = 4
+
+    creation_count = 0
+    real_init = ort.InferenceSession.__init__
+
+    def counting_init(self, *args, **kwargs):
+        nonlocal creation_count
+        creation_count += 1
+        return real_init(self, *args, **kwargs)
+
+    try:
+        ort.InferenceSession.__init__ = counting_init
+        # Call a, b, c, d — fills the cache (4 sessions).
+        for m in models[:4]:
+            srv._get_ort_session(m)
+        assert creation_count == 4
+
+        # Call e — evicts a (LRU), inserts e.
+        srv._get_ort_session(models[4])
+        assert creation_count == 5
+
+        # Call a again — cache miss (a was evicted), creates a 6th session.
+        srv._get_ort_session(models[0])
+        assert creation_count == 6, (
+            f"Expected 6 total sessions after round-trip eviction; got {creation_count}"
+        )
+        assert len(srv._ort_session_cache) == srv._ORT_CACHE_MAXSIZE
+    finally:
+        ort.InferenceSession.__init__ = real_init
+        srv._ort_session_cache = orig_cache
+        srv._ORT_CACHE_MAXSIZE = orig_maxsize
+
+
+@pytestmark_eval
+def test_ort_session_cache_invalidated_on_mtime_change(tmp_path):
+    """Replacing the model file on disk (different mtime) must cause a
+    cache miss on the next call, not a stale session hit."""
+    from collections import OrderedDict
+
+    import onnxruntime as ort
+
+    model = tmp_path / "m.onnx"
+    _make_tiny_mlp(model)
+
+    orig_cache = srv._ort_session_cache
+    srv._ort_session_cache = OrderedDict()
+
+    creation_count = 0
+    real_init = ort.InferenceSession.__init__
+
+    def counting_init(self, *args, **kwargs):
+        nonlocal creation_count
+        creation_count += 1
+        return real_init(self, *args, **kwargs)
+
+    try:
+        ort.InferenceSession.__init__ = counting_init
+
+        srv._get_ort_session(model)
+        assert creation_count == 1
+
+        # Simulate file replacement: touch the file to bump mtime.
+        import time
+
+        time.sleep(0.01)  # ensure mtime advances on filesystems with 10ms resolution
+        model.touch()
+
+        srv._get_ort_session(model)
+        assert creation_count == 2, (
+            f"Expected a new session after mtime change; still got {creation_count}"
+        )
+    finally:
+        ort.InferenceSession.__init__ = real_init
+        srv._ort_session_cache = orig_cache

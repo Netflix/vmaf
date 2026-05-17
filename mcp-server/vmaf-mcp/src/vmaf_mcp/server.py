@@ -37,6 +37,7 @@ import os
 import shutil
 import subprocess
 import sys
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -86,6 +87,60 @@ def _validate_path(p: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
+# ORT InferenceSession cache
+#
+# Creating an ort.InferenceSession is expensive (20–200 ms on a 100 KB model,
+# more on larger models).  The MCP server is long-lived and the same model is
+# typically called many times in a session, so caching sessions pays off
+# immediately.
+#
+# Cache key: (resolved_path_str, mtime_float) — the mtime invalidates the
+# entry when the model file changes on disk without restarting the server.
+#
+# ort.InferenceSession is not hashable, so functools.lru_cache cannot be used
+# directly.  We keep a plain OrderedDict (insertion order = LRU order) with a
+# configurable max size.  Race-safety: a simultaneous call with the same key
+# may create a second session; the loser's session is simply discarded.  The
+# worst case is one extra session object for the duration of the double-create
+# window — acceptable given the async single-threaded event loop model.
+# ---------------------------------------------------------------------------
+
+_ORT_CACHE_MAXSIZE: int = 4
+# Key: (path_str, mtime_float), Value: InferenceSession
+_ort_session_cache: OrderedDict[tuple[str, float], Any] = OrderedDict()
+
+
+def _get_ort_session(model_path: Path) -> Any:
+    """Return a cached ``ort.InferenceSession`` for *model_path*.
+
+    The session is keyed on ``(resolved_path, mtime)`` so it is invalidated
+    automatically when the model file is replaced on disk.  At most
+    ``_ORT_CACHE_MAXSIZE`` sessions are held in memory at any time; the
+    oldest entry is evicted when the cache is full.
+    """
+    import onnxruntime as ort
+
+    resolved = str(model_path.resolve())
+    mtime = model_path.stat().st_mtime
+    key = (resolved, mtime)
+
+    if key in _ort_session_cache:
+        # Move to end (most-recently-used position).
+        _ort_session_cache.move_to_end(key)
+        return _ort_session_cache[key]
+
+    sess = ort.InferenceSession(resolved, providers=["CPUExecutionProvider"])
+
+    # Evict oldest if at capacity (check after creation to keep the
+    # cache consistent even if another coroutine races here).
+    while len(_ort_session_cache) >= _ORT_CACHE_MAXSIZE:
+        _ort_session_cache.popitem(last=False)
+
+    _ort_session_cache[key] = sess
+    return sess
+
+
+# ---------------------------------------------------------------------------
 # Tool implementations
 # ---------------------------------------------------------------------------
 
@@ -106,9 +161,7 @@ class ScoreRequest:
 async def _run_vmaf_score(req: ScoreRequest) -> dict[str, Any]:
     vmaf = _vmaf_binary()
     if not vmaf.exists():
-        raise RuntimeError(
-            f"vmaf binary not found at {vmaf}. " "Build first: meson compile -C build."
-        )
+        raise RuntimeError(f"vmaf binary not found at {vmaf}. Build first: meson compile -C build.")
 
     output = Path("/tmp") / f"vmaf-mcp-{os.getpid()}-{asyncio.current_task().get_name()}.json"
     try:
@@ -211,12 +264,11 @@ def _eval_model_on_split(
         raise ValueError(f"split must be one of {_VALID_SPLITS}; got {split!r}")
     try:
         import numpy as np
-        import onnxruntime as ort
         import pandas as pd
         from scipy.stats import pearsonr, spearmanr
     except ImportError as exc:  # pragma: no cover — exercised only without extras
         raise RuntimeError(
-            "eval_model_on_split requires the 'eval' extra: " "pip install 'vmaf-mcp[eval]'"
+            "eval_model_on_split requires the 'eval' extra: pip install 'vmaf-mcp[eval]'"
         ) from exc
 
     df = pd.read_parquet(features)
@@ -254,7 +306,7 @@ def _eval_model_on_split(
     if len(x) < 2:
         raise ValueError(f"split {split!r} has {len(x)} samples — need ≥2 to compute correlations")
 
-    sess = ort.InferenceSession(str(model), providers=["CPUExecutionProvider"])
+    sess = _get_ort_session(model)
     pred = np.asarray(sess.run(None, {input_name: x})[0]).reshape(-1)
     if pred.shape != y.shape:
         raise ValueError(f"model output shape {pred.shape} does not match target shape {y.shape}")

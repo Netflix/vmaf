@@ -41,6 +41,12 @@ Locked in [ADR-0009](../docs/adr/0009-mcp-server-tool-surface.md):
 - **Tiny-AI surface rule applies**: MCP tools that touch the tiny-AI path
   (e.g. `describe_worst_frames`) ship docs under `docs/ai/` in the same PR.
   See [ADR-0042](../docs/adr/0042-tinyai-docs-required-per-pr.md).
+- **ORT InferenceSession instances MUST be cached by (path, mtime)** — per-call
+  creation of `ort.InferenceSession` costs 20–200 ms and is a performance
+  hazard in a long-lived MCP server. All call paths that create an
+  `InferenceSession` MUST go through `_get_ort_session()` in `server.py`,
+  which maintains an LRU cache (max 4 sessions). Inline
+  `ort.InferenceSession(...)` calls in the MCP server are a lint violation.
 
 ## Governing ADRs
 
