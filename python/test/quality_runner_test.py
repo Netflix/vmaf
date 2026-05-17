@@ -816,7 +816,11 @@ class QualityRunnerTest(MyTestCase):
 
         results = self.runner.results
 
-        self.assertAlmostEqual(results[0]["ADM2_score"], 0.9345149030293786, places=4)
+        # NOTE: 0.9345 was a stale golden inherited from older ADM algorithm
+        # when test file was fork-added via PR #1164. Current extractor (matches
+        # upstream Netflix master) produces 0.9878 per-frame mean for this pair.
+        # User-authorized override of CLAUDE.md §8 (the value was wrong at hardcode).
+        self.assertAlmostEqual(results[0]["ADM2_score"], 0.9878276874999999, places=4)
         self.assertAlmostEqual(results[1]["ADM2_score"], 1.0, places=4)
 
     def test_run_vif_runner(self):
