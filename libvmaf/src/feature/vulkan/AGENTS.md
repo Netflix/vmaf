@@ -99,7 +99,12 @@ ADR-0234) catches drift but only after a full GPU run.
   returns `-ENOTSUP` at `init()`. Any Netflix upstream sync that
   touches `motion_blend()` mirrors across the three GPU motion
   twins in the same PR. See [../../AGENTS.md §"motion3_score GPU
-  contract"](../../AGENTS.md).
+  contract"](../../AGENTS.md). The parity gate is
+  `test/test_vulkan_motion3_parity.c` (places=4, 1e-4 tolerance);
+  the CUDA twin is `test/test_cuda_motion3_parity.c` (PR #922)
+  and the SYCL twin is `test/test_sycl_motion3_parity.c` (PR #927).
+  Changes to the `motion3_postprocess_host` helper must be verified
+  against all three parity tests.
 
 - **`motion_v2_vulkan.c` mirror divergence** (ADR-0193). The
   Vulkan kernel uses an **edge-replicating** mirror that diverges
