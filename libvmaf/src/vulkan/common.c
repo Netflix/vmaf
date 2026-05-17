@@ -285,6 +285,27 @@ int vmaf_vulkan_context_new(VmafVulkanContext **out, int device_index)
         goto fail;
     }
 
+    /* ADR-0492: vif.comp promotes g/sv_sq/gg_sigma to double via
+     * GL_EXT_shader_explicit_arithmetic_types_float64 to match
+     * integer_vif.c's CPU double-precision path exactly and pass the
+     * ADR-0214 places=4 Vulkan parity gate.  shaderFloat64 is a
+     * VkPhysicalDeviceFeatures core field (Vulkan 1.0+) and must be
+     * probed and enabled explicitly at vkCreateDevice time. */
+    {
+        VkPhysicalDeviceFeatures avail_feats = {0};
+        vkGetPhysicalDeviceFeatures(ctx->physical_device, &avail_feats);
+        if (!avail_feats.shaderFloat64) {
+            fprintf(stderr,
+                    "libvmaf: Vulkan backend disabled on this device "
+                    "(\"%s\") — no shaderFloat64 support, required for "
+                    "double-precision VIF g/sv_sq computation "
+                    "(ADR-0492). Falling back to CPU.\n",
+                    ctx->props.deviceName);
+            err = -ENOTSUP;
+            goto fail;
+        }
+    }
+
     float queue_priority = 1.0f;
     VkDeviceQueueCreateInfo queue_create = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
@@ -292,16 +313,16 @@ int vmaf_vulkan_context_new(VmafVulkanContext **out, int device_index)
         .queueCount = 1,
         .pQueuePriorities = &queue_priority,
     };
-    /* Enable shaderBufferInt64Atomics on the device so the SPIR-V
-     * loader accepts our reduction shaders.  We re-use a fresh
-     * VkPhysicalDeviceShaderAtomicInt64Features struct (the one
-     * populated above is a query-only result; spec disallows
-     * passing it back through pNext on `vkCreateDevice`). */
+    /* Enable shaderBufferInt64Atomics (ADR-0350) and shaderFloat64
+     * (ADR-0492) on the device.  We re-use fresh structs because the
+     * query-result structs above are spec-disallowed on vkCreateDevice's
+     * pNext chain.  shaderFloat64 lives in the VkPhysicalDeviceFeatures
+     * core struct (not an extension struct), so we set it there. */
     VkPhysicalDeviceShaderAtomicInt64Features atomic64_enable = {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES,
         .shaderBufferInt64Atomics = VK_TRUE,
     };
-    VkPhysicalDeviceFeatures features = {0};
+    VkPhysicalDeviceFeatures features = {.shaderFloat64 = VK_TRUE};
     VkDeviceCreateInfo device_create = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .pNext = &atomic64_enable,
@@ -442,6 +463,25 @@ static int vmaf_vulkan_context_new_external(VmafVulkanContext **out,
                     "device (\"%s\") — no shaderBufferInt64Atomics "
                     "support, required for the two-level reduction "
                     "shaders (ADR-0350). Falling back to CPU.\n",
+                    ctx->props.deviceName);
+            err = -ENOTSUP;
+            goto fail;
+        }
+    }
+
+    /* ADR-0492: also probe shaderFloat64 on the external-handle path.
+     * We cannot alter the caller's pre-created VkDevice features, so
+     * if the device was created without shaderFloat64 our VIF shader
+     * will fail to load.  Refuse early with a clear diagnostic. */
+    {
+        VkPhysicalDeviceFeatures ext_feats = {0};
+        vkGetPhysicalDeviceFeatures(ctx->physical_device, &ext_feats);
+        if (!ext_feats.shaderFloat64) {
+            fprintf(stderr,
+                    "libvmaf: Vulkan backend disabled on imported "
+                    "device (\"%s\") — no shaderFloat64 support, "
+                    "required for double-precision VIF computation "
+                    "(ADR-0492). Falling back to CPU.\n",
                     ctx->props.deviceName);
             err = -ENOTSUP;
             goto fail;

@@ -35448,3 +35448,22 @@ the marker (it originates in libsvm upstream and may reappear).
 No rebase impact: doc-only addition. If upstream Netflix adds a motion
 extractor or renames existing ones, update `docs/metrics/motion.md` to
 match — no code change required.
+
+
+---
+
+## fix/vulkan-vif-shader-fp64-for-bit-exact
+
+**Files**: `libvmaf/src/feature/vulkan/shaders/vif.comp`,
+`libvmaf/src/vulkan/common.c`,
+`docs/adr/0492-vulkan-vif-shader-fp64-g-computation.md`,
+`docs/backends/vulkan/overview.md`,
+`changelog.d/fixed/vulkan-vif-fp64-g-computation.md`.
+
+**Rebase sensitivity (medium):** `vif.comp` carries the fp64 extension
+declaration at line 68 and the revised g/sv_sq block at ~line 540.  If
+upstream Netflix modifies the VIF computation path in `integer_vif.c`,
+re-verify that the double-precision GLSL block still mirrors the CPU
+reference exactly (especially the eps constant and the int32 truncation
+order for sv_sq).  The `common.c` shaderFloat64 probe must stay in sync
+with any new device-feature guards added to the same function.

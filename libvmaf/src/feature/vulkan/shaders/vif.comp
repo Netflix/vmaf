@@ -1,4 +1,5 @@
-/* SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
+/* Copyright 2026 Lusoris and Claude (Anthropic)
+ * SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
  *
  * Vulkan compute shader for the integer VIF feature extractor.
  *
@@ -59,6 +60,13 @@
 #extension GL_KHR_shader_subgroup_shuffle                  : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64   : require
 #extension GL_EXT_shader_subgroup_extended_types_int64     : require
+/* GL_EXT_shader_explicit_arithmetic_types_float64 is required for the
+ * VIF g/sv_sq computation in double precision to match integer_vif.c's
+ * `double g = sigma12 / (sigma1_sq + eps)` path exactly.  RTX 4090
+ * and all Vulkan 1.3+ discrete GPUs expose shaderFloat64 (probed in
+ * vmaf_vulkan_context_new; the backend refuses to init on devices that
+ * don't expose it — see ADR-0492). */
+#extension GL_EXT_shader_explicit_arithmetic_types_float64 : require
 
 /* Workgroup geometry mirrors the SYCL fused kernel:
  *   local_size_x = 32  -> matches the subgroup size requirement
@@ -515,23 +523,42 @@ void main()
         if (sigma2_sq < 0) sigma2_sq = 0;
 
         if (int64_t(sigma1_sq) >= SIGMA_NSQ) {
-            /* `precise` here lowers to per-result `OpDecorate ... NoContraction`
-             * (GLSL 4.50 §4.7.1). It blocks the NVIDIA shader compiler's
-             * Vulkan-1.4 default `mul + sub` and `mul * mul` FMA-fold for
-             * `sv_sq = sigma2_sq - g*sigma12` and `gg_sigma_f = g*g*sigma1_sq`,
-             * which were the load-bearing per-frame VIF stats identified
-             * in research-0053 (45/48 frame mismatches at API 1.4).
-             * No-op under API 1.3 where the compiler wasn't contracting. */
-            precise float g = 0.0;
-            precise float sv_sq = 0.0;
-            precise float gg_sigma_f = 0.0;
+            /* Promote g / sv_sq / gg_sigma_f to double to match the
+             * precision of integer_vif.c's CPU path:
+             *   double g = sigma12 / (sigma1_sq + eps);   // eps = 6.5536e-6
+             *   int32_t sv_sq = sigma2_sq - g * sigma12;  // double arith, int32 truncation
+             *   g = MIN(g, vif_enhn_gain_limit);
+             *   int64_t numer1_tmp = (int64_t)(g * g * sigma1_sq) + numer1;
+             *
+             * The previous `precise float` path (research-0053) blocked FMA
+             * contraction but still lost ~7 ULP/pixel vs the CPU's double
+             * division, accumulating to ~2e-4 VMAF delta at sub-1080p — above
+             * the ADR-0214 places=4 gate (1e-4 threshold).  double eliminates
+             * the systematic bias entirely.  The `precise` qualifier is dropped
+             * because double arithmetic has no useful FMA contraction in GLSL
+             * and GL_EXT_shader_explicit_arithmetic_types_float64 already
+             * mandates IEEE-754 double for the promoted variables.
+             * Device capability is probed at backend-init time (ADR-0492). */
 
-            if (sigma12 > 0 && sigma1_sq != 0 && sigma2_sq != 0) {
-                g = float(sigma12) / float(sigma1_sq);
-                sv_sq = float(sigma2_sq) - g * float(sigma12);
-                if (sv_sq < 0.0) sv_sq = 0.0;
-                g = min(g, pc.vif_enhn_gain_limit);
-                gg_sigma_f = g * g * float(sigma1_sq);
+            /* eps matches integer_vif.c: `const double eps = 65536 * 1.0e-10`
+             * The comment there says "this epsilon can go away"; sigma1_sq is
+             * >= SIGMA_NSQ (262144) so eps/sigma1_sq < 2.5e-11 — negligible.
+             * We include it to stay bit-identical with the C reference. */
+            const double EPS = 65536.0lf * 1.0e-10lf;
+
+            double g_d       = 0.0lf;
+            int    sv_sq_i   = 0;
+            double gg_sigma  = 0.0lf;
+
+            /* Condition mirrors integer_vif.c line 318:
+             * `if (sigma12 > 0 && sigma2_sq > 0)`.
+             * sigma1_sq > 0 is implied by sigma1_sq >= SIGMA_NSQ above. */
+            if (sigma12 > 0 && sigma2_sq > 0) {
+                g_d     = double(sigma12) / (double(sigma1_sq) + EPS);
+                sv_sq_i = int(double(sigma2_sq) - g_d * double(sigma12));
+                if (sv_sq_i < 0) sv_sq_i = 0;
+                g_d    = min(g_d, double(pc.vif_enhn_gain_limit));
+                gg_sigma = g_d * g_d * double(sigma1_sq);
             }
 
             uint log_den_stage1 = uint(int64_t(SIGMA_NSQ) + int64_t(sigma1_sq));
@@ -544,8 +571,8 @@ void main()
             uint den_val = log2_lut.lut[log_den1 - 32768u];
 
             if (sigma12 >= 0) {
-                uint     numer1 = uint(sv_sq) + uint(SIGMA_NSQ);
-                uint64_t numer1_tmp = uint64_t(int64_t(gg_sigma_f)) + uint64_t(numer1);
+                uint     numer1 = uint(sv_sq_i) + uint(SIGMA_NSQ);
+                uint64_t numer1_tmp = uint64_t(int64_t(gg_sigma)) + uint64_t(numer1);
 
                 int x1 = 0;
                 int x2_val = 0;

@@ -441,3 +441,15 @@ reduction shaders (ADR-0356). Falling back to CPU.
 The framework then falls back to the CPU path automatically. Linux
 and Windows targets with NVIDIA proprietary, Mesa anv, RADV, and
 lavapipe drivers all advertise the feature and follow the GPU path.
+
+**Required device features summary (ADR-0350, ADR-0492):**
+
+| Feature | Vulkan struct | Requirement | Why |
+|---|---|---|---|
+| `shaderBufferInt64Atomics` | `VkPhysicalDeviceShaderAtomicInt64Features` | Required | Two-level GPU reduction shaders (ADR-0350) |
+| `shaderFloat64` | `VkPhysicalDeviceFeatures` (core) | Required | VIF `g`/`sv_sq` double-precision computation — closes fp32-vs-double ~7 ULP/px bias (ADR-0492) |
+
+Devices missing either feature fall back to CPU with a `stderr` diagnostic
+and `-ENOTSUP`. Apple Silicon / MoltenVK is excluded by both requirements.
+All tested discrete GPU targets (NVIDIA RTX 4090, AMD RDNA2+, Intel Arc
+Xe-HPG) expose both features.

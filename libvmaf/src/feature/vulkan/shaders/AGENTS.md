@@ -75,6 +75,15 @@ shader's kernel semantics **must** ship with matching changes to:
   unify them on rebase — the underlying CPU code paths require
   the divergence.
 
+- **`vif.comp` g/sv_sq computation is in `double` — do NOT revert to
+  `float` or `precise float`** (ADR-0492). The VIF gain factor `g` and
+  residual variance `sv_sq` are computed in double precision via
+  `GL_EXT_shader_explicit_arithmetic_types_float64` to match the CPU
+  reference (`integer_vif.c` double path). Reverting to `precise float`
+  reduces back to ~7 ULP/px fp32 bias, accumulating to ~2×10⁻⁴ VMAF
+  delta and failing the ADR-0214 places=4 gate. The `precise` qualifier
+  on these variables was removed in this PR; do not re-add it.
+
 - **`vif.comp` `precise` decorations are conservatively scoped**
   (ADR-0264). Widening `precise` past the empirically-determined
   set onto helper functions or onto auxiliary axes makes the
