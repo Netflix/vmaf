@@ -78,6 +78,15 @@ if is_nvtx_enabled and host_machine.system() == 'windows'
     warning('NVTX is not supported on Windows, disabling.')
     is_nvtx_enabled = false
 endif
+# NVTX requires the CUDA toolkit headers even when enable_cuda=false because
+# nvToolsExt.h lives under /usr/local/cuda/include. Without this guard, meson
+# hard-errors on any host without a CUDA installation when enable_nvtx=true and
+# enable_cuda=false (the include_directories call at line ~484 fails with
+# "Include dir /usr/local/cuda/include does not exist").
+# Audit finding: build-matrix-symbols-audit-2026-05-16.md §1a.
+if is_nvtx_enabled and not is_cuda_enabled
+    error('enable_nvtx=true requires enable_cuda=true (NVTX headers reside in the CUDA toolkit)')
+endif
 
 # DNN runtime (ONNX Runtime) — defines dnn_sources / dnn_defines / dnn_deps.
 subdir('dnn')
