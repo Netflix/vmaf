@@ -20,9 +20,17 @@
 # RUNTIME PREREQUISITES (host):
 #   - NVIDIA Container Toolkit for CUDA kernel execution
 #     https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
-#   - (Optional) ROCm runtime for HIP kernel execution — build-regression
-#     catching works without it; ENOSYS is returned for HIP feature kernels.
-#   - (Optional) Intel oneAPI runtime for SYCL kernel execution
+#   - For HIP kernel execution on AMD hardware: pass /dev/kfd and
+#     /dev/dri/renderD<N> (AMD node) into the container. rocm-hip-runtime-dev
+#     (installed in the image) provides libhsa-runtime64.so + libamdhip64.so;
+#     no additional host-side ROCm userspace install is needed beyond the
+#     kernel driver (amdgpu module) and device nodes being accessible.
+#   - For SYCL kernel execution on Intel Arc: pass /dev/dri/renderD<N> (Intel
+#     node) into the container. intel-opencl-icd + libze-intel-gpu1 (installed
+#     in the image) provide the compute-runtime GPU ICD; libumf.so.1 and the
+#     Level Zero loader (libze1) are also in the image. No additional host-side
+#     Intel driver install is needed beyond the i915/xe kernel module and the
+#     DRI device node being accessible.
 #
 # See docs/development/dev-mcp.md for full usage.
 
@@ -143,6 +151,35 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     intel-basekit \
     && rm -rf /var/lib/apt/lists/*
 
+# ---------- Intel GPU compute-runtime (Arc / Xe dispatch via Level Zero) ----
+# intel-opencl-icd and libze-intel-gpu1 come from Intel's GPU apt repo
+# (separate from the oneAPI repo above). They provide:
+#   intel-opencl-icd  → /usr/lib/x86_64-linux-gnu/intel-opencl/libigdrcl.so
+#                       (OpenCL GPU ICD for Gen12/Xe/Arc hardware)
+#   libze-intel-gpu1  → /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1
+#                       (Level Zero GPU ICD — what the Level Zero loader
+#                       probes to expose Arc hardware to SYCL programs)
+#   clinfo            — diagnostic tool to verify OpenCL platform visibility
+#
+# Without these packages sycl-ls returns "No platforms found" even though the
+# Level Zero loader (libze1) and compiler (icpx / intel-basekit) are present:
+# the loader has nothing to probe because the GPU-side ICD is missing.
+# Verified on the host: adding LD_LIBRARY_PATH=/opt/intel/oneapi/umf/latest/lib
+# (for libumf.so.1) plus the intel-compute-runtime ICDs makes sycl-ls detect
+# the Arc A380 under the level_zero:gpu adapter.
+RUN curl -fsSL https://repositories.intel.com/gpu/intel-graphics.key \
+        | gpg --dearmor \
+        | tee /usr/share/keyrings/intel-graphics.gpg > /dev/null \
+    && printf 'deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu/24.04/lts noble flex\n' \
+        > /etc/apt/sources.list.d/intel-gpu.list
+
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    intel-opencl-icd \
+    libze-intel-gpu1 \
+    clinfo \
+    && rm -rf /var/lib/apt/lists/*
+
 # Level Zero loader (libze_loader) for SYCL
 ARG LEVEL_ZERO_VER=1.28.6
 RUN curl -fsSL "https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VER}/libze1_${LEVEL_ZERO_VER}%2Bu24.04_amd64.deb" -o /tmp/libze1.deb \
@@ -152,21 +189,30 @@ RUN curl -fsSL "https://github.com/oneapi-src/level-zero/releases/download/v${LE
     && find /tmp -maxdepth 1 -name 'libze*.deb' -delete \
     && find /var/lib/apt/lists -mindepth 1 -delete
 
-
 # oneAPI env — source /opt/intel/oneapi/setvars.sh in interactive shells;
 # for CI/build steps we set the critical vars explicitly.
+#
+# ONEAPI_ROOT/umf/latest/lib must be in LD_LIBRARY_PATH so that the oneAPI
+# Unified Runtime Level Zero adapter (libur_adapter_level_zero.so.0) can
+# dlopen libumf.so.1 at startup.  Without it every UR adapter load fails with
+# "libumf.so.1: cannot open shared object file" and sycl-ls reports
+# "No platforms found" even though the Arc GPU is visible to the kernel.
+# Confirmed via LD_DEBUG=libs on the host before landing this fix.
 ENV ONEAPI_ROOT=/opt/intel/oneapi
 ENV DPCPP_ROOT=${ONEAPI_ROOT}/compiler/latest
 ENV PATH=${DPCPP_ROOT}/bin:${PATH}
-ENV LD_LIBRARY_PATH=${DPCPP_ROOT}/lib:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH=${DPCPP_ROOT}/lib:${ONEAPI_ROOT}/umf/latest/lib:${LD_LIBRARY_PATH}
 ENV PKG_CONFIG_PATH=${ONEAPI_ROOT}/tbb/latest/lib/pkgconfig:${PKG_CONFIG_PATH}
 
-# ---------- ROCm 6.x (HIP toolchain — build-only on NVIDIA host) -----------
-# AMD apt repo
-# NOTE: On an NVIDIA-only host HIP device kernels compile and embed but cannot
-# be dispatched at runtime (the HIP runtime returns an error). The container
-# is still useful for build-regression catching and static analysis.
-# See docs/development/dev-mcp.md §Known Limitations.
+# ---------- ROCm 6.x (HIP toolchain + runtime) -----------------------------
+# AMD apt repo.
+# NOTE: HIP kernel dispatch on AMD hardware requires /dev/kfd and
+# /dev/dri/renderD<N> (AMD node) to be passed into the container at runtime.
+# rocm-hip-runtime-dev already brings libhsa-runtime64.so (via hsa-rocr) and
+# libamdhip64.so, so no additional host-side ROCm userspace install is needed.
+# On a host with no AMD GPU the HIP runtime returns an error for device ops;
+# the container is still useful for build-regression catching and static
+# analysis. See docs/development/dev-mcp.md §Known Limitations.
 RUN curl -fsSL https://repo.radeon.com/rocm/rocm.gpg.key \
         | gpg --dearmor \
         | tee /usr/share/keyrings/rocm-archive-keyring.gpg > /dev/null \
@@ -175,12 +221,20 @@ RUN curl -fsSL https://repo.radeon.com/rocm/rocm.gpg.key \
     && printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600\n' \
         > /etc/apt/preferences.d/rocm-pin-600
 
-# `rocm-hip-sdk` pulls in `rccl` (multi-GPU collectives) which depends on
-# `libdrm-amdgpu-amdgpu1` + `libdrm2-amdgpu` — packages NOT present in the
-# ROCm 6.4 noble apt repo as of 2026-05-16. We don't need rccl for libvmaf
-# HIP feature kernels (each worker uses one GPU). Use `rocm-hip-runtime-dev`
-# instead, which gives the HIP runtime + headers + hipcc dependency without
-# the multi-GPU collective stack.
+# Package selection rationale:
+#   rocm-hip-runtime-dev — HIP runtime (libamdhip64.so) + HSA runtime
+#                          (libhsa-runtime64.so via hsa-rocr) + hipcc + dev
+#                          headers. Sufficient for dispatch: hipcc embeds .co
+#                          fat-binaries at compile time; libamdhip64 dispatches
+#                          them via the HSA agent (gfx1036 on the dev host).
+#   hipcc                — HIP compiler driver (explicit, in case
+#                          rocm-hip-runtime-dev dependency changes).
+#   rocm-cmake           — CMake helpers used by the meson HIP backend.
+#
+# Why NOT rocm-hip-sdk: it pulls rccl (multi-GPU collectives) which depends on
+# libdrm-amdgpu-amdgpu1 + libdrm2-amdgpu, packages absent from the ROCm 6.4
+# noble apt repo as of 2026-05-16. libvmaf HIP feature kernels use one GPU per
+# worker and need no multi-GPU collective stack.
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     rocm-hip-runtime-dev \
@@ -191,6 +245,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV ROCM_PATH=/opt/rocm
 ENV PATH=${ROCM_PATH}/bin:${ROCM_PATH}/llvm/bin:${PATH}
 ENV LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
+
+# ---------- Build-time GPU runtime visibility probes -----------------------
+# Emit sycl-ls / clinfo / rocminfo output during image build so that any
+# install gap surfaces in the build log rather than silently at container
+# startup. In a standard BuildKit sandbox these may show "No platforms found"
+# or CPU-only (no GPU device node passthrough during build) — expected and
+# non-fatal (|| true). The output is still captured for diagnosis.
+RUN echo "=== sycl-ls (SYCL device visibility) ===" \
+    && sycl-ls 2>&1 || true \
+    && echo "=== clinfo --list (OpenCL platform/device list) ===" \
+    && clinfo --list 2>&1 || true \
+    && echo "=== rocminfo agents ===" \
+    && rocminfo 2>&1 | grep -E "Agent|Name:|Device Type|gfx" || true
 
 # ---------- Vulkan ICD selection for lavapipe ------------------------------
 # Set the lavapipe ICD as the default software Vulkan renderer.
