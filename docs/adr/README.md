@@ -452,6 +452,7 @@ ADRs may exist there for local session continuity, but the tracked
 | [ADR-0451](0451-local-dev-mcp-container.md) | Local dev-MCP container for live probing — Docker, all 4 GPU backends (CUDA/SYCL/Vulkan/HIP), continuous 15-min smoke probe | Accepted | infra, docker, mcp, gpu, hip, cuda, sycl, vulkan, dev, fork-local |
 | [ADR-0452](0452-cambi-calculate-c-values-avx512-neon.md) | Port `calculate_c_values_row` to AVX-512 (16-lane gather) and NEON (mask-zero fast-skip); bit-exact integer pipeline | Accepted | simd, cambi, perf |
 | [ADR-0453](0453-psnr-enable-chroma-gpu-parity.md) | PSNR `enable_chroma` option parity across CUDA, SYCL, Vulkan GPU backends | Accepted | cuda, sycl, vulkan, psnr, option-parity, bug |
+| [ADR-0456](0456-ssimulacra2-cuda-blur-fusion-transpose.md) | SSIMULACRA2 CUDA blur: 3-channel kernel fusion (`gridDim.z`) + V-pass shared-memory transpose for coalesced access | Accepted | cuda, perf, ssimulacra2 |
 | [ADR-0458](0458-sycl-cambi-ssim-slm-staging.md) | SYCL CAMBI queue-sync collapse (25→5 q.wait()/frame) + SSIM horizontal SLM staging (SY-1/SY-2 perf fix) | Accepted | sycl, perf, cambi, ssim, gpu, fork-local |
 | [ADR-0460](0460-integer-vif-enable-chroma.md) | Add `enable_chroma` option to `integer_vif` — mirrors psnr/ssim pattern, emits per-scale Cb/Cr VIF scores | Accepted | feature, vif, chroma |
 | [ADR-0468](0468-hip-float-adm-real-kernel.md) | HIP float_adm real kernel — ninth HIP consumer; ports CUDA 4-stage DWT+CSF+CM pipeline to HIP (warp-64 reductions, hipMalloc buffers, HSACO via hipcc) | Accepted | hip, build, feature-extractor |
@@ -462,5 +463,6 @@ ADRs may exist there for local session continuity, but the tracked
 | [ADR-0488](0488-gpu-dispatch-env-shared-snapshot.md) | Shared once-snapshot helper for GPU dispatch env variables — replaces bespoke CUDA pthread_once and closes Vulkan/SYCL concurrency-mt-unsafe exposure | Accepted | gpu, cuda, vulkan, sycl, dispatch, threading, refactor, fork-local |
 | [ADR-0489](0489-cambi-sycl-event-chain.md) | CAMBI SYCL — replace GPU-to-GPU `q.wait()` calls with `sycl::event` chains (SY-1) | Accepted | sycl, gpu, cambi, performance, fork-local |
 | [ADR-0464](0464-cambi-cuda-smem-tile.md) | CAMBI CUDA spatial-mask kernel: cooperative 22x22 shared-memory zero_deriv tile reduces global reads 26x (from 147 to ~5.7 per thread); adds __launch_bounds__(256) and AGENTS.md invariant for high-overlap stencil kernels | Accepted | cuda, gpu, cambi, performance, kernel, fork-local |
+
 
 

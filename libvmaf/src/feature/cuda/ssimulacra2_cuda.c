@@ -64,6 +64,7 @@
 
 #define SS2C_NUM_SCALES 6
 #define SS2C_BLUR_BLOCK 64
+#define SS2C_TILE 32 /* Transpose tile dimension; mirrors SS2C_TILE in ssimulacra2_blur.cu. */
 #define SS2C_MUL_BX 16
 #define SS2C_MUL_BY 8
 #define SS2C_SIGMA 1.5
@@ -207,8 +208,12 @@ typedef struct Ssimu2StateCuda {
     /* CUDA module + kernel handles. */
     CUmodule module_blur;
     CUmodule module_mul;
-    CUfunction func_blur_h;
-    CUfunction func_blur_v;
+    CUfunction func_blur_h;    /* single-channel H pass (retained; unused after ADR-0456) */
+    CUfunction func_blur_v;    /* single-channel V pass (retained; unused after ADR-0456) */
+    CUfunction func_blur_h3;   /* fused 3-channel H pass (ADR-0456 Change 1) */
+    CUfunction func_transpose; /* row→col-major transpose (ADR-0456 Change 2) */
+    CUfunction
+        func_blur_v3_transposed; /* fused 3-channel V pass on col-major input (ADR-0456 Changes 1+2) */
     CUfunction func_mul3;
     CUstream str;
 
@@ -221,6 +226,9 @@ typedef struct Ssimu2StateCuda {
     VmafCudaBuffer *d_dis_xyb;
     VmafCudaBuffer *d_mul_buf;
     VmafCudaBuffer *d_blur_scratch;
+    /* Column-major transpose scratch for V-pass coalescing (ADR-0456).
+     * Same size as d_blur_scratch — 3 × full-plane floats. */
+    VmafCudaBuffer *d_transpose_buf;
     VmafCudaBuffer *d_mu1;
     VmafCudaBuffer *d_mu2;
     VmafCudaBuffer *d_s11;
@@ -559,6 +567,7 @@ static int ss2c_alloc_buffers(VmafFeatureExtractor *fex, Ssimu2StateCuda *s)
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->d_dis_xyb, three_plane_bytes);
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->d_mul_buf, three_plane_bytes);
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->d_blur_scratch, three_plane_bytes);
+    ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->d_transpose_buf, three_plane_bytes);
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->d_mu1, three_plane_bytes);
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->d_mu2, three_plane_bytes);
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->d_s11, three_plane_bytes);
@@ -614,6 +623,16 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
         cu_f, cuModuleGetFunction(&s->func_blur_h, s->module_blur, "ssimulacra2_blur_h"), fail);
     CHECK_CUDA_GOTO(
         cu_f, cuModuleGetFunction(&s->func_blur_v, s->module_blur, "ssimulacra2_blur_v"), fail);
+    /* ADR-0456: fused 3-channel H + transpose + fused 3-channel V. */
+    CHECK_CUDA_GOTO(
+        cu_f, cuModuleGetFunction(&s->func_blur_h3, s->module_blur, "ssimulacra2_blur_h3"), fail);
+    CHECK_CUDA_GOTO(
+        cu_f, cuModuleGetFunction(&s->func_transpose, s->module_blur, "ssimulacra2_transpose"),
+        fail);
+    CHECK_CUDA_GOTO(cu_f,
+                    cuModuleGetFunction(&s->func_blur_v3_transposed, s->module_blur,
+                                        "ssimulacra2_blur_v3_transposed"),
+                    fail);
     CHECK_CUDA_GOTO(cu_f, cuModuleGetFunction(&s->func_mul3, s->module_mul, "ssimulacra2_mul3"),
                     fail);
     CHECK_CUDA_GOTO(cu_f, cuCtxPopCurrent(NULL), fail_after_pop);
@@ -649,9 +668,25 @@ static int ss2c_launch_mul3(Ssimu2StateCuda *s, CudaFunctions *cu_f, CUdeviceptr
     return 0;
 }
 
-static int ss2c_launch_blur_pass(Ssimu2StateCuda *s, CudaFunctions *cu_f, CUfunction func,
-                                 CUdeviceptr in_buf, CUdeviceptr out_buf, unsigned cw, unsigned ch,
-                                 unsigned in_off, unsigned out_off, unsigned lines)
+/* ADR-0456 Change 1+2: fused 3-channel blur with V-pass coalescing.
+ *
+ * Per blur call this issues exactly 3 kernel launches:
+ *   1. ssimulacra2_blur_h3        (gridDim.z=3 fuses all 3 H passes)
+ *   2. ssimulacra2_transpose      (gridDim.z=3 converts H output to col-major)
+ *   3. ssimulacra2_blur_v3_transposed (gridDim.z=3 fuses all 3 V passes, coalesced reads)
+ *
+ * The old dispatch issued 6 launches per blur (2 per channel × 3).
+ * With 5 blurs per scale × 6 scales = 30 blurs/frame, the reduction
+ * is from 180 to 90 kernel launches per frame.
+ *
+ * V-pass coalescing: the transpose converts H-pass output from
+ * row-major to column-major so the V-pass IIR reads consecutive
+ * addresses for each column scan. See ssimulacra2_blur.cu for the
+ * detailed analysis. */
+
+/* Fused 3-channel H pass — gridDim = (ceil(ch/BLOCK), 1, 3). */
+static int ss2c_launch_blur_h3(Ssimu2StateCuda *s, CudaFunctions *cu_f, CUdeviceptr in_buf,
+                               CUdeviceptr out_buf, unsigned cw, unsigned ch)
 {
     float n2_0 = s->rg_n2[0];
     float n2_1 = s->rg_n2[1];
@@ -660,11 +695,48 @@ static int ss2c_launch_blur_pass(Ssimu2StateCuda *s, CudaFunctions *cu_f, CUfunc
     float d1_1 = s->rg_d1[1];
     float d1_2 = s->rg_d1[2];
     int radius = s->rg_radius;
-    void *args[] = {&in_buf, &out_buf, &cw,   &ch,     &n2_0,   &n2_1,   &n2_2,
-                    &d1_0,   &d1_1,    &d1_2, &radius, &in_off, &out_off};
-    unsigned grid = (lines + SS2C_BLUR_BLOCK - 1u) / SS2C_BLUR_BLOCK;
-    CHECK_CUDA_RETURN(
-        cu_f, cuLaunchKernel(func, grid, 1, 1, SS2C_BLUR_BLOCK, 1, 1, 0, s->str, args, NULL));
+    unsigned plane_stride = s->width * s->height;
+    void *args[] = {&in_buf, &out_buf, &cw,   &ch,   &n2_0,   &n2_1,
+                    &n2_2,   &d1_0,    &d1_1, &d1_2, &radius, &plane_stride};
+    unsigned grid_x = (ch + SS2C_BLUR_BLOCK - 1u) / SS2C_BLUR_BLOCK;
+    /* gridDim.z = 3: one z-slice per XYB channel. */
+    CHECK_CUDA_RETURN(cu_f, cuLaunchKernel(s->func_blur_h3, grid_x, 1, 3u, SS2C_BLUR_BLOCK, 1, 1, 0,
+                                           s->str, args, NULL));
+    return 0;
+}
+
+/* Transpose: row-major → col-major, gridDim.z=3.
+ * Tile shape: (SS2C_TILE, SS2C_TILE, 1) per z-slice. */
+static int ss2c_launch_transpose(Ssimu2StateCuda *s, CudaFunctions *cu_f, CUdeviceptr in_buf,
+                                 CUdeviceptr out_buf, unsigned cw, unsigned ch)
+{
+    unsigned plane_stride = s->width * s->height;
+    void *args[] = {&in_buf, &out_buf, &cw, &ch, &plane_stride};
+    unsigned gx = (cw + SS2C_TILE - 1u) / SS2C_TILE;
+    unsigned gy = (ch + SS2C_TILE - 1u) / SS2C_TILE;
+    CHECK_CUDA_RETURN(cu_f, cuLaunchKernel(s->func_transpose, gx, gy, 3u, SS2C_TILE, SS2C_TILE, 1,
+                                           0, s->str, args, NULL));
+    return 0;
+}
+
+/* Fused 3-channel V pass on col-major input — gridDim = (ceil(cw/BLOCK), 1, 3). */
+static int ss2c_launch_blur_v3_transposed(Ssimu2StateCuda *s, CudaFunctions *cu_f,
+                                          CUdeviceptr in_transposed, CUdeviceptr out_buf,
+                                          unsigned cw, unsigned ch)
+{
+    float n2_0 = s->rg_n2[0];
+    float n2_1 = s->rg_n2[1];
+    float n2_2 = s->rg_n2[2];
+    float d1_0 = s->rg_d1[0];
+    float d1_1 = s->rg_d1[1];
+    float d1_2 = s->rg_d1[2];
+    int radius = s->rg_radius;
+    unsigned plane_stride = s->width * s->height;
+    void *args[] = {&in_transposed, &out_buf, &cw,   &ch,   &n2_0,   &n2_1,
+                    &n2_2,          &d1_0,    &d1_1, &d1_2, &radius, &plane_stride};
+    unsigned grid_x = (cw + SS2C_BLUR_BLOCK - 1u) / SS2C_BLUR_BLOCK;
+    CHECK_CUDA_RETURN(cu_f, cuLaunchKernel(s->func_blur_v3_transposed, grid_x, 1, 3u,
+                                           SS2C_BLUR_BLOCK, 1, 1, 0, s->str, args, NULL));
     return 0;
 }
 
@@ -673,19 +745,22 @@ static int ss2c_blur_3plane(Ssimu2StateCuda *s, CudaFunctions *cu_f, CUdeviceptr
 {
     const unsigned cw = s->scale_w[scale];
     const unsigned ch = s->scale_h[scale];
-    const unsigned full_plane = s->width * s->height;
     CUdeviceptr scratch = (CUdeviceptr)s->d_blur_scratch->data;
+    CUdeviceptr transpose_buf = (CUdeviceptr)s->d_transpose_buf->data;
     int err = 0;
-    for (int c = 0; c < 3; c++) {
-        const unsigned off = (unsigned)c * full_plane;
-        err = ss2c_launch_blur_pass(s, cu_f, s->func_blur_h, in_buf, scratch, cw, ch, off, off, ch);
-        if (err)
-            return err;
-        err =
-            ss2c_launch_blur_pass(s, cu_f, s->func_blur_v, scratch, out_buf, cw, ch, off, off, cw);
-        if (err)
-            return err;
-    }
+
+    /* H pass: fused 3-channel. Output → scratch (row-major). */
+    err = ss2c_launch_blur_h3(s, cu_f, in_buf, scratch, cw, ch);
+    if (err)
+        return err;
+    /* Transpose: scratch (row-major) → transpose_buf (col-major). */
+    err = ss2c_launch_transpose(s, cu_f, scratch, transpose_buf, cw, ch);
+    if (err)
+        return err;
+    /* V pass: fused 3-channel on col-major input → out_buf (row-major). */
+    err = ss2c_launch_blur_v3_transposed(s, cu_f, transpose_buf, out_buf, cw, ch);
+    if (err)
+        return err;
     return 0;
 }
 
@@ -1052,6 +1127,7 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     SS2C_FREE_DEV(d_dis_xyb);
     SS2C_FREE_DEV(d_mul_buf);
     SS2C_FREE_DEV(d_blur_scratch);
+    SS2C_FREE_DEV(d_transpose_buf);
     SS2C_FREE_DEV(d_mu1);
     SS2C_FREE_DEV(d_mu2);
     SS2C_FREE_DEV(d_s11);

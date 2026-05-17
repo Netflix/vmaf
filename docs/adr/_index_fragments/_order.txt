@@ -362,3 +362,5 @@
 0451-local-dev-mcp-container
 0446-extractor-hdr-and-hfr-feature-options
 0467-ssimulacra2-avx512-neon-ulp-audit
+0456-ssimulacra2-cuda-blur-fusion-transpose
+

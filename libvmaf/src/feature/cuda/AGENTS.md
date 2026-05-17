@@ -287,6 +287,16 @@ HIP / Metal motion twins listed in the Twin-update table below) in the same PR.
   ceil(N/BLOCK_AREA) passes, `__syncthreads()`, then read from SLM.
   Omitting the tile for such kernels is a performance regression; the
   parity-gate alone does not catch it.
+- **`ssimulacra2/ssimulacra2_blur.cu` blur kernels with per-channel loops must
+  fuse via `gridDim.z`** (ADR-0456). The fused kernels `ssimulacra2_blur_h3`,
+  `ssimulacra2_transpose`, and `ssimulacra2_blur_v3_transposed` all take a
+  `plane_stride` argument and use `blockIdx.z` to select the XYB channel. The
+  V-pass operates on a column-major transposed buffer to convert stride-`width`
+  per-thread access to stride-1 sequential reads. Any future blur kernel that
+  iterates over columns (V-direction IIR) requires a preceding transpose for
+  coalescing; do not skip the transpose to save one launch — the V-pass
+  performance benefit outweighs the launch cost at all resolutions ≥ 480p.
+
 
 ## Build
 
@@ -315,3 +325,6 @@ The `enable_cuda` umbrella flag gates inclusion via
   CAMBI CUDA port (Strategy II hybrid, T3-15a).
 - [ADR-0464](../../../../docs/adr/0464-cambi-cuda-smem-tile.md) --
   CAMBI CUDA spatial-mask SLM tile (perf-audit 2026-05-16 win 3).
+- [ADR-0456](../../../../docs/adr/0456-ssimulacra2-cuda-blur-fusion-transpose.md) —
+  SSIMULACRA2 CUDA blur: 3-channel kernel fusion + V-pass transpose.
+

@@ -1,0 +1,1 @@
+| [ADR-0456](0456-ssimulacra2-cuda-blur-fusion-transpose.md) | SSIMULACRA2 CUDA blur: 3-channel kernel fusion (`gridDim.z`) + V-pass shared-memory transpose for coalesced access | Accepted | cuda, perf, ssimulacra2 |
