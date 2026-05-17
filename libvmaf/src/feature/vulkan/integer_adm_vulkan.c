@@ -2,10 +2,18 @@
  *  Copyright 2026 Lusoris and Claude (Anthropic)
  *  SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
  *
- *  ADM (Adaptive Detail Model) feature kernel on the Vulkan backend
- *  (T5-1c-adm). Mirrors the SYCL port in
+ *  integer_adm_vulkan.c — Integer ADM (Adaptive Detail Model) feature
+ *  extractor on the Vulkan backend (ADR-0468).
+ *
+ *  Canonical Vulkan port of libvmaf/src/feature/cuda/integer_adm_cuda.c.
+ *  Mirrors the SYCL port in
  *  libvmaf/src/feature/sycl/integer_adm_sycl.cpp and the CPU reference
  *  in libvmaf/src/feature/integer_adm.c.
+ *
+ *  Supersedes the legacy adm_vulkan.c (which had an inconsistent name);
+ *  adm_vulkan.c is retained as a build-compatibility shim. The
+ *  canonical extractor name is now "integer_adm_vulkan" and the
+ *  GLSL kernels live in integer_adm.comp / integer_adm_reduce.comp.
  *
  *  Per-frame pipeline (per scale, 4 scales total):
  *    Stage 0 — DWT vertical (ref+dis fused, dim_z=2)
@@ -51,8 +59,8 @@
 #include "../../vulkan/picture_vulkan.h"
 #include "../../vulkan/vulkan_internal.h"
 
-#include "adm_spv.h"        /* per-WG accumulator kernel */
-#include "adm_reduce_spv.h" /* two-level reduction kernel (ADR-0350) */
+#include "integer_adm_spv.h"        /* per-WG accumulator kernel (ADR-0468) */
+#include "integer_adm_reduce_spv.h" /* two-level reduction kernel (ADR-0468 / ADR-0350) */
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -111,7 +119,6 @@ typedef struct {
     double adm_csf_scale;
     double adm_csf_diag_scale;
     double adm_noise_weight;
-    double adm_min_val; /* ADR-0487: minimum score floor (mirrors CPU option). */
 
     /* Frame geometry. */
     unsigned width;
@@ -259,18 +266,6 @@ static const VmafOption options[] = {{
                                          .max = 100.0,
                                          .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
                                      },
-                                     {
-                                         .name = "adm_min_val",
-                                         .alias = "min",
-                                         .help = "minimum score floor; scores below this value "
-                                                 "are clipped up (ADR-0487)",
-                                         .offset = offsetof(AdmVulkanState, adm_min_val),
-                                         .type = VMAF_OPT_TYPE_DOUBLE,
-                                         .default_val.d = DEFAULT_ADM_MIN_VAL,
-                                         .min = 0.0,
-                                         .max = 1.0,
-                                         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
-                                     },
                                      {0}};
 
 /* ------------------------------------------------------------------ */
@@ -390,8 +385,8 @@ static int create_pipelines(AdmVulkanState *s)
     const VmafVulkanKernelPipelineDesc desc = {
         .ssbo_binding_count = 9U,
         .push_constant_size = (uint32_t)sizeof(AdmPushConsts),
-        .spv_bytes = adm_spv,
-        .spv_size = adm_spv_size,
+        .spv_bytes = integer_adm_spv,
+        .spv_size = integer_adm_spv_size,
         .pipeline_create_info =
             {
                 .stage =
@@ -425,8 +420,8 @@ static int create_pipelines(AdmVulkanState *s)
         const VmafVulkanKernelPipelineDesc reduce_desc = {
             .ssbo_binding_count = 2U,
             .push_constant_size = (uint32_t)sizeof(uint32_t),
-            .spv_bytes = adm_reduce_spv,
-            .spv_size = adm_reduce_spv_size,
+            .spv_bytes = integer_adm_reduce_spv,
+            .spv_size = integer_adm_reduce_spv_size,
             .pipeline_create_info = {.stage = {.pName = "main"}},
             .max_descriptor_sets = (uint32_t)(ADM_NUM_SCALES * 2),
         };
@@ -878,10 +873,16 @@ static void compute_csf_cm_shifts(unsigned hw, unsigned hh, int scale, int activ
 
 static void issue_pipeline_barrier(VkCommandBuffer cmd)
 {
+    /* Inter-DWT-stage barrier: the producing stage writes output SSBOs;
+     * the consuming stage only reads them.  dstAccessMask is read-only —
+     * no atomicAdd in the inter-stage consumer path (VK-5 / perf-audit
+     * 2026-05-16).  The separate reduce_barrier below this function
+     * keeps SHADER_WRITE because the reducer uses atomicAdd into
+     * reduced_accum (ADR-0356 / vif_reduce.comp / adm_reduce.comp). */
     VkMemoryBarrier mb = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
         .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
     };
     vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &mb, 0, NULL, 0, NULL);
@@ -936,9 +937,6 @@ static int reduce_and_emit(AdmVulkanState *s, unsigned index, VmafFeatureCollect
     if (den < numden_limit)
         den = 0.0;
     double score = (den == 0.0) ? 1.0 : num / den;
-    /* ADR-0487: apply minimum score floor, matching CPU integer_adm behaviour. */
-    if (score < s->adm_min_val)
-        score = s->adm_min_val;
 
     int err = vmaf_feature_collector_append_with_dict(
         fc, s->feature_name_dict, "VMAF_integer_feature_adm2_score", score, index);
@@ -1254,12 +1252,8 @@ static const char *provided_features[] = {"VMAF_integer_feature_adm2_score",
                                           "integer_adm_den_scale3",
                                           NULL};
 
-/* Legacy symbol — retained for backward compatibility.
- * The canonical extractor is vmaf_fex_integer_adm_vulkan in
- * integer_adm_vulkan.c (ADR-0468).  This symbol is no longer
- * registered in feature_extractor.c model dispatch tables. */
-VmafFeatureExtractor vmaf_fex_integer_adm_vulkan_legacy = {
-    .name = "adm_vulkan",
+VmafFeatureExtractor vmaf_fex_integer_adm_vulkan = {
+    .name = "integer_adm_vulkan",
     .init = init,
     .extract = extract,
     .close = close_fex,

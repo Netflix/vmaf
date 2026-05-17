@@ -141,11 +141,22 @@ ADR-0234) catches drift but only after a full GPU run.
   applies on Vulkan too (ADR-0188 / 0189 / 0190). Auto-decimation
   is a v2 follow-up; do not silently enable it on rebase.
 
+- **`integer_adm_vulkan.c` is the canonical Vulkan integer ADM extractor**
+  (ADR-0468). It exports `vmaf_fex_integer_adm_vulkan` with `.name =
+  "integer_adm_vulkan"` and uses `integer_adm.comp` /
+  `integer_adm_reduce.comp`. The legacy `adm_vulkan.c` (exporting
+  `vmaf_fex_integer_adm_vulkan_legacy` with `.name = "adm_vulkan"`) is
+  retained as a compatibility shim and will be deleted in a follow-up PR.
+  The model dispatch tables in `feature_extractor.c` reference the C symbol
+  `vmaf_fex_integer_adm_vulkan`, which now resolves to `integer_adm_vulkan.c`.
+  Any ADM algorithm update must be applied to `integer_adm_vulkan.c` +
+  `integer_adm.comp` / `integer_adm_reduce.comp`, not to the legacy shim.
+
 - **`adm_vulkan.c` / `float_adm_vulkan.c` expose three ADM tuning
   parameters** (`adm_csf_scale`, `adm_csf_diag_scale`, `noise_weight`)
   with the same defaults as the CPU path (PR #731). If upstream Netflix
   adds or renames these parameters, the Vulkan twins must be updated in
-  the same PR.
+  the same PR. The canonical twin for future changes is `integer_adm_vulkan.c`.
 
 - **`motion_fps_weight` cross-backend parity** — see the canonical
   invariant note in [`../cuda/AGENTS.md`](../cuda/AGENTS.md).

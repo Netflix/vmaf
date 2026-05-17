@@ -96,9 +96,15 @@ secondary.
     plus optional moving-average; the 5-frame window mode
     (`motion_five_frame_window=true`) returns `-ENOTSUP` at
     `init()` since the GPU still uses a 2-deep blur ring.
-  - `adm_vulkan.c` + GLSL shader
-    [`shaders/adm.comp`](../../../libvmaf/src/feature/vulkan/shaders/adm.comp).
-    4-scale CDF 9/7 DWT + decouple+CSF fused pass + per-band CSF
+  - `integer_adm_vulkan.c` (canonical, ADR-0468) + GLSL shaders
+    [`shaders/integer_adm.comp`](../../../libvmaf/src/feature/vulkan/shaders/integer_adm.comp)
+    and
+    [`shaders/integer_adm_reduce.comp`](../../../libvmaf/src/feature/vulkan/shaders/integer_adm_reduce.comp).
+    Registered as `"integer_adm_vulkan"`. The legacy `adm_vulkan.c`
+    (registered as `"adm_vulkan"`) is retained as a build-compatibility
+    shim; the model dispatch tables reference the canonical extractor
+    symbol `vmaf_fex_integer_adm_vulkan` which now resolves to the new
+    file. 4-scale CDF 9/7 DWT + decouple+CSF fused pass + per-band CSF
     denominator and contrast-measure reductions. 16 pipelines per
     extractor (one per `(scale, stage)`). Produces the standard
     `integer_adm2` + `integer_adm_scale0..3` outputs.

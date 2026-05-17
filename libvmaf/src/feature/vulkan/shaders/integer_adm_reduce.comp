@@ -1,0 +1,113 @@
+/* Copyright 2026 Lusoris and Claude (Anthropic)
+ * SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
+ *
+ * integer_adm_reduce.comp — Two-level GPU reduction shader for the
+ * integer ADM per-workgroup accumulators (ADR-0468).
+ *
+ * Canonical reduction shader for integer_adm_vulkan.c.  Supersedes the
+ * legacy adm_reduce.comp / adm_vulkan.c pair.  Algorithm is identical
+ * to adm_reduce.comp (T-GPU-PERF-VK-3 / ADR-0350).
+ *
+ * Input:  per-WG accumulator SSBO from integer_adm.comp Stage-3 —
+ *           [wg_count][ADM_ACCUM_SLOTS_PER_WG] int64_t  (row-major).
+ *           Slot layout: csf_h, csf_v, csf_d, cm_h, cm_v, cm_d (6 fields).
+ * Output: a single AdmAccumResult struct (6 int64_t) per dispatch.
+ *
+ * One dispatch per scale (4 scales). The caller issues a compute-to-compute
+ * pipeline barrier on the accumulator buffer between the adm.comp Stage-3
+ * dispatch and this reduction dispatch (same cmd buffer, no semaphore).
+ *
+ * Bit-exactness: int64 tree reduction is identical to host serial loop
+ * for the same reason as vif_reduce.comp. See ADR-0350.
+ */
+
+#version 460
+#extension GL_KHR_shader_subgroup_arithmetic             : require
+#extension GL_KHR_shader_subgroup_basic                  : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_shader_subgroup_extended_types_int64   : require
+#extension GL_EXT_shader_atomic_int64                    : require
+
+/* ADM_ACCUM_SLOTS_PER_WG: csf_h,csf_v,csf_d,cm_h,cm_v,cm_d = 6. */
+layout(constant_id = 0) const int ACCUM_SLOTS = 6;
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+const int WG_SIZE       = 256;
+const int MAX_SUBGROUPS = WG_SIZE;
+
+layout(set = 0, binding = 0, std430) readonly buffer AccumIn {
+    int64_t v[];
+} accum_in;
+
+layout(set = 0, binding = 1, std430) buffer AccumOut {
+    int64_t v[];
+} accum_out;
+
+layout(push_constant) uniform Params {
+    uint wg_count;
+} pc;
+
+shared int64_t s_lmem[6 * MAX_SUBGROUPS];
+
+void main()
+{
+    uint tid   = gl_LocalInvocationIndex;
+    uint gid   = gl_GlobalInvocationID.x;
+    uint sg_id = gl_SubgroupID;
+    uint n_sg  = gl_NumSubgroups;
+
+    int64_t t[6];
+    t[0] = 0L; t[1] = 0L; t[2] = 0L;
+    t[3] = 0L; t[4] = 0L; t[5] = 0L;
+
+    uint total_threads = gl_WorkGroupSize.x * gl_NumWorkGroups.x;
+    for (uint slot = gid; slot < pc.wg_count; slot += total_threads) {
+        uint base = slot * uint(ACCUM_SLOTS);
+        t[0] += accum_in.v[base + 0u];
+        t[1] += accum_in.v[base + 1u];
+        t[2] += accum_in.v[base + 2u];
+        t[3] += accum_in.v[base + 3u];
+        t[4] += accum_in.v[base + 4u];
+        t[5] += accum_in.v[base + 5u];
+    }
+
+    int64_t sg[6];
+    sg[0] = subgroupAdd(t[0]);
+    sg[1] = subgroupAdd(t[1]);
+    sg[2] = subgroupAdd(t[2]);
+    sg[3] = subgroupAdd(t[3]);
+    sg[4] = subgroupAdd(t[4]);
+    sg[5] = subgroupAdd(t[5]);
+
+    if (subgroupElect()) {
+        s_lmem[0u * MAX_SUBGROUPS + sg_id] = sg[0];
+        s_lmem[1u * MAX_SUBGROUPS + sg_id] = sg[1];
+        s_lmem[2u * MAX_SUBGROUPS + sg_id] = sg[2];
+        s_lmem[3u * MAX_SUBGROUPS + sg_id] = sg[3];
+        s_lmem[4u * MAX_SUBGROUPS + sg_id] = sg[4];
+        s_lmem[5u * MAX_SUBGROUPS + sg_id] = sg[5];
+    }
+    memoryBarrierShared();
+    barrier();
+
+    if (tid == 0u) {
+        int64_t wg_total[6];
+        wg_total[0] = 0L; wg_total[1] = 0L; wg_total[2] = 0L;
+        wg_total[3] = 0L; wg_total[4] = 0L; wg_total[5] = 0L;
+        for (uint s = 0u; s < n_sg; s++) {
+            wg_total[0] += s_lmem[0u * MAX_SUBGROUPS + s];
+            wg_total[1] += s_lmem[1u * MAX_SUBGROUPS + s];
+            wg_total[2] += s_lmem[2u * MAX_SUBGROUPS + s];
+            wg_total[3] += s_lmem[3u * MAX_SUBGROUPS + s];
+            wg_total[4] += s_lmem[4u * MAX_SUBGROUPS + s];
+            wg_total[5] += s_lmem[5u * MAX_SUBGROUPS + s];
+        }
+        atomicAdd(accum_out.v[0], wg_total[0]);
+        atomicAdd(accum_out.v[1], wg_total[1]);
+        atomicAdd(accum_out.v[2], wg_total[2]);
+        atomicAdd(accum_out.v[3], wg_total[3]);
+        atomicAdd(accum_out.v[4], wg_total[4]);
+        atomicAdd(accum_out.v[5], wg_total[5]);
+    }
+}
