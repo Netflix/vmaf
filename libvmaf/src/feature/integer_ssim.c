@@ -26,11 +26,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <string.h>
 
-#include "config.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
+#include "opt.h"
 
 #define KERNEL_SHIFT (8)
 #define KERNEL_WEIGHT (1 << KERNEL_SHIFT)
@@ -238,27 +240,64 @@ static double calc_ssim(const unsigned char *_src, int _systride, const unsigned
     return ssim / ssimw;
 }
 
+typedef struct IntegerSsimState {
+    bool enable_db;
+    bool clip_db;
+    double max_db;
+} IntegerSsimState;
+
+static const VmafOption options[] = {{
+                                         .name = "enable_db",
+                                         .help = "write SSIM values as dB: -10*log10(1-ssim)",
+                                         .offset = offsetof(IntegerSsimState, enable_db),
+                                         .type = VMAF_OPT_TYPE_BOOL,
+                                         .default_val.b = false,
+                                     },
+                                     {
+                                         .name = "clip_db",
+                                         .help = "clip dB scores to a peak-derived ceiling",
+                                         .offset = offsetof(IntegerSsimState, clip_db),
+                                         .type = VMAF_OPT_TYPE_BOOL,
+                                         .default_val.b = false,
+                                     },
+                                     {0}};
+
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc, unsigned w,
                 unsigned h)
 {
-    (void)fex;
     (void)pix_fmt;
-    (void)bpc;
-    (void)w;
-    (void)h;
+
+    IntegerSsimState *s = fex->priv;
+
+    const unsigned peak = (1u << bpc) - 1u;
+    if (s->clip_db) {
+        const double mse = 0.5 / ((double)w * (double)h);
+        s->max_db = ceil(10. * log10((double)(peak * peak) / mse));
+    } else {
+        s->max_db = INFINITY;
+    }
+
     return 0;
 }
+
+#ifndef MIN
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#endif
 
 static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90, unsigned index,
                    VmafFeatureCollector *feature_collector)
 {
-    (void)fex;
+    IntegerSsimState *s = fex->priv;
     (void)ref_pic_90;
     (void)dist_pic_90;
 
     double score = calc_ssim(ref_pic->data[0], ref_pic->stride[0], dist_pic->data[0],
                              dist_pic->stride[0], 1.0, ref_pic->bpc, ref_pic->w[0], ref_pic->h[0]);
+
+    if (s->enable_db)
+        score = MIN(-10. * log10(1. - score), s->max_db);
+
     int err = vmaf_feature_collector_append(feature_collector, "ssim", score, index);
     if (err)
         return err;
@@ -284,6 +323,8 @@ VmafFeatureExtractor vmaf_fex_ssim = {
     .name = "ssim",
     .init = init,
     .extract = extract,
+    .options = options,
     .close = close,
+    .priv_size = sizeof(IntegerSsimState),
     .provided_features = provided_features,
 };
