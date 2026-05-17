@@ -100,6 +100,7 @@ extern VmafFeatureExtractor vmaf_fex_integer_motion_vulkan_impl;
 extern VmafFeatureExtractor vmaf_fex_integer_motion_v2_vulkan;
 extern VmafFeatureExtractor vmaf_fex_integer_adm_vulkan;
 extern VmafFeatureExtractor vmaf_fex_psnr_vulkan;
+extern VmafFeatureExtractor vmaf_fex_integer_psnr_vulkan;
 extern VmafFeatureExtractor vmaf_fex_float_moment_vulkan;
 extern VmafFeatureExtractor vmaf_fex_ciede_vulkan;
 extern VmafFeatureExtractor vmaf_fex_integer_ciede_vulkan;
@@ -114,6 +115,7 @@ extern VmafFeatureExtractor vmaf_fex_float_vif_vulkan;
 extern VmafFeatureExtractor vmaf_fex_float_adm_vulkan;
 extern VmafFeatureExtractor vmaf_fex_ssimulacra2_vulkan;
 extern VmafFeatureExtractor vmaf_fex_cambi_vulkan;
+extern VmafFeatureExtractor vmaf_fex_integer_ssim_vulkan;
 /* integer_cambi_vulkan — Strategy II integer variant (fused spatial-mask shader). */
 extern VmafFeatureExtractor vmaf_fex_integer_cambi_vulkan;
 #endif
@@ -217,29 +219,29 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
      * name selection until the full backend lands (T5-1c). */
     &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan,
     &vmaf_fex_integer_motion_v2_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
-    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_ansnr_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
-    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
-    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_psnr_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
-    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
-    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_motion_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
-    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
-    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_vif_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
-    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
-    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_adm_vulkan,
-    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_ssimulacra2_vulkan,
-    /* integer_motion_vulkan: explicitly-named twin of the legacy motion_vulkan
-     * extractor. Provides "integer_motion_vulkan" as a lookup name, matching
-     * the naming convention used by the CUDA and SYCL backends. */
-    &vmaf_fex_integer_motion_vulkan_impl,
+    &vmaf_fex_integer_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
+    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
+    &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan,
+    &vmaf_fex_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
+    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
+    &vmaf_fex_float_ansnr_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
+    &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan,
+    &vmaf_fex_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
+    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
+    &vmaf_fex_float_psnr_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
+    &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan,
+    &vmaf_fex_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
+    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
+    &vmaf_fex_float_motion_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
+    &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan,
+    &vmaf_fex_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
+    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
+    &vmaf_fex_float_vif_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
+    &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan,
+    &vmaf_fex_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
+    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
+    &vmaf_fex_float_adm_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
+    &vmaf_fex_ssimulacra2_vulkan,
     /* T7-36 / ADR-0205: cambi Vulkan twin (Strategy II hybrid). */
     &vmaf_fex_cambi_vulkan,
     /* integer_cambi_vulkan: fused spatial-mask shader, Strategy II hybrid,

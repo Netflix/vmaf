@@ -1,0 +1,134 @@
+/* Copyright 2026 Lusoris and Claude (Anthropic)
+ * SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
+ *
+ * Vulkan compute shader for the integer_psnr feature extractor.
+ *
+ * This is the integer-domain PSNR shader.  It is algorithmically identical
+ * to shaders/psnr.comp (which backs vmaf_fex_psnr_vulkan) but is compiled
+ * into a separate SPIR-V module so that vmaf_fex_integer_psnr_vulkan can be
+ * registered and dispatched independently of vmaf_fex_psnr_vulkan, matching
+ * the CUDA split: vmaf_fex_psnr_cuda (integer) vs vmaf_fex_float_psnr_cuda.
+ *
+ * Algorithm (mirrors libvmaf/src/feature/integer_psnr.c::sse_line_{8,16}):
+ *
+ *   1. For each (ref, dis) pixel pair within the frame:
+ *        diff = (int64)ref - (int64)dis;
+ *        se   += diff * diff;
+ *   2. Workgroup-level int64 reduction:
+ *        subgroupAdd within each subgroup, shared-array reduction
+ *        across subgroups, lane 0 writes one int64 partial per WG
+ *        to slot `gl_WorkGroupID.y * num_workgroups_x +
+ *        gl_WorkGroupID.x` of the SSE partials SSBO.
+ *   3. Host CPU sums the per-WG slots and computes PSNR per channel:
+ *          peak     = (1 << bpc) - 1
+ *          psnr_max = 6 * bpc + 12
+ *          psnr     = min(10 * log10(peak^2 / max(mse, 1e-16)), psnr_max)
+ *        with mse = sse / (w * h).
+ *
+ * Single dispatch per channel; the host invokes the same pipeline
+ * 1-3 times depending on whether chroma is enabled.
+ *
+ * Resource bindings:
+ *   0: reference plane          (uint32 packed: 4 px @ ≤8bpc, 2 px @ ≥10bpc)
+ *   1: distorted plane          (same packing)
+ *   2: per-WG int64 SE partials (one slot per WG)
+ *
+ * Specialization constants (set per-pipeline via VkSpecializationInfo):
+ *   constant_id = 0  WIDTH
+ *   constant_id = 1  HEIGHT
+ *   constant_id = 2  BPC                 (8 / 10 / 12 / 16)
+ *   constant_id = 3  SUBGROUP_SIZE       (compile-time array size only;
+ *                                         runtime uses gl_NumSubgroups)
+ */
+#version 460
+#extension GL_KHR_shader_subgroup_arithmetic               : require
+#extension GL_KHR_shader_subgroup_basic                    : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64   : require
+#extension GL_EXT_shader_subgroup_extended_types_int64     : require
+
+/* 16x8 = 128 threads per WG. Same as psnr.comp / motion.comp / vif.comp. */
+layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;
+
+layout(constant_id = 0) const int WIDTH         = 0;
+layout(constant_id = 1) const int HEIGHT        = 0;
+layout(constant_id = 2) const int BPC           = 8;
+layout(constant_id = 3) const int SUBGROUP_SIZE = 32;
+
+const int WG_X     = 16;
+const int WG_Y     = 8;
+const int WG_SIZE  = WG_X * WG_Y;
+/* Worst case: subgroup_size=1 on lavapipe → WG_SIZE subgroups per WG. */
+const int MAX_SUBGROUPS = WG_SIZE;
+
+/* Per-subgroup partial SE scratch. */
+shared int64_t s_se[MAX_SUBGROUPS];
+
+layout(set = 0, binding = 0, std430) readonly buffer RefIn { uint pixels[]; } ref_in;
+layout(set = 0, binding = 1, std430) readonly buffer DisIn { uint pixels[]; } dis_in;
+layout(set = 0, binding = 2, std430)          buffer SE    { int64_t v[]; }   se_out;
+
+layout(push_constant) uniform Params {
+    uint width;
+    uint height;
+    uint bpc;
+    uint num_workgroups_x;
+} pc;
+
+uint read_ref(uint y, uint x) {
+    if (BPC <= 8) {
+        uint stride_words = (pc.width + 3u) >> 2;
+        uint word = ref_in.pixels[y * stride_words + (x >> 2)];
+        uint sh = (x & 3u) * 8u;
+        return (word >> sh) & 0xFFu;
+    } else {
+        uint stride_words = (pc.width + 1u) >> 1;
+        uint word = ref_in.pixels[y * stride_words + (x >> 1)];
+        uint sh = (x & 1u) * 16u;
+        return (word >> sh) & 0xFFFFu;
+    }
+}
+
+uint read_dis(uint y, uint x) {
+    if (BPC <= 8) {
+        uint stride_words = (pc.width + 3u) >> 2;
+        uint word = dis_in.pixels[y * stride_words + (x >> 2)];
+        uint sh = (x & 3u) * 8u;
+        return (word >> sh) & 0xFFu;
+    } else {
+        uint stride_words = (pc.width + 1u) >> 1;
+        uint word = dis_in.pixels[y * stride_words + (x >> 1)];
+        uint sh = (x & 1u) * 16u;
+        return (word >> sh) & 0xFFFFu;
+    }
+}
+
+void main()
+{
+    uint gx = gl_GlobalInvocationID.x;
+    uint gy = gl_GlobalInvocationID.y;
+    bool valid = (gx < pc.width && gy < pc.height);
+
+    int64_t my_se = 0L;
+    if (valid) {
+        int64_t r = int64_t(read_ref(gy, gx));
+        int64_t d = int64_t(read_dis(gy, gx));
+        int64_t diff = r - d;
+        my_se = diff * diff;
+    }
+
+    /* Subgroup-level reduction. */
+    int64_t sg_sum = subgroupAdd(my_se);
+    if (subgroupElect()) {
+        s_se[gl_SubgroupID] = sg_sum;
+    }
+    barrier();
+
+    /* Cross-subgroup reduction by lane 0. */
+    if (gl_LocalInvocationIndex == 0u) {
+        int64_t total = 0L;
+        for (uint i = 0u; i < gl_NumSubgroups; ++i)
+            total += s_se[i];
+        uint slot = gl_WorkGroupID.y * pc.num_workgroups_x + gl_WorkGroupID.x;
+        se_out.v[slot] = total;
+    }
+}

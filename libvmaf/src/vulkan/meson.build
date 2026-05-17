@@ -48,6 +48,7 @@ vulkan_shader_sources = [
     'shaders/motion_v2.comp',
     'shaders/adm.comp',
     'shaders/psnr.comp',
+    'shaders/integer_psnr.comp',
     'shaders/moment.comp',
     'shaders/ciede.comp',
     'shaders/ssim.comp',
@@ -76,6 +77,8 @@ vulkan_shader_sources = [
     'shaders/cambi_filter_mode.comp',
     'shaders/cambi_decimate.comp',
     'shaders/cambi_mask_dp.comp',
+    # integer_ssim Vulkan twin — reads raw uint8/uint16 samples inline.
+    'shaders/integer_ssim.comp',
     # integer_cambi_vulkan — fused spatial-mask shader (ported from CUDA).
     'shaders/cambi_spatial_mask.comp',
 ]
@@ -168,6 +171,7 @@ vulkan_sources += files(
     '../feature/vulkan/integer_motion_vulkan.c',
     '../feature/vulkan/motion_v2_vulkan.c',
     '../feature/vulkan/psnr_vulkan.c',
+    '../feature/vulkan/integer_psnr_vulkan.c',
     '../feature/vulkan/moment_vulkan.c',
     '../feature/vulkan/ciede_vulkan.c',
     '../feature/vulkan/integer_ciede_vulkan.c',
@@ -182,6 +186,7 @@ vulkan_sources += files(
     '../feature/vulkan/float_adm_vulkan.c',
     '../feature/vulkan/ssimulacra2_vulkan.c',
     '../feature/vulkan/cambi_vulkan.c',
+    '../feature/vulkan/integer_ssim_vulkan.c',
     '../feature/vulkan/integer_cambi_vulkan.c',
 )
 
