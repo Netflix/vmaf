@@ -7,18 +7,32 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
-## refactor/aiutils-subprocess-dedup — subprocess helper extraction
+## fix/float-ansnr-enable-chroma-restore — `enable_chroma` option in `float_ansnr`
 
-**`ai/src/aiutils/subprocess_utils.py`** (new file): no upstream equivalent;
-pure fork-local utility. No rebase-sensitive invariant — upstream changes to
-`ai/scripts/` do not touch `aiutils`.
+PR #947 added `enable_chroma` (bool, default `false`) to `float_ansnr` so
+the extractor can emit `float_ansnr_cb/cr` and `float_anpsnr_cb/cr` in
+addition to luma. PR #1067 inadvertently clobbered that with the pre-#947
+luma-only version. This PR restores all four elements: struct field,
+`options[]` entry, per-plane name arrays, and the plane loop in `extract()`.
 
-## fix/cuda-libvmaf-fixme-clarify — CUDA FIXME/TODO comment cleanup
+**Rebase impact**: any branch that patches `libvmaf/src/feature/float_ansnr.c`
+against the pre-restore base will conflict on the `enable_chroma` region.
+Resolve by keeping the PR #947 enable-chroma logic (plane loop + option table).
 
-**`libvmaf/src/libvmaf.c`**: comment-only change; replaces bare `FIXME` / `TODO`
-markers in the CUDA cleanup path with structured `DEFERRED` blocks.  No
-rebase-sensitive invariant — upstream can safely overwrite any of these comment
-blocks if their CUDA path changes.
+**Smoke-test after rebase**:
+
+```bash
+meson setup build -Denable_cuda=false -Denable_sycl=false
+ninja -C build src/liblibvmaf_feature.a.p/feature_float_ansnr.c.o
+# must exit 0 with no undefined-reference warnings
+```
+
+---
+
+## docs/fix-state-md-pipe-escaping — docs/state.md table escaping
+
+No rebase impact: doc-only change. `docs/state.md` is fork-local and not
+present in Netflix upstream; upstream syncs do not touch it.
 
 ## fix/saliency-per-mb-eval-2026-05-15 — integer_vif enable_chroma
 

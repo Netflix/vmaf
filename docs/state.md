@@ -105,7 +105,9 @@ landed fix yet._
 
 ## Recently closed
 
-| T-FEX-LIST-DEDUP-REGRESSION | PR #1088 squash merged from a stale base, re-introducing 6 SYCL + 55 Vulkan duplicate pointer entries into `feature_extractor_list[]` and silently dropping `integer_ms_ssim_hip` (ADR-0285) and `integer_vif_metal` (ADR-0436) registrations. Both extractor names became unreachable by name-lookup without error. | no ADR (bug fix, only-one-way revert) | fix/fex-list-dedup-hip-metal-restore | — | 2026-05-17 |
+| **FLOAT-ANSNR-ENABLE-CHROMA-CLOBBERED** | PR #1067 replaced the `enable_chroma`-aware `float_ansnr.c` (from PR #947) with the pre-#947 luma-only version; `enable_chroma` option, plane loop, and per-plane name arrays all dropped | — | PR fix/float-ansnr-enable-chroma-restore | — | (since PR #1067 merged) |
+| **INTEGER-VIF-SYCL-SKIP-SCALE0-OPTION** | `integer_vif_sycl` had no `vif_skip_scale0` option registration; the suppression logic was also absent from `collect_fex_sycl`, so scale-0 was always included on SYCL regardless of the caller setting | — | this PR (`fix/vif-skip-scale0-sycl-parity`) | — | (since integer_vif_sycl landed) |
+| **FLOAT-VIF-CUDA-SKIP-SCALE0-OPTION** | `float_vif_cuda` implemented `vif_skip_scale0` suppression in `collect_fex_cuda` but never registered the option; the field was always `false`, so scale-0 was never suppressed on CUDA regardless of the caller setting | — | PR #1079 (`fix/float-vif-cuda-skip-scale0-option`, 2026-05-16) | — | (since float_vif_cuda landed) |
 | T-GPU-PSNR-ENABLE-CHROMA-SILENT | `psnr_cuda` / `psnr_sycl` / `psnr_vulkan` silently ignored `enable_chroma=false`, emitting full chroma on non-YUV400 sources and diverging from CPU | ADR-0453 / Research-0136 | fix/psnr-enable-chroma-gpu-parity-2026-05-16 | — | (last ~3 months)
 
 _Bugs closed in the last ~90 days. Older entries roll off into
