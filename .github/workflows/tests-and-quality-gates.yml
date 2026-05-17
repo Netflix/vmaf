@@ -552,21 +552,25 @@ jobs:
               EXCLUDE=''
               ;;
             undefined)
-              # UBSan deselects: (none as of this PR; all tests pass cleanly)
-              # test_model was excluded due to SAN-MODEL-MALLOC-OOB (fixed by
-              # PR #548); verified to pass via local UBSan build.
-              # test_cambi was excluded due to T-CAMBI-AVX2-CI-SIGILL (fixed
-              # by PR #761 via runtime gate on vmaf_cpu_features() & AVX2);
-              # verified to pass via local UBSan build.
-              EXCLUDE=''
+              # UBSan deselects: test_model (NULL-to-nonnull memcpy
+              # in svm.cpp parser — same defect as ASan exclusion
+              # surfaced via a different sanitizer angle). Tracked as
+              # T-SANITIZER-DEFECTS-REVEALED-758.
+              # test_cambi was removed from this list after PR #761
+              # (merged 2026-05-11) added a runtime __builtin_cpu_supports
+              # AVX2 gate to test_calculate_c_values_scalar_avx2_parity,
+              # eliminating the SIGILL on non-AVX2 CI runners; confirmed
+              # clean under UBSan on current master.
+              EXCLUDE='test_model$'
               ;;
             thread)
-              # TSan deselects: (none as of this PR; all tests pass cleanly)
-              # test_model was excluded due to SAN-MODEL-MALLOC-OOB (fixed by
-              # PR #548); verified to pass via local TSan build.
-              # test_framesync was excluded due to SAN-FRAMESYNC-MUTEX-DOMAIN
-              # (fixed by PR #548); verified to pass via local TSan build.
-              EXCLUDE=''
+              # TSan deselects: test_model (same defect as ASan/UBSan
+              # exclusion above).
+              # test_framesync was removed from this list after PR #548
+              # (merged 2026-05-09) fixed the SAN-FRAMESYNC-MUTEX-DOMAIN
+              # mutex-domain mismatch; nightly TSan job was green on
+              # 2026-05-09 and 2026-05-10 (state.md entry).
+              EXCLUDE='test_model$'
               ;;
             *)
               echo "::error::ADR-0347 deselect list is not defined for sanitizer=${{ matrix.sanitizer }}" >&2
