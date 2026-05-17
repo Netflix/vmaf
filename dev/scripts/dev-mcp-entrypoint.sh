@@ -30,7 +30,7 @@ echo "[dev-mcp-entrypoint] Build info: $(vmaf --version 2>&1 || echo 'vmaf CLI n
 # vmaf-mcp reads the UDS transport config from environment:
 #   VMAF_MCP_UDS_PATH — socket path
 #   VMAF_MODEL_PATH   — directory containing .json and .onnx model files
-vmaf-mcp-server \
+vmaf-mcp \
   --transport uds \
   --socket "${SOCKET_PATH}" \
   --model-dir "${MODEL_PATH}" \
