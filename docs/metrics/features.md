@@ -705,7 +705,11 @@ Y plane only.
 
 **Options** — none.
 
-**Backends** — scalar only.
+**Backends** — scalar (CPU) plus CUDA (`float_moment_cuda`, T7-23),
+SYCL (`float_moment_sycl`), and Vulkan (`float_moment_vulkan`). All
+three GPU kernels accumulate four `int64` partial sums per frame in a
+single dispatch and are bit-exact vs the CPU integer input (the CPU
+path also operates on integer pixels before dividing by `w*h`).
 
 **Limitations** — Stateless per-frame. Float pipeline (the picture
 plane is copied to float32 before the moments are computed); the
