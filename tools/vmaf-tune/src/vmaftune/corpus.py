@@ -65,6 +65,62 @@ from aiutils.time_utils import now_iso_8601 as _utc_now_iso  # noqa: E402
 
 _LOG = logging.getLogger(__name__)
 
+# Suffixes the vmaf CLI accepts as-is without a prior ffmpeg decode step.
+_VMAF_RAW_SUFFIXES: frozenset[str] = frozenset({".yuv", ".y4m", ""})
+
+
+def _maybe_decode_distorted(
+    req: "ScoreRequest",
+    *,
+    encode_dir: Path,
+    ffmpeg_bin: str,
+    runner: object,
+) -> "ScoreRequest":
+    """Decode ``req.distorted`` to a raw YUV sidecar when it is a container.
+
+    The vmaf CLI only accepts ``.yuv`` / ``.y4m`` inputs. Encoded outputs
+    are containers (``mp4``, ``mkv``, …); they must be decoded before
+    the scoring step. The decoded YUV file is placed next to the encode
+    under ``encode_dir`` with a ``.decoded.yuv`` suffix so callers that
+    keep encodes (``--keep-encodes``) can find it.
+
+    Returns an updated :class:`ScoreRequest` pointing at the decoded path.
+    When the distorted file is already raw, or when the decode fails, the
+    original request is returned unchanged (the vmaf binary will then
+    fail/crash on an undecodable input and the row will record
+    ``exit_status != 0``).
+    """
+    if req.distorted.suffix.lower() in _VMAF_RAW_SUFFIXES:
+        return req
+
+    decoded = encode_dir / (req.distorted.stem + ".decoded.yuv")
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        str(req.distorted),
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        req.pix_fmt,
+        str(decoded),
+    ]
+    import subprocess as _sp  # noqa: PLC0415 — keep import local to avoid polluting module
+
+    run_fn = runner if callable(runner) else _sp.run
+    completed = run_fn(cmd, capture_output=True, text=True, check=False)
+    if int(getattr(completed, "returncode", 1)) == 0 and decoded.exists():
+        return dataclasses.replace(req, distorted=decoded)
+    _LOG.warning(
+        "corpus: ffmpeg decode of %s failed (rc=%s); scoring will likely fail",
+        req.distorted,
+        getattr(completed, "returncode", "?"),
+    )
+    return req
+
 
 @dataclasses.dataclass(frozen=True)
 class CorpusJob:
@@ -454,6 +510,18 @@ def iter_rows(
             frame_cnt=frame_cnt,
         )
         if enc_res.exit_status == 0:
+            # The vmaf CLI only reads raw .yuv / .y4m input; decode the
+            # encoded container to a temporary YUV before scoring.
+            # Always use the real subprocess for the decode step — test
+            # stubs injected via ``score_runner`` handle vmaf CLI calls only.
+            import subprocess as _sp  # noqa: PLC0415
+
+            score_req = _maybe_decode_distorted(
+                score_req,
+                encode_dir=opts.encode_dir,
+                ffmpeg_bin=opts.ffmpeg_bin,
+                runner=_sp.run,
+            )
             score_res = run_score(
                 score_req,
                 vmaf_bin=opts.vmaf_bin,

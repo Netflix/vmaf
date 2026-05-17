@@ -616,45 +616,66 @@ static int per_shot_write_plan_json(FILE *out, const struct vmaf_per_shot_settin
 
 /* Emit the plan in the requested format. Both formats encode the
  * full signal vector so a downstream encoder can override the
- * predicted CRF with a custom rule. */
+ * predicted CRF with a custom rule.
+ *
+ * When output is the sentinel "-" write to stdout directly so that
+ * callers piping the output (e.g. per_shot.py's subprocess capture)
+ * receive the JSON/CSV on their stdin.  No fclose() on stdout. */
 static int per_shot_write_plan(const struct vmaf_per_shot_settings *s,
                                const struct vmaf_per_shot_record *shots, uint32_t shot_count)
 {
     if (s == NULL || s->output == NULL)
         return -EINVAL;
-    /* Use open() + fdopen() with explicit 0644 (rw-r--r--) on POSIX
-     * so the new file is not created world-writable per the process
-     * umask (CodeQL's "File created without restricting permissions"
-     * alert). MSVC's runtime doesn't ship <unistd.h> and Windows file
-     * permissions don't map onto Unix mode bits the same way; fall
-     * back to plain fopen() on _WIN32 where the security model is
-     * ACL-based and not affected by the umask issue. */
+
+    FILE *out = NULL;
+    bool use_stdout = (strcmp(s->output, "-") == 0);
+    if (use_stdout) {
+        out = stdout;
+    } else {
+        /* Use open() + fdopen() with explicit 0644 (rw-r--r--) on POSIX
+         * so the new file is not created world-writable per the process
+         * umask (CodeQL's "File created without restricting permissions"
+         * alert). MSVC's runtime doesn't ship <unistd.h> and Windows file
+         * permissions don't map onto Unix mode bits the same way; fall
+         * back to plain fopen() on _WIN32 where the security model is
+         * ACL-based and not affected by the umask issue. */
 #ifndef _WIN32
-    int fd = open(s->output, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-    if (fd < 0) {
-        (void)fprintf(stderr, "vmaf-perShot: cannot open output %s\n", s->output);
-        return -EIO;
-    }
-    FILE *out = fdopen(fd, "w");
-    if (out == NULL) {
-        /* strerror() is concurrency-mt-unsafe; the path is enough
-         * context for the user to diagnose. */
-        (void)fprintf(stderr, "vmaf-perShot: cannot open output %s\n", s->output);
-        (void)close(fd);
-        return -EIO;
-    }
+        int fd =
+            open(s->output, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        if (fd < 0) {
+            (void)fprintf(stderr, "vmaf-perShot: cannot open output %s\n", s->output);
+            return -EIO;
+        }
+        out = fdopen(fd, "w");
+        if (out == NULL) {
+            /* strerror() is concurrency-mt-unsafe; the path is enough
+             * context for the user to diagnose. */
+            (void)fprintf(stderr, "vmaf-perShot: cannot open output %s\n", s->output);
+            (void)close(fd);
+            return -EIO;
+        }
 #else
-    FILE *out = fopen(s->output, "w");
-    if (out == NULL) {
-        (void)fprintf(stderr, "vmaf-perShot: cannot open output %s\n", s->output);
-        return -EIO;
-    }
+        out = fopen(s->output, "w");
+        if (out == NULL) {
+            (void)fprintf(stderr, "vmaf-perShot: cannot open output %s\n", s->output);
+            return -EIO;
+        }
 #endif
+    }
+
     int rc = (s->format == VMAF_PER_SHOT_FMT_CSV) ?
                  per_shot_write_plan_csv(out, shots, shot_count) :
                  per_shot_write_plan_json(out, s, shots, shot_count);
-    if (fclose(out) != 0 && rc == 0)
-        rc = -EIO;
+
+    /* Flush stdout but do not fclose it; fclose a file opened by this
+     * function only when we own the descriptor. */
+    if (use_stdout) {
+        if (fflush(out) != 0 && rc == 0)
+            rc = -EIO;
+    } else {
+        if (fclose(out) != 0 && rc == 0)
+            rc = -EIO;
+    }
     return rc;
 }
 
@@ -791,7 +812,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     assert(settings.output != NULL);
-    (void)fprintf(stdout, "vmaf-perShot: wrote %" PRIu32 " shot(s) to %s\n", shot_count,
+    (void)fprintf(stderr, "vmaf-perShot: wrote %" PRIu32 " shot(s) to %s\n", shot_count,
                   settings.output);
     free(shots);
     return EXIT_SUCCESS;

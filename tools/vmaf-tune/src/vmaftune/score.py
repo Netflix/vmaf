@@ -202,6 +202,39 @@ def parse_feature_aggregates(
     return means, stds
 
 
+def _decode_to_raw_yuv(
+    src: Path,
+    dst: Path,
+    *,
+    pix_fmt: str,
+    ffmpeg_bin: str = "ffmpeg",
+    runner: object | None = None,
+) -> int:
+    """Decode a container (mp4/mkv/…) to a raw planar YUV file for the vmaf CLI.
+
+    The vmaf CLI only accepts ``.yuv`` / ``.y4m`` inputs. When the distorted
+    encode is a container file (e.g. ``.mp4``) the caller must decode it first.
+    Returns the ffmpeg exit code — non-zero signals a decode failure.
+    """
+    runner_fn = runner or subprocess.run
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        str(src),
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        pix_fmt,
+        str(dst),
+    ]
+    completed = runner_fn(cmd, capture_output=True, text=True, check=False)  # type: ignore[operator]
+    return int(getattr(completed, "returncode", 1))
+
+
 def run_score(
     req: ScoreRequest,
     *,
@@ -214,6 +247,11 @@ def run_score(
 
     ``backend`` is forwarded to :func:`build_vmaf_command`; when ``None``
     no ``--backend`` flag is emitted (libvmaf picks its own default).
+
+    The vmaf CLI only accepts raw ``.yuv`` / ``.y4m`` inputs. Callers that
+    pass a container path (``mp4``, ``mkv``, etc.) as ``req.distorted`` must
+    decode it to a raw YUV file first — see :func:`decode_distorted_container`
+    in corpus.py for the corpus pipeline's decode step.
     """
     runner_fn = runner or subprocess.run
 

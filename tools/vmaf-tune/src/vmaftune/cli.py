@@ -1385,27 +1385,13 @@ def _run_predict(args: argparse.Namespace) -> int:
     from .predictor_validate import Verdict, validate_predictor
     from .score import ScoreRequest, run_score
 
-    shots = detect_shots(
-        source=args.source,
-        width=0,
-        height=0,
-        bitdepth=args.bitdepth,
-        framerate=0.0,
-        total_frames=args.total_frames or 0,
-        per_shot_bin=args.per_shot_bin,
-    )
-    if not shots:
-        print("predict: no shots detected; nothing to do", file=sys.stderr)
-        return 1
-
     feat_cfg = FeatureExtractorConfig(
         ffmpeg_bin=args.ffmpeg_bin,
         use_saliency=args.use_saliency,
     )
 
-    # Probe geometry once — every validation shot reuses the same
-    # width/height/fps/pix_fmt for both reference extraction and the
-    # encode dispatch.
+    # Probe geometry first — detect_shots needs width/height/pix_fmt and
+    # geometry is also required for the encode/score loop below.
     width, height, fps = _probe_video_geometry(args.source, feat_cfg, subprocess.run)
     if width <= 0 or height <= 0:
         print(
@@ -1413,6 +1399,18 @@ def _run_predict(args: argparse.Namespace) -> int:
             "(width/height); falling back is not safe — aborting.",
             file=sys.stderr,
         )
+        return 1
+
+    shots = detect_shots(
+        Path(args.source),
+        width=width,
+        height=height,
+        bitdepth=args.bitdepth,
+        total_frames=args.total_frames or 0,
+        per_shot_bin=args.per_shot_bin,
+    )
+    if not shots:
+        print("predict: no shots detected; nothing to do", file=sys.stderr)
         return 1
     pix_fmt = "yuv420p"  # canonical reference format; matches saliency.py + the corpus loop
 
@@ -1484,14 +1482,34 @@ def _run_predict(args: argparse.Namespace) -> int:
         if encode_result.exit_status != 0 or not dist_path.exists():
             return dist_path, float("nan")
 
+        # Decode the encoded container to a raw YUV sidecar — the vmaf
+        # CLI only accepts .yuv / .y4m inputs.
+        dist_yuv = workdir / f"dist_{shot.start_frame}_{shot.end_frame}.decoded.yuv"
+        decode_cmd = [
+            args.ffmpeg_bin,
+            "-y",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-i",
+            str(dist_path),
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            pix_fmt,
+            str(dist_yuv),
+        ]
+        dec = subprocess.run(decode_cmd, capture_output=True, text=True, check=False)
+        dist_for_score = dist_yuv if dec.returncode == 0 and dist_yuv.exists() else dist_path
+
         score_req = ScoreRequest(
             reference=ref_yuv,
-            distorted=dist_path,
+            distorted=dist_for_score,
             width=width,
             height=height,
             pix_fmt=pix_fmt,
         )
-        score_result = run_score(score_req, ffmpeg_bin=args.ffmpeg_bin)
+        score_result = run_score(score_req)
         return dist_path, float(score_result.vmaf_score)
 
     try:
