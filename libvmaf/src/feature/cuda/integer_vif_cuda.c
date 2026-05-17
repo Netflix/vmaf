@@ -48,6 +48,8 @@ typedef struct VifStateCuda {
     /* Engine-scope fence batching opt-in flag (T-GPU-OPT-1, ADR-0242). */
     bool drained;
     bool debug;
+    bool enable_chroma;
+    unsigned n_planes;
     double vif_enhn_gain_limit;
     void (*filter1d_8)(VifBufferCuda *buf, uint8_t *ref_in, uint8_t *dis_in, unsigned w, unsigned h,
                        double vif_enhn_gain_limit, CUstream stream);
@@ -75,6 +77,17 @@ static const VmafOption options[] = {{
                                          .offset = offsetof(VifStateCuda, debug),
                                          .type = VMAF_OPT_TYPE_BOOL,
                                          .default_val.b = false,
+                                     },
+                                     {
+                                         .name = "enable_chroma",
+                                         .help =
+                                             "when set, compute vif on chroma (Cb/Cr) planes in "
+                                             "addition to luma; forced off for YUV400. "
+                                             "CUDA path: n_planes clamped to 1 (luma-only kernel)",
+                                         .offset = offsetof(VifStateCuda, enable_chroma),
+                                         .type = VMAF_OPT_TYPE_BOOL,
+                                         .default_val.b = false,
+                                         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
                                      },
                                      {
                                          .name = "vif_enhn_gain_limit",
@@ -160,7 +173,11 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     CHECK_CUDA_GOTO(cu_f, cuCtxPopCurrent(NULL), fail_after_pop);
 
-    (void)pix_fmt;
+    /* Clamp n_planes to 1: CUDA VIF kernel is luma-only; honour YUV400 too. */
+    if (pix_fmt == VMAF_PIX_FMT_YUV400P)
+        s->enable_chroma = false;
+    s->n_planes = 1; /* CUDA path: chroma dispatch not yet implemented */
+
     const bool hbd = bpc > 8;
 
     int tex_alignment;
@@ -521,54 +538,59 @@ static int submit_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
     CudaFunctions *cu_f = fex->cu_state->f;
     (void)ref_pic_90;
     (void)dist_pic_90;
+    /* n_planes is always 1: CUDA VIF kernel is luma-only; enable_chroma is
+     * clamped in init_fex_cuda.  Loop mirrors CPU integer_vif dispatch shape. */
+    for (unsigned plane = 0; plane < s->n_planes; ++plane) {
+        int w = ref_pic->w[plane];
+        int h = dist_pic->h[plane];
 
-    int w = ref_pic->w[0];
-    int h = dist_pic->h[0];
+        CHECK_CUDA_RETURN(
+            cu_f, cuMemsetD8Async(s->buf.accum_data->data, 0, sizeof(vif_accums) * 4, s->str));
+        CHECK_CUDA_RETURN(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic),
+                                                  vmaf_cuda_picture_get_ready_event(dist_pic),
+                                                  CU_EVENT_WAIT_DEFAULT));
+        for (unsigned scale = 0; scale < 4; ++scale) {
+            if (scale > 0) {
+                w /= 2;
+                h /= 2;
+            }
 
-    CHECK_CUDA_RETURN(cu_f,
-                      cuMemsetD8Async(s->buf.accum_data->data, 0, sizeof(vif_accums) * 4, s->str));
-    CHECK_CUDA_RETURN(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic),
-                                              vmaf_cuda_picture_get_ready_event(dist_pic),
-                                              CU_EVENT_WAIT_DEFAULT));
-    for (unsigned scale = 0; scale < 4; ++scale) {
-        if (scale > 0) {
-            w /= 2;
-            h /= 2;
+            int err = 0;
+            if (ref_pic->bpc == 8 && scale == 0) {
+                err = filter1d_8(s, &s->buf, (uint8_t *)ref_pic->data[0],
+                                 (uint8_t *)dist_pic->data[0], w, h, s->vif_enhn_gain_limit, cu_f,
+                                 vmaf_cuda_picture_get_stream(ref_pic));
+            } else if (scale == 0) {
+                err = filter1d_16(s, &s->buf, (uint16_t *)ref_pic->data[0],
+                                  (uint16_t *)dist_pic->data[0], w, h, scale, ref_pic->bpc,
+                                  s->vif_enhn_gain_limit, cu_f,
+                                  vmaf_cuda_picture_get_stream(ref_pic));
+            } else {
+                // s->buf.ref / s->buf.dis are CUdeviceptr (unsigned long long) carved
+                // from the master buffer in init; the filter1d_16 contract takes a
+                // typed uint16_t* view. Cast is inherent to the CUDA Driver API.
+                // Per ADR-0141 touched-file rule, upstream-parity exception.
+                // NOLINTNEXTLINE(performance-no-int-to-ptr)
+                err = filter1d_16(s, &s->buf, (uint16_t *)s->buf.ref, (uint16_t *)s->buf.dis, w, h,
+                                  scale, ref_pic->bpc, s->vif_enhn_gain_limit, cu_f, s->str);
+            }
+            if (err)
+                return err;
+            if (scale == 0) {
+                // This event ensures the input buffer is consumed
+                CHECK_CUDA_RETURN(cu_f,
+                                  cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
+                CHECK_CUDA_RETURN(cu_f, cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
+            }
         }
 
-        int err = 0;
-        if (ref_pic->bpc == 8 && scale == 0) {
-            err =
-                filter1d_8(s, &s->buf, (uint8_t *)ref_pic->data[0], (uint8_t *)dist_pic->data[0], w,
-                           h, s->vif_enhn_gain_limit, cu_f, vmaf_cuda_picture_get_stream(ref_pic));
-        } else if (scale == 0) {
-            err = filter1d_16(s, &s->buf, (uint16_t *)ref_pic->data[0],
-                              (uint16_t *)dist_pic->data[0], w, h, scale, ref_pic->bpc,
-                              s->vif_enhn_gain_limit, cu_f, vmaf_cuda_picture_get_stream(ref_pic));
-        } else {
-            // s->buf.ref / s->buf.dis are CUdeviceptr (unsigned long long) carved
-            // from the master buffer in init; the filter1d_16 contract takes a
-            // typed uint16_t* view. Cast is inherent to the CUDA Driver API.
-            // Per ADR-0141 touched-file rule, upstream-parity exception.
-            // NOLINTNEXTLINE(performance-no-int-to-ptr)
-            err = filter1d_16(s, &s->buf, (uint16_t *)s->buf.ref, (uint16_t *)s->buf.dis, w, h,
-                              scale, ref_pic->bpc, s->vif_enhn_gain_limit, cu_f, s->str);
-        }
-        if (err)
-            return err;
-        if (scale == 0) {
-            // This event ensures the input buffer is consumed
-            CHECK_CUDA_RETURN(cu_f, cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
-            CHECK_CUDA_RETURN(cu_f, cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
-        }
+        // Queue async download of accumulators
+        CHECK_CUDA_RETURN(cu_f, cuMemcpyDtoHAsync(s->buf.accum_host, s->buf.accum_data->data,
+                                                  sizeof(vif_accums) * 4, s->str));
+        CHECK_CUDA_RETURN(cu_f, cuEventRecord(s->finished, s->str));
+        /* Engine-scope fence batching opt-in (T-GPU-OPT-1, ADR-0242). */
+        (void)vmaf_cuda_drain_batch_register_event(s->finished, &s->drained);
     }
-
-    // Queue async download of accumulators
-    CHECK_CUDA_RETURN(cu_f, cuMemcpyDtoHAsync(s->buf.accum_host, s->buf.accum_data->data,
-                                              sizeof(vif_accums) * 4, s->str));
-    CHECK_CUDA_RETURN(cu_f, cuEventRecord(s->finished, s->str));
-    /* Engine-scope fence batching opt-in (T-GPU-OPT-1, ADR-0242). */
-    (void)vmaf_cuda_drain_batch_register_event(s->finished, &s->drained);
     return 0;
 }
 
