@@ -1,7 +1,7 @@
 # Fork bug-status — `docs/state.md`
 
 <!-- markdownlint-disable MD013 -->
-_Updated: 2026-05-17 (`integer_vif_metal` `vif_skip_scale0` option gap fixed — `collect_fex_metal` now suppresses scale-0 output and excludes it from combined score accumulation when set; row added to Recently closed.)_
+_Updated: 2026-05-16 (F2-B perf regression restored — `rfe_hw_flags_cache` / `rfe_hw_flags_dirty` fields and three write/read sites clobbered by PR #1067 merge re-applied to `libvmaf.c`; ADR-0485; row added to Recently closed.)_
 _Updated: 2026-05-16 (Table pipe-escaping fixes — 3 broken `\|` occurrences in Recently Closed table rows replaced with prose or bare pipes inside backtick spans, eliminating phantom extra columns in rows FINDING-10, HP-2, and fr\_regressor\_v2\_ensemble seed-redo.)_
 _Updated: 2026-05-16 (Staleness sweep — 5 stale verified-notes corrected: PR #512 Phase-3b MERGED (T-VK-VIF-1.4-RESIDUAL-ARC); PR #469 MERGED (T6-2a-followup' path B, two rows); PR #497 MERGED 2026-05-09 — Research-0090 deferred trigger fired, now actionable; PR #443 + #444 CLOSED without merge, stale cross-refs struck.)_
 _Updated: 2026-05-16 (T-CAMBI-CUDA-HOST-PREPROCESSING-SEGV closed — `cambi_cuda` SIGSEGV on every frame fixed by downloading dist_pic GPU→host before host preprocessing; row added to Recently closed.)_
@@ -106,8 +106,7 @@ landed fix yet._
 
 ## Recently closed
 
-| **INTEGER-VIF-METAL-SKIP-SCALE0-OPTION** | `integer_vif_metal` had no `vif_skip_scale0` option registration and no suppression logic in `collect_fex_metal`; scale-0 was always included in the Metal VIF score regardless of the caller setting | — | this PR (`fix/vif-skip-scale0-metal-parity`) | — | (since integer_vif_metal landed, PR #1006) |
-| **INTEGER-VIF-SYCL-SKIP-SCALE0-OPTION** | `integer_vif_sycl` had no `vif_skip_scale0` option registration; the suppression logic was also absent from `collect_fex_sycl`, so scale-0 was always included on SYCL regardless of the caller setting | — | this PR (`fix/vif-skip-scale0-sycl-parity`) | — | (since integer_vif_sycl landed) |
+| **F2-B-RFE-HW-FLAGS-CACHE-CLOBBERED** | PR #1067 merge silently dropped the five `rfe_hw_flags_cache` / `rfe_hw_flags_dirty` sites introduced by PR #1056 (`86e2498a8`), re-introducing a per-frame O(n_extractors) scan in `vmaf_read_pictures` (CUDA builds only). | [ADR-0485](adr/0485-restore-rfe-hw-flags-cache.md) | `fix/restore-rfe-hw-flags-cache` | — | PR #1056 → #1067 merge window |
 | **FLOAT-VIF-CUDA-SKIP-SCALE0-OPTION** | `float_vif_cuda` implemented `vif_skip_scale0` suppression in `collect_fex_cuda` but never registered the option; the field was always `false`, so scale-0 was never suppressed on CUDA regardless of the caller setting | — | PR #1079 (`fix/float-vif-cuda-skip-scale0-option`, 2026-05-16) | — | (since float_vif_cuda landed) |
 | T-GPU-PSNR-ENABLE-CHROMA-SILENT | `psnr_cuda` / `psnr_sycl` / `psnr_vulkan` silently ignored `enable_chroma=false`, emitting full chroma on non-YUV400 sources and diverging from CPU | ADR-0453 / Research-0136 | fix/psnr-enable-chroma-gpu-parity-2026-05-16 | — | (last ~3 months)
 | T-SANITIZER-CAMBI-UBSAN-DESELECT | `test_cambi` UBSan deselect was stale — PR #761 (2026-05-11) added `__builtin_cpu_supports("avx2")` runtime gate, eliminating the SIGILL that justified the exclusion | — | fix/sanitizer-cambi-framesync-deselect-2026-05-16 | `UBSAN_OPTIONS=halt_on_error=1 ./build-ubsan/test/test_cambi` passes clean | (last ~3 months)

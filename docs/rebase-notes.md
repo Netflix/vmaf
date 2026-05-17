@@ -7,12 +7,18 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
-## perf/ort-run-stack-arrays-2026-05-16 — vmaf_ort_run stack arrays
+## fix/restore-rfe-hw-flags-cache
 
-**`libvmaf/src/dnn/ort_backend.c`**: replaces five `calloc`/`free` pairs in
-`vmaf_ort_run` with fixed-size stack arrays guarded by `VMAF_ORT_MAX_IO = 8`.
-Pure fork-local DNN infrastructure; upstream Netflix/vmaf does not maintain
-`libvmaf/src/dnn/`. No rebase conflict expected.
+No rebase impact: `libvmaf/src/libvmaf.c` is mirrored from upstream Netflix but the
+`rfe_hw_flags_cache` / `rfe_hw_flags_dirty` fields and their three read/write sites are
+purely additive fork-local additions inside `#ifdef HAVE_CUDA` guards. If upstream Netflix
+ever modifies `VmafContext`, `vmaf_init`, `vmaf_use_feature`, or `vmaf_read_pictures`,
+verify the five cache sites are preserved after the merge. ADR-0485.
+
+## docs/fix-state-md-pipe-escaping — docs/state.md table escaping
+
+No rebase impact: doc-only change. `docs/state.md` is fork-local and not
+present in Netflix upstream; upstream syncs do not touch it.
 
 ## fix/saliency-per-mb-eval-2026-05-15 — integer_vif enable_chroma
 
@@ -34993,27 +34999,22 @@ ninja -C build
 meson test -C build test_context test_log   # must exit 0
 ```
 
-## `fix/restore-vmaf-cuda-picture-get-pix-fmt` — restore dropped accessor (PR #1067 regression)
+---
 
-**Files touched**: `libvmaf/src/cuda/picture_cuda.c`,
-`libvmaf/src/cuda/picture_cuda.h`.
+### Ghost `moment_vulkan.c` removed (fix/drop-ghost-moment-vulkan-c)
 
-**Rebase impact**: low. Two isolated additions at the end of the file —
-a function definition after `vmaf_cuda_picture_get_finished_event` and a
-declaration + Doxygen block before `#endif`. No upstream Netflix/vmaf
-analogue; no conflict expected on upstream sync.
+PR #1067 re-introduced the pre-rename `moment_vulkan.c` alongside the new
+`float_moment_vulkan.c` that PR #1046 had established. The ghost file was
+deleted and `libvmaf/src/vulkan/meson.build` updated to reference
+`float_moment_vulkan.c` exclusively.
 
-**Invariant to preserve on rebase**: `vmaf_cuda_picture_get_pix_fmt` must
-remain declared in `picture_cuda.h` and defined in `picture_cuda.c`.
-If a future refactor removes it, update all callers that replaced
-open-coded `pic->pix_fmt` field accesses with this accessor.
+**Rebase impact**: any branch that modified `moment_vulkan.c` must be
+re-targeted to `float_moment_vulkan.c` instead.
 
-**Smoke-test after rebase** (CPU-only build sufficient; no CUDA hardware required):
+**Smoke-test after rebase**:
 
 ```bash
-meson setup build -Denable_cuda=false -Denable_sycl=false
-ninja -C build
-grep -q "vmaf_cuda_picture_get_pix_fmt" libvmaf/src/cuda/picture_cuda.h && echo "PASS"
+ninja -C build && echo "no duplicate symbol error"
 ```
 
 ---
