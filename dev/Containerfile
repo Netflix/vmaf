@@ -296,6 +296,7 @@ RUN cd libvmaf && CC=icx CXX=icpx meson setup build \
         -Denable_mcp_uds=true \
         -Denable_mcp_sse=auto \
         --buildtype=release \
+        -Db_lto=false \
         --prefix=/usr/local \
         -Dc_args="-march=native" \
     && ninja -C build \
