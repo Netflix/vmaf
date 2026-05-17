@@ -1368,6 +1368,10 @@ libvmaf_sources = [
     src_dir + 'picture_pool.c',
     src_dir + 'thread_locale.c',
     src_dir + 'gpu_picture_pool.c',
+    # ADR-0461: thread-safe once-snapshot of GPU dispatch env variables.
+    # Compiled unconditionally so it is available to every GPU backend
+    # (CUDA, Vulkan, SYCL) without a per-backend Meson guard.
+    src_dir + 'gpu_dispatch_env.c',
 ]
 
 if is_cuda_enabled

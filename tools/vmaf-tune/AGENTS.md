@@ -765,3 +765,11 @@ canonical `encoder` / `crf` / `vmaf_score` /
 `bitrate_kbps` rows and historical hardware-sweep `codec` / `q` /
 `vmaf` / `actual_kbps` aliases; do not reintroduce external conversion
 scripts for those local corpora.
+- **`corpus.py` uses `aiutils` helpers for file hashing and timestamps.**
+  `_sha256_file` (imported as `aiutils.file_utils.sha256`) and `_utc_now_iso`
+  (imported as `aiutils.time_utils.now_iso_8601`) replace the formerly
+  inline `_sha256_of` and `_utc_now_iso` functions. The module adds
+  `ai/src` to `sys.path` at import time so callers on a plain dev clone
+  (without `aiutils` installed as an editable package) still resolve the
+  import. Do not reintroduce inline duplicates of either helper — the
+  canonical implementations live in `ai/src/aiutils/`.

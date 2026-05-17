@@ -23,16 +23,22 @@
  *      - vmaf_cambi_spatial_pooling: top-K pooling → per-scale score.
  *      - vmaf_cambi_weight_scores_per_scale: inner-product scale weights.
  *
- *  Per-frame flow (synchronous per-scale loop, same as CUDA v1):
+ *  Per-frame flow (event-chained GPU passes, SY-1 perf-audit 2026-05-16):
  *    1. Host preprocessing (CPU): resize/upcast dist_pic → pics[0].
  *    2. H2D upload of pics[0] luma plane → d_image (USM device).
+ *       One q.wait() drains the H2D upload before GPU kernel launch.
  *    3. GPU launch_spatial_mask over d_image → d_mask.
+ *       Returns a sycl::event — no q.wait() here.
  *    4. For scale = 0 .. NUM_SCALES-1:
- *         a. (scale > 0) GPU launch_decimate d_image → d_tmp, swap;
- *            GPU launch_decimate d_mask  → d_tmp, swap.
- *         b. GPU launch_filter_mode H: d_image → d_tmp.
- *         c. GPU launch_filter_mode V: d_tmp   → d_image.
- *         d. q.wait() to drain; D2H memcpy → pics[0], pics[1].
+ *         a. (scale > 0) GPU launch_decimate d_image → d_tmp, depends on
+ *            prior event; GPU launch_decimate d_mask → d_tmp, depends on
+ *            image-decimate event.  Both return events; no q.wait().
+ *         b. GPU launch_filter_mode H: d_image → d_tmp, depends on prior
+ *            event.  Returns event.
+ *         c. GPU launch_filter_mode V: d_tmp → d_image, depends on H event.
+ *            Returns event.
+ *         d. One q.wait() to drain all GPU work before D2H.
+ *            D2H memcpy → pics[0], pics[1].  q.wait() after D2H.
  *         e. Host vmaf_cambi_calculate_c_values + vmaf_cambi_spatial_pooling.
  *    5. Host vmaf_cambi_weight_scores_per_scale → final score.
  *    6. Store score; collect() emits "Cambi_feature_cambi_score".
@@ -46,8 +52,11 @@
  *    - Buffers are USM device pointers (uint16_t *) allocated via
  *      vmaf_sycl_malloc_device / vmaf_sycl_malloc_host.
  *    - Kernels submitted with q.submit([=](sycl::handler &) { ... }).
- *    - q.wait() used between GPU and CPU stages (synchronous v1 posture
- *      matching the CUDA twin; see ADR-0360 §v1 simplification note).
+ *    - q.wait() used only at H2D completion and before each D2H read.
+ *      GPU-to-GPU dependencies use sycl::event depends_on chains so the
+ *      runtime can overlap or pipeline adjacent dispatches without a full
+ *      queue drain (SY-1 fix — perf-audit 2026-05-16).  The CUDA twin
+ *      (ADR-0360) retains its v1 synchronous posture for now.
  *    - Does NOT use vmaf_sycl_graph_register because CAMBI's host
  *      residual is non-trivial and the per-scale CPU work serialises
  *      frames already. Same reasoning as the CUDA twin.
@@ -259,9 +268,10 @@ static int cambi_sycl_init_tvi(CambiStateSycl *s)
 /* SYCL kernel 1: Spatial mask                                         */
 /* Port of cambi_spatial_mask_kernel from cambi_score.cu.              */
 /* ------------------------------------------------------------------ */
-static void launch_spatial_mask(sycl::queue &q, const uint16_t *image, uint16_t *mask,
-                                unsigned width, unsigned height, unsigned stride_words,
-                                unsigned mask_index)
+/* Returns the submit event so callers can chain depends_on without a q.wait(). */
+static sycl::event launch_spatial_mask(sycl::queue &q, const uint16_t *image, uint16_t *mask,
+                                       unsigned width, unsigned height, unsigned stride_words,
+                                       unsigned mask_index)
 {
     const size_t global_x = ((size_t)width + WG_X - 1u) / WG_X * WG_X;
     const size_t global_y = ((size_t)height + WG_Y - 1u) / WG_Y * WG_Y;
@@ -274,7 +284,7 @@ static void launch_spatial_mask(sycl::queue &q, const uint16_t *image, uint16_t 
     const uint16_t *e_image = image;
     uint16_t *e_mask = mask;
 
-    q.submit([=](sycl::handler &h) {
+    return q.submit([=](sycl::handler &h) {
         h.parallel_for(ndr, [=](sycl::nd_item<2> it) {
             const int x = (int)it.get_global_id(1);
             const int y = (int)it.get_global_id(0);
@@ -319,8 +329,11 @@ static void launch_spatial_mask(sycl::queue &q, const uint16_t *image, uint16_t 
 /* SYCL kernel 2: 2× decimate                                          */
 /* Port of cambi_decimate_kernel from cambi_score.cu.                  */
 /* ------------------------------------------------------------------ */
-static void launch_decimate(sycl::queue &q, const uint16_t *src, uint16_t *dst, unsigned out_w,
-                            unsigned out_h, unsigned src_stride_words, unsigned dst_stride_words)
+/* Returns the submit event; dep is a prerequisite event (use a default-constructed
+ * sycl::event{} when there is no explicit dependency). */
+static sycl::event launch_decimate(sycl::queue &q, const uint16_t *src, uint16_t *dst,
+                                   unsigned out_w, unsigned out_h, unsigned src_stride_words,
+                                   unsigned dst_stride_words, sycl::event dep)
 {
     const size_t global_x = ((size_t)out_w + WG_X - 1u) / WG_X * WG_X;
     const size_t global_y = ((size_t)out_h + WG_Y - 1u) / WG_Y * WG_Y;
@@ -333,7 +346,8 @@ static void launch_decimate(sycl::queue &q, const uint16_t *src, uint16_t *dst, 
     const uint16_t *e_src = src;
     uint16_t *e_dst = dst;
 
-    q.submit([=](sycl::handler &h) {
+    return q.submit([=](sycl::handler &h) {
+        h.depends_on(dep);
         h.parallel_for(ndr, [=](sycl::nd_item<2> it) {
             const unsigned x = (unsigned)it.get_global_id(1);
             const unsigned y = (unsigned)it.get_global_id(0);
@@ -350,8 +364,10 @@ static void launch_decimate(sycl::queue &q, const uint16_t *src, uint16_t *dst, 
 /* Port of cambi_filter_mode_kernel from cambi_score.cu.               */
 /* axis=0 → horizontal, axis=1 → vertical.                             */
 /* ------------------------------------------------------------------ */
-static void launch_filter_mode(sycl::queue &q, const uint16_t *in, uint16_t *out, unsigned width,
-                               unsigned height, unsigned stride_words, int axis)
+/* Returns the submit event; dep is a prerequisite event. */
+static sycl::event launch_filter_mode(sycl::queue &q, const uint16_t *in, uint16_t *out,
+                                      unsigned width, unsigned height, unsigned stride_words,
+                                      int axis, sycl::event dep)
 {
     const size_t global_x = ((size_t)width + WG_X - 1u) / WG_X * WG_X;
     const size_t global_y = ((size_t)height + WG_Y - 1u) / WG_Y * WG_Y;
@@ -364,7 +380,8 @@ static void launch_filter_mode(sycl::queue &q, const uint16_t *in, uint16_t *out
     const uint16_t *e_in = in;
     uint16_t *e_out = out;
 
-    q.submit([=](sycl::handler &h) {
+    return q.submit([=](sycl::handler &h) {
+        h.depends_on(dep);
         h.parallel_for(ndr, [=](sycl::nd_item<2> it) {
             const int x = (int)it.get_global_id(1);
             const int y = (int)it.get_global_id(0);
@@ -740,7 +757,10 @@ static int submit_fex_sycl(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
     if (err)
         return err;
 
-    /* Step 2: H2D upload pics[0].data[0] → d_image (stride-aware). */
+    /* Step 2: H2D upload pics[0].data[0] → d_image (stride-aware).
+     * q.wait() after the row-loop drains all H2D transfers before the first
+     * GPU kernel.  The subsequent GPU-to-GPU steps use event chains and do
+     * not require a queue drain (SY-1 fix). */
     {
         const ptrdiff_t src_stride_bytes = s->pics[0].stride[0];
         const uint8_t *src = static_cast<const uint8_t *>(s->pics[0].data[0]);
@@ -748,19 +768,21 @@ static int submit_fex_sycl(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
         for (unsigned row = 0; row < s->proc_height; row++) {
             const uint8_t *src_row = src + (size_t)row * (size_t)src_stride_bytes;
             uint16_t *dst_row = s->d_image + (size_t)row * s->proc_width;
-            /* Synchronous row memcpy via USM (d_image is device USM). */
             q.memcpy(dst_row, src_row, row_bytes);
         }
-        q.wait();
+        q.wait(); /* drain H2D before first GPU kernel */
     }
 
-    /* Step 3: GPU spatial mask at full scale. */
+    /* Step 3: GPU spatial mask at full scale.
+     * Capture the event so the per-scale loop can depend_on it without an
+     * intermediate q.wait() (SY-1 fix). */
+    sycl::event ev_prev;
     {
         const unsigned mask_index = (unsigned)cambi_sycl_get_mask_index(
             s->proc_width, s->proc_height, CAMBI_SYCL_MASK_FILTER_SIZE);
-        launch_spatial_mask(q, s->d_image, s->d_mask, s->proc_width, s->proc_height, s->proc_width,
-                            mask_index);
-        q.wait();
+        ev_prev = launch_spatial_mask(q, s->d_image, s->d_mask, s->proc_width, s->proc_height,
+                                      s->proc_width, mask_index);
+        /* No q.wait() here — the event is threaded into the scale loop. */
     }
 
     /* Step 4: per-scale loop. */
@@ -777,19 +799,21 @@ static int submit_fex_sycl(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
 
     for (int scale = 0; scale < CAMBI_SYCL_NUM_SCALES; scale++) {
         if (scale > 0) {
-            /* GPU decimate cur_image → cur_tmp. */
+            /* GPU decimate cur_image → cur_tmp.  Depends on prior event
+             * (spatial_mask or previous scale's filter_mode V). */
             const unsigned new_w = (scaled_w + 1u) >> 1;
             const unsigned new_h = (scaled_h + 1u) >> 1;
-            launch_decimate(q, cur_image, cur_tmp, new_w, new_h, scaled_w, new_w);
-            q.wait();
+            sycl::event ev_dec_img =
+                launch_decimate(q, cur_image, cur_tmp, new_w, new_h, scaled_w, new_w, ev_prev);
             {
                 uint16_t *t = cur_image;
                 cur_image = cur_tmp;
                 cur_tmp = t;
             }
-            /* GPU decimate cur_mask → cur_tmp. */
-            launch_decimate(q, cur_mask, cur_tmp, new_w, new_h, scaled_w, new_w);
-            q.wait();
+            /* GPU decimate cur_mask → cur_tmp.  Can run concurrently with
+             * ev_dec_img on independent buffers; share the same predecessor. */
+            sycl::event ev_dec_mask =
+                launch_decimate(q, cur_mask, cur_tmp, new_w, new_h, scaled_w, new_w, ev_prev);
             {
                 uint16_t *t = cur_mask;
                 cur_mask = cur_tmp;
@@ -797,14 +821,26 @@ static int submit_fex_sycl(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
             }
             scaled_w = new_w;
             scaled_h = new_h;
+            /* filter_mode H must wait for both decimations; combine via
+             * a no-op barrier submitted with both events as deps. */
+            ev_prev = q.submit([&](sycl::handler &h) {
+                h.depends_on({ev_dec_img, ev_dec_mask});
+                h.single_task([=]() {});
+            });
         }
 
-        /* GPU filter_mode H: cur_image → cur_tmp. */
-        launch_filter_mode(q, cur_image, cur_tmp, scaled_w, scaled_h, scaled_w, 0);
-        q.wait();
-        /* GPU filter_mode V: cur_tmp → cur_image. */
-        launch_filter_mode(q, cur_tmp, cur_image, scaled_w, scaled_h, scaled_w, 1);
-        q.wait();
+        /* GPU filter_mode H: cur_image → cur_tmp.  Depends on ev_prev
+         * (spatial_mask for scale 0; combined decimate fence for scale > 0). */
+        sycl::event ev_filt_h =
+            launch_filter_mode(q, cur_image, cur_tmp, scaled_w, scaled_h, scaled_w, 0, ev_prev);
+        /* GPU filter_mode V: cur_tmp → cur_image.  Depends on H. */
+        ev_prev =
+            launch_filter_mode(q, cur_tmp, cur_image, scaled_w, scaled_h, scaled_w, 1, ev_filt_h);
+        /* ev_prev holds the filter_mode V event.  Wait for it specifically
+         * before issuing D2H copies so the copies read fully-written device
+         * data.  Using ev_prev.wait() instead of q.wait() avoids draining
+         * unrelated in-flight work (SY-1 fix). */
+        ev_prev.wait();
 
         /* D2H: cur_image → h_image, cur_mask → h_mask. */
         {
@@ -815,7 +851,7 @@ static int submit_fex_sycl(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
                 q.memcpy(s->h_mask + (size_t)row * scaled_w, cur_mask + (size_t)row * scaled_w,
                          row_bytes);
             }
-            q.wait();
+            q.wait(); /* drain D2H row copies before CPU residual */
         }
 
         /* Copy h_image / h_mask → pics[0] / pics[1] (stride-aware). */

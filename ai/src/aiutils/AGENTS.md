@@ -1,11 +1,13 @@
 # aiutils — Shared AI Helpers
 
 This package centralizes common utility patterns to reduce duplication across
-`ai/scripts/` and downstream consumers.
+`ai/scripts/` and `tools/vmaf-tune/src/vmaftune/` (and any other downstream
+consumer that adds `ai/src` to `sys.path`).
 
-## Invariants for new scripts
+## Invariants for new scripts and modules
 
-When writing a new script in `ai/scripts/`, follow these patterns:
+When writing a new script in `ai/scripts/` or a new module in
+`tools/vmaf-tune/src/vmaftune/`, follow these patterns:
 
 1. **File hashing:** Import `sha256` from `aiutils.file_utils`, not a local `_sha256()`.
 2. **UTC timestamps:** Use `now_iso_8601()` from `aiutils.time_utils` for ISO-8601

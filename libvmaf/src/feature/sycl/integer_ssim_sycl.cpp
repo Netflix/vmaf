@@ -13,9 +13,11 @@
  *  intermediates with picture_copy normalisation. Same approach
  *  as ciede_sycl (PR #137).
  *
- *  Two-pass design mirrors ssim_vulkan / ssim_cuda:
+*  Two-pass design mirrors ssim_vulkan / ssim_cuda:
  *    1. horizontal 11-tap separable Gaussian over ref / cmp /
  *       ref² / cmp² / ref·cmp into 5 device float buffers.
+ *       SLM-staged (SY-2, ADR-0458): 26-float tile per WG row
+ *       eliminates redundant global-memory reads across neighbours.
  *    2. nd_range vertical 11-tap + per-pixel SSIM combine +
  *       per-WG float partial sums via sycl::reduce_over_group.
  *
@@ -101,11 +103,24 @@ struct SsimStateSycl {
     VmafDictionary *feature_name_dict;
 };
 
+/* Tile width for the horizontal SLM staging (SY-2, ADR-0458):
+ * each WG of SSIM_WG_X columns needs SSIM_WG_X + (SSIM_K-1) input
+ * floats per row to cover the 11-tap apron.  Two SLM arrays (ref,
+ * cmp) of size SSIM_WG_Y * SSIM_TILE_W carry all needed input pixels;
+ * the five output channels are computed from SLM with no extra arrays.
+ * This eliminates 11 global-memory loads per output channel per pixel
+ * (total 55 → 26 loads per pixel pair on Arc A380). */
+static constexpr size_t SSIM_TILE_W = SSIM_WG_X + (size_t)(SSIM_K - 1); /* 26 */
+
 static void launch_horiz(sycl::queue &q, const float *d_ref, const float *d_cmp, float *d_ref_mu,
                          float *d_cmp_mu, float *d_ref_sq, float *d_cmp_sq, float *d_refcmp,
                          unsigned width, unsigned w_horiz, unsigned h_horiz)
 {
-    sycl::range<2> global{(size_t)h_horiz, (size_t)w_horiz};
+    /* nd_range with SSIM_WG_X × SSIM_WG_Y work-groups; work-item count
+     * rounded up to WG multiples.  Guard threads write nothing. */
+    const size_t global_x = ((w_horiz + SSIM_WG_X - 1) / SSIM_WG_X) * SSIM_WG_X;
+    const size_t global_y = ((h_horiz + SSIM_WG_Y - 1) / SSIM_WG_Y) * SSIM_WG_Y;
+    sycl::nd_range<2> ndr{sycl::range<2>{global_y, global_x}, sycl::range<2>{SSIM_WG_Y, SSIM_WG_X}};
     const unsigned e_w = width;
     const unsigned e_w_horiz = w_horiz;
     const unsigned e_h_horiz = h_horiz;
@@ -117,31 +132,77 @@ static void launch_horiz(sycl::queue &q, const float *d_ref, const float *d_cmp,
     float *e_cmp_sq = d_cmp_sq;
     float *e_refcmp = d_refcmp;
 
-    q.submit([=](sycl::handler &h) {
-        h.parallel_for(global, [=](sycl::id<2> id) {
-            const size_t y = id[0];
-            const size_t x = id[1];
-            if (x >= (size_t)e_w_horiz || y >= (size_t)e_h_horiz)
-                return;
-            float ref_mu_h = 0.0f, cmp_mu_h = 0.0f;
-            float ref_sq_h = 0.0f, cmp_sq_h = 0.0f, refcmp_h = 0.0f;
-            for (int u = 0; u < SSIM_K; u++) {
-                const size_t src_idx = y * (size_t)e_w + (x + (size_t)u);
-                const float r = e_ref[src_idx];
-                const float c = e_cmp[src_idx];
-                const float w = G[u];
-                ref_mu_h += w * r;
-                cmp_mu_h += w * c;
-                ref_sq_h += w * (r * r);
-                cmp_sq_h += w * (c * c);
-                refcmp_h += w * (r * c);
+    q.submit([&](sycl::handler &cgh) {
+        /* Two SLM tiles: one for ref, one for cmp.
+         * Size = SSIM_WG_Y rows × SSIM_TILE_W cols = 8 × 26 floats each.
+         * Total SLM per WG = 2 × 208 × 4 B = 1664 B — well within Arc A380
+         * local-memory limits (64 KB per compute unit). */
+        sycl::local_accessor<float, 1> s_ref(sycl::range<1>(SSIM_WG_Y * SSIM_TILE_W), cgh);
+        sycl::local_accessor<float, 1> s_cmp(sycl::range<1>(SSIM_WG_Y * SSIM_TILE_W), cgh);
+
+        cgh.parallel_for(ndr, [=](sycl::nd_item<2> it) {
+            const size_t gx = it.get_global_id(1);
+            const size_t gy = it.get_global_id(0);
+            const size_t lx = it.get_local_id(1);
+            const size_t ly = it.get_local_id(0);
+            const size_t lid = ly * SSIM_WG_X + lx; /* linear local id */
+
+            /* Phase 1: cooperative tile load.
+             * The WG covers output columns [wg_ox, wg_ox + SSIM_WG_X).
+             * Input columns needed: [wg_ox, wg_ox + SSIM_WG_X + SSIM_K - 1).
+             * wg_ox is the WG's global x-origin mapped to input-space
+             * (which equals output-space because input[x..x+SSIM_K-1]
+             *  produces output[x]). */
+            const size_t wg_ox = it.get_group(1) * SSIM_WG_X;
+            const size_t wg_oy = it.get_group(0) * SSIM_WG_Y;
+            const size_t tile_elems = SSIM_WG_Y * SSIM_TILE_W;
+            const size_t wg_size = SSIM_WG_X * SSIM_WG_Y;
+
+            for (size_t i = lid; i < tile_elems; i += wg_size) {
+                const size_t tr = i / SSIM_TILE_W; /* row within tile */
+                const size_t tc = i % SSIM_TILE_W; /* col within tile */
+                const size_t gy_load = wg_oy + tr;
+                const size_t gx_load = wg_ox + tc; /* no clamping needed:
+                                                      * wg_ox + SSIM_TILE_W - 1
+                                                      * == wg_ox + SSIM_WG_X + SSIM_K - 2
+                                                      * < width  (w_horiz = width - SSIM_K + 1,
+                                                      *   last valid wg_ox = w_horiz -
+                                                      *   SSIM_WG_X → wg_ox + SSIM_TILE_W - 1
+                                                      *   <= width - 1). */
+                if (gy_load < (size_t)e_h_horiz && gx_load < (size_t)e_w) {
+                    const size_t idx = gy_load * (size_t)e_w + gx_load;
+                    s_ref[i] = e_ref[idx];
+                    s_cmp[i] = e_cmp[idx];
+                } else {
+                    s_ref[i] = 0.0f;
+                    s_cmp[i] = 0.0f;
+                }
             }
-            const size_t dst_idx = y * (size_t)e_w_horiz + x;
-            e_ref_mu[dst_idx] = ref_mu_h;
-            e_cmp_mu[dst_idx] = cmp_mu_h;
-            e_ref_sq[dst_idx] = ref_sq_h;
-            e_cmp_sq[dst_idx] = cmp_sq_h;
-            e_refcmp[dst_idx] = refcmp_h;
+            it.barrier(sycl::access::fence_space::local_space);
+
+            /* Phase 2: compute 11-tap horizontal convolution from SLM. */
+            if (gx < (size_t)e_w_horiz && gy < (size_t)e_h_horiz) {
+                float ref_mu_h = 0.0f, cmp_mu_h = 0.0f;
+                float ref_sq_h = 0.0f, cmp_sq_h = 0.0f, refcmp_h = 0.0f;
+                for (int u = 0; u < SSIM_K; u++) {
+                    /* SLM index: row ly, column lx + u. */
+                    const size_t si = ly * SSIM_TILE_W + lx + (size_t)u;
+                    const float r = s_ref[si];
+                    const float c = s_cmp[si];
+                    const float gw = G[u];
+                    ref_mu_h += gw * r;
+                    cmp_mu_h += gw * c;
+                    ref_sq_h += gw * (r * r);
+                    cmp_sq_h += gw * (c * c);
+                    refcmp_h += gw * (r * c);
+                }
+                const size_t dst_idx = gy * (size_t)e_w_horiz + gx;
+                e_ref_mu[dst_idx] = ref_mu_h;
+                e_cmp_mu[dst_idx] = cmp_mu_h;
+                e_ref_sq[dst_idx] = ref_sq_h;
+                e_cmp_sq[dst_idx] = cmp_sq_h;
+                e_refcmp[dst_idx] = refcmp_h;
+            }
         });
     });
 }

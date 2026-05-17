@@ -6,10 +6,9 @@
  *  and ADR-0181.
  */
 #include "dispatch_strategy.h"
+#include "../gpu_dispatch_parse.h"
 
-#include <stddef.h>
 #include <stdlib.h>
-#include <string.h>
 
 /* Backend default: SYCL graph replay wins above 720p frame area on
  * Intel Arc A380 / oneAPI 2025.3 (empirical sweep documented in
@@ -18,47 +17,15 @@
  * dispatch overhead. */
 #define VMAF_SYCL_DEFAULT_AREA_THRESHOLD (1280U * 720U)
 
-/* Parse `env_value` looking for a `feature_name:strategy` token. Returns:
- *   1 + GRAPH_REPLAY  → token found, value is "graph"
- *   1 + DIRECT        → token found, value is "direct"
- *   0                 → token not found
- *
- * Token format: comma-separated `name:strategy` pairs. Whitespace
- * around tokens is ignored; case-sensitive feature-name match. */
-static int parse_per_feature_override(const char *env_value, const char *feature_name,
-                                      VmafSyclDispatchStrategy *out)
-{
-    if (!env_value || !feature_name)
-        return 0;
-    const size_t name_len = strlen(feature_name);
-    const char *p = env_value;
-    while (*p) {
-        while (*p == ' ' || *p == '\t' || *p == ',')
-            ++p;
-        if (!*p)
-            break;
-        const char *colon = strchr(p, ':');
-        if (!colon)
-            break;
-        const size_t tok_name_len = (size_t)(colon - p);
-        if (tok_name_len == name_len && memcmp(p, feature_name, name_len) == 0) {
-            const char *v = colon + 1;
-            if (strncmp(v, "graph", 5) == 0) {
-                *out = VMAF_SYCL_DISPATCH_GRAPH_REPLAY;
-                return 1;
-            }
-            if (strncmp(v, "direct", 6) == 0) {
-                *out = VMAF_SYCL_DISPATCH_DIRECT;
-                return 1;
-            }
-        }
-        const char *next = strchr(colon, ',');
-        if (!next)
-            break;
-        p = next + 1;
-    }
-    return 0;
-}
+/* Strategy name table — index matches VmafSyclDispatchStrategy enum values:
+ *   0 → VMAF_SYCL_DISPATCH_DIRECT
+ *   1 → VMAF_SYCL_DISPATCH_GRAPH_REPLAY
+ * See ADR-0483. */
+static const char *const k_sycl_strategy_names[] = {
+    "direct", /* VMAF_SYCL_DISPATCH_DIRECT       = 0 */
+    "graph",  /* VMAF_SYCL_DISPATCH_GRAPH_REPLAY = 1 */
+    nullptr,
+};
 
 VmafSyclDispatchStrategy vmaf_sycl_select_strategy(const char *feature_name,
                                                    const VmafFeatureCharacteristics *chars,
@@ -66,9 +33,9 @@ VmafSyclDispatchStrategy vmaf_sycl_select_strategy(const char *feature_name,
 {
     /* Per-feature env override has highest precedence. */
     const char *env_disp = getenv("VMAF_SYCL_DISPATCH");
-    VmafSyclDispatchStrategy out = VMAF_SYCL_DISPATCH_DIRECT;
-    if (parse_per_feature_override(env_disp, feature_name, &out))
-        return out;
+    int idx = static_cast<int>(VMAF_SYCL_DISPATCH_DIRECT);
+    if (vmaf_gpu_dispatch_parse_env(env_disp, feature_name, k_sycl_strategy_names, &idx))
+        return static_cast<VmafSyclDispatchStrategy>(idx);
 
     /* Legacy global env knobs. USE wins over NO when both are set
      * (matches the existing libvmaf/src/sycl/common.cpp semantics). */

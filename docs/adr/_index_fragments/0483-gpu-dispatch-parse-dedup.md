@@ -1,0 +1,1 @@
+| [ADR-0483](0483-gpu-dispatch-parse-dedup.md) | Extract shared `vmaf_gpu_dispatch_parse_env` tokenizer into `gpu_dispatch_parse.h`; removes verbatim triplicate across CUDA/SYCL/Vulkan dispatch_strategy TUs | Accepted | cuda, sycl, vulkan, refactor, dedup |

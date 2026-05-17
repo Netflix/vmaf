@@ -23,12 +23,11 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
-import datetime as _dt
-import hashlib
 import json
 import logging
 import math
 import os
+import sys
 import uuid
 from collections.abc import Iterator, Sequence
 from pathlib import Path
@@ -52,6 +51,17 @@ from .encoder_stats import aggregate_stats
 from .hdr import HdrInfo, detect_hdr, hdr_codec_args, select_hdr_vmaf_model
 from .per_shot import ShotMetadata, _detect_shots_with_status, summarise_shots
 from .score import ScoreRequest, ScoreResult, run_score
+
+# Resolve ai/src so aiutils helpers are importable without requiring an
+# editable install of the ai package.  The repo layout is:
+#   tools/vmaf-tune/src/vmaftune/corpus.py  (parents[4] = repo root)
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+_AI_SRC = _REPO_ROOT / "ai" / "src"
+if str(_AI_SRC) not in sys.path:
+    sys.path.insert(0, str(_AI_SRC))
+
+from aiutils.file_utils import sha256 as _sha256_file  # noqa: E402
+from aiutils.time_utils import now_iso_8601 as _utc_now_iso  # noqa: E402
 
 _LOG = logging.getLogger(__name__)
 
@@ -131,21 +141,6 @@ class CorpusOptions:
     # height >= 2160, vmaf_v0.6.1 otherwise. False keeps the explicit
     # vmaf_model value regardless of source resolution.
     resolution_aware: bool = True
-
-
-def _sha256_of(path: Path, *, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        while True:
-            buf = fh.read(chunk)
-            if not buf:
-                break
-            h.update(buf)
-    return h.hexdigest()
-
-
-def _utc_now_iso() -> str:
-    return _dt.datetime.now(tz=_dt.timezone.utc).isoformat(timespec="seconds")
 
 
 def _encode_path(opts: CorpusOptions, source: Path, preset: str, crf: int) -> Path:
@@ -317,7 +312,7 @@ def iter_rows(
     callers leave them ``None``.
     """
     adapter = get_adapter(opts.encoder)
-    src_hash = _sha256_of(job.source) if (opts.src_sha256 and job.source.exists()) else ""
+    src_hash = _sha256_file(job.source) if (opts.src_sha256 and job.source.exists()) else ""
 
     opts.encode_dir.mkdir(parents=True, exist_ok=True)
 

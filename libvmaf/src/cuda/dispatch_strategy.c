@@ -9,8 +9,8 @@
  *  See ADR-0181.
  */
 #include "dispatch_strategy.h"
+#include "../gpu_dispatch_parse.h"
 
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -66,40 +66,15 @@ static void cache_env_dispatch(void)
         g_env_disp = strdup(val); /* stable copy; outlives any subsequent setenv */
 }
 
-static int parse_per_feature_override(const char *env_value, const char *feature_name,
-                                      VmafCudaDispatchStrategy *out)
-{
-    if (!env_value || !feature_name)
-        return 0;
-    const size_t name_len = strlen(feature_name);
-    const char *p = env_value;
-    while (*p) {
-        while (*p == ' ' || *p == '\t' || *p == ',')
-            ++p;
-        if (!*p)
-            break;
-        const char *colon = strchr(p, ':');
-        if (!colon)
-            break;
-        const size_t tok_name_len = (size_t)(colon - p);
-        if (tok_name_len == name_len && memcmp(p, feature_name, name_len) == 0) {
-            const char *v = colon + 1;
-            if (strncmp(v, "graph", 5) == 0) {
-                *out = VMAF_CUDA_DISPATCH_GRAPH_CAPTURE;
-                return 1;
-            }
-            if (strncmp(v, "direct", 6) == 0) {
-                *out = VMAF_CUDA_DISPATCH_DIRECT;
-                return 1;
-            }
-        }
-        const char *next = strchr(colon, ',');
-        if (!next)
-            break;
-        p = next + 1;
-    }
-    return 0;
-}
+/* Strategy name table — index matches VmafCudaDispatchStrategy enum values:
+ *   0 → VMAF_CUDA_DISPATCH_DIRECT
+ *   1 → VMAF_CUDA_DISPATCH_GRAPH_CAPTURE
+ * See ADR-0483. */
+static const char *const k_cuda_strategy_names[] = {
+    "direct", /* VMAF_CUDA_DISPATCH_DIRECT        = 0 */
+    "graph",  /* VMAF_CUDA_DISPATCH_GRAPH_CAPTURE = 1 */
+    NULL,
+};
 
 VmafCudaDispatchStrategy vmaf_cuda_select_strategy(const char *feature_name,
                                                    const VmafFeatureCharacteristics *chars,
@@ -119,9 +94,9 @@ VmafCudaDispatchStrategy vmaf_cuda_select_strategy(const char *feature_name,
     (void)pthread_once(&g_env_once, cache_env_dispatch);
 #endif
 
-    VmafCudaDispatchStrategy out = VMAF_CUDA_DISPATCH_DIRECT;
-    if (parse_per_feature_override(g_env_disp, feature_name, &out))
-        return out;
+    int idx = (int)VMAF_CUDA_DISPATCH_DIRECT;
+    if (vmaf_gpu_dispatch_parse_env(g_env_disp, feature_name, k_cuda_strategy_names, &idx))
+        return (VmafCudaDispatchStrategy)idx;
 
     /* Stub default — DIRECT for every feature. CUDA graph capture
      * is a follow-up PR (see ADR-0181 § Consequences / follow-ups). */

@@ -7,6 +7,26 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
+## refactor/aiutils-vmaftune-corpus-dedup — no rebase impact
+
+`tools/vmaf-tune/` is fork-local. `ai/src/aiutils/` is fork-local.
+No upstream-shared files are touched; no rebase action required.
+
+## fix/saliency-per-mb-eval-2026-05-15 — integer_vif enable_chroma
+
+## refactor/gpu-dispatch-env-pthread-once (ADR-0461)
+
+No rebase impact: adds `libvmaf/src/gpu_dispatch_env.{h,c}` (new fork-local
+files) and modifies `cuda/dispatch_strategy.c`, `vulkan/dispatch_strategy.c`,
+`sycl/dispatch_strategy.cpp` — all fork-local TUs with no Netflix upstream
+equivalents. If upstream Netflix ever introduces their own dispatch env
+handling, merge by adopting their approach and dropping this helper.
+
+No rebase impact: doc-only change. `docs/state.md` is fork-local and not
+present in Netflix upstream; upstream syncs do not touch it.
+
+---
+
 ## test/output-public-api-coverage-2026-05-16
 
 **No rebase impact.** All changes are confined to
@@ -76,6 +96,26 @@ IDs are assigned in commit order and never reused. A single entry may
 cover several PRs in one workstream; cross-link from the ID heading.
 
 ## Entries (backfilled 2026-04-18 per ADR-0108 adoption)
+
+### perf/cambi-sycl-event-chain-2026-05-16 — CAMBI SYCL GPU-to-GPU event chains (SY-1)
+
+- **Touches**: `libvmaf/src/feature/sycl/integer_cambi_sycl.cpp`,
+  `libvmaf/src/feature/sycl/AGENTS.md`,
+  `docs/adr/0471-cambi-sycl-event-chain.md`.
+- **Invariant**: `launch_spatial_mask`, `launch_decimate`, and
+  `launch_filter_mode` now return `sycl::event` and accept a
+  `sycl::event dep` parameter (except `launch_spatial_mask`, which has no
+  predecessor). If upstream Netflix ever rewrites the CAMBI SYCL port
+  (unlikely — SYCL is fork-only), preserve the event-chain structure and
+  ensure the two semantically-required `q.wait()` points (post-H2D and
+  post-D2H) remain. The CUDA twin (`integer_cambi_cuda.c`) retains
+  synchronous v1 posture and is not affected by this change.
+- **Re-test**:
+  ```
+  meson test -C build --suite=fast cambi_sycl
+  python3 scripts/ci/cross_backend_parity_gate.py --feature cambi --places 4
+  ```
+
 
 ### fix/psnr-enable-chroma-gpu-parity-2026-05-16 — PSNR `enable_chroma` option GPU parity
 
@@ -34986,6 +35026,29 @@ arm64/AGENTS.md) now requires that every cambi inner-loop function ported to
 AVX2 ships with AVX-512 + NEON siblings in the same PR. Do not merge a
 cambi AVX2 kernel without the matching AVX-512 + NEON files and a dispatch
 update in `cambi.c`.
+
+---
+
+## `refactor/gpu-dispatch-parse-dedup` — shared GPU dispatch env tokenizer (ADR-0483)
+
+**Branch**: `refactor/gpu-dispatch-parse-dedup`
+
+**Files touched**:
+`libvmaf/src/gpu_dispatch_parse.h` (new),
+`libvmaf/src/cuda/dispatch_strategy.c`,
+`libvmaf/src/sycl/dispatch_strategy.cpp`,
+`libvmaf/src/vulkan/dispatch_strategy.c`.
+
+**Rebase impact**: low. The three `dispatch_strategy` TUs are fork-local;
+upstream Netflix/vmaf does not have `dispatch_strategy.c` files. No public
+headers, no meson sources, and no link-time symbols change — the new
+`gpu_dispatch_parse.h` is a header-only `static inline` and is not added to
+any meson source list.
+
+**Invariant to preserve on rebase**: `k_<backend>_strategy_names[]` index 0
+must equal the backend enum's default value (e.g. `VMAF_CUDA_DISPATCH_DIRECT =
+0`). When adding new strategy enum values, append to both the enum and the
+table; never reorder either.
 
 ---
 

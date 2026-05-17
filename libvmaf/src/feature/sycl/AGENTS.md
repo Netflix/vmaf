@@ -120,16 +120,41 @@ HIP / Metal motion twins listed in the Twin-update table above) in the same PR.
   parameter"](../../AGENTS.md).
 
 - **`integer_cambi_sycl.cpp` — Strategy II hybrid: no graph register,
-  synchronous per-scale loop** (T3-15 / ADR-0371). The `submit()` runs
-  a synchronous per-scale loop: H2D upload → `launch_spatial_mask` →
-  per-scale (`launch_decimate` + `launch_filter_mode` H + V → D2H →
-  `vmaf_cambi_calculate_c_values` + `vmaf_cambi_spatial_pooling`). The
-  CPU-residual phases must stay inside `submit()`, not `collect()`.
+  event-chained GPU passes with synchronous D2H barrier** (T3-15 /
+  ADR-0371 / SY-1 perf fix 2026-05-16). The `submit()` flow is: H2D
+  upload + single `q.wait()` → `launch_spatial_mask` (returns event) →
+  per-scale `launch_decimate` image + mask (each returns event, chained
+  via `depends_on`) → `launch_filter_mode` H + V (chained via events) →
+  `ev_prev.wait()` to drain GPU work → D2H memcpy rows → `q.wait()` →
+  `vmaf_cambi_calculate_c_values` + `vmaf_cambi_spatial_pooling`.
+  GPU-to-GPU transitions use `sycl::event` chains, not `q.wait()`;
+  only the H2D-drain and the pre-D2H barriers call `wait()`.
+  The CPU-residual phases must stay inside `submit()`, not `collect()`.
   `collect()` only emits `s->score`. Do **not** move the CPU residual
   into `collect()` and do **not** register with `vmaf_sycl_graph_register`
   — the per-scale D2H readback and host histogram pass are incompatible
-  with the graph-replay model. The CUDA twin (ADR-0360) follows the same
-  pattern; keep both in sync.
+  with the graph-replay model. The CUDA twin (ADR-0360) retains
+  synchronous v1 posture; the event-chain refactor is SYCL-only.
+
+- **Per-step `q.wait()` in feature extractors is forbidden — use the
+  in-order queue** (ADR-0458 / SY-1). The SYCL in-order queue serialises
+  all submitted operations automatically; adding `q.wait()` between GPU
+  kernels drains the queue to idle and prevents pipelining. The only
+  mandatory `q.wait()` calls are at **CPU-reads-from-device boundaries**
+  (i.e., right before host code reads a `vmaf_sycl_malloc_host` buffer
+  that was written by a preceding `q.memcpy`). Example: `integer_cambi_sycl.cpp`
+  has exactly one `q.wait()` per scale, right before
+  `vmaf_cambi_calculate_c_values`.
+
+- **Stencil/convolution SYCL kernels MUST use `local_accessor` for tap
+  reuse** (ADR-0458 / SY-2). Any kernel that implements a separable
+  filter (Gaussian, box, motion-blur) with more than 3 taps **must** stage
+  the required input region into shared local memory (SLM) via
+  `local_accessor` + a cooperative tile-load loop + barrier, following the
+  pattern in `float_vif_sycl.cpp`, `float_ansnr_sycl.cpp`,
+  `float_motion_sycl.cpp`, and (post ADR-0458) `integer_ssim_sycl.cpp`.
+  A bare `parallel_for<range<N>>` reading global memory for every tap is a
+  lint violation for convolution kernels — use `nd_range` instead.
 
 - **`integer_adm_sycl.cpp` / `float_adm_sycl.cpp` expose three ADM
   tuning parameters** (`adm_csf_scale`, `adm_csf_diag_scale`,
