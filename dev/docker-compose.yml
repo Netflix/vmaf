@@ -54,9 +54,14 @@ services:
   # -------------------------------------------------------------------------
   dev-mcp:
     build:
-      # Paths are relative to --project-directory (repo root), NOT to the
-      # compose-file directory. Earlier `context: ..` resolved to
-      # /home/kilian/dev (one up from project-dir) and broke the build.
+      # context is the repo root. Always invoke via dev-mcp-up.sh (which passes
+      # --project-directory) or with:
+      #   docker compose --project-directory <repo-root> -f dev/docker-compose.yml build
+      # Without --project-directory, Docker Compose v2 defaults the project dir to
+      # the compose-file's parent (dev/), which makes context: . resolve to dev/ and
+      # bypasses the root .dockerignore — leaking .corpus/ (781 GB) into the build
+      # context. The Containerfile now uses explicit COPY directives for each needed
+      # subtree, so the build is safe even if context resolution is wrong.
       context: .
       dockerfile: dev/Containerfile
       target: dev-mcp

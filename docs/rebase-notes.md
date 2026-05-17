@@ -7,6 +7,15 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
+## fix/dev-mcp-no-corpus-in-image — no rebase impact
+
+`dev/Containerfile`, `dev/docker-compose.yml`, and `docs/development/dev-mcp.md`
+are fork-local files with no Netflix upstream equivalents. The explicit COPY
+list in the Containerfile is fork-local build infrastructure. No upstream sync
+action required.
+
+---
+
 ## refactor/aiutils-vmaftune-corpus-dedup — no rebase impact
 
 `tools/vmaf-tune/` is fork-local. `ai/src/aiutils/` is fork-local.
@@ -35377,15 +35386,3 @@ upstream later changes the HIP PSNR submit/collect call-graph, re-check
 that the per-plane loop in `submit_fex_hip` and `collect_fex_hip` matches
 whatever new structure upstream introduces. The kernel (`psnr_score.hip`)
 is unchanged.
-
----
-
-## fix/docs-pr-strict-check-batch18
-
-**Files**: `.github/workflows/lint-and-format.yml`,
-`.github/workflows/required-aggregator.yml`
-
-No rebase impact: the change adds a new CI job (`docs-lint`) and a new
-entry in the required-aggregator check list. Both are purely additive and
-contain no fork-local logic that upstream could change. If upstream adds
-its own docs-lint CI, dedup by dropping our job or merging the two.

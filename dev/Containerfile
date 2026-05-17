@@ -190,14 +190,45 @@ FROM gpu-sdks AS libvmaf-build
 
 WORKDIR /build/vmaf
 
-# Copy the full source tree (read-only mount is for runtime; build needs it).
+# Copy only the build-needed subtrees — NOT the full repo root.
+#
+# Root cause for this explicit list: when `docker compose -f dev/docker-compose.yml`
+# is invoked without --project-directory, Docker Compose v2 sets the project
+# directory to the compose-file's parent (dev/), making `context: .` resolve to
+# dev/ rather than the repo root. As a result the root .dockerignore is never
+# consulted, and the entire repo root (including .corpus/ at 781 GB) is sent to
+# the daemon on every build. The runtime bind-mount (source: ., target: /workspace)
+# already provides the full tree at run-time, so baking it in is unnecessary.
+#
+# Directories included:
+#   libvmaf/        — meson source (the actual library + feature extractors)
+#   ffmpeg-patches/ — patch series applied in stage 3.5
+#   mcp-server/     — MCP JSON-RPC server (pip install -e)
+#   ai/             — tiny-AI training harness (pip install -e)
+#   tools/          — vmaf-tune CLI (pip install -e)
+#   python/         — Python bindings added to PYTHONPATH
+#   model/          — VMAF model JSON/ONNX files (VMAF_MODEL_PATH)
+#   testdata/       — YUV fixtures for smoke tests (VMAF_TESTDATA_PATH;
+#                     runtime bind-mount shadows this at run-time)
+#   dev/            — entrypoint + helper scripts (ENTRYPOINT reference)
+#   scripts/        — CI helper scripts (assertion-density, copyright check)
+#
 # COPY --chown transfers ownership of file *contents*, but the /build/vmaf
 # directory itself is owned by root because Docker's WORKDIR directive always
 # creates directories as root.  Without chown-ing the directory entry, the vmaf
 # user cannot create the meson build subdir (os.makedirs → EACCES → meson
 # reports as OSError).  chown /build too so that future sub-directories created
 # inside /build by vmaf (e.g., /build/ffmpeg) are not blocked either.
-COPY --chown=vmaf:vmaf . /build/vmaf/
+COPY --chown=vmaf:vmaf libvmaf/        /build/vmaf/libvmaf/
+COPY --chown=vmaf:vmaf ffmpeg-patches/ /build/vmaf/ffmpeg-patches/
+COPY --chown=vmaf:vmaf mcp-server/     /build/vmaf/mcp-server/
+COPY --chown=vmaf:vmaf ai/             /build/vmaf/ai/
+COPY --chown=vmaf:vmaf tools/          /build/vmaf/tools/
+COPY --chown=vmaf:vmaf python/         /build/vmaf/python/
+COPY --chown=vmaf:vmaf model/          /build/vmaf/model/
+COPY --chown=vmaf:vmaf testdata/       /build/vmaf/testdata/
+COPY --chown=vmaf:vmaf dev/            /build/vmaf/dev/
+COPY --chown=vmaf:vmaf scripts/        /build/vmaf/scripts/
 RUN chown vmaf:vmaf /build /build/vmaf
 
 # Install ONNX Runtime C++ shared library (provides pkg-config .pc file so

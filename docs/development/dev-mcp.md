@@ -18,14 +18,14 @@ The design decision is recorded in [ADR-0435](../adr/0435-local-dev-mcp-containe
 ### Required
 
 | Component | Version | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Docker Engine | 26+ | `docker compose` v2 plugin required |
 | [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) | latest | Enables `--gpus all` / `runtime: nvidia` for CUDA kernel execution. The container builds and runs *without* it; CUDA feature extractors return `-ENOSYS` at runtime. |
 
 ### Optional
 
 | Component | Purpose |
-|---|---|
+| --- | --- |
 | AMD ROCm runtime on host | Run HIP kernels inside the container. Without it, HIP compiles but returns an error at kernel dispatch. |
 | Intel oneAPI runtime on host | Run SYCL kernels via Level Zero. Without it, SYCL falls back to the OpenCL CPU device or returns an error. |
 | `jq` | Pretty-print probe JSON output on the host. `apt install jq`. |
@@ -34,11 +34,27 @@ The design decision is recorded in [ADR-0435](../adr/0435-local-dev-mcp-containe
 
 ## How to build
 
-From the repository root:
+Use the provided wrapper from the repository root:
 
 ```bash
-docker compose -f dev/docker-compose.yml build
+./dev/scripts/dev-mcp-up.sh
 ```
+
+Or, to build without starting:
+
+```bash
+docker compose --project-directory "$(pwd)" -f dev/docker-compose.yml build
+```
+
+> **Important — always pass `--project-directory`.**  Without it, Docker
+> Compose v2 sets the project directory to the compose-file's parent (`dev/`),
+> causing `context: .` to resolve to `dev/` instead of the repo root.  This
+> bypasses the root `.dockerignore` and — on developer machines that hold
+> `.corpus/` (up to 781 GB) — sends the entire corpus into the build context,
+> accumulating copies in `/var/lib/docker/overlay2/` on every failed build.
+> The `dev-mcp-up.sh` wrapper always passes `--project-directory`; the bare
+> `docker compose -f` form is unsafe unless run from the repo root with the
+> flag explicit.
 
 The first build downloads all GPU SDK layers and compiles libvmaf from source.
 Expect 20–40 minutes on a typical workstation; subsequent builds use the
@@ -136,7 +152,7 @@ Each probe file follows this schema:
 ```
 
 | Field | Meaning |
-|---|---|
+| --- | --- |
 | `score` | Aggregate VMAF score for the 48-frame 576×324 golden pair. `null` = backend failed. |
 | `duration_ms` | Wall-clock time for the full scoring run. |
 | `error` | Error message string, or `null` for success. |
@@ -145,15 +161,15 @@ Each probe file follows this schema:
 ### Expected values
 
 - CPU score: ~76.45 (matches the Netflix golden pair; exact value varies by model version).
-- CUDA / Vulkan scores: within ±0.01 of CPU (numeric parity is not bit-exact — see
-  [ADR-0214](../adr/0214-gpu-parity-ci-gate.md)).
+- CUDA / Vulkan scores: within ±0.01 of CPU (numeric parity is not bit-exact —
+  see [ADR-0214](../adr/0214-gpu-parity-ci-gate.md)).
 - SYCL: `ENOSYS` on hosts without Intel GPU or oneAPI runtime; normal.
 - HIP: error on NVIDIA-only hosts; normal.
 
 ### Common error patterns
 
 | Error | Cause | Action |
-|---|---|---|
+| --- | --- | --- |
 | `ENOSYS: no CUDA device` | No NVIDIA GPU or Container Toolkit not installed | Install Container Toolkit and set `NVIDIA_VISIBLE_DEVICES=all` |
 | `ENOSYS: no SYCL device` | No Intel GPU / oneAPI runtime | Expected on non-Intel hosts; not a regression |
 | `mcp stdio returned empty response` | `vmaf-mcp-server` not in PATH or build failed | Rebuild container; check `docker compose logs dev-mcp` |
@@ -164,7 +180,7 @@ Each probe file follows this schema:
 ## Known limitations
 
 | Limitation | Details |
-|---|---|
+| --- | --- |
 | HIP kernels cannot run on NVIDIA-only hosts | The HIP toolchain in the container compiles and embeds HSACO fat binaries, but the AMD ROCm runtime is not available. Feature extractors return an error at kernel dispatch. The container is still valuable for catching compile-time regressions in HIP paths. |
 | Metal is disabled on Linux | `libvmaf` is built with `-Denable_metal=auto`, which resolves to disabled on Linux. Metal kernels require macOS + Apple Silicon. |
 | SYCL requires Intel GPU or software emulation | Without the oneAPI Level Zero runtime, SYCL falls back to the OpenCL CPU device (if available) or returns `-ENOSYS`. Performance is significantly lower than on a dedicated Intel GPU. |
