@@ -324,7 +324,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libx264-dev libx265-dev libsvtav1-dev libaom-dev libvpx-dev libdav1d-dev \
+    libx264-dev libx265-dev libsvtav1-dev libsvtav1enc-dev libaom-dev libvpx-dev libdav1d-dev \
     libfdk-aac-dev libmp3lame-dev libopus-dev libvorbis-dev \
     libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev \
     libva-dev libvdpau-dev \
