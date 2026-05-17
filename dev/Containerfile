@@ -361,9 +361,13 @@ RUN PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib/x86_64-linux-gnu/pkg
         --enable-vaapi --enable-vdpau \
         --extra-cflags="-I${CUDA_HOME}/include" \
         --extra-ldflags="-L${CUDA_HOME}/lib64" \
-    && make -j"$(nproc)" \
-    && USER=root make install \
+    && make -j"$(nproc)"
+
+USER root
+RUN cd /build/ffmpeg \
+    && make install \
     && /usr/local/bin/ffmpeg -version | head -3
+USER vmaf
 
 WORKDIR /build/vmaf
 
