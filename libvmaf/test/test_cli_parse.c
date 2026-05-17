@@ -22,6 +22,8 @@
 #include <getopt.h>
 #endif
 
+#include <string.h>
+
 #include "test.h"
 
 #include "cli_parse.h"
@@ -362,6 +364,93 @@ static char *test_cpumask_short_opt()
     return NULL;
 }
 
+/* --precision=max must set precision_max = true and select the %.17g format.
+ * ADR-0119: "max" is the keyword that opts in to IEEE-754 round-trip lossless
+ * output; any other value is a numeric digit count or "legacy". */
+static char *test_precision_max()
+{
+    char *argv[7] = {"vmaf", "-r", "ref.y4m", "-d", "dis.y4m", "--precision=max"};
+    int argc = 6;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: --precision=max must set precision_max = true", settings.precision_max);
+    mu_assert("cli_parse: --precision=max must not set precision_legacy",
+              !settings.precision_legacy);
+    mu_assert("cli_parse: --precision=max precision_fmt must contain 17",
+              settings.precision_fmt && strstr(settings.precision_fmt, "17") != NULL);
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+    return NULL;
+}
+
+/* --precision=legacy must set precision_legacy = true and preserve the
+ * default %.6f format (ADR-0119 §backward-compat alias). */
+static char *test_precision_legacy()
+{
+    char *argv[7] = {"vmaf", "-r", "ref.y4m", "-d", "dis.y4m", "--precision=legacy"};
+    int argc = 6;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: --precision=legacy must set precision_legacy = true",
+              settings.precision_legacy);
+    mu_assert("cli_parse: --precision=legacy must not set precision_max", !settings.precision_max);
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+    return NULL;
+}
+
+/* --precision=6 must store precision_n = 6 and produce a "%.6g"-style fmt.
+ * Valid range is 1..17 per cli_parse.c::resolve_precision_fmt. */
+static char *test_precision_numeric()
+{
+    char *argv[7] = {"vmaf", "-r", "ref.y4m", "-d", "dis.y4m", "--precision=6"};
+    int argc = 6;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: --precision=6 must set precision_n = 6", settings.precision_n == 6);
+    mu_assert("cli_parse: --precision=6 must not set precision_max", !settings.precision_max);
+    mu_assert("cli_parse: --precision=6 must not set precision_legacy", !settings.precision_legacy);
+    mu_assert("cli_parse: --precision=6 precision_fmt must contain '6'",
+              settings.precision_fmt && strstr(settings.precision_fmt, "6") != NULL);
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+    return NULL;
+}
+
+/* --sycl_device 3 must store sycl_device = 3 without engaging no_sycl. */
+static char *test_sycl_device_explicit()
+{
+    char *argv[8] = {"vmaf", "-r", "ref.y4m", "-d", "dis.y4m", "--sycl_device", "3"};
+    int argc = 7;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: --sycl_device 3 must set sycl_device = 3", settings.sycl_device == 3);
+    mu_assert("cli_parse: --sycl_device must not engage no_sycl", !settings.no_sycl);
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+    return NULL;
+}
+
+/* --vulkan_device 1 must store vulkan_device = 1 without engaging no_vulkan. */
+static char *test_vulkan_device_explicit()
+{
+    char *argv[8] = {"vmaf", "-r", "ref.y4m", "-d", "dis.y4m", "--vulkan_device", "1"};
+    int argc = 7;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: --vulkan_device 1 must set vulkan_device = 1",
+              settings.vulkan_device == 1);
+    mu_assert("cli_parse: --vulkan_device must not engage no_vulkan", !settings.no_vulkan);
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+    return NULL;
+}
+
 /* Explicit `--gpumask=N --backend cuda` must preserve the user's gpumask,
  * NOT clobber it. Multi-GPU rigs need fine-grained disable bits. */
 static char *test_backend_cuda_preserves_explicit_gpumask()
@@ -403,8 +492,13 @@ static char *run_backend_tests(void)
     mu_run_test(test_backend_metal);
     mu_run_test(test_hip_device_explicit);
     mu_run_test(test_metal_device_explicit);
+    mu_run_test(test_sycl_device_explicit);
+    mu_run_test(test_vulkan_device_explicit);
     mu_run_test(test_no_hip_no_metal_flags);
     mu_run_test(test_cpumask_short_opt);
+    mu_run_test(test_precision_max);
+    mu_run_test(test_precision_legacy);
+    mu_run_test(test_precision_numeric);
     return NULL;
 }
 
