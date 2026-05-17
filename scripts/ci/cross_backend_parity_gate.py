@@ -160,6 +160,12 @@ FEATURE_METRICS: dict[str, tuple[str, ...]] = {
         "adm_scale3",
     ),
     "ssimulacra2": ("ssimulacra2",),
+    # T7-36 / ADR-0210: cambi Vulkan hybrid (Strategy II). The GPU phases
+    # are all integer arithmetic; the host residual runs the unmodified CPU
+    # c-values code on byte-identical buffers → emitted score is
+    # bit-identical to vmaf_fex_cambi, so places=4 (5e-5) holds by
+    # construction. Mirrors cross_backend_vif_diff.py's cambi entry.
+    "cambi": ("Cambi_feature_cambi_score",),
 }
 
 # ---------------------------------------------------------------------------
@@ -201,6 +207,9 @@ FEATURE_TOLERANCE: dict[str, float] = {
     "psnr_hvs": 5e-4,  # DCT + per-block float reductions — places=3.
     # XYB cube root + IIR blur reassociation — places=2 per ADR-0192.
     "ssimulacra2": 5e-3,
+    # T7-36 / ADR-0210: integer arithmetic + unmodified CPU host residual
+    # → bit-identical to CPU. places=4 by construction.
+    "cambi": 5e-5,
 }
 
 # Backend → extractor-name suffix and CLI device-selection flag.

@@ -420,7 +420,7 @@ jobs:
             --distorted python/test/resource/yuv/src01_hrc01_576x324.yuv \
             --width 576 --height 324 \
             --backends cpu vulkan \
-            --features adm ciede float_adm float_ansnr float_moment \
+            --features adm cambi ciede float_adm float_ansnr float_moment \
                        float_motion float_ms_ssim float_ms_ssim_lcs \
                        float_psnr float_ssim float_vif psnr psnr_hvs \
                        ssimulacra2 vif \
