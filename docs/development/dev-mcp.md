@@ -73,6 +73,22 @@ NVIDIA_VISIBLE_DEVICES=all CONTAINER_RUNTIME=nvidia \
     ./dev/scripts/dev-mcp-up.sh
 ```
 
+To ensure the container joins the correct host `video` and `render` groups
+(GIDs differ across distributions), export `HOST_GID_VIDEO` and
+`HOST_GID_RENDER` before starting.  The wrapper reads them automatically; you
+can also pass them inline:
+
+```bash
+HOST_GID_VIDEO=$(getent group video | cut -d: -f3) \
+HOST_GID_RENDER=$(getent group render | cut -d: -f3) \
+CONTAINER_RUNTIME=nvidia \
+docker compose -f dev/docker-compose.yml --project-directory . up -d dev-mcp
+```
+
+The defaults baked into `docker-compose.yml` (`44` for `video`, `109` for
+`render`) match common Ubuntu installations.  Override whenever `getent group
+video` returns a different GID (for example, Arch Linux uses `985`/`986`).
+
 The `dev-mcp-up.sh` wrapper builds (if needed) then starts:
 
 1. `vmaf-dev-mcp` — primary container; exposes MCP UDS at `/sockets/vmaf-mcp.sock`.

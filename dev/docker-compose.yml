@@ -29,14 +29,6 @@ x-common-env: &common-env
   NVIDIA_VISIBLE_DEVICES: all
   NVIDIA_DRIVER_CAPABILITIES: compute,graphics,utility,video
 
-x-common-deploy: &common-deploy
-  resources:
-    reservations:
-      devices:
-        - driver: nvidia
-          count: all
-          capabilities: [gpu]
-
 # ---------------------------------------------------------------------------
 # Volumes
 # ---------------------------------------------------------------------------
@@ -109,6 +101,25 @@ services:
       - video
       - render
 
+    # Intel Arc (Vulkan/SYCL via DRI) + AMD ROCm (HIP via /dev/kfd).
+    # /dev/dri covers all DRM render nodes (renderD128–renderD130, cards 0–2).
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/kfd:/dev/kfd
+
+    # video + render groups give the HIP runtime access to /dev/kfd and
+    # the DRI render nodes without running as root.
+    # GIDs are read at compose-up time from environment variables so the
+    # numeric IDs match the host's actual video/render groups (which differ
+    # across distributions). Defaults are common Ubuntu values (44=video,
+    # 109=render). Override via:
+    #   HOST_GID_VIDEO=$(getent group video | cut -d: -f3) \
+    #   HOST_GID_RENDER=$(getent group render | cut -d: -f3) \
+    #   docker compose ... up -d
+    group_add:
+      - "${HOST_GID_VIDEO:-44}"
+      - "${HOST_GID_RENDER:-109}"
+
     networks:
       - vmaf-net
 
@@ -152,16 +163,13 @@ services:
 
     runtime: ${CONTAINER_RUNTIME:-runc}
 
-    deploy:
-      <<: *common-deploy
-
     devices:
       - /dev/dri:/dev/dri
       - /dev/kfd:/dev/kfd
 
     group_add:
-      - video
-      - render
+      - "${HOST_GID_VIDEO:-44}"
+      - "${HOST_GID_RENDER:-109}"
 
     networks:
       - vmaf-net
