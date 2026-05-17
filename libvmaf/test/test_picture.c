@@ -157,11 +157,54 @@ static char *test_picture_alloc_rejects_overflow_dimensions()
     return NULL;
 }
 
-char *run_tests()
+/*
+ * Smoke test for VMAF_PIX_FMT_YUV400P (luma-only / monochrome).
+ *
+ * picture.c sets chroma w/h to 0 and chroma data[] pointers to NULL for
+ * YUV400P pictures.  This test pins that contract so regressions in
+ * picture_compute_geometry or vmaf_picture_alloc are caught before any
+ * consumer (e.g. a luma-only PSNR extractor) walks a NULL chroma pointer.
+ */
+static char *test_picture_alloc_yuv400p_luma_only(void)
+{
+    int err;
+    VmafPicture pic;
+
+    /* Standard HD luma-only picture. */
+    err = vmaf_picture_alloc(&pic, VMAF_PIX_FMT_YUV400P, 8, 1920, 1080);
+    mu_assert("vmaf_picture_alloc failed for 1920x1080 YUV400P", !err);
+    mu_assert("YUV400P luma data[0] must be non-NULL", pic.data[0] != NULL);
+    mu_assert("YUV400P chroma data[1] must be NULL", pic.data[1] == NULL);
+    mu_assert("YUV400P chroma data[2] must be NULL", pic.data[2] == NULL);
+    mu_assert("YUV400P luma w[0] must equal requested width", pic.w[0] == 1920);
+    mu_assert("YUV400P luma h[0] must equal requested height", pic.h[0] == 1080);
+    mu_assert("YUV400P chroma w[1] must be zero", pic.w[1] == 0);
+    mu_assert("YUV400P chroma w[2] must be zero", pic.w[2] == 0);
+    mu_assert("YUV400P chroma h[1] must be zero", pic.h[1] == 0);
+    mu_assert("YUV400P chroma h[2] must be zero", pic.h[2] == 0);
+    err = vmaf_picture_unref(&pic);
+    mu_assert("vmaf_picture_unref failed for YUV400P", !err);
+
+    /* Odd dimensions: geometry zeroing must not depend on even luma dims. */
+    err = vmaf_picture_alloc(&pic, VMAF_PIX_FMT_YUV400P, 8, 577, 323);
+    mu_assert("vmaf_picture_alloc failed for odd-dim YUV400P", !err);
+    mu_assert("YUV400P odd-dim luma data[0] must be non-NULL", pic.data[0] != NULL);
+    mu_assert("YUV400P odd-dim chroma data[1] must be NULL", pic.data[1] == NULL);
+    mu_assert("YUV400P odd-dim chroma data[2] must be NULL", pic.data[2] == NULL);
+    mu_assert("YUV400P odd-dim chroma w[1] must be zero", pic.w[1] == 0);
+    mu_assert("YUV400P odd-dim chroma h[1] must be zero", pic.h[1] == 0);
+    err = vmaf_picture_unref(&pic);
+    mu_assert("vmaf_picture_unref failed for odd-dim YUV400P", !err);
+
+    return NULL;
+}
+
+char *run_tests(void)
 {
     mu_run_test(test_picture_alloc_ref_and_unref);
     mu_run_test(test_picture_data_alignment);
     mu_run_test(test_picture_odd_dim_chroma_ceiling);
     mu_run_test(test_picture_alloc_rejects_overflow_dimensions);
+    mu_run_test(test_picture_alloc_yuv400p_luma_only);
     return NULL;
 }
