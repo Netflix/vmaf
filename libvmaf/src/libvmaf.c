@@ -1595,7 +1595,9 @@ static int read_pictures_cuda_cleanup(VmafContext *vmaf, VmafPicture *ref_host,
                                       vmaf_cuda_picture_get_stream(ref_device)),
                         after_ref_event);
     after_ref_event:
-        //^FIXME: move to picture callback
+        /* Deferred (T8.x): move unref into a cuStreamAddCallback/cuLaunchHostFunc
+         * so the host-side unref fires when the GPU event completes rather than
+         * eagerly here; requires a stable picture-callback ABI. */
         err |= vmaf_picture_unref(ref_device);
     }
     if (dist_device->priv) {
@@ -1604,7 +1606,7 @@ static int read_pictures_cuda_cleanup(VmafContext *vmaf, VmafPicture *ref_host,
                                       vmaf_cuda_picture_get_stream(dist_device)),
                         after_dist_event);
     after_dist_event:
-        //^FIXME: move to picture callback
+        /* Deferred (T8.x): same picture-callback deferral as ref_device above. */
         err |= vmaf_picture_unref(dist_device);
     }
     if (_cuda_err && !err)
