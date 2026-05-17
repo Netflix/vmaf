@@ -1,6 +1,7 @@
 # Fork bug-status — `docs/state.md`
 
 <!-- markdownlint-disable MD013 -->
+_Updated: 2026-05-17 (`integer_adm` CUDA and Vulkan backends now honour `adm_skip_scale0`; the option was registered on the CPU extractor but absent from both GPU paths, so scale-0 was always accumulated; row added to Recently closed.)_
 _Updated: 2026-05-16 (Staleness sweep — 5 stale verified-notes corrected: PR #512 Phase-3b MERGED (T-VK-VIF-1.4-RESIDUAL-ARC); PR #469 MERGED (T6-2a-followup' path B, two rows); PR #497 MERGED 2026-05-09 — Research-0090 deferred trigger fired, now actionable; PR #443 + #444 CLOSED without merge, stale cross-refs struck.)_
 _Updated: 2026-05-16 (T-CAMBI-CUDA-HOST-PREPROCESSING-SEGV closed — `cambi_cuda` SIGSEGV on every frame fixed by downloading dist_pic GPU→host before host preprocessing; row added to Recently closed.)_
 _Updated: 2026-05-16 (PR fix/sycl-motion-fps-weight-vulkan-import-status-2026-05-16 — closed T-VK-T7-29-PART-2-IMPORT-NOT-IMPL; all three Vulkan import entry points fully implemented, stale -ENOSYS header comments removed. SYCL motion_v2 gains motion_fps_weight option.)_
@@ -105,6 +106,7 @@ landed fix yet._
 
 ## Recently closed
 
+| T-INT-ADM-CUDA-VK-SKIP-SCALE0-OPTION | `integer_adm_cuda` and `adm_vulkan` silently dropped `adm_skip_scale0`; scale-0 was always accumulated regardless of caller setting, diverging from `integer_adm.c` CPU | — | fix/adm-skip-scale0-gpu-parity | `vmaf --feature integer_adm_cuda:adm_skip_scale0=true` → `integer_adm_scale0=0.0` | (last ~3 months)
 | T-GPU-MS-SSIM-ENABLE-DB-SILENT | `float_ms_ssim_cuda` silently ignored `enable_db` / `clip_db`; `float_ms_ssim_sycl` silently ignored `enable_lcs`, `enable_db`, `clip_db` — GPU emitted linear scores regardless | ADR-0460 / Research-0137 | fix/ms-ssim-gpu-enable-db-lcs-sycl-2026-05-16 | — | (last ~3 months)
 | T-GPU-PSNR-ENABLE-CHROMA-SILENT | `psnr_cuda` / `psnr_sycl` / `psnr_vulkan` silently ignored `enable_chroma=false`, emitting full chroma on non-YUV400 sources and diverging from CPU | ADR-0453 / Research-0136 | fix/psnr-enable-chroma-gpu-parity-2026-05-16 | — | (last ~3 months)
 

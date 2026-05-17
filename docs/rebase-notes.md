@@ -7,6 +7,13 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
+## fix/adm-skip-scale0-gpu-parity — no rebase impact
+
+`libvmaf/src/feature/cuda/integer_adm_cuda.c` and
+`libvmaf/src/feature/vulkan/adm_vulkan.c` are fork-local GPU backends
+with no Netflix upstream counterpart. Adds `bool adm_skip_scale0` field
+and option entry to each; no upstream-shared files touched.
+
 ## refactor/aiutils-vmaftune-corpus-dedup — no rebase impact
 
 `tools/vmaf-tune/` is fork-local. `ai/src/aiutils/` is fork-local.
@@ -35377,6 +35384,3 @@ upstream later changes the HIP PSNR submit/collect call-graph, re-check
 that the per-plane loop in `submit_fex_hip` and `collect_fex_hip` matches
 whatever new structure upstream introduces. The kernel (`psnr_score.hip`)
 is unchanged.
-
-
-

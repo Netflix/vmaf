@@ -111,7 +111,8 @@ typedef struct {
     double adm_csf_scale;
     double adm_csf_diag_scale;
     double adm_noise_weight;
-    double adm_min_val; /* ADR-0487: minimum score floor (mirrors CPU option). */
+    double adm_min_val;   /* ADR-0487: minimum score floor (mirrors CPU option). */
+    bool adm_skip_scale0; /* host-side suppression: scale-0 excluded from score when set */
 
     /* Frame geometry. */
     unsigned width;
@@ -269,6 +270,17 @@ static const VmafOption options[] = {{
                                          .default_val.d = DEFAULT_ADM_MIN_VAL,
                                          .min = 0.0,
                                          .max = 1.0,
+                                         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+                                     },
+                                     {
+                                         .name = "adm_skip_scale0",
+                                         .alias = "ss0",
+                                         .help = "skip scale-0 contribution: exclude scale-0 "
+                                                 "num/den from the overall ADM score and emit 0.0 "
+                                                 "for integer_adm_scale0 (parity with CPU option)",
+                                         .offset = offsetof(AdmVulkanState, adm_skip_scale0),
+                                         .type = VMAF_OPT_TYPE_BOOL,
+                                         .default_val.b = false,
                                          .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
                                      },
                                      {0}};
@@ -922,6 +934,13 @@ static int reduce_and_emit(AdmVulkanState *s, unsigned index, VmafFeatureCollect
                               (float)s->adm_norm_view_dist, (float)s->adm_ref_display_height,
                               (float)s->adm_csf_scale, (float)s->adm_csf_diag_scale,
                               (float)s->adm_noise_weight, &den_scale);
+        /* adm_skip_scale0: exclude scale 0 from num/den accumulation, mirroring
+         * the CPU integer_adm.c fast-path (den_scale = 1e-10, num_scale = 0). */
+        if (scale == 0 && s->adm_skip_scale0) {
+            scores_num[0] = 0.0;
+            scores_den[0] = 1e-10;
+            continue;
+        }
         num += num_scale;
         den += den_scale;
         scores_num[scale] = num_scale;
