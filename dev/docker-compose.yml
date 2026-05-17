@@ -102,18 +102,6 @@ services:
 
     # video + render groups give the HIP runtime access to /dev/kfd and
     # the DRI render nodes without running as root.
-    group_add:
-      - video
-      - render
-
-    # Intel Arc (Vulkan/SYCL via DRI) + AMD ROCm (HIP via /dev/kfd).
-    # /dev/dri covers all DRM render nodes (renderD128–renderD130, cards 0–2).
-    devices:
-      - /dev/dri:/dev/dri
-      - /dev/kfd:/dev/kfd
-
-    # video + render groups give the HIP runtime access to /dev/kfd and
-    # the DRI render nodes without running as root.
     # GIDs are read at compose-up time from environment variables so the
     # numeric IDs match the host's actual video/render groups (which differ
     # across distributions). Defaults are common Ubuntu values (44=video,
