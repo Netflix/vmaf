@@ -299,8 +299,11 @@ RUN cd libvmaf && CC=icx CXX=icpx meson setup build \
         -Db_lto=false \
         --prefix=/usr/local \
         -Dc_args="-march=native" \
-    && ninja -C build \
-    && ninja -C build install
+    && ninja -C build
+
+USER root
+RUN cd libvmaf && ninja -C build install
+USER vmaf
 
 # ---------------------------------------------------------------------------
 # Stage 3.5 — FFmpeg n8.1.1 with our libvmaf integration patches
