@@ -191,6 +191,11 @@ nav:
       - Vulkan image import: api/vulkan-image-import.md
   - Metrics:
       - Features: metrics/features.md
+      - SSIM: metrics/ssim.md
+      - MS-SSIM: metrics/ms-ssim.md
+      - PSNR-HVS: metrics/psnr-hvs.md
+      - ANSNR: metrics/ansnr.md
+      - VIF: metrics/vif.md
       - CAMBI: metrics/cambi.md
       - SSIMULACRA 2: metrics/ssimulacra2.md
       - DISTS: metrics/dists.md
