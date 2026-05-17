@@ -258,8 +258,8 @@ static float dwt_quant_step(int lambda, int theta, double view_dist, int display
 {
     float const r = (float)(view_dist * display_h * M_PI / 180.0);
     float const temp =
-        std::log10f(std::powf(2.0f, lambda + 1) * dwt_model_Y.f0 * dwt_model_Y.g[theta] / r);
-    return 2.0f * dwt_model_Y.a * std::powf(10.0f, dwt_model_Y.k * temp * temp) /
+        log10f(powf(2.0f, lambda + 1) * dwt_model_Y.f0 * dwt_model_Y.g[theta] / r);
+    return 2.0f * dwt_model_Y.a * powf(10.0f, dwt_model_Y.k * temp * temp) /
            dwt_basis_amp[lambda][theta];
 }
 
@@ -1209,7 +1209,7 @@ static void conclude_adm_cm(const int64_t *accum, int h, int w, int scale, float
     const uint32_t shift_inner_accum = (uint32_t)std::ceil(std::log2(h));
 
     float const powf_add =
-        std::powf((float)((bottom - top) * (right - left)) * noise_weight, 1.0f / 3.0f);
+        powf((float)((bottom - top) * (right - left)) * noise_weight, 1.0f / 3.0f);
 
     *result = 0;
     for (int i = 0; i < 3; i++) {
@@ -1225,12 +1225,12 @@ static void conclude_adm_cm(const int64_t *accum, int h, int w, int scale, float
         } else {
             // CPU uses w (full band width) for shift_cub, not active_w
             uint32_t const shift_cub = (uint32_t)std::ceil(std::log2((double)w));
-            float final_shift[3] = {std::powf(2.0f, 45.0f - shift_cub - shift_inner_accum),
-                                    std::powf(2.0f, 39.0f - shift_cub - shift_inner_accum),
-                                    std::powf(2.0f, 36.0f - shift_cub - shift_inner_accum)};
+            float final_shift[3] = {powf(2.0f, 45.0f - shift_cub - shift_inner_accum),
+                                    powf(2.0f, 39.0f - shift_cub - shift_inner_accum),
+                                    powf(2.0f, 36.0f - shift_cub - shift_inner_accum)};
             f_accum = (float)(accum[i] / final_shift[scale - 1]);
         }
-        *result += std::powf(f_accum, 1.0f / 3.0f) + powf_add;
+        *result += powf(f_accum, 1.0f / 3.0f) + powf_add;
     }
 }
 
@@ -1265,12 +1265,12 @@ static void conclude_adm_csf_den(const uint64_t *accum, int h, int w, int scale,
     }
 
     float const powf_add =
-        std::powf((float)((bottom - top) * (right - left)) * noise_weight, 1.0f / 3.0f);
+        powf((float)((bottom - top) * (right - left)) * noise_weight, 1.0f / 3.0f);
 
     *result = 0;
     for (int i = 0; i < 3; i++) {
         double const csf = (double)(accum[i] / shift_csf) * std::pow(rfactor[i], 3);
-        *result += std::powf((float)csf, 1.0f / 3.0f) + powf_add;
+        *result += powf((float)csf, 1.0f / 3.0f) + powf_add;
     }
 }
 
