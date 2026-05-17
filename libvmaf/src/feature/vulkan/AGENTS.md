@@ -77,6 +77,17 @@ ADR-0234) catches drift but only after a full GPU run.
   `default_val.b = true`; do **not** flip the default. See
   [`../../AGENTS.md §"Vulkan PSNR chroma contract"`](../../AGENTS.md).
 
+- **`psnr_hvs_vulkan.c` `enable_chroma` option**
+  ([ADR-0461](../../../../docs/adr/0461-psnr-hvs-vulkan-enable-chroma.md)).
+  Mirrors the ADR-0453 / `psnr_vulkan` pattern: `n_planes` is 1 when
+  `enable_chroma=false` (luma-only output; combined `psnr_hvs` score
+  suppressed) and 3 otherwise. Chroma pipelines
+  (`pipeline_chroma_u` / `pipeline_chroma_v`) are only created in
+  `create_pipeline()` when `enable_chroma=true`; `close_fex()` relies on
+  `VK_NULL_HANDLE` guards so no special-casing is needed there. The
+  `default_val.b = true` must **not** be flipped — it would silently drop
+  `psnr_hvs_cb`, `psnr_hvs_cr`, and `psnr_hvs` for all existing callers.
+
 - **`ms_ssim_vulkan.c` honours the `enable_lcs` GPU contract**
   (ADR-0243). Emits 15 extra metrics
   (`float_ms_ssim_{l,c,s}_scale{0..4}`) when `enable_lcs=true`.

@@ -27,6 +27,7 @@
 
 #include <errno.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -92,10 +93,30 @@ typedef struct {
     VmafVulkanBuffer *dist_in[PSNR_HVS_NUM_PLANES];
     VmafVulkanBuffer *partials[PSNR_HVS_NUM_PLANES];
 
+    /* `enable_chroma` option: when false, only the luma plane (Y) is
+     * dispatched and only `psnr_hvs_y` is emitted.  The combined
+     * `psnr_hvs` score (0.8·Y + 0.1·(Cb+Cr)) requires all three planes
+     * and is suppressed when chroma is disabled.  Default true mirrors
+     * the psnr_vulkan / ADR-0453 precedent and the CPU extractor's
+     * always-three-plane behaviour.  See ADR-0461. */
+    bool enable_chroma;
+    /* Number of active planes: 1 when enable_chroma=false, 3 otherwise. */
+    unsigned n_planes;
+
     VmafDictionary *feature_name_dict;
 } PsnrHvsVulkanState;
 
-static const VmafOption options[] = {{0}};
+static const VmafOption options[] = {
+    {
+        .name = "enable_chroma",
+        .help = "enable calculation for chroma channels "
+                "(when false only psnr_hvs_y is emitted)",
+        .offset = offsetof(PsnrHvsVulkanState, enable_chroma),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = true,
+    },
+    {0},
+};
 
 typedef struct {
     uint32_t width;
@@ -197,8 +218,10 @@ static int create_pipeline(PsnrHvsVulkanState *s)
     if (err)
         return err;
 
-    /* Planes 1 + 2 (chroma U / V) — same layout/shader/DSL/pool,
-     * different `plane` spec-constant. */
+    /* Planes 1 + 2 (chroma U / V) — only created when enable_chroma=true.
+     * Same layout/shader/DSL/pool as luma; different `plane` spec-constant. */
+    if (!s->enable_chroma)
+        return 0;
     err = build_pipeline_for_plane(s, /*plane=*/1, &s->pipeline_chroma_u);
     if (err)
         return err;
@@ -208,7 +231,7 @@ static int create_pipeline(PsnrHvsVulkanState *s)
 static int alloc_buffers(PsnrHvsVulkanState *s)
 {
     int err = 0;
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (unsigned p = 0; p < s->n_planes; p++) {
         const size_t plane_bytes = (size_t)s->width[p] * s->height[p] * sizeof(float);
         const size_t partials_bytes = (size_t)s->num_blocks[p] * sizeof(float);
         err |= vmaf_vulkan_buffer_alloc(s->ctx, &s->ref_in[p], plane_bytes);
@@ -266,10 +289,16 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
         return -EINVAL;
     }
 
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    /* Mirror ADR-0453 / psnr_vulkan.c: when enable_chroma=false, treat
+     * the extractor as luma-only — skip chroma pipeline creation, buffer
+     * allocation, and dispatch.  The combined psnr_hvs score is also
+     * suppressed because it depends on all three planes. */
+    s->n_planes = s->enable_chroma ? (unsigned)PSNR_HVS_NUM_PLANES : 1U;
+
+    for (unsigned p = 0; p < s->n_planes; p++) {
         if (s->width[p] < (unsigned)PSNR_HVS_BLOCK || s->height[p] < (unsigned)PSNR_HVS_BLOCK) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
-                     "psnr_hvs_vulkan: plane %d dims %ux%u smaller than 8×8 block\n", p,
+                     "psnr_hvs_vulkan: plane %d dims %ux%u smaller than 8x8 block\n", p,
                      s->width[p], s->height[p]);
             return -EINVAL;
         }
@@ -303,14 +332,14 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
         return err;
 
     /* Submit pool: 1 fence + 1 cmdbuf for the per-frame combined
-     * dispatch (all 3 planes batched into one cmd buffer). */
+     * dispatch (all n_planes batched into one cmd buffer). */
     err = vmaf_vulkan_kernel_submit_pool_create(s->ctx, /*slot_count=*/1, &s->sub_pool);
     if (err)
         return err;
 
-    /* Pre-allocate one descriptor set per plane (3 sets total). */
+    /* Pre-allocate one descriptor set per active plane. */
     err = vmaf_vulkan_kernel_descriptor_sets_alloc(s->ctx, s->pl.desc_pool, s->pl.dsl,
-                                                   (uint32_t)PSNR_HVS_NUM_PLANES, s->pre_sets);
+                                                   (uint32_t)s->n_planes, s->pre_sets);
     if (err)
         return err;
 
@@ -410,18 +439,20 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
     PsnrHvsVulkanState *s = fex->priv;
     int err = 0;
 
-    /* Upload all three planes. */
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
-        err = upload_plane(s, s->ref_in[p], ref_pic, p);
+    /* Upload active planes (n_planes = 1 when enable_chroma=false, 3 otherwise). */
+    for (unsigned p = 0; p < s->n_planes; p++) {
+        err = upload_plane(s, s->ref_in[p], ref_pic, (int)p);
         if (err)
             return err;
-        err = upload_plane(s, s->dist_in[p], dist_pic, p);
+        err = upload_plane(s, s->dist_in[p], dist_pic, (int)p);
         if (err)
             return err;
     }
 
-    /* Descriptor sets were written once in init() — no per-frame update needed
-     * because the buffer bindings are invariant (perf audit VK-6, 2026-05-16). */
+    /* Pre-allocated descriptor sets — just rebind the buffer
+     * pointers per frame (T-GPU-OPT-VK-4 / ADR-0256). */
+    for (unsigned p = 0; p < s->n_planes; p++)
+        write_descriptor_set(s, s->pre_sets[p], (int)p);
 
     /* Acquire the pre-allocated cmd buffer + fence (slot 0) from
      * the submit pool. Reset + begin happens inside acquire. */
@@ -431,7 +462,7 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
         return err;
     VkCommandBuffer cmd = submit.cmd;
 
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (unsigned p = 0; p < s->n_planes; p++) {
         PsnrHvsPushConsts pc = {
             .width = s->width[p],
             .height = s->height[p],
@@ -442,7 +473,7 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
                                 &s->pre_sets[p], 0, NULL);
         vkCmdPushConstants(cmd, s->pl.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc),
                            &pc);
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, psnr_hvs_plane_pipeline(s, p));
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, psnr_hvs_plane_pipeline(s, (int)p));
         vkCmdDispatch(cmd, s->num_blocks_x[p], s->num_blocks_y[p], 1);
     }
 
@@ -453,14 +484,14 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
     /* Per-plane reduction + log10 transform. CPU `calc_psnrhvs`
      * accumulates `ret` in `float` over per-coefficient contribs
      * (line 360 of psnr_hvs.c), then `ret /= pixels` (float / int)
-     * and `ret /= samplemax²` (float / int). Match that exactly:
+     * and `ret /= samplemax^2` (float / int). Match that exactly:
      * sum the per-block partials in float in block iteration
      * order, divide by `pixels` (int) and `samplemax_sq` (int)
      * with implicit promotion. Promoting to double here would
      * be a more-precise-but-different value, surfacing as ~1e-4
      * dB drift vs CPU at places=4. */
-    double plane_score[PSNR_HVS_NUM_PLANES];
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    double plane_score[PSNR_HVS_NUM_PLANES] = {0.0, 0.0, 0.0};
+    for (unsigned p = 0; p < s->n_planes; p++) {
         int err_inv = vmaf_vulkan_buffer_invalidate(s->ctx, s->partials[p]);
         if (err_inv)
             return err_inv;
@@ -474,15 +505,19 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
         plane_score[p] = (double)ret;
     }
 
-    static const char *plane_features[PSNR_HVS_NUM_PLANES] = {"psnr_hvs_y", "psnr_hvs_cb",
-                                                              "psnr_hvs_cr"};
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    static const char *const plane_features[PSNR_HVS_NUM_PLANES] = {"psnr_hvs_y", "psnr_hvs_cb",
+                                                                    "psnr_hvs_cr"};
+    for (unsigned p = 0; p < s->n_planes; p++) {
         err |= vmaf_feature_collector_append(feature_collector, plane_features[p],
                                              convert_score_db(plane_score[p], 1.0), index);
     }
-    const double combined = 0.8 * plane_score[0] + 0.1 * (plane_score[1] + plane_score[2]);
-    err |= vmaf_feature_collector_append(feature_collector, "psnr_hvs",
-                                         convert_score_db(combined, 1.0), index);
+    /* The combined psnr_hvs = 0.8*Y + 0.1*(Cb+Cr) requires all 3 planes;
+     * suppress it when enable_chroma=false (ADR-0461). */
+    if (s->enable_chroma) {
+        const double combined = 0.8 * plane_score[0] + 0.1 * (plane_score[1] + plane_score[2]);
+        err |= vmaf_feature_collector_append(feature_collector, "psnr_hvs",
+                                             convert_score_db(combined, 1.0), index);
+    }
 
 cleanup:
     /* Pool-borrowed submit: free is a no-op for the underlying
@@ -511,7 +546,10 @@ static int close_fex(VmafFeatureExtractor *fex)
     vmaf_vulkan_kernel_submit_pool_destroy(s->ctx, &s->sub_pool);
     vmaf_vulkan_kernel_pipeline_destroy(s->ctx, &s->pl);
 
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    /* Free only the planes that were actually allocated (n_planes is
+     * 1 when enable_chroma=false, 3 otherwise). The NULL-guard is
+     * still present because alloc_buffers may have returned early. */
+    for (unsigned p = 0; p < s->n_planes; p++) {
         if (s->ref_in[p])
             vmaf_vulkan_buffer_free(s->ctx, s->ref_in[p]);
         if (s->dist_in[p])
