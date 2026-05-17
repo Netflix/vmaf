@@ -64,6 +64,8 @@ typedef struct AdmStateHip {
     double adm_csf_scale;
     double adm_csf_diag_scale;
     double adm_noise_weight;
+    double adm_min_val;          /* ADR-0487: minimum score floor (mirrors CPU + CUDA option). */
+    bool adm_skip_scale0;        /* host-side suppression: scale-0 excluded from score when set */
     unsigned submit_w, submit_h; /* stored by submit for collect */
 
 #ifdef HAVE_HIPCC
@@ -228,6 +230,15 @@ static void write_scores(const write_score_parameters_adm_hip *params)
                              (float)s->adm_csf_scale, (float)s->adm_csf_diag_scale,
                              (float)s->adm_noise_weight);
 
+        /* adm_skip_scale0: exclude scale 0 from num/den accumulation, mirroring
+         * the CPU integer_adm.c fast-path (den_scale = 1e-10, num_scale = 0).
+         * The GPU kernel still computes scale 0; suppression is host-side only. */
+        if (scale == 0u && s->adm_skip_scale0) {
+            scores[0] = 0.0;
+            scores[1] = 1e-10;
+            continue;
+        }
+
         num += num_scale;
         den += den_scale;
 
@@ -244,6 +255,9 @@ static void write_scores(const write_score_parameters_adm_hip *params)
     } else {
         score = num / den;
     }
+    /* ADR-0487: apply minimum score floor, matching CPU integer_adm behaviour. */
+    if (score < s->adm_min_val)
+        score = s->adm_min_val;
     score_num = num;
     score_den = den;
 
@@ -366,6 +380,27 @@ static const VmafOption options_hip[] = {
         .default_val.d = DEFAULT_ADM_NOISE_WEIGHT,
         .min = 0.0,
         .max = 100.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "adm_min_val",
+        .alias = "min",
+        .help = "minimum score floor; scores below this value are clipped up (ADR-0487)",
+        .offset = offsetof(AdmStateHip, adm_min_val),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_ADM_MIN_VAL,
+        .min = 0.0,
+        .max = 1.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "adm_skip_scale0",
+        .alias = "ss0",
+        .help = "skip scale-0 contribution: exclude scale-0 num/den from overall ADM score "
+                "and emit 0.0 for integer_adm_scale0 (parity with CPU integer_adm option)",
+        .offset = offsetof(AdmStateHip, adm_skip_scale0),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {0}};

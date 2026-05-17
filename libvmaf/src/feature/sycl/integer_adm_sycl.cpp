@@ -114,6 +114,8 @@ struct AdmStateSycl {
     double adm_csf_scale;
     double adm_csf_diag_scale;
     double adm_noise_weight;
+    double adm_min_val;   /* ADR-0487: minimum score floor (mirrors CPU + CUDA option). */
+    bool adm_skip_scale0; /* host-side suppression: scale-0 excluded from score when set */
 
     VmafDictionary *feature_name_dict;
 
@@ -221,6 +223,29 @@ static const VmafOption options[] = {{
                                          .default_val = {.d = DEFAULT_ADM_NOISE_WEIGHT},
                                          .min = 0.0,
                                          .max = 100.0,
+                                         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+                                     },
+                                     {
+                                         .name = "adm_min_val",
+                                         .alias = "min",
+                                         .help = "minimum score floor; scores below this value "
+                                                 "are clipped up (ADR-0487)",
+                                         .offset = offsetof(AdmStateSycl, adm_min_val),
+                                         .type = VMAF_OPT_TYPE_DOUBLE,
+                                         .default_val = {.d = DEFAULT_ADM_MIN_VAL},
+                                         .min = 0.0,
+                                         .max = 1.0,
+                                         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+                                     },
+                                     {
+                                         .name = "adm_skip_scale0",
+                                         .alias = "ss0",
+                                         .help = "skip scale-0 contribution: exclude scale-0 "
+                                                 "num/den from overall ADM score and emit 0.0 "
+                                                 "for integer_adm_scale0 (parity with CPU)",
+                                         .offset = offsetof(AdmStateSycl, adm_skip_scale0),
+                                         .type = VMAF_OPT_TYPE_BOOL,
+                                         .default_val = {.b = false},
                                          .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
                                      },
                                      {nullptr}};
@@ -1560,6 +1585,15 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
                              (float)s->adm_ref_display_height, (float)s->adm_csf_scale,
                              (float)s->adm_csf_diag_scale, (float)s->adm_noise_weight);
 
+        /* adm_skip_scale0: exclude scale 0 from num/den accumulation, mirroring
+         * the CPU integer_adm.c fast-path (den_scale = 1e-10, num_scale = 0).
+         * The GPU kernel still computes scale 0; suppression is host-side only. */
+        if (scale == 0 && s->adm_skip_scale0) {
+            scores_num[0] = 0.0;
+            scores_den[0] = 1e-10;
+            continue;
+        }
+
         num += num_scale;
         den += den_scale;
         scores_num[scale] = num_scale;
@@ -1573,7 +1607,11 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
     if (den < numden_limit)
         den = 0.0;
 
-    double const score = (den == 0.0) ? 1.0 : num / den;
+    double score_val = (den == 0.0) ? 1.0 : num / den;
+    /* ADR-0487: apply minimum score floor, matching CPU integer_adm behaviour. */
+    if (score_val < s->adm_min_val)
+        score_val = s->adm_min_val;
+    double const score = score_val;
 
     // Write primary feature
     {
