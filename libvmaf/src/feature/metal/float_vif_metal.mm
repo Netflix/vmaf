@@ -90,6 +90,7 @@ typedef struct FloatVifStateMetal {
     double vif_kernelscale;
     double vif_sigma_nsq;
     bool   debug;
+    bool   vif_skip_scale0; /* host-side suppression: emit 0.0 for scale-0, mirrors float_vif.c */
 
     VmafDictionary *feature_name_dict;
 } FloatVifStateMetal;
@@ -135,6 +136,15 @@ static const VmafOption options[] = {
         .default_val.d = 2.0,
         .min = 0.0,
         .max = 5.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "vif_skip_scale0",
+        .alias = "ssclz",
+        .help = "when set, skip scale 0 calculations",
+        .offset = offsetof(FloatVifStateMetal, vif_skip_scale0),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {0},
@@ -509,7 +519,13 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
     };
 
     int err = 0;
-    for (int i = 0; i < FVIF_SCALES; i++) {
+    /* vif_skip_scale0: emit 0.0 for scale-0 and exclude from aggregate,
+     * mirroring float_vif.c collect path (host-side suppression only). */
+    const double scale0_val = s->vif_skip_scale0 ? 0.0 :
+        ((scores[1] != 0.0) ? (scores[0] / scores[1]) : 1.0);
+    err |= vmaf_feature_collector_append_with_dict(
+        feature_collector, s->feature_name_dict, scale_names[0], scale0_val, index);
+    for (int i = 1; i < FVIF_SCALES; i++) {
         const double val = (scores[2*i+1] != 0.0) ?
                            (scores[2*i] / scores[2*i+1]) : 1.0;
         err |= vmaf_feature_collector_append_with_dict(
@@ -517,8 +533,10 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
     }
 
     if (s->debug && !err) {
-        const double score_num = scores[0] + scores[2] + scores[4] + scores[6];
-        const double score_den = scores[1] + scores[3] + scores[5] + scores[7];
+        const double score_num = (s->vif_skip_scale0 ? 0.0 : scores[0]) +
+                                 scores[2] + scores[4] + scores[6];
+        const double score_den = (s->vif_skip_scale0 ? 0.0 : scores[1]) +
+                                 scores[3] + scores[5] + scores[7];
         const double score     = (score_den == 0.0) ? 1.0 : (score_num / score_den);
         err |= vmaf_feature_collector_append_with_dict(
             feature_collector, s->feature_name_dict, "vif", score, index);
@@ -527,15 +545,20 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
         err |= vmaf_feature_collector_append_with_dict(
             feature_collector, s->feature_name_dict, "vif_den", score_den, index);
 
-        static const char *nd_names[8] = {
-            "vif_num_scale0", "vif_den_scale0",
+        err |= vmaf_feature_collector_append_with_dict(
+            feature_collector, s->feature_name_dict, "vif_num_scale0",
+            s->vif_skip_scale0 ? 0.0 : scores[0], index);
+        err |= vmaf_feature_collector_append_with_dict(
+            feature_collector, s->feature_name_dict, "vif_den_scale0",
+            s->vif_skip_scale0 ? -1.0 : scores[1], index);
+        static const char *nd_names[6] = {
             "vif_num_scale1", "vif_den_scale1",
             "vif_num_scale2", "vif_den_scale2",
             "vif_num_scale3", "vif_den_scale3",
         };
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 6; i++) {
             err |= vmaf_feature_collector_append_with_dict(
-                feature_collector, s->feature_name_dict, nd_names[i], scores[i], index);
+                feature_collector, s->feature_name_dict, nd_names[i], scores[i + 2], index);
         }
     }
     return err;

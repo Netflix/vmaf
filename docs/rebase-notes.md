@@ -35380,6 +35380,20 @@ is unchanged.
 
 ---
 
+## fix/float-vif-skip-scale0-hip-metal
+
+**Files**: `libvmaf/src/feature/sycl/float_vif_sycl.cpp`,
+`libvmaf/src/feature/hip/float_vif_hip.c`,
+`libvmaf/src/feature/metal/float_vif_metal.mm`
+
+No rebase impact: the changes are additive (new field + option + host-side
+guard in the collect path). GPU kernels are unchanged. If upstream later
+changes the float_vif collect path or adds `vif_skip_scale0` natively,
+re-check that scale-0 suppression in all three backends matches the CPU
+implementation in `float_vif.c`.
+
+---
+
 ## fix/adm-metal-missing-options
 
 **File**: `libvmaf/src/feature/metal/integer_adm_metal.mm`
