@@ -166,6 +166,15 @@ static const VmafOption options[] = {{
                                          .max = 100.0,
                                          .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
                                      },
+                                     {
+                                         .name = "vif_skip_scale0",
+                                         .help = "skip scale 0 (finest scale) VIF computation; "
+                                                 "score0 is forced to 0.0 (parity with CPU option)",
+                                         .offset = offsetof(VifVulkanState, vif_skip_scale0),
+                                         .type = VMAF_OPT_TYPE_BOOL,
+                                         .default_val.b = false,
+                                         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+                                     },
                                      {0}};
 
 /* ------------------------------------------------------------------ */
@@ -608,8 +617,12 @@ static int reduce_and_emit(VifVulkanState *s, unsigned index, VmafFeatureCollect
                      (double)totals[i].den_non_log;
         scale_num[i] = num;
         scale_den[i] = den;
-        score_num += num;
-        score_den += den;
+        /* vif_skip_scale0: exclude scale 0 from the aggregate (parity with
+         * integer_vif.c CPU path, lines 725-733). */
+        if (!s->vif_skip_scale0 || i > 0) {
+            score_num += num;
+            score_den += den;
+        }
     }
 
     static const char *const key_names[] = {
@@ -636,12 +649,20 @@ static int reduce_and_emit(VifVulkanState *s, unsigned index, VmafFeatureCollect
                                                 score_den, index);
         for (int i = 0; i < VIF_NUM_SCALES; i++) {
             char name[64];
-            snprintf(name, sizeof(name), "integer_vif_num_scale%d", i);
-            vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, name, scale_num[i],
-                                                    index);
-            snprintf(name, sizeof(name), "integer_vif_den_scale%d", i);
-            vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, name, scale_den[i],
-                                                    index);
+            if (i == 0 && s->vif_skip_scale0) {
+                (void)snprintf(name, sizeof(name), "integer_vif_num_scale0");
+                vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, name, 0.0, index);
+                (void)snprintf(name, sizeof(name), "integer_vif_den_scale0");
+                vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, name, -1.0,
+                                                        index);
+            } else {
+                (void)snprintf(name, sizeof(name), "integer_vif_num_scale%d", i);
+                vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, name,
+                                                        scale_num[i], index);
+                (void)snprintf(name, sizeof(name), "integer_vif_den_scale%d", i);
+                vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict, name,
+                                                        scale_den[i], index);
+            }
         }
     }
     return 0;
