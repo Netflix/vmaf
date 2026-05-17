@@ -324,7 +324,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libx264-dev libx265-dev libsvtav1-dev libsvtav1enc-dev libvpx-dev libdav1d-dev \
+    libx264-dev libx265-dev libvpx-dev libdav1d-dev \
     libfdk-aac-dev libmp3lame-dev libopus-dev libvorbis-dev \
     libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev \
     libva-dev libvdpau-dev \
@@ -354,7 +354,7 @@ RUN PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib/x86_64-linux-gnu/pkg
         --enable-libvmaf-sycl \
         --enable-libvmaf-vulkan \
         --enable-libvmaf-hip \
-        --enable-libx264 --enable-libx265 --enable-libsvtav1 \
+        --enable-libx264 --enable-libx265 \
         --enable-libvpx --enable-libdav1d \
         --enable-libfdk-aac --enable-libmp3lame --enable-libopus --enable-libvorbis \
         --enable-libass --enable-libfreetype --enable-libfontconfig --enable-libfribidi \
