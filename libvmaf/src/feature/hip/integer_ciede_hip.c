@@ -2,9 +2,10 @@
  *  Copyright 2026 Lusoris and Claude (Anthropic)
  *  SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
  *
- *  ciede2000 feature extractor on the HIP backend — third consumer of
- *  `libvmaf/src/hip/kernel_template.h` (T7-10b follow-up / ADR-0259).
- *  Real kernel promotion: T7-10b batch-4 / ADR-0377.
+ *  ciede2000 feature extractor on the HIP backend — canonical TU,
+ *  named `integer_ciede_hip.c` to match the CUDA twin convention
+ *  (`integer_ciede_cuda.c`). T7-10b follow-up / ADR-0259; real
+ *  kernel promotion: T7-10b batch-4 / ADR-0377.
  *
  *  This TU mirrors `libvmaf/src/feature/cuda/integer_ciede_cuda.c`
  *  call-graph-for-call-graph. When `HAVE_HIPCC` is defined the real HIP
