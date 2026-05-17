@@ -34,7 +34,6 @@
  */
 
 #include <errno.h>
-#include <float.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -71,15 +70,6 @@ typedef struct {
     bool enable_chroma;
     /* Number of active planes (1 for YUV400, 3 otherwise). */
     unsigned n_planes;
-    /* `enable_mse` option: emit per-plane MSE alongside PSNR.
-     * Mirrors CPU integer_psnr.c::extract's enable_mse branch. */
-    bool enable_mse;
-    /* `reduced_hbd_peak` option: peak = 255<<(bpc-8) instead of (1<<bpc)-1.
-     * Mirrors CPU integer_psnr.c::init's reduced_hbd_peak branch. */
-    bool reduced_hbd_peak;
-    /* `min_sse` option: drives per-plane psnr_max when > 0.0.
-     * Mirrors CPU integer_psnr.c::init's min_sse formula. */
-    double min_sse;
 
     /* Vulkan context handle. Borrow on imported state, lazy-create otherwise. */
     VmafVulkanContext *ctx;
@@ -120,38 +110,14 @@ typedef struct {
     VmafDictionary *feature_name_dict;
 } PsnrVulkanState;
 
-static const VmafOption options[] = {
-    {
-        .name = "enable_chroma",
-        .help = "enable calculation for chroma channels",
-        .offset = offsetof(PsnrVulkanState, enable_chroma),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = true,
-    },
-    {
-        .name = "enable_mse",
-        .help = "enable MSE calculation",
-        .offset = offsetof(PsnrVulkanState, enable_mse),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-    },
-    {
-        .name = "reduced_hbd_peak",
-        .help = "reduce hbd peak value to align with scaled 8-bit content",
-        .offset = offsetof(PsnrVulkanState, reduced_hbd_peak),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-    },
-    {
-        .name = "min_sse",
-        .help = "constrain the minimum possible sse",
-        .offset = offsetof(PsnrVulkanState, min_sse),
-        .type = VMAF_OPT_TYPE_DOUBLE,
-        .default_val.d = 0.0,
-        .min = 0.0,
-        .max = DBL_MAX,
-    },
-    {0}};
+static const VmafOption options[] = {{
+                                         .name = "enable_chroma",
+                                         .help = "enable calculation for chroma channels",
+                                         .offset = offsetof(PsnrVulkanState, enable_chroma),
+                                         .type = VMAF_OPT_TYPE_BOOL,
+                                         .default_val.b = true,
+                                     },
+                                     {0}};
 
 typedef struct {
     uint32_t width;
@@ -287,26 +253,14 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
         s->height[1] = s->height[2] = 0U;
     }
 
-    /* Mirror CPU integer_psnr.c::init's peak formula:
-     *   reduced_hbd_peak → peak = 255 * (1 << (bpc-8));
-     *   default          → peak = (1 << bpc) - 1. */
-    s->peak = s->reduced_hbd_peak ? (uint32_t)(255u * (1u << (bpc - 8u))) : (1u << bpc) - 1u;
-
-    /* Mirror CPU integer_psnr.c::init's psnr_max formula:
-     *   min_sse > 0 → psnr_max[p] = ceil(10*log10(peak^2/(min_sse/(w_p*h_p))));
-     *   default     → psnr_max[p] = (6*bpc) + 12. */
-    for (unsigned p = 0; p < PSNR_NUM_PLANES; p++) {
-        if (s->min_sse > 0.0) {
-            const int ss_hor = (pix_fmt != VMAF_PIX_FMT_YUV444P);
-            const int ss_ver = (pix_fmt == VMAF_PIX_FMT_YUV420P);
-            const unsigned pw = (p && ss_hor) ? (w + 1u) >> 1 : w;
-            const unsigned ph = (p && ss_ver) ? (h + 1u) >> 1 : h;
-            const double mse = s->min_sse / ((double)pw * ph);
-            s->psnr_max[p] = ceil(10.0 * log10((double)s->peak * s->peak / mse));
-        } else {
-            s->psnr_max[p] = (double)(6U * bpc) + 12.0;
-        }
-    }
+    /* Match CPU integer_psnr.c::init's psnr_max default branch
+     * (`min_sse == 0.0`): psnr_max[p] = (6 * bpc) + 12. The CPU path
+     * uses a per-plane vector to leave room for the `min_sse`-driven
+     * formula; we replicate the array even though all three entries
+     * are identical in the default branch, so a future `min_sse`
+     * option flip stays a one-line change. */
+    for (unsigned p = 0; p < PSNR_NUM_PLANES; p++)
+        s->psnr_max[p] = (double)(6U * bpc) + 12.0;
 
     s->ctx = vmaf_vulkan_state_get_context(fex->vulkan_state);
     if (s->ctx) {
@@ -479,15 +433,6 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
             feature_collector, s->feature_name_dict, psnr_name[p], psnr, index);
         if (e && !err)
             err = e;
-
-        /* Mirror CPU integer_psnr.c::extract's enable_mse branch. */
-        if (s->enable_mse) {
-            static const char *const mse_name[PSNR_NUM_PLANES] = {"mse_y", "mse_cb", "mse_cr"};
-            const int em = vmaf_feature_collector_append_with_dict(
-                feature_collector, s->feature_name_dict, mse_name[p], mse, index);
-            if (em && !err)
-                err = em;
-        }
     }
 
 cleanup:

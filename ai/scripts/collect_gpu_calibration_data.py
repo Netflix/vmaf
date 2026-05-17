@@ -33,13 +33,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import tempfile
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-
-from aiutils.subprocess_utils import run_cmd
 
 # Reuse the parity gate's authoritative feature ↔ metric-name table and
 # backend ↔ extractor-suffix table. Importing from a sibling top-level
@@ -176,7 +175,8 @@ def build_command(
 
 def run_one(cmd: list[str]) -> tuple[int, str]:
     """Run one ``vmaf`` invocation. Returns ``(returncode, stderr_or_stdout)``."""
-    proc = run_cmd(cmd, capture=True, check=False)
+
+    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
     if proc.returncode != 0:
         return proc.returncode, (proc.stderr or proc.stdout)
     return 0, ""

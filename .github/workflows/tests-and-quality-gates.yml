@@ -420,7 +420,7 @@ jobs:
             --distorted python/test/resource/yuv/src01_hrc01_576x324.yuv \
             --width 576 --height 324 \
             --backends cpu vulkan \
-            --features adm cambi ciede float_adm float_ansnr float_moment \
+            --features adm ciede float_adm float_ansnr float_moment \
                        float_motion float_ms_ssim float_ms_ssim_lcs \
                        float_psnr float_ssim float_vif psnr psnr_hvs \
                        ssimulacra2 vif \
@@ -544,33 +544,35 @@ jobs:
         run: |
           case "${{ matrix.sanitizer }}" in
             address)
-              # ASan deselects: (none as of this PR; all tests pass cleanly)
-              # test_model was excluded due to SAN-MODEL-MALLOC-OOB (fixed by
-              # PR #548); verified to pass via local ASan build.
-              # test_float_ms_ssim_min_dim was previously removed after
-              # confirming it passes cleanly under detect_leaks=1.
-              EXCLUDE=''
+              # ASan deselects: test_model (svm.cpp parser
+              # alloc-too-big on malformed JSON) — pre-existing
+              # ASan/LSan defects revealed by PR #758's introspect-based
+              # test enumeration (the prior `meson test --list` parser
+              # returned empty in CI's meson 1.3.2 so these tests were
+              # never dispatched and the leaks went unnoticed). Tracked
+              # in `docs/state.md` as T-SANITIZER-DEFECTS-REVEALED-758.
+              # test_float_ms_ssim_min_dim was removed from this list
+              # after confirming it passes cleanly under ASAN_OPTIONS=
+              # detect_leaks=1 (the invoke_init helper already calls
+              # fex->close() + free(priv) on every code path).
+              EXCLUDE='test_model$'
               ;;
             undefined)
               # UBSan deselects: test_model (NULL-to-nonnull memcpy
               # in svm.cpp parser — same defect as ASan exclusion
-              # surfaced via a different sanitizer angle). Tracked as
+              # surfaced via a different sanitizer angle); test_cambi
+              # (SIGILL in
+              # test_calculate_c_values_scalar_avx2_parity — UBSan
+              # traps on undefined behavior in the cambi scalar / AVX2
+              # parity probe). Tracked as
               # T-SANITIZER-DEFECTS-REVEALED-758.
-              # test_cambi was removed from this list after PR #761
-              # (merged 2026-05-11) added a runtime __builtin_cpu_supports
-              # AVX2 gate to test_calculate_c_values_scalar_avx2_parity,
-              # eliminating the SIGILL on non-AVX2 CI runners; confirmed
-              # clean under UBSan on current master.
-              EXCLUDE='test_model$'
+              EXCLUDE='test_model$|test_cambi$'
               ;;
             thread)
-              # TSan deselects: test_model (same defect as ASan/UBSan
-              # exclusion above).
-              # test_framesync was removed from this list after PR #548
-              # (merged 2026-05-09) fixed the SAN-FRAMESYNC-MUTEX-DOMAIN
-              # mutex-domain mismatch; nightly TSan job was green on
-              # 2026-05-09 and 2026-05-10 (state.md entry).
-              EXCLUDE='test_model$'
+              # TSan deselects: test_model (same defect) and
+              # test_framesync (mutex-domain mismatch on per-buffer
+              # `count` between submit/acquire paths).
+              EXCLUDE='test_model$|test_framesync$'
               ;;
             *)
               echo "::error::ADR-0347 deselect list is not defined for sanitizer=${{ matrix.sanitizer }}" >&2

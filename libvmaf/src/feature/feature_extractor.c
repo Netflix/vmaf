@@ -106,7 +106,6 @@ extern VmafFeatureExtractor vmaf_fex_ciede_vulkan;
 extern VmafFeatureExtractor vmaf_fex_integer_ciede_vulkan;
 extern VmafFeatureExtractor vmaf_fex_float_ssim_vulkan;
 extern VmafFeatureExtractor vmaf_fex_float_ms_ssim_vulkan;
-extern VmafFeatureExtractor vmaf_fex_integer_ms_ssim_vulkan;
 extern VmafFeatureExtractor vmaf_fex_psnr_hvs_vulkan;
 extern VmafFeatureExtractor vmaf_fex_float_ansnr_vulkan;
 extern VmafFeatureExtractor vmaf_fex_float_psnr_vulkan;
@@ -115,9 +114,6 @@ extern VmafFeatureExtractor vmaf_fex_float_vif_vulkan;
 extern VmafFeatureExtractor vmaf_fex_float_adm_vulkan;
 extern VmafFeatureExtractor vmaf_fex_ssimulacra2_vulkan;
 extern VmafFeatureExtractor vmaf_fex_cambi_vulkan;
-extern VmafFeatureExtractor vmaf_fex_integer_ssim_vulkan;
-/* integer_cambi_vulkan — Strategy II integer variant (fused spatial-mask shader). */
-extern VmafFeatureExtractor vmaf_fex_integer_cambi_vulkan;
 #endif
 #if HAVE_HIP
 /* HIP first-consumer kernel — T7-10 / ADR-0241. Registration succeeds
@@ -128,10 +124,10 @@ extern VmafFeatureExtractor vmaf_fex_psnr_hip;
  * float_psnr_hip. With `enable_hipcc=true` the HSACO is embedded and
  * the kernel runs on device; without it init() returns -ENOSYS. */
 extern VmafFeatureExtractor vmaf_fex_float_psnr_hip;
-/* HIP third-consumer kernel — T7-10b follow-up / ADR-0257; real
- * kernel promotion: ADR-0377. Defined in `integer_ciede_hip.c`
- * (renamed from `ciede_hip.c` to follow the `integer_*_hip.c`
- * convention). Mirrors `vmaf_fex_ciede_cuda` field-for-field. */
+/* HIP third-consumer kernel — T7-10b follow-up / ADR-0257. Same
+ * scaffold posture as the first consumer: registration succeeds,
+ * `init()` returns -ENOSYS until T7-10b. Mirrors
+ * `vmaf_fex_ciede_cuda` field-for-field. */
 extern VmafFeatureExtractor vmaf_fex_ciede_hip;
 /* HIP fourth-consumer kernel — T7-10b follow-up / ADR-0258. Same
  * scaffold posture; emits four `float_moment_*` features. */
@@ -141,11 +137,6 @@ extern VmafFeatureExtractor vmaf_fex_float_moment_hip;
  * -ENOSYS until T7-10b. */
 extern VmafFeatureExtractor vmaf_fex_float_ansnr_hip;
 extern VmafFeatureExtractor vmaf_fex_integer_motion_v2_hip;
-/* HIP integer_motion consumer: mirrors `feature/cuda/integer_motion_cuda.c`
- * call-graph-for-call-graph. Provides motion_score (debug), motion2_score,
- * and motion3_score. With enable_hipcc=true the HSACO is loaded and the
- * kernel runs on device; without it init() returns -ENOSYS. */
-extern VmafFeatureExtractor vmaf_fex_integer_motion_hip;
 /* HIP seventh-consumer kernel — T7-10b follow-up / ADR-0273. Same
  * scaffold posture; mirrors the CUDA twin
  * `feature/cuda/float_motion_cuda.c` and pins the temporal-extractor
@@ -156,11 +147,6 @@ extern VmafFeatureExtractor vmaf_fex_float_motion_hip;
  * `feature/cuda/integer_ssim_cuda.c` and pins the two-dispatch +
  * five intermediate float buffers shape. v1: scale=1 only. */
 extern VmafFeatureExtractor vmaf_fex_float_ssim_hip;
-/* HIP eleventh-consumer kernel — integer_ssim_hip. Two-pass separable
- * Gaussian (same design as float_ssim_hip) but emits `integer_ssim`.
- * With `enable_hipcc=true` the HSACO blob is embedded and the kernel
- * runs on device; without it init() returns -ENOSYS. v1: scale=1 only. */
-extern VmafFeatureExtractor vmaf_fex_integer_ssim_hip;
 #endif
 #if HAVE_METAL
 /* Metal feature extractors — T8-1c through T8-1j / ADR-0421.
@@ -179,7 +165,6 @@ extern VmafFeatureExtractor vmaf_fex_float_psnr_metal;
 extern VmafFeatureExtractor vmaf_fex_float_ansnr_metal;
 extern VmafFeatureExtractor vmaf_fex_float_motion_metal;
 extern VmafFeatureExtractor vmaf_fex_float_moment_metal;
-extern VmafFeatureExtractor vmaf_fex_integer_ssim_metal;
 #endif
 /* SpEED-QA NR metric scaffold — ADR-0253. */
 extern VmafFeatureExtractor vmaf_fex_speed_qa;
@@ -207,9 +192,10 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_integer_vif_sycl, &vmaf_fex_integer_adm_sycl, &vmaf_fex_integer_motion_sycl,
     &vmaf_fex_integer_motion_v2_sycl, &vmaf_fex_psnr_sycl, &vmaf_fex_float_moment_sycl,
     &vmaf_fex_ciede_sycl, &vmaf_fex_float_ssim_sycl, &vmaf_fex_float_ms_ssim_sycl,
-    &vmaf_fex_psnr_hvs_sycl, &vmaf_fex_float_ansnr_sycl, &vmaf_fex_float_psnr_sycl,
-    &vmaf_fex_float_motion_sycl, &vmaf_fex_float_vif_sycl, &vmaf_fex_ssimulacra2_sycl,
-    &vmaf_fex_float_adm_sycl,
+    &vmaf_fex_psnr_hvs_sycl, &vmaf_fex_psnr_sycl, &vmaf_fex_float_moment_sycl, &vmaf_fex_ciede_sycl,
+    &vmaf_fex_float_ssim_sycl, &vmaf_fex_float_ms_ssim_sycl, &vmaf_fex_psnr_hvs_sycl,
+    &vmaf_fex_float_ansnr_sycl, &vmaf_fex_float_psnr_sycl, &vmaf_fex_float_motion_sycl,
+    &vmaf_fex_float_vif_sycl, &vmaf_fex_ssimulacra2_sycl, &vmaf_fex_float_adm_sycl,
     /* T3-15 / ADR-0371: cambi SYCL twin (closes last CUDA→SYCL parity gap). */
     &vmaf_fex_cambi_sycl,
 #endif
@@ -221,34 +207,30 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
      * name selection until the full backend lands (T5-1c). */
     &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan,
     &vmaf_fex_integer_motion_v2_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
-    &vmaf_fex_integer_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
-    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
-    &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan,
-    &vmaf_fex_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
-    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
-    &vmaf_fex_float_ansnr_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
-    &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan,
-    &vmaf_fex_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
-    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
-    &vmaf_fex_float_psnr_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
-    &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan,
-    &vmaf_fex_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
-    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
-    &vmaf_fex_float_motion_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
-    &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan,
-    &vmaf_fex_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
-    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
-    &vmaf_fex_float_vif_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
-    &vmaf_fex_integer_vif_vulkan, &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan,
-    &vmaf_fex_psnr_vulkan, &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan,
-    &vmaf_fex_float_ssim_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
-    &vmaf_fex_float_adm_vulkan, &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan,
-    &vmaf_fex_ssimulacra2_vulkan,
+    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
+    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
+    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
+    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
+    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_ansnr_vulkan,
+    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
+    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
+    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
+    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_psnr_vulkan,
+    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
+    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
+    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
+    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_motion_vulkan,
+    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
+    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
+    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
+    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_vif_vulkan,
+    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_integer_vif_vulkan,
+    &vmaf_fex_integer_motion_vulkan, &vmaf_fex_integer_adm_vulkan, &vmaf_fex_psnr_vulkan,
+    &vmaf_fex_float_moment_vulkan, &vmaf_fex_ciede_vulkan, &vmaf_fex_float_ssim_vulkan,
+    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_float_adm_vulkan,
+    &vmaf_fex_float_ms_ssim_vulkan, &vmaf_fex_psnr_hvs_vulkan, &vmaf_fex_ssimulacra2_vulkan,
     /* T7-36 / ADR-0205: cambi Vulkan twin (Strategy II hybrid). */
     &vmaf_fex_cambi_vulkan,
-    /* integer_cambi_vulkan: fused spatial-mask shader, Strategy II hybrid,
-     * Vulkan twin of integer_cambi_cuda.c (ADR-0360). */
-    &vmaf_fex_integer_cambi_vulkan,
 #endif
 #if HAVE_CUDA
     &vmaf_fex_integer_adm_cuda, &vmaf_fex_integer_vif_cuda, &vmaf_fex_integer_motion_cuda,
@@ -272,9 +254,10 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
      * on device; without it init() returns -ENOSYS (scaffold posture).
      * Emits `float_psnr` (luma-only, same as the CUDA twin). */
     &vmaf_fex_float_psnr_hip,
-    /* Third consumer (ADR-0257 / ADR-0377): `ciede_hip` — real
-     * HSACO kernel path in `integer_ciede_hip.c`. Mirrors
-     * `integer_ciede_cuda.c`'s call graph. */
+    /* Third consumer (ADR-0257): `ciede_hip` mirrors
+     * `integer_ciede_cuda.c`'s call graph. Same scaffold-only
+     * registration posture — registers, `init()` returns -ENOSYS
+     * until T7-10b. */
     &vmaf_fex_ciede_hip,
     /* Fourth consumer (ADR-0258): `float_moment_hip` mirrors
      * `integer_moment_cuda.c`'s call graph; emits four
@@ -283,11 +266,6 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     /* T7-10b fifth + sixth consumers (ADR-0266 / ADR-0267): same
      * scaffold-posture registration as the first consumer. */
     &vmaf_fex_float_ansnr_hip, &vmaf_fex_integer_motion_v2_hip,
-    /* integer_motion HIP consumer: mirrors integer_motion_cuda.c; emits
-     * motion_score (debug), motion2_score, and motion3_score.
-     * With enable_hipcc=true the HSACO is loaded and the kernel runs on
-     * device; without it init() returns -ENOSYS (scaffold posture). */
-    &vmaf_fex_integer_motion_hip,
     /* Seventh consumer (ADR-0273): `float_motion_hip` mirrors
      * `float_motion_cuda.c`'s call graph (TEMPORAL flag,
      * raw-pixel cache + blurred-frame ping-pong, `flush()`
@@ -301,11 +279,6 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
      * float-partial readback); emits one feature (`float_ssim`)
      * once the runtime kernel arrives. v1 is scale=1 only. */
     &vmaf_fex_float_ssim_hip,
-    /* Eleventh consumer: integer_ssim_hip — two-pass separable Gaussian,
-     * same design as float_ssim_hip but emits `integer_ssim`. With
-     * `enable_hipcc=true` the HSACO is embedded; otherwise -ENOSYS.
-     * v1: scale=1 only. */
-    &vmaf_fex_integer_ssim_hip,
 #endif
 #if HAVE_METAL
     /* T8-1 first consumer (ADR-0361): registration succeeds even on
@@ -319,8 +292,6 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     /* T8-1 batch-2 additional consumers (ADR-0361): 4 float features. */
     &vmaf_fex_float_psnr_metal, &vmaf_fex_float_ansnr_metal, &vmaf_fex_float_motion_metal,
     &vmaf_fex_float_moment_metal,
-    /* T8-1k: integer_ssim Metal port (integer pixel input, float SSIM output). */
-    &vmaf_fex_integer_ssim_metal,
 #endif
     &vmaf_fex_speed_qa, &vmaf_fex_lpips, &vmaf_fex_dists_sq, &vmaf_fex_fastdvdnet_pre,
     &vmaf_fex_mobilesal, &vmaf_fex_transnet_v2, &vmaf_fex_null, NULL};

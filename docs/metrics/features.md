@@ -28,7 +28,7 @@ limitations in the same PR as the code.
 |--------------------|-----------------|---------------|-----------------------------------------------------------------------------------------------|---------------------|--------------------|
 | VIF (fixed-point)  | `vif`           | Yes           | `vif_scale0`, `vif_scale1`, `vif_scale2`, `vif_scale3`                                        | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
 | VIF (float)        | `float_vif`     | Yes           | `float_vif_scale0..3`                                                                         | —                   | CUDA, SYCL, Vulkan |
-| Motion2 (fixed)    | `motion`        | Yes           | `motion2` (+ `motion` if `debug=true`)                                                        | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
+| Motion2 (fixed)    | `motion`        | Yes           | `motion2` (+ `motion` if `debug=true`)                                                        | AVX2, AVX-512, NEON | CUDA, Vulkan       |
 | Motion v2 (fixed)  | `motion_v2`     | No            | `VMAF_integer_feature_motion_v2_sad_score`, `VMAF_integer_feature_motion2_v2_score`           | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
 | Motion2 (float)    | `float_motion`  | Yes           | `float_motion2` (+ `float_motion` if `debug=true`)                                            | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
 | ADM (fixed-point)  | `adm`           | Yes           | `adm2`, `adm_scale0`, `adm_scale1`, `adm_scale2`, `adm_scale3`                                | AVX2, AVX-512, NEON | CUDA, Vulkan       |
@@ -89,9 +89,8 @@ Depending on your build configuration not every backend is available — see
 ⁵ HIP backend (T7-10b) — `psnr_hip` (ADR-0241), `ciede_hip` /
 `float_moment_hip` (ADR-0257 / ADR-0258), the fifth/sixth
 host-scaffolded consumers `float_ansnr_hip` / `motion_v2_hip`
-(ADR-0266 / ADR-0267), the seventh/eighth consumers
-`float_motion_hip` / `float_ssim_hip` (ADR-0273 / ADR-0274),
-and the ninth consumer `integer_ms_ssim_hip` (ADR-0285, batch-5)
+(ADR-0266 / ADR-0267), and the seventh/eighth consumers
+`float_motion_hip` / `float_ssim_hip` (ADR-0273 / ADR-0274)
 all register at the extractor level under
 `#if HAVE_HIP` so callers asking by name get the cleaner
 "extractor found, runtime not ready (`-ENOSYS`)" surface; kernels
@@ -163,12 +162,11 @@ Operates on the Y plane only.
 
 #### Options
 
-| Option                 | Alias   | Type   | Default | Range      | Effect                                                                                                                          |
-|------------------------|---------|--------|---------|------------|---------------------------------------------------------------------------------------------------------------------------------|
-| `debug`                | —       | bool   | `false` | —          | Emit `vif`, `vif_num`, `vif_den`, plus per-scale numerator/denominator                                                          |
-| `vif_enhn_gain_limit`  | `egl`   | double | `1.4`   | `1.0–1.4`  | Cap enhancement-gain ratio so over-sharpened output cannot saturate                                                             |
-| `vif_kernelscale`      | —       | double | `1.0`   | `0.1–4.0`  | Scale the Gaussian kernel std-dev — only `float_vif`                                                                            |
-| `vif_skip_scale0`      | `ssclz` | bool   | `false` | —          | Skip scale-0 (lowest-resolution pyramid level) calculations; scale-0 outputs are set to `0.0` and excluded from the fused score |
+| Option                 | Alias | Type   | Default | Range      | Effect                                                                 |
+|------------------------|-------|--------|---------|------------|------------------------------------------------------------------------|
+| `debug`                | —     | bool   | `false` | —          | Emit `vif`, `vif_num`, `vif_den`, plus per-scale numerator/denominator |
+| `vif_enhn_gain_limit`  | `egl` | double | `1.4`   | `1.0–1.4`  | Cap enhancement-gain ratio so over-sharpened output cannot saturate    |
+| `vif_kernelscale`      | —     | double | `1.0`   | `0.1–4.0`  | Scale the Gaussian kernel std-dev — only `float_vif`                   |
 
 `egl=1.0` disables the enhancement-gain path entirely (matches pre-v1.3
 behaviour).
@@ -705,11 +703,7 @@ Y plane only.
 
 **Options** — none.
 
-**Backends** — scalar (CPU) plus CUDA (`float_moment_cuda`, T7-23),
-SYCL (`float_moment_sycl`), and Vulkan (`float_moment_vulkan`). All
-three GPU kernels accumulate four `int64` partial sums per frame in a
-single dispatch and are bit-exact vs the CPU integer input (the CPU
-path also operates on integer pixels before dividing by `w*h`).
+**Backends** — scalar only.
 
 **Limitations** — Stateless per-frame. Float pipeline (the picture
 plane is copied to float32 before the moments are computed); the

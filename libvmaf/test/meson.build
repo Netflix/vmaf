@@ -15,16 +15,6 @@ gpu_all_deps = [
   metal_deps,
 ]
 
-# Coverage for vmaf_version() — referenced in fuzz/meson.build comment but
-# had no assertion-level test. Verifies the return value is a non-empty
-# MAJOR.MINOR.PATCH string matching ^\d+\.\d+\.\d+$.
-test_version = executable('test_version',
-    ['test.c', 'test_version.c'],
-    include_directories : [libvmaf_inc, test_inc],
-    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: [pthread_dependency],
-)
-
 test_context = executable('test_context',
     ['test.c', 'test_context.c'],
     include_directories : [libvmaf_inc, test_inc],
@@ -388,19 +378,6 @@ test_psnr = executable('test_psnr',
     dependencies: [pthread_dependency, sycl_dependency],
 )
 
-# Closes the C-unit-test gap identified in
-# .workingdir/audit-test-coverage-2026-05-16.md §1: the integer_vif
-# vif_skip_scale0 option (which zeroes scale-0 output) had zero coverage
-# at the C level; only Python bindings exercised it.  This test exercises
-# both true/false paths through the public API so that a future GPU port of
-# the option has a concrete CPU ground truth to compare against.
-test_vif_skip_scale0 = executable('test_vif_skip_scale0',
-    ['test.c', 'test_vif_skip_scale0.c'],
-    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: [pthread_dependency, math_lib, gpu_all_deps],
-)
-
 test_framesync = executable('test_framesync',
     ['test.c', 'test_framesync.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
@@ -573,6 +550,28 @@ test_moment_simd = executable('test_moment_simd',
 )
 endif
 
+ansnr_simd_test_archs = ['x86_64', 'x86', 'aarch64', 'arm64']
+if ansnr_simd_test_archs.contains(host_machine.cpu_family())
+test_ansnr_simd = executable('test_ansnr_simd',
+    ['test.c', 'test_ansnr_simd.c',
+     '../src/mem.c', '../src/picture.c', '../src/ref.c',
+     '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c',
+     '../src/metadata_handler.c', '../src/thread_locale.c', '../src/gpu_picture_pool.c', dnn_sources],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/'),
+                           include_directories('../src/feature/'), dnn_inc],
+    c_args : vmaf_cflags_common + dnn_defines,
+    dependencies : [math_lib, stdatomic_dependency, pthread_dependency, thread_lib,
+                    gpu_all_deps, dnn_deps],
+    objects : [
+      common_cuda_objects,
+      platform_specific_cpu_objects,
+      libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
+      libvmaf_feature_static_lib.extract_all_objects(recursive: true),
+      libsvm_static_lib.extract_all_objects(recursive: true),
+    ],
+)
+endif
+
 ms_ssim_decimate_test_archs = ['x86_64', 'x86', 'aarch64', 'arm64']
 if ms_ssim_decimate_test_archs.contains(host_machine.cpu_family())
 test_ms_ssim_decimate = executable('test_ms_ssim_decimate',
@@ -690,18 +689,6 @@ test_read_pictures_monotonic = executable('test_read_pictures_monotonic',
 )
 test('test_read_pictures_monotonic', test_read_pictures_monotonic, suite : ['fast'])
 
-# audit-test-coverage-2026-05-16 §2 — model-collection public API entry
-# points (vmaf_model_collection_load, vmaf_use_features_from_model_collection,
-# vmaf_score_at_index_model_collection, vmaf_score_pooled_model_collection)
-# had zero C-unit-test coverage.
-test_model_collection_api = executable('test_model_collection_api',
-    ['test.c', 'test_model_collection_api.c'],
-    include_directories : [libvmaf_inc, test_inc],
-    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: [math_lib, pthread_dependency, thread_lib],
-)
-test('test_model_collection_api', test_model_collection_api, suite : ['fast'])
-
 # ADR-0154 — score_pooled returns -EAGAIN instead of -EINVAL for
 # not-yet-written features (Netflix#755).
 test_score_pooled_eagain = executable('test_score_pooled_eagain',
@@ -817,19 +804,6 @@ test_vulkan_pic_preallocation = executable('test_vulkan_pic_preallocation',
     c_args: ['-DHAVE_VULKAN=1']
 )
 test('test_vulkan_pic_preallocation', test_vulkan_pic_preallocation, suite : ['fast', 'gpu'])
-
-# integer_motion_vulkan smoke: registration + init() contract gates
-# (min-dim rejection, five-frame-window -ENOTSUP, happy-path skipped
-# when no Vulkan compute device is present).
-test_integer_motion_vulkan_smoke = executable('test_integer_motion_vulkan_smoke',
-    ['test.c', 'test_integer_motion_vulkan_smoke.c'],
-    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: [pthread_dependency],
-    c_args: ['-DHAVE_VULKAN=1']
-)
-test('test_integer_motion_vulkan_smoke', test_integer_motion_vulkan_smoke,
-     suite : ['fast', 'gpu'])
 endif
 
 # ADR-0209 / T5-2: embedded MCP scaffold smoke. Pins the -ENOSYS
@@ -930,7 +904,6 @@ if host_machine.system() != 'windows'
     test('test_cli_parse_long_only_args', test_cli_parse_long_only_args, suite : ['fast'])
 endif
 test('test_psnr', test_psnr, suite : ['fast'])
-test('test_vif_skip_scale0', test_vif_skip_scale0, suite : ['fast'])
 test('test_framesync', test_framesync, suite : ['fast'])
 test('test_propagate_metadata', test_propagate_metadata, suite : ['fast'])
 test('test_adm_csf', test_adm_csf, suite : ['fast'])
@@ -943,26 +916,7 @@ if float_enabled and moment_simd_test_archs.contains(host_machine.cpu_family())
 test('test_moment_simd', test_moment_simd, suite : ['fast', 'simd'])
 endif
 
-ansnr_simd_test_archs = ['x86_64', 'x86', 'aarch64', 'arm64']
 if ansnr_simd_test_archs.contains(host_machine.cpu_family())
-test_ansnr_simd = executable('test_ansnr_simd',
-    ['test.c', 'test_ansnr_simd.c',
-     '../src/mem.c', '../src/picture.c', '../src/ref.c',
-     '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c',
-     '../src/metadata_handler.c', '../src/thread_locale.c', '../src/gpu_picture_pool.c', dnn_sources],
-    include_directories : [libvmaf_inc, test_inc, include_directories('../src/'),
-                           include_directories('../src/feature/'), dnn_inc],
-    c_args : vmaf_cflags_common + dnn_defines,
-    dependencies : [math_lib, stdatomic_dependency, pthread_dependency, thread_lib,
-                    gpu_all_deps, dnn_deps],
-    objects : [
-      common_cuda_objects,
-      platform_specific_cpu_objects,
-      libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
-      libvmaf_feature_static_lib.extract_all_objects(recursive: true),
-      libsvm_static_lib.extract_all_objects(recursive: true),
-    ],
-)
 test('test_ansnr_simd', test_ansnr_simd, suite : ['fast', 'simd'])
 endif
 

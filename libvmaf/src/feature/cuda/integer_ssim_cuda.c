@@ -19,8 +19,6 @@
  */
 
 #include <errno.h>
-#include <math.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -50,7 +48,6 @@ typedef struct SsimStateCuda {
      * template's readback bundle. */
     VmafCudaKernelReadback rb;
 
-    CUmodule module;
     CUfunction func_horiz_8;
     CUfunction func_horiz_16;
     CUfunction func_vert;
@@ -76,11 +73,6 @@ typedef struct SsimStateCuda {
     unsigned bpc;
     float c1;
     float c2;
-
-    /* dB-domain output options (mirrors float_ssim.c). */
-    bool enable_db;
-    bool clip_db;
-    double max_db; /* computed in init from clip_db + bpc + dimensions */
 
     unsigned index;
     VmafDictionary *feature_name_dict;
@@ -113,22 +105,6 @@ static const VmafOption options[] = {
         .default_val.i = 0,
         .min = 0,
         .max = 10,
-    },
-    {
-        .name = "enable_db",
-        .help = "convert SSIM score to dB domain: -10*log10(1-ssim)",
-        .offset = offsetof(SsimStateCuda, enable_db),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
-    },
-    {
-        .name = "clip_db",
-        .help = "clip dB output to a maximum finite value (mirrors CPU float_ssim)",
-        .offset = offsetof(SsimStateCuda, clip_db),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {0},
 };
@@ -163,14 +139,14 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA_GOTO(cu_f, cuCtxPushCurrent(fex->cu_state->ctx), fail);
     ctx_pushed = 1;
 
-    CHECK_CUDA_GOTO(cu_f, cuModuleLoadData(&s->module, ssim_score_ptx), fail);
+    CUmodule module;
+    CHECK_CUDA_GOTO(cu_f, cuModuleLoadData(&module, ssim_score_ptx), fail);
     CHECK_CUDA_GOTO(
-        cu_f, cuModuleGetFunction(&s->func_horiz_8, s->module, "calculate_ssim_horiz_8bpc"), fail);
-    CHECK_CUDA_GOTO(cu_f,
-                    cuModuleGetFunction(&s->func_horiz_16, s->module, "calculate_ssim_horiz_16bpc"),
+        cu_f, cuModuleGetFunction(&s->func_horiz_8, module, "calculate_ssim_horiz_8bpc"), fail);
+    CHECK_CUDA_GOTO(
+        cu_f, cuModuleGetFunction(&s->func_horiz_16, module, "calculate_ssim_horiz_16bpc"), fail);
+    CHECK_CUDA_GOTO(cu_f, cuModuleGetFunction(&s->func_vert, module, "calculate_ssim_vert_combine"),
                     fail);
-    CHECK_CUDA_GOTO(
-        cu_f, cuModuleGetFunction(&s->func_vert, s->module, "calculate_ssim_vert_combine"), fail);
 
     CHECK_CUDA_GOTO(cu_f, cuCtxPopCurrent(NULL), fail_after_pop);
 
@@ -184,15 +160,6 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     const float L = 255.0f, K1 = 0.01f, K2 = 0.03f;
     s->c1 = (K1 * L) * (K1 * L);
     s->c2 = (K2 * L) * (K2 * L);
-
-    /* Compute max_db cap used by clip_db (mirrors float_ssim.c:init). */
-    if (s->clip_db) {
-        const double peak = (double)((1u << bpc) - 1u);
-        const double mse = 0.5 / ((double)w * (double)h);
-        s->max_db = ceil(10.0 * log10(peak * peak / mse));
-    } else {
-        s->max_db = INFINITY;
-    }
 
     const unsigned grid_x = (s->w_final + SSIM_BLOCK_X - 1) / SSIM_BLOCK_X;
     const unsigned grid_y = (s->h_final + SSIM_BLOCK_Y - 1) / SSIM_BLOCK_Y;
@@ -330,13 +297,6 @@ static int submit_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
     return vmaf_cuda_kernel_submit_post_record(&s->lc, fex->cu_state);
 }
 
-static double ssim_to_db(double ssim, double max_db)
-{
-    /* Mirrors float_ssim.c:convert_to_db.  Clamp to max_db when clip_db. */
-    const double db = -10.0 * log10(1.0 - ssim);
-    return db < max_db ? db : max_db;
-}
-
 static int collect_fex_cuda(VmafFeatureExtractor *fex, unsigned index,
                             VmafFeatureCollector *feature_collector)
 {
@@ -351,10 +311,7 @@ static int collect_fex_cuda(VmafFeatureExtractor *fex, unsigned index,
     for (unsigned i = 0; i < s->partials_count; i++)
         total += (double)partials_host[i];
     const double n_pixels = (double)s->w_final * (double)s->h_final;
-    double score = total / n_pixels;
-
-    if (s->enable_db)
-        score = ssim_to_db(score, s->max_db);
+    const double score = total / n_pixels;
 
     return vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                                    "float_ssim", score, index);
@@ -402,8 +359,6 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     const int dict_rc = vmaf_dictionary_free(&s->feature_name_dict);
     if (rc == 0)
         rc = dict_rc;
-    if (s->module)
-        (void)fex->cu_state->f->cuModuleUnload(s->module);
     return rc;
 }
 

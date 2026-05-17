@@ -513,21 +513,15 @@ static double reduce_sad_partials(MotionVulkanState *s)
 
 static int extract_force_zero(MotionVulkanState *s, unsigned index, VmafFeatureCollector *fc)
 {
-    /* Mirrors float_motion_cuda.c extract_force_zero (Metal #1018 + HIP #1037
-     * audit): emit motion2 unconditionally; emit motion and motion3 only when
-     * debug=true.  The erroneous frame_index guard that suppressed motion_score
-     * on frame 0 is removed — every frame must receive motion2=0 to anchor the
-     * collector index regardless of force-zero mode. */
-    int err = vmaf_feature_collector_append_with_dict(
-        fc, s->feature_name_dict, "VMAF_integer_feature_motion2_score", 0.0, index);
-    if (s->debug && !err) {
-        err = vmaf_feature_collector_append_with_dict(
+    int err = 0;
+    if (s->frame_index > 0) {
+        err |= vmaf_feature_collector_append_with_dict(
             fc, s->feature_name_dict, "VMAF_integer_feature_motion_score", 0.0, index);
     }
-    if (s->debug && !err) {
-        err = vmaf_feature_collector_append_with_dict(
-            fc, s->feature_name_dict, "VMAF_integer_feature_motion3_score", 0.0, index);
-    }
+    err |= vmaf_feature_collector_append_with_dict(
+        fc, s->feature_name_dict, "VMAF_integer_feature_motion2_score", 0.0, index);
+    err |= vmaf_feature_collector_append_with_dict(
+        fc, s->feature_name_dict, "VMAF_integer_feature_motion3_score", 0.0, index);
     s->frame_index++;
     return err;
 }
@@ -771,34 +765,18 @@ static int flush(VmafFeatureExtractor *fex, VmafFeatureCollector *feature_collec
         return 1;
 
     if (s->frame_index > 1) {
-        /* Idempotency guard (Metal #1018 + HIP #1037 + float_motion_cuda parity):
-         * the post-#312 flush_context_vulkan may have already written
-         * motion2_score[frame_index-1] via a pending-collect.  Probe and skip
-         * in that case; re-appending would trip the "cannot be overwritten"
-         * warning and surface as a context synchronisation error. */
-        double existing;
-        if (vmaf_feature_collector_get_score(feature_collector,
-                                             "VMAF_integer_feature_motion2_score", &existing,
-                                             s->frame_index - 1) != 0) {
-            double const last_motion2 =
-                MIN(s->prev_motion_score * s->motion_fps_weight, s->motion_max_val);
-            ret = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                          "VMAF_integer_feature_motion2_score",
-                                                          last_motion2, s->frame_index - 1);
-            if (ret >= 0) {
-                double const motion3_score = motion3_postprocess(s, last_motion2);
-                /* Same idempotency posture for motion3 at the same tail index. */
-                double existing3;
-                if (vmaf_feature_collector_get_score(feature_collector,
-                                                     "VMAF_integer_feature_motion3_score",
-                                                     &existing3, s->frame_index - 1) != 0) {
-                    int ret_m3 = vmaf_feature_collector_append_with_dict(
-                        feature_collector, s->feature_name_dict,
-                        "VMAF_integer_feature_motion3_score", motion3_score, s->frame_index - 1);
-                    if (ret_m3 < 0)
-                        ret = ret_m3;
-                }
-            }
+        double const last_motion2 =
+            MIN(s->prev_motion_score * s->motion_fps_weight, s->motion_max_val);
+        ret = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                      "VMAF_integer_feature_motion2_score",
+                                                      last_motion2, s->frame_index - 1);
+        if (ret >= 0) {
+            double const motion3_score = motion3_postprocess(s, last_motion2);
+            int ret_m3 = vmaf_feature_collector_append_with_dict(
+                feature_collector, s->feature_name_dict, "VMAF_integer_feature_motion3_score",
+                motion3_score, s->frame_index - 1);
+            if (ret_m3 < 0)
+                ret = ret_m3;
         }
     }
     return (ret < 0) ? ret : !ret;

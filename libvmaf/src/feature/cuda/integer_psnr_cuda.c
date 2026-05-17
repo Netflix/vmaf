@@ -45,7 +45,6 @@
  */
 
 #include <errno.h>
-#include <float.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -87,55 +86,21 @@ typedef struct PsnrStateCuda {
     /* Number of active planes (1 for YUV400, 3 otherwise). */
     unsigned n_planes;
     /* Per-plane psnr_max — `(6 * bpc) + 12` in the default branch
-     * (CPU integer_psnr.c::init's `min_sse == 0.0` path). The min_sse
-     * option overrides this per-plane via the CPU formula. */
+     * (CPU integer_psnr.c::init's `min_sse == 0.0` path). The array
+     * layout leaves `min_sse`-driven per-plane formulas a one-line
+     * change away. */
     double psnr_max[PSNR_NUM_PLANES];
-    /* `enable_mse` option: when true, emit per-plane MSE alongside PSNR.
-     * Mirrors CPU integer_psnr.c::extract's enable_mse branch. */
-    bool enable_mse;
-    /* `reduced_hbd_peak` option: when true, peak = 255 << (bpc-8) instead
-     * of (1<<bpc)-1. Mirrors CPU integer_psnr.c::init's reduced_hbd_peak
-     * branch. */
-    bool reduced_hbd_peak;
-    /* `min_sse` option: constrain minimum SSE per plane when > 0.
-     * Drives psnr_max[p] via the CPU formula:
-     *   psnr_max[p] = ceil(10 * log10(peak^2 / (min_sse / (w*h)))). */
-    double min_sse;
     VmafDictionary *feature_name_dict;
 } PsnrStateCuda;
 
-static const VmafOption options[] = {
-    {
-        .name = "enable_chroma",
-        .help = "enable calculation for chroma channels",
-        .offset = offsetof(PsnrStateCuda, enable_chroma),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = true,
-    },
-    {
-        .name = "enable_mse",
-        .help = "enable MSE calculation",
-        .offset = offsetof(PsnrStateCuda, enable_mse),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-    },
-    {
-        .name = "reduced_hbd_peak",
-        .help = "reduce hbd peak value to align with scaled 8-bit content",
-        .offset = offsetof(PsnrStateCuda, reduced_hbd_peak),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-    },
-    {
-        .name = "min_sse",
-        .help = "constrain the minimum possible sse",
-        .offset = offsetof(PsnrStateCuda, min_sse),
-        .type = VMAF_OPT_TYPE_DOUBLE,
-        .default_val.d = 0.0,
-        .min = 0.0,
-        .max = DBL_MAX,
-    },
-    {0}};
+static const VmafOption options[] = {{
+                                         .name = "enable_chroma",
+                                         .help = "enable calculation for chroma channels",
+                                         .offset = offsetof(PsnrStateCuda, enable_chroma),
+                                         .type = VMAF_OPT_TYPE_BOOL,
+                                         .default_val.b = true,
+                                     },
+                                     {0}};
 
 static int psnr_cuda_dispatch(const VmafPicture *ref, const VmafPicture *dis, VmafCudaBuffer *sse,
                               unsigned width, unsigned height, unsigned plane, unsigned bpc,
@@ -211,25 +176,11 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA_GOTO(cu_f, cuCtxPopCurrent(NULL), fail_after_pop);
 
     s->bpc = bpc;
-    /* Mirror CPU integer_psnr.c::init's peak formula:
-     *   reduced_hbd_peak → peak = 255 * (1 << (bpc-8));
-     *   default          → peak = (1 << bpc) - 1. */
-    s->peak = s->reduced_hbd_peak ? (uint32_t)(255u * (1u << (bpc - 8u))) : (1u << bpc) - 1u;
-    /* Mirror CPU integer_psnr.c::init's psnr_max formula:
-     *   min_sse > 0 → psnr_max[p] = ceil(10*log10(peak^2/(min_sse/(w_p*h_p))));
-     *   default     → psnr_max[p] = (6*bpc) + 12. */
-    for (unsigned p = 0; p < PSNR_NUM_PLANES; p++) {
-        if (s->min_sse > 0.0) {
-            const int ss_hor = (pix_fmt != VMAF_PIX_FMT_YUV444P);
-            const int ss_ver = (pix_fmt == VMAF_PIX_FMT_YUV420P);
-            const unsigned pw = (p && ss_hor) ? (w + 1u) >> 1 : w;
-            const unsigned ph = (p && ss_ver) ? (h + 1u) >> 1 : h;
-            const double mse = s->min_sse / ((double)pw * ph);
-            s->psnr_max[p] = ceil(10.0 * log10((double)s->peak * s->peak / mse));
-        } else {
-            s->psnr_max[p] = (double)(6U * bpc) + 12.0;
-        }
-    }
+    s->peak = (1u << bpc) - 1u;
+    /* Match CPU integer_psnr.c::init's psnr_max default branch
+     * (`min_sse == 0.0`): psnr_max[p] = (6 * bpc) + 12. */
+    for (unsigned p = 0; p < PSNR_NUM_PLANES; p++)
+        s->psnr_max[p] = (double)(6U * bpc) + 12.0;
 
     /* Per-plane readback pairs (device SSE accumulator + pinned host
      * slot) via the template. One pair per plane — matches the
@@ -351,15 +302,6 @@ static int collect_fex_cuda(VmafFeatureExtractor *fex, unsigned index,
             feature_collector, s->feature_name_dict, psnr_name[p], psnr, index);
         if (e && rc == 0)
             rc = e;
-
-        /* Mirror CPU integer_psnr.c::extract's enable_mse branch. */
-        if (s->enable_mse) {
-            static const char *const mse_name[PSNR_NUM_PLANES] = {"mse_y", "mse_cb", "mse_cr"};
-            const int em = vmaf_feature_collector_append_with_dict(
-                feature_collector, s->feature_name_dict, mse_name[p], mse, index);
-            if (em && rc == 0)
-                rc = em;
-        }
     }
     return rc;
 }

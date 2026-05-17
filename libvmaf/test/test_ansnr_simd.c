@@ -17,29 +17,26 @@
  */
 
 /*
- * Numerical-parity contract test for the ansnr MSE SIMD kernels
- * (T3-7, ADR-0245 / simd-coverage-audit-2026-05-15).
+ * Numerical-parity contract test for the ansnr MSE SIMD line kernels
+ * (T3-7, ADR-0245 coverage audit 2026-05-15).
  *
- * The contract per `ansnr_avx2.c`, `ansnr_avx512.c`, `ansnr_neon.c`
- * is tolerance-bounded, not bit-exact:
+ * The per-line kernels (`ansnr_mse_line_avx2`, `ansnr_mse_line_avx512`,
+ * `ansnr_mse_line_neon`) are tolerance-bounded against the scalar inner
+ * loop, not bit-exact.  Sources of divergence:
+ *   - AVX2/AVX-512: per-line double accumulator is narrowed back to float
+ *     before adding to the running inter-row total in `ansnr_mse_s`;
+ *     residuals are sub-ULP at the final log10 call.
+ *   - NEON: uses float64x2_t accumulators throughout but the tail scalar
+ *     fallback narrows back to float; same regime.
  *
- *   - AVX2 / AVX-512: per-lane double accumulator, but cast back to float
- *     before adding to the inter-row running total; accumulation order
- *     differs from scalar.
- *   - NEON: float64x2 accumulator with widening per lane; tail is merged
- *     into a float before addition; same tolerance regime.
+ * The test exercises each kernel in isolation (single row, multiple rows,
+ * width not a multiple of the vector width) and compares the accumulated
+ * sig/noise values with the scalar inner loop using a relative tolerance
+ * of 1e-6 — ~4 orders of magnitude tighter than the snapshot gate's
+ * `places=4` threshold.
  *
- * Strategy: drive each _line_ kernel in isolation over a synthetic row,
- * then compare the accumulated (sig, noise) pair against a scalar
- * per-element reference at relative tolerance 1e-5.  This mirrors the
- * `test_moment_simd.c` pattern (ADR-0179) and is deliberately tighter
- * than the production snapshot gate (places=4, |abs| < 5e-5).
- *
- * Pixel range: [0, 256) for ref and dis.  Negative-difference coverage
- * (dis > ref) is exercised by seeding a separate PRNG run for dis.
- *
- * Boilerplate (PRNG, aligned alloc, CPU gate) is from `simd_bitexact_test.h`
- * (ADR-0245).
+ * Boilerplate (xorshift PRNG, aligned alloc, AVX2 CPU gate, relative
+ * tolerance assertion) is from `simd_bitexact_test.h` (ADR-0245).
  */
 
 #include <stddef.h>
@@ -47,7 +44,8 @@
 
 #include "config.h"
 #include "test.h"
-/* clang-format off — test.h has no header guard; must precede harness. */
+/* clang-format off — test.h has no header guard; must precede harness
+ * include to avoid a mu_report redefinition conflict. */
 #include "simd_bitexact_test.h"
 /* clang-format on */
 
@@ -62,59 +60,50 @@
 #endif
 
 #define ALIGN_BYTES 64
-/* Width is not a multiple of 4, 8, or 16 — exercises tail path on all ISAs. */
+/* Width chosen so that it exercises the tail path on both AVX2 (8-wide)
+ * and NEON (4-wide): not a multiple of 8 or 4. */
 #define TEST_W 73
-/* Heights > 1 are exercised by calling the line kernel in a loop. */
+/* Multiple rows to verify per-row accumulation. */
 #define TEST_H 17
 
-/* Pixel range matches the float values produced by picture_copy for 8-bit input. */
+/* Pixel input range: post-picture_copy 8-bit float in [0, 256). */
 #define ANSNR_FILL_LO 0.0f
 #define ANSNR_FILL_HI 256.0f
 
 /*
- * Relative tolerance: 1e-5 of the scalar accumulator.
- *
- * Sources of divergence:
- *   - Inter-lane cross-add order (float → double → float narrowing per SIMD row).
- *   - Tail scalar remainder added into an already-narrowed float result (NEON).
- *   - Compiler auto-vectorisation of the scalar reference TU.
- *
- * 1e-5 is ~1000× tighter than the snapshot gate and comfortably above the
- * measured worst-case residual across all ISAs (< 5e-7 on representative inputs).
+ * Relative tolerance: 1e-6 of the larger of the two values.
+ * Tighter than the snapshot gate's `places=4` (~5e-5 abs at typical score
+ * magnitudes) but looser than the float32 machine epsilon (1.19e-7) to
+ * account for double-to-float narrowing in the inter-row accumulation path.
  */
-#define ANSNR_REL_TOL 1e-5
+#define ANSNR_REL_TOL 1e-6
 
-/* ------------------------------------------------------------------
- * Shared scalar reference for a single line.
- * Accumulates into double to remove compiler-reorder ambiguity and
- * returns via pointers, matching the per-line contract.
- * ------------------------------------------------------------------ */
-static void ansnr_mse_line_scalar(const float *ref, const float *dis, float *sig_accum,
-                                  float *noise_accum, int w)
+/*
+ * run_scalar_line_loop: accumulate ref^2 and (ref-dis)^2 over one row
+ * using the pure C inner loop from ansnr_tools.c lines 107-119.  This
+ * is the reference that the SIMD kernels must match within ANSNR_REL_TOL.
+ */
+static void run_scalar_line_loop(const float *ref, const float *dis, float *sig_out,
+                                 float *noise_out, int w)
 {
-    double sig = 0.0;
-    double noise = 0.0;
+    float sig = 0.0f;
+    float noise = 0.0f;
     for (int j = 0; j < w; j++) {
-        double r = (double)ref[j];
-        double d = (double)dis[j];
-        double diff = r - d;
-        sig += r * r;
-        noise += diff * diff;
+        float ref_val = ref[j];
+        float dis_val = dis[j];
+        sig += ref_val * ref_val;
+        noise += (ref_val - dis_val) * (ref_val - dis_val);
     }
-    *sig_accum += (float)sig;
-    *noise_accum += (float)noise;
+    *sig_out += sig;
+    *noise_out += noise;
 }
 
-/* ------------------------------------------------------------------
- * Helper: fill ref + dis buffers, run scalar and one SIMD line kernel
- * over TEST_H rows, compare accumulators.
- * ------------------------------------------------------------------ */
-typedef void (*ansnr_line_fn)(const float *, const float *, float *, float *, int);
+#if ARCH_X86
 
-static char *check_line_kernel(ansnr_line_fn simd_fn, uint32_t seed, int w, int h)
+static char *check_avx2(uint32_t seed, int w)
 {
-    const int stride = (w + 15) & ~15; /* rounded to 16 floats for alignment */
-    const size_t bytes = (size_t)stride * (size_t)h * sizeof(float);
+    const int stride = (w + 7) & ~7;
+    const size_t bytes = (size_t)stride * sizeof(float);
 
     float *ref = (float *)simd_test_aligned_malloc(bytes, ALIGN_BYTES);
     float *dis = (float *)simd_test_aligned_malloc(bytes, ALIGN_BYTES);
@@ -124,106 +113,159 @@ static char *check_line_kernel(ansnr_line_fn simd_fn, uint32_t seed, int w, int 
         return "aligned_malloc failed";
     }
 
-    simd_test_fill_random_f32(ref, (size_t)stride * (size_t)h, ANSNR_FILL_LO, ANSNR_FILL_HI, seed);
-    /* Dis uses a different seed to exercise negative-difference paths (dis > ref). */
-    simd_test_fill_random_f32(dis, (size_t)stride * (size_t)h, ANSNR_FILL_LO, ANSNR_FILL_HI,
-                              seed ^ 0xAAAAAAAAu);
+    simd_test_fill_random_f32(ref, (size_t)stride, ANSNR_FILL_LO, ANSNR_FILL_HI, seed);
+    simd_test_fill_random_f32(dis, (size_t)stride, ANSNR_FILL_LO, ANSNR_FILL_HI,
+                              seed ^ 0xffff0000u);
 
     float sig_scalar = 0.0f;
     float noise_scalar = 0.0f;
-    float sig_simd = 0.0f;
-    float noise_simd = 0.0f;
+    run_scalar_line_loop(ref, dis, &sig_scalar, &noise_scalar, w);
 
-    for (int i = 0; i < h; i++) {
-        const float *rrow = ref + (size_t)i * (size_t)stride;
-        const float *drow = dis + (size_t)i * (size_t)stride;
-        ansnr_mse_line_scalar(rrow, drow, &sig_scalar, &noise_scalar, w);
-        simd_fn(rrow, drow, &sig_simd, &noise_simd, w);
-    }
+    float sig_avx2 = 0.0f;
+    float noise_avx2 = 0.0f;
+    ansnr_mse_line_avx2(ref, dis, &sig_avx2, &noise_avx2, w);
 
     simd_test_aligned_free(ref);
     simd_test_aligned_free(dis);
 
-    /* Use static string literals so the returned pointer remains valid
-     * after this stack frame exits (mu_assert contract). */
-    SIMD_BITEXACT_ASSERT_RELATIVE((double)sig_scalar, (double)sig_simd, ANSNR_REL_TOL,
-                                  "ansnr_mse_line sig outside relative tolerance");
-    SIMD_BITEXACT_ASSERT_RELATIVE((double)noise_scalar, (double)noise_simd, ANSNR_REL_TOL,
-                                  "ansnr_mse_line noise outside relative tolerance");
+    SIMD_BITEXACT_ASSERT_RELATIVE((double)sig_scalar, (double)sig_avx2, ANSNR_REL_TOL,
+                                  "ansnr_mse_line_avx2 sig outside relative tolerance");
+    SIMD_BITEXACT_ASSERT_RELATIVE((double)noise_scalar, (double)noise_avx2, ANSNR_REL_TOL,
+                                  "ansnr_mse_line_avx2 noise outside relative tolerance");
     return NULL;
 }
 
-/* ------------------------------------------------------------------
- * AVX2 test cases
- * ------------------------------------------------------------------ */
-#if ARCH_X86
-
 static char *test_avx2_seed_a(void)
 {
-    return check_line_kernel(ansnr_mse_line_avx2, 0xdeadbeefu, TEST_W, TEST_H);
+    return check_avx2(0xdeadbeefu, TEST_W);
 }
 static char *test_avx2_seed_b(void)
 {
-    return check_line_kernel(ansnr_mse_line_avx2, 0x12345678u, TEST_W, TEST_H);
+    return check_avx2(0x12345678u, TEST_W);
 }
 static char *test_avx2_aligned_w(void)
 {
-    return check_line_kernel(ansnr_mse_line_avx2, 0xabcdef01u, 64, 16);
+    return check_avx2(0xabcdef01u, 64);
 }
 static char *test_avx2_tiny(void)
 {
-    return check_line_kernel(ansnr_mse_line_avx2, 0xfeedface, 9, 1);
+    return check_avx2(0xfeedface, 9);
 }
 
 #if HAVE_AVX512
 
+static char *check_avx512(uint32_t seed, int w)
+{
+    const int stride = (w + 15) & ~15;
+    const size_t bytes = (size_t)stride * sizeof(float);
+
+    float *ref = (float *)simd_test_aligned_malloc(bytes, ALIGN_BYTES);
+    float *dis = (float *)simd_test_aligned_malloc(bytes, ALIGN_BYTES);
+    if (!ref || !dis) {
+        simd_test_aligned_free(ref);
+        simd_test_aligned_free(dis);
+        return "aligned_malloc failed";
+    }
+
+    simd_test_fill_random_f32(ref, (size_t)stride, ANSNR_FILL_LO, ANSNR_FILL_HI, seed);
+    simd_test_fill_random_f32(dis, (size_t)stride, ANSNR_FILL_LO, ANSNR_FILL_HI,
+                              seed ^ 0xffff0000u);
+
+    float sig_scalar = 0.0f;
+    float noise_scalar = 0.0f;
+    run_scalar_line_loop(ref, dis, &sig_scalar, &noise_scalar, w);
+
+    float sig_avx512 = 0.0f;
+    float noise_avx512 = 0.0f;
+    ansnr_mse_line_avx512(ref, dis, &sig_avx512, &noise_avx512, w);
+
+    simd_test_aligned_free(ref);
+    simd_test_aligned_free(dis);
+
+    SIMD_BITEXACT_ASSERT_RELATIVE((double)sig_scalar, (double)sig_avx512, ANSNR_REL_TOL,
+                                  "ansnr_mse_line_avx512 sig outside relative tolerance");
+    SIMD_BITEXACT_ASSERT_RELATIVE((double)noise_scalar, (double)noise_avx512, ANSNR_REL_TOL,
+                                  "ansnr_mse_line_avx512 noise outside relative tolerance");
+    return NULL;
+}
+
 static char *test_avx512_seed_a(void)
 {
-    return check_line_kernel(ansnr_mse_line_avx512, 0xdeadbeefu, TEST_W, TEST_H);
+    return check_avx512(0xdeadbeefu, TEST_W);
 }
 static char *test_avx512_seed_b(void)
 {
-    return check_line_kernel(ansnr_mse_line_avx512, 0x12345678u, TEST_W, TEST_H);
+    return check_avx512(0x12345678u, TEST_W);
 }
 static char *test_avx512_aligned_w(void)
 {
-    return check_line_kernel(ansnr_mse_line_avx512, 0xabcdef01u, 64, 16);
+    return check_avx512(0xabcdef01u, 64);
 }
 static char *test_avx512_tiny(void)
 {
-    return check_line_kernel(ansnr_mse_line_avx512, 0xfeedface, 17, 1);
+    return check_avx512(0xfeedface, 17);
 }
 
 #endif /* HAVE_AVX512 */
+
 #endif /* ARCH_X86 */
 
-/* ------------------------------------------------------------------
- * NEON test cases
- * ------------------------------------------------------------------ */
 #if ARCH_AARCH64
+
+static char *check_neon(uint32_t seed, int w)
+{
+    const int stride = (w + 3) & ~3;
+    const size_t bytes = (size_t)stride * sizeof(float);
+
+    float *ref = (float *)simd_test_aligned_malloc(bytes, ALIGN_BYTES);
+    float *dis = (float *)simd_test_aligned_malloc(bytes, ALIGN_BYTES);
+    if (!ref || !dis) {
+        simd_test_aligned_free(ref);
+        simd_test_aligned_free(dis);
+        return "aligned_malloc failed";
+    }
+
+    simd_test_fill_random_f32(ref, (size_t)stride, ANSNR_FILL_LO, ANSNR_FILL_HI, seed);
+    simd_test_fill_random_f32(dis, (size_t)stride, ANSNR_FILL_LO, ANSNR_FILL_HI,
+                              seed ^ 0xffff0000u);
+
+    float sig_scalar = 0.0f;
+    float noise_scalar = 0.0f;
+    run_scalar_line_loop(ref, dis, &sig_scalar, &noise_scalar, w);
+
+    float sig_neon = 0.0f;
+    float noise_neon = 0.0f;
+    ansnr_mse_line_neon(ref, dis, &sig_neon, &noise_neon, w);
+
+    simd_test_aligned_free(ref);
+    simd_test_aligned_free(dis);
+
+    SIMD_BITEXACT_ASSERT_RELATIVE((double)sig_scalar, (double)sig_neon, ANSNR_REL_TOL,
+                                  "ansnr_mse_line_neon sig outside relative tolerance");
+    SIMD_BITEXACT_ASSERT_RELATIVE((double)noise_scalar, (double)noise_neon, ANSNR_REL_TOL,
+                                  "ansnr_mse_line_neon noise outside relative tolerance");
+    return NULL;
+}
 
 static char *test_neon_seed_a(void)
 {
-    return check_line_kernel(ansnr_mse_line_neon, 0xdeadbeefu, TEST_W, TEST_H);
+    return check_neon(0xdeadbeefu, TEST_W);
 }
 static char *test_neon_seed_b(void)
 {
-    return check_line_kernel(ansnr_mse_line_neon, 0x12345678u, TEST_W, TEST_H);
+    return check_neon(0x12345678u, TEST_W);
 }
 static char *test_neon_aligned_w(void)
 {
-    return check_line_kernel(ansnr_mse_line_neon, 0xabcdef01u, 64, 16);
+    return check_neon(0xabcdef01u, 64);
 }
 static char *test_neon_tiny(void)
 {
-    return check_line_kernel(ansnr_mse_line_neon, 0xfeedface, 5, 1);
+    return check_neon(0xfeedface, 5);
 }
 
 #endif /* ARCH_AARCH64 */
 
-/* ------------------------------------------------------------------
- * Test runner
- * ------------------------------------------------------------------ */
 char *run_tests(void)
 {
 #if ARCH_X86
@@ -235,11 +277,20 @@ char *run_tests(void)
     mu_run_test(test_avx2_aligned_w);
     mu_run_test(test_avx2_tiny);
 #if HAVE_AVX512
-    mu_run_test(test_avx512_seed_a);
-    mu_run_test(test_avx512_seed_b);
-    mu_run_test(test_avx512_aligned_w);
-    mu_run_test(test_avx512_tiny);
-#endif
+    /* AVX-512 path tested only when both AVX2 and AVX-512 are present;
+     * simd_test_have_avx2 already confirmed AVX2, and the
+     * ansnr_mse_s dispatcher only selects AVX-512 when AVX-512 flags
+     * are also set, so we probe directly via vmaf_get_cpu_flags. */
+    {
+        unsigned flags = vmaf_get_cpu_flags_x86();
+        if (flags & VMAF_X86_CPU_FLAG_AVX512) {
+            mu_run_test(test_avx512_seed_a);
+            mu_run_test(test_avx512_seed_b);
+            mu_run_test(test_avx512_aligned_w);
+            mu_run_test(test_avx512_tiny);
+        }
+    }
+#endif /* HAVE_AVX512 */
 #elif ARCH_AARCH64
     mu_run_test(test_neon_seed_a);
     mu_run_test(test_neon_seed_b);

@@ -96,18 +96,10 @@ typedef struct PsnrStateHip {
     void *ref_in[PSNR_NUM_PLANES];
     void *dis_in[PSNR_NUM_PLANES];
 #endif /* HAVE_HIPCC */
-    double min_sse;
     VmafDictionary *feature_name_dict;
 } PsnrStateHip;
 
-static const VmafOption options[] = {{
-                                         .name = "enable_chroma",
-                                         .help = "enable calculation for chroma channels",
-                                         .offset = offsetof(PsnrStateHip, enable_chroma),
-                                         .type = VMAF_OPT_TYPE_BOOL,
-                                         .default_val.b = true,
-                                     },
-                                     {0}};
+static const VmafOption options[] = {{0}};
 
 #define PSNR_HIP_BX 16
 #define PSNR_HIP_BY 16
@@ -267,9 +259,8 @@ static int init_fex_hip(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     s->bpc = bpc;
     s->peak = (1u << bpc) - 1u;
-    /* psnr_max = (6 * bpc) + 12 for all planes (CPU min_sse==0 branch). */
-    for (unsigned p = 0; p < PSNR_NUM_PLANES; p++)
-        s->psnr_max[p] = (double)(6u * bpc) + 12.0;
+    /* psnr_max formula mirrors CPU integer_psnr.c::init min_sse==0 branch. */
+    s->psnr_max_y = (double)(6u * bpc) + 12.0;
 
     /* Per-plane readback pairs (device uint64 SSE accumulator + pinned host
      * slot). Allocate only for active planes to avoid wasting pinned memory. */
@@ -359,22 +350,19 @@ static int submit_fex_hip(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafP
     const uintptr_t pic_stream_handle = 0;
     const size_t bpp = (s->bpc <= 8u) ? 1u : 2u;
 
-    /* HtoD copy all active planes into tightly-pitched staging buffers.
-     * 2D memcpy strips source stride so the kernel sees a packed layout. */
-    for (unsigned p = 0; p < s->n_planes; p++) {
-        const ptrdiff_t dst_stride = (ptrdiff_t)(s->width[p] * bpp);
-        hipError_t rc =
-            hipMemcpy2DAsync(s->ref_in[p], (size_t)dst_stride, ref_pic->data[p],
-                             (size_t)ref_pic->stride[p], (size_t)dst_stride, (size_t)s->height[p],
-                             hipMemcpyHostToDevice, (hipStream_t)pic_stream_handle);
-        if (rc != hipSuccess)
-            return -EIO;
-        rc = hipMemcpy2DAsync(s->dis_in[p], (size_t)dst_stride, dist_pic->data[p],
-                              (size_t)dist_pic->stride[p], (size_t)dst_stride, (size_t)s->height[p],
-                              hipMemcpyHostToDevice, (hipStream_t)pic_stream_handle);
-        if (rc != hipSuccess)
-            return -EIO;
-    }
+    /* HtoD copy ref luma via 2D memcpy to handle arbitrary source stride. */
+    hipError_t rc =
+        hipMemcpy2DAsync(s->ref_in, (size_t)plane_pitch, ref_pic->data[0],
+                         (size_t)ref_pic->stride[0], (size_t)plane_pitch, (size_t)s->frame_h,
+                         hipMemcpyHostToDevice, (hipStream_t)pic_stream_handle);
+    if (rc != hipSuccess)
+        return -EIO;
+
+    rc = hipMemcpy2DAsync(s->dis_in, (size_t)plane_pitch, dist_pic->data[0],
+                          (size_t)dist_pic->stride[0], (size_t)plane_pitch, (size_t)s->frame_h,
+                          hipMemcpyHostToDevice, (hipStream_t)pic_stream_handle);
+    if (rc != hipSuccess)
+        return -EIO;
 
     return psnr_hip_launch(s, pic_stream_handle);
 #else

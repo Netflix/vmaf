@@ -28,11 +28,9 @@
 
 #include <cerrno>
 #include <cmath>
-#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <limits>
 
 extern "C" {
 #include "config.h"
@@ -113,12 +111,6 @@ struct MsSsimStateSycl {
     unsigned pending_index;
 
     VmafDictionary *feature_name_dict;
-
-    bool enable_lcs;    /* ADR-0486: emit per-scale L/C/S triples (parity with CUDA). */
-    bool enable_chroma; /* ADR-0486: accepted for symmetry; MS-SSIM is luma-only. */
-    bool enable_db;     /* ADR-0485: output score as dB (parity with CPU). */
-    bool clip_db;       /* ADR-0485: clamp dB to per-frame finite ceiling. */
-    double max_db;      /* ADR-0485: computed in init; INFINITY when clip_db=false. */
 };
 
 /* Period-2n mirror — matches ms_ssim_decimate.c::ms_ssim_decimate_mirror. */
@@ -281,39 +273,7 @@ static void launch_vert_lcs(sycl::queue &q, const float *h_ref_mu, const float *
 
 extern "C" {
 
-static const VmafOption options_ms_ssim_sycl[] = {
-    {
-        .name = "enable_lcs",
-        .help = "emit per-scale luminance, contrast and structure intermediates "
-                "(float_ms_ssim_{l,c,s}_scale{0..4}); parity with CPU and CUDA / ADR-0486",
-        .offset = offsetof(MsSsimStateSycl, enable_lcs),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val = {.b = false},
-    },
-    {
-        .name = "enable_chroma",
-        .help = "accepted for option-table symmetry with CUDA twin; MS-SSIM is "
-                "luma-only by construction so this flag has no effect / ADR-0486",
-        .offset = offsetof(MsSsimStateSycl, enable_chroma),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val = {.b = false},
-    },
-    {
-        .name = "enable_db",
-        .help = "write MS-SSIM values as dB (parity with CPU float_ms_ssim / ADR-0485)",
-        .offset = offsetof(MsSsimStateSycl, enable_db),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val = {.b = false},
-    },
-    {
-        .name = "clip_db",
-        .help = "clip dB scores to a finite ceiling (parity with CPU float_ms_ssim / ADR-0485)",
-        .offset = offsetof(MsSsimStateSycl, clip_db),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val = {.b = false},
-    },
-    {0},
-};
+static const VmafOption options_ms_ssim_sycl[] = {{0}};
 
 static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc,
                          unsigned w, unsigned h)
@@ -353,15 +313,6 @@ static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     s->c1 = (K1 * L) * (K1 * L);
     s->c2 = (K2 * L) * (K2 * L);
     s->c3 = s->c2 * 0.5f;
-
-    /* ADR-0485: dB ceiling — mirrors CPU float_ms_ssim init logic. */
-    if (s->clip_db) {
-        const double peak = static_cast<double>((1u << bpc) - 1u);
-        const double mse = 0.5 / (static_cast<double>(w) * static_cast<double>(h));
-        s->max_db = std::ceil(10.0 * std::log10(peak * peak / mse));
-    } else {
-        s->max_db = std::numeric_limits<double>::infinity();
-    }
 
     if (!fex->sycl_state) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR, "ms_ssim_sycl: no SYCL state\n");
@@ -492,36 +443,8 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
                   std::pow(std::fabs(s_means[i]), (double)GAMMAS[i]);
     }
 
-    /* ADR-0485: dB conversion — mirrors CPU float_ms_ssim::convert_to_db. */
-    if (s->enable_db) {
-        const double db_val = -10.0 * std::log10(1.0 - msssim);
-        msssim = (db_val < s->max_db) ? db_val : s->max_db;
-    }
-
-    int err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                      "float_ms_ssim", msssim, index);
-
-    /* ADR-0486: per-scale L/C/S intermediates — parity with CPU and CUDA. */
-    if (s->enable_lcs && !err) {
-        static const char *const l_names[MS_SSIM_SCALES] = {
-            "float_ms_ssim_l_scale0", "float_ms_ssim_l_scale1", "float_ms_ssim_l_scale2",
-            "float_ms_ssim_l_scale3", "float_ms_ssim_l_scale4",
-        };
-        static const char *const c_names[MS_SSIM_SCALES] = {
-            "float_ms_ssim_c_scale0", "float_ms_ssim_c_scale1", "float_ms_ssim_c_scale2",
-            "float_ms_ssim_c_scale3", "float_ms_ssim_c_scale4",
-        };
-        static const char *const s_names[MS_SSIM_SCALES] = {
-            "float_ms_ssim_s_scale0", "float_ms_ssim_s_scale1", "float_ms_ssim_s_scale2",
-            "float_ms_ssim_s_scale3", "float_ms_ssim_s_scale4",
-        };
-        for (int i = 0; i < MS_SSIM_SCALES; i++) {
-            err |= vmaf_feature_collector_append(feature_collector, l_names[i], l_means[i], index);
-            err |= vmaf_feature_collector_append(feature_collector, c_names[i], c_means[i], index);
-            err |= vmaf_feature_collector_append(feature_collector, s_names[i], s_means[i], index);
-        }
-    }
-    return err;
+    return vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                   "float_ms_ssim", msssim, index);
 }
 
 static int close_fex_sycl(VmafFeatureExtractor *fex)

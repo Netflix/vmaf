@@ -31,15 +31,6 @@
 #define VK_API_VERSION_1_4 VK_API_VERSION_1_3
 #endif
 
-// VK_KHR_portability_enumeration was promoted to core in Vulkan 1.3.216
-// (August 2022). Guard against older SDK headers that predate the constant.
-#ifndef VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME
-#define VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME "VK_KHR_portability_enumeration"
-#endif
-#ifndef VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
-#define VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR ((VkInstanceCreateFlags)0x00000001)
-#endif
-
 #define VK_OR_FAIL(call_, errno_)                                                                  \
     do {                                                                                           \
         VkResult _vkr = (call_);                                                                   \
@@ -62,36 +53,6 @@ static int load_volk_once(void)
     return 0;
 }
 
-/* Probe whether VK_KHR_portability_enumeration is available.
- * Required on macOS/MoltenVK so that vkEnumeratePhysicalDevices returns
- * portability-subset devices (VK-8, perf-audit-vulkan-sycl-2026-05-16). */
-static int has_portability_enumeration_ext(void)
-{
-    uint32_t count = 0;
-    VkResult vkr = vkEnumerateInstanceExtensionProperties(NULL, &count, NULL);
-    if (vkr != VK_SUCCESS || count == 0)
-        return 0;
-
-    VkExtensionProperties *props = calloc(count, sizeof(*props));
-    if (!props)
-        return 0;
-    vkr = vkEnumerateInstanceExtensionProperties(NULL, &count, props);
-    if (vkr != VK_SUCCESS) {
-        free(props);
-        return 0;
-    }
-    int found = 0;
-    for (uint32_t i = 0; i < count; i++) {
-        if (strncmp(props[i].extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
-                    VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            found = 1;
-            break;
-        }
-    }
-    free(props);
-    return found;
-}
-
 static int create_instance(VkInstance *out_instance)
 {
     VkApplicationInfo app_info = {
@@ -102,21 +63,9 @@ static int create_instance(VkInstance *out_instance)
         .engineVersion = VK_MAKE_API_VERSION(0, 3, 0, 0),
         .apiVersion = VK_API_VERSION_1_4,
     };
-
-    /* VK-8: on macOS/MoltenVK, vkEnumeratePhysicalDevices returns zero
-     * devices unless VK_KHR_portability_enumeration is requested and
-     * VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR is set.
-     * We probe for the extension first and enable it only when present,
-     * so Linux/Windows builds are unaffected (Vulkan spec §3.3). */
-    const int use_portability = has_portability_enumeration_ext();
-    const char *portability_ext = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
-
     VkInstanceCreateInfo create_info = {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pApplicationInfo = &app_info,
-        .enabledExtensionCount = use_portability ? 1u : 0u,
-        .ppEnabledExtensionNames = use_portability ? &portability_ext : NULL,
-        .flags = use_portability ? VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR : 0u,
     };
     VkResult vkr = vkCreateInstance(&create_info, NULL, out_instance);
     if (vkr != VK_SUCCESS)

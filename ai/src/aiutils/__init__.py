@@ -10,13 +10,11 @@ directory and establish standard interfaces for new scripts.
 from aiutils.file_utils import sha256
 from aiutils.jsonl_utils import iter_jsonl
 from aiutils.parquet_utils import write_parquet_atomic
-from aiutils.subprocess_utils import run_cmd
 from aiutils.time_utils import now_iso_8601
 
 __all__ = [
     "iter_jsonl",
     "now_iso_8601",
-    "run_cmd",
     "sha256",
     "write_parquet_atomic",
 ]

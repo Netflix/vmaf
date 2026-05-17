@@ -147,9 +147,6 @@ typedef struct MsSsimStateCuda {
                          * by construction, so n_planes is clamped to 1
                          * unless a future extension lifts that. */
     unsigned n_planes;  /* active plane count: always 1 once clamped. */
-    bool enable_db;     /* ADR-0485: output score as dB (mirrors CPU option). */
-    bool clip_db;       /* ADR-0485: clamp dB to per-frame finite max. */
-    double max_db;      /* ADR-0485: computed ceiling; set in init. */
 } MsSsimStateCuda;
 
 static const VmafOption options[] = {
@@ -166,20 +163,6 @@ static const VmafOption options[] = {
                 "currently MS-SSIM is luma-only, so this flag is accepted but "
                 "always clamps n_planes to 1 until a chroma extension lands",
         .offset = offsetof(MsSsimStateCuda, enable_chroma),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-    },
-    {
-        .name = "enable_db",
-        .help = "write MS-SSIM values as dB (parity with CPU float_ms_ssim / ADR-0485)",
-        .offset = offsetof(MsSsimStateCuda, enable_db),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-    },
-    {
-        .name = "clip_db",
-        .help = "clip dB scores to a finite ceiling (parity with CPU float_ms_ssim / ADR-0485)",
-        .offset = offsetof(MsSsimStateCuda, clip_db),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
     },
@@ -237,16 +220,6 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     s->c1 = (K1 * L) * (K1 * L);
     s->c2 = (K2 * L) * (K2 * L);
     s->c3 = s->c2 * 0.5f;
-
-    /* ADR-0485: dB ceiling — matches CPU float_ms_ssim init logic.
-     * peak = (2^bpc - 1); mse floor = 0.5 / (w*h); ceiling = -10*log10(mse/peak^2). */
-    if (s->clip_db) {
-        const double peak = (double)((1u << bpc) - 1u);
-        const double mse = 0.5 / ((double)w * (double)h);
-        s->max_db = ceil(10.0 * log10(peak * peak / mse));
-    } else {
-        s->max_db = INFINITY;
-    }
 
     int err = vmaf_cuda_kernel_lifecycle_init(&s->lc, fex->cu_state);
     if (err)
@@ -511,13 +484,6 @@ static int collect_fex_cuda(VmafFeatureExtractor *fex, unsigned index,
     for (int i = 0; i < MS_SSIM_SCALES; i++) {
         msssim *= pow(l_means[i], (double)g_alphas[i]) * pow(c_means[i], (double)g_betas[i]) *
                   pow(fabs(s_means[i]), (double)g_gammas[i]);
-    }
-
-    /* ADR-0485: dB conversion — mirrors CPU float_ms_ssim::convert_to_db.
-     * MIN(-10*log10(1-score), max_db) where max_db = INFINITY when clip_db=false. */
-    if (s->enable_db) {
-        const double db_val = -10.0 * log10(1.0 - msssim);
-        msssim = (db_val < s->max_db) ? db_val : s->max_db;
     }
 
     int err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,

@@ -77,9 +77,7 @@ libvmaf/src/feature/hip/          # per-feature kernels
 
 - **`float_psnr_hip`** — float (ref-dis)² reduction per block. Emits `float_psnr`.
 - **`integer_psnr_hip`** — uint64 atomic-SSE kernel, warp-64 `__shfl_down`
-  reduction. Emits `psnr_y`, `psnr_cb`, `psnr_cr` (same plane-loop as the
-  CUDA twin; `enable_chroma=false` or YUV400P sources emit luma only —
-  ADR-0471).
+  reduction. Emits `psnr_y`.
 - **`float_ansnr_hip`** — per-block (sig, noise) float-partial kernel, 3×3 ref +
   5×5 dis filter with shared-memory mirror-padded tile. Emits `float_ansnr` +
   `float_anpsnr`.
@@ -137,4 +135,4 @@ Each returns `-ENOSYS` at `init()`. Tracked in
 - [ADR-0375](../../adr/0375-hip-batch3-runtime-kernels.md) — batch-3 runtime kernels.
 - [ADR-0377](../../adr/0377-hip-batch4-runtime-kernels.md) — batch-4 runtime kernels.
 - [ADR-0380](../../adr/0380-ffmpeg-hip-backend-selector.md) — FFmpeg HIP backend selector.
-- [Research-0432](../../research/0432-hip-applicability.md) — AMD market-share + ROCm Linux maturity.
+- [Research-0033](../../research/0033-hip-applicability.md) — AMD market-share + ROCm Linux maturity.

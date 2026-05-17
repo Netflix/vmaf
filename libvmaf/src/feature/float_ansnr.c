@@ -17,19 +17,16 @@
  */
 
 #include <errno.h>
-#include <stddef.h>
 #include <string.h>
 
 #include "feature_collector.h"
 #include "feature_extractor.h"
-#include "opt.h"
 
 #include "mem.h"
 #include "ansnr.h"
 #include "picture_copy.h"
 
 typedef struct AnsnrState {
-    bool enable_chroma;
     size_t float_stride;
     float *ref;
     float *dist;
@@ -37,27 +34,12 @@ typedef struct AnsnrState {
     double psnr_max;
 } AnsnrState;
 
-static const VmafOption options[] = {
-    {
-        .name = "enable_chroma",
-        .help = "enable ANSNR/ANPSNR calculation for chroma (Cb/Cr) channels",
-        .offset = offsetof(AnsnrState, enable_chroma),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = false,
-    },
-    {0}};
-
-static const char *ansnr_name[3] = {"float_ansnr", "float_ansnr_cb", "float_ansnr_cr"};
-static const char *anpsnr_name[3] = {"float_anpsnr", "float_anpsnr_cb", "float_anpsnr_cr"};
-
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc, unsigned w,
                 unsigned h)
 {
+    (void)pix_fmt;
+
     AnsnrState *s = fex->priv;
-
-    if (pix_fmt == VMAF_PIX_FMT_YUV400P)
-        s->enable_chroma = false;
-
     s->float_stride = ALIGN_CEIL(w * sizeof(float));
     s->ref = aligned_malloc(s->float_stride * h, 32);
     if (!s->ref)
@@ -100,27 +82,22 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
     (void)ref_pic_90;
     (void)dist_pic_90;
 
-    const unsigned n_planes = s->enable_chroma ? 3u : 1u;
+    picture_copy(s->ref, s->float_stride, ref_pic, -128, ref_pic->bpc, 0);
+    picture_copy(s->dist, s->float_stride, dist_pic, -128, dist_pic->bpc, 0);
 
-    for (unsigned p = 0; p < n_planes; p++) {
-        picture_copy(s->ref, s->float_stride, ref_pic, -128, ref_pic->bpc, p);
-        picture_copy(s->dist, s->float_stride, dist_pic, -128, dist_pic->bpc, p);
+    double score;
+    double score_psnr;
+    err = compute_ansnr(s->ref, s->dist, ref_pic->w[0], ref_pic->h[0], s->float_stride,
+                        s->float_stride, &score, &score_psnr, s->peak, s->psnr_max);
 
-        double score;
-        double score_psnr;
-        err = compute_ansnr(s->ref, s->dist, ref_pic->w[p], ref_pic->h[p], s->float_stride,
-                            s->float_stride, &score, &score_psnr, s->peak, s->psnr_max);
-        if (err)
-            return err;
-
-        err = vmaf_feature_collector_append(feature_collector, ansnr_name[p], score, index);
-        if (err)
-            return err;
-        err = vmaf_feature_collector_append(feature_collector, anpsnr_name[p], score_psnr, index);
-        if (err)
-            return err;
-    }
-
+    if (err)
+        return err;
+    err = vmaf_feature_collector_append(feature_collector, "float_ansnr", score, index);
+    if (err)
+        return err;
+    err = vmaf_feature_collector_append(feature_collector, "float_anpsnr", score_psnr, index);
+    if (err)
+        return err;
     return 0;
 }
 
@@ -143,6 +120,5 @@ VmafFeatureExtractor vmaf_fex_float_ansnr = {
     .extract = extract,
     .close = close,
     .priv_size = sizeof(AnsnrState),
-    .options = options,
     .provided_features = provided_features,
 };

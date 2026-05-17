@@ -133,7 +133,7 @@ For each ADR:
 - ADR-0221: changelog-fragment policy.
 - `changelog.d/changed/adr-bulk-status-flip-2026-05-06.md`: prior
   bulk sweep precedent (13 ADRs).
-- `docs/research/0433-ci-pipeline-audit-2026-05.md` and
+- `docs/research/0034-ci-pipeline-audit-2026-05.md` and
   `docs/research/0061-vmaf-tune-capability-audit.md`: prior audit
   digest precedents at this scale.
 

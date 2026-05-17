@@ -234,8 +234,6 @@ if is_hipcc_enabled and is_hip_enabled
         'ssim_score' : feature_src_dir + 'hip/float_ssim/ssim_score.hip',
         'ciede_score' : feature_src_dir + 'hip/integer_ciede/ciede_score.hip',
         'motion_v2_score' : feature_src_dir + 'hip/integer_motion_v2/motion_v2_score.hip',
-        # integer_ssim_hip: eleventh HIP kernel-template consumer.
-        'integer_ssim_score' : feature_src_dir + 'hip/integer_ssim/integer_ssim_score.hip',
     }
     foreach name, src : hip_kernel_sources
         hsaco_target = custom_target('hip_hsaco_' + name,
@@ -566,17 +564,6 @@ if is_asm_enabled
                 c_args : vmaf_cflags_common + ['-DARCH_AARCH64', '-march=armv9-a+sve2', '-ffp-contract=off'],
             )
             platform_specific_cpu_objects += arm64_ssimulacra2_sve2_lib.extract_all_objects()
-
-            # ADR-0445: moment SVE2 sister TU.  VLA f32→f64 widening pattern;
-            # no scalar tail — predicated loads handle row tails natively.
-            # `-ffp-contract=off` mirrors the SSIMULACRA 2 SVE2 rationale.
-            arm64_moment_sve2_lib = static_library(
-                'arm64_moment_sve2',
-                feature_src_dir + 'arm64/moment_sve2.c',
-                include_directories : vmaf_base_include,
-                c_args : vmaf_cflags_common + ['-DARCH_AARCH64', '-march=armv9-a+sve2', '-ffp-contract=off'],
-            )
-            platform_specific_cpu_objects += arm64_moment_sve2_lib.extract_all_objects()
         endif
     endif
 
@@ -1232,7 +1219,7 @@ if is_cuda_enabled
         feature_src_dir + 'cuda/integer_psnr_cuda.c',
         feature_src_dir + 'cuda/integer_moment_cuda.c',
         feature_src_dir + 'cuda/integer_ciede_cuda.c',
-        feature_src_dir + 'cuda/float_ssim_cuda.c',
+        feature_src_dir + 'cuda/integer_ssim_cuda.c',
         feature_src_dir + 'cuda/integer_ms_ssim_cuda.c',
         feature_src_dir + 'cuda/integer_psnr_hvs_cuda.c',
         feature_src_dir + 'cuda/float_ansnr_cuda.c',

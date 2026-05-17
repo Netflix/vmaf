@@ -46,14 +46,13 @@ import json
 import os
 import re
 import shlex
+import subprocess
 import sys
 import time
 import zipfile
 from pathlib import Path
 
 import pandas as pd
-
-from aiutils.subprocess_utils import run_cmd
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -106,8 +105,12 @@ EXTRACTORS = (
 _NAME_RE = re.compile(r"^([ABCD])[A-Za-z0-9]+_(\d+)x(\d+)_\d+fps_10bit_420\.mp4$")
 
 
+def _run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, check=True, **kw)
+
+
 def _decode_yuv_10bit(src_mp4: Path, out_yuv: Path) -> tuple[int, int, int]:
-    probe = run_cmd(
+    probe = subprocess.run(
         [
             "ffprobe",
             "-v",
@@ -120,14 +123,16 @@ def _decode_yuv_10bit(src_mp4: Path, out_yuv: Path) -> tuple[int, int, int]:
             "json",
             str(src_mp4),
         ],
-        capture=True,
+        check=True,
+        capture_output=True,
+        text=True,
     )
     info = json.loads(probe.stdout)["streams"][0]
     w = int(info["width"])
     h = int(info["height"])
     nb_frames = int(info.get("nb_frames", 0))
     out_yuv.parent.mkdir(parents=True, exist_ok=True)
-    run_cmd(
+    _run(
         [
             "ffmpeg",
             "-y",
@@ -157,7 +162,7 @@ def _encode_dis_10bit(src_mp4: Path, out_yuv: Path, crf: int) -> None:
         f"ffmpeg -y -loglevel error -i pipe:0 -pix_fmt yuv420p10le "
         f"-f rawvideo {shlex.quote(str(out_yuv))}"
     )
-    run_cmd(["bash", "-c", cmd])
+    _run(["bash", "-c", cmd])
 
 
 def _run_vmaf_full(
@@ -178,7 +183,7 @@ def _run_vmaf_full(
     feat_args: list[str] = []
     for ex in EXTRACTORS:
         feat_args += ["--feature", ex]
-    run_cmd(
+    _run(
         [
             str(vmaf_bin),
             "--reference",

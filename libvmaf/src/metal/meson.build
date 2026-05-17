@@ -66,8 +66,7 @@ metal_objcpp_lib = static_library(
               '../feature/metal/integer_psnr_metal.mm',
               '../feature/metal/float_motion_metal.mm',
               '../feature/metal/integer_motion_metal.mm',
-              '../feature/metal/float_ssim_metal.mm',
-              '../feature/metal/integer_ssim_metal.mm'),
+              '../feature/metal/float_ssim_metal.mm'),
     ],
     include_directories: metal_objcpp_includes,
     objcpp_args: metal_objcpp_args,
@@ -163,22 +162,6 @@ float_ssim_air = custom_target('float_ssim_air',
               '-o', '@OUTPUT@'],
 )
 
-integer_ssim_air = custom_target('integer_ssim_air',
-    input: '../feature/metal/integer_ssim.metal',
-    output: 'integer_ssim.air',
-    command: [xcrun, '-sdk', 'macosx', 'metal',
-              '-c', '@INPUT@',
-              '-o', '@OUTPUT@'],
-)
-
-integer_psnr_hvs_air = custom_target('integer_psnr_hvs_air',
-    input: '../feature/metal/integer_psnr_hvs.metal',
-    output: 'integer_psnr_hvs.air',
-    command: [xcrun, '-sdk', 'macosx', 'metal',
-              '-c', '@INPUT@',
-              '-o', '@OUTPUT@'],
-)
-
 metal_air_files = [
     mv2_air,
     float_psnr_air,
@@ -188,7 +171,6 @@ metal_air_files = [
     float_motion_air,
     integer_motion_air,
     float_ssim_air,
-    integer_ssim_air,
 ]
 
 metallib_target = custom_target('libvmaf-metallib',

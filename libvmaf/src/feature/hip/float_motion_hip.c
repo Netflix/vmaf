@@ -90,7 +90,6 @@ typedef struct FloatMotionStateHip {
     unsigned bpc;
     double prev_motion_score;
     double motion_fps_weight;
-    double motion_max_val;
     bool debug;
     bool motion_force_zero;
 
@@ -122,17 +121,6 @@ static const VmafOption options[] = {
         .default_val.d = 1.0,
         .min = 0.0,
         .max = 5.0,
-        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
-    },
-    {
-        .name = "motion_max_val",
-        .alias = "mmxv",
-        .help = "maximum value allowed; larger values will be clipped to this value",
-        .offset = offsetof(FloatMotionStateHip, motion_max_val),
-        .type = VMAF_OPT_TYPE_DOUBLE,
-        .default_val.d = 10000.0,
-        .min = 0.0,
-        .max = 10000.0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {0},
@@ -513,15 +501,13 @@ static int collect_fex_hip(VmafFeatureExtractor *fex, unsigned index,
         return err;
     }
 
-    /* index >= 2: emit motion2_score = min(prev, cur) * fps_weight clipped to
-     * motion_max_val at index-1, then (debug) motion_score at current index.
-     * Same order as CUDA twin. Apply fps weight to both operands before the
-     * min; then clip against motion_max_val (parity with float_motion.c:514).
-     * Identity at defaults: fps_weight=1.0, motion_max_val=10000.0. */
+    /* index >= 2: emit motion2_score = min(prev, cur) at index-1, then
+     * (debug) motion_score at current index. Same order as CUDA twin.
+     * Apply fps weight to both operands before the min so the weight
+     * scales the motion2 output; identity when motion_fps_weight = 1.0. */
     const double w_cur = motion_score * s->motion_fps_weight;
     const double w_prev = s->prev_motion_score * s->motion_fps_weight;
-    const double motion2_raw = (w_cur < w_prev) ? w_cur : w_prev;
-    const double motion2 = (motion2_raw < s->motion_max_val) ? motion2_raw : s->motion_max_val;
+    const double motion2 = (w_cur < w_prev) ? w_cur : w_prev;
     err = vmaf_feature_collector_append_with_dict(
         feature_collector, s->feature_name_dict, "VMAF_feature_motion2_score", motion2, index - 1u);
     if (s->debug && err == 0) {
@@ -556,13 +542,12 @@ static int flush_fex_hip(VmafFeatureExtractor *fex, VmafFeatureCollector *featur
         return 1;
     }
 
-    /* Emit the tail motion2 = min(prev_motion_score * fps_weight, max_val)
-     * at the last frame index.  Mirrors float_motion.c flush shape;
-     * identity at defaults: fps_weight=1.0, motion_max_val=10000.0. */
-    const double tail_raw = s->prev_motion_score * s->motion_fps_weight;
-    const double tail = (tail_raw < s->motion_max_val) ? tail_raw : s->motion_max_val;
-    int err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                      "VMAF_feature_motion2_score", tail, s->index);
+    /* Emit the tail motion2 = prev_motion_score * fps_weight at the last
+     * frame index.  Mirrors the CUDA twin's flush_fex_cuda shape exactly;
+     * identity when motion_fps_weight = 1.0. */
+    int err = vmaf_feature_collector_append_with_dict(
+        feature_collector, s->feature_name_dict, "VMAF_feature_motion2_score",
+        s->prev_motion_score * s->motion_fps_weight, s->index);
     return (err != 0) ? err : 1;
 #endif /* HAVE_HIPCC */
 }

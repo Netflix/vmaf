@@ -41,23 +41,13 @@ I/O strategy (perf win — Research-0135):
   remains the primary restartability signal; the JSONL staging file handles recovery
   of in-memory rows after an unclean exit.
 
-ffprobe geometry override (Win 2 — Research-0135):
+ffprobe skip (Win 2 — Research-0135):
   When ``--metadata-jsonl`` is provided and the sidecar contains
   ``chug_width_manifest``, ``chug_height_manifest``, and
-  ``chug_framerate_manifest`` for a clip, those values are used in place of
-  ffprobe's geometry output.  The pixel format is inferred from
-  ``chug_bit_depth`` (10 → ``yuv420p10le``, else ``yuv420p``); prior to the
-  F6-B fix ``chug_bit_depth`` was not loaded from the sidecar, so the pixel
-  format always defaulted to ``yuv420p`` regardless of actual bit depth.
-  ffprobe is still called for ``color_meta`` (HDR transfer/primaries detection);
-  a full ffprobe skip requires adding those fields to the CHUG sidecar schema.
-
-tmpfs scratch (Win 3 — Research-0135):
-  When ``/dev/shm`` is writable and has >=20 GiB free, temporary YUV files
-  are written there instead of the OS temp directory.  This eliminates NVMe
-  I/O for the intermediate per-clip raw YUV (~1.5 GiB per 1080p 30 fps 240-
-  frame clip) and reduces the per-clip wall time by an estimated 5–15 s on
-  NVMe-bound hosts.  Pass ``--scratch-dir`` to override auto-selection.
+  ``chug_framerate_manifest`` for a clip, ffprobe is skipped for that clip.
+  The pixel format is inferred from ``chug_bit_depth`` (10 → ``yuv420p10le``,
+  else ``yuv420p``) or defaults to ``yuv420p``.  ffprobe remains necessary for
+  clips not covered by the sidecar.
 
 Parallelism (ADR-0382): clips are dispatched to a
 ``concurrent.futures.ProcessPoolExecutor`` with ``--threads-cuda`` workers
@@ -444,38 +434,6 @@ def _feature_arg(extractor: str, is_hdr: bool, motion_fps_weight: float) -> str:
     return f"{base}=" + ":".join(opts)
 
 
-_DEV_SHM = Path("/dev/shm")
-_TMPFS_HEADROOM_BYTES = 20 * 1024 * 1024 * 1024  # 20 GiB minimum free
-
-
-def _choose_scratch_dir(requested: Path | None = None) -> Path:
-    """Return an appropriate scratch directory for temporary YUV files.
-
-    Priority (Win 3 — Research-0135):
-    1. ``requested`` — explicit caller override; always honoured.
-    2. ``/dev/shm`` — Linux tmpfs RAM-disk.  Used automatically when the
-       mount exists, is a directory, is writable by the current user, and
-       ``statvfs`` reports at least 20 GiB of free space (headroom for 8
-       concurrent workers each holding a 1080p 10-bit 240-frame clip,
-       ~1.5 GiB each).
-    3. ``tempfile.gettempdir()`` — portable fallback (NVMe or OS temp).
-
-    On non-Linux hosts ``/dev/shm`` is absent and the function always falls
-    back to (3) without raising.
-    """
-    if requested is not None:
-        return requested
-    try:
-        if _DEV_SHM.is_dir() and os.access(_DEV_SHM, os.W_OK):
-            st = os.statvfs(_DEV_SHM)
-            free = st.f_bavail * st.f_frsize
-            if free >= _TMPFS_HEADROOM_BYTES:
-                return _DEV_SHM / "k150k_yuv_scratch"
-    except OSError:
-        pass
-    return Path(tempfile.gettempdir()) / "k150k_yuv_scratch"
-
-
 def _decode_to_yuv(mp4: Path, yuv_path: Path, pix_fmt: str) -> None:
     """Decode ``mp4`` to raw YUV.  Writes atomically via a ``.tmp`` sibling."""
     tmp = yuv_path.with_suffix(".tmp")
@@ -761,10 +719,6 @@ def _load_jsonl_metadata(path: Path | None, *, split_seed: str) -> dict[str, dic
         "chug_content_name",
         "chug_height_manifest",
         "chug_width_manifest",
-        # Required by _geometry_from_sidecar to infer yuv420p10le for 10-bit
-        # CHUG clips; omitting it caused that function to always fall back to
-        # the yuv420p default regardless of actual bit depth (F6-B / Research-0135).
-        "chug_bit_depth",
     )
     out: dict[str, dict[str, Any]] = {}
     with path.open("r", encoding="utf-8") as fh:
@@ -885,12 +839,8 @@ def _process_clip(
 
     When ``sidecar_meta`` contains the required CHUG geometry fields
     (``chug_width_manifest``, ``chug_height_manifest``,
-    ``chug_framerate_manifest``), geometry from ffprobe is overridden by the
-    sidecar values (Win 2, Research-0135).  ``chug_bit_depth`` must also be
-    present in ``sidecar_meta`` for 10-bit clips to be decoded as
-    ``yuv420p10le``; it is now loaded from the sidecar in
-    ``_load_jsonl_metadata`` (F6-B fix).  ffprobe is still called for
-    HDR color metadata (color_transfer, color_primaries).
+    ``chug_framerate_manifest``), ffprobe is skipped for that clip (Win 2,
+    Research-0135).
 
     Returns a dict with keys: clip_name, mos, width, height, <feat>_mean/std.
     Raises on any failure so the caller can log and skip.
@@ -1064,14 +1014,8 @@ def main() -> int:
     ap.add_argument(
         "--scratch-dir",
         type=Path,
-        default=None,
-        help=(
-            "Scratch directory for temporary YUV files.  Cleaned per-clip.  "
-            "Defaults to /dev/shm/k150k_yuv_scratch when /dev/shm is writable "
-            "and has >=20 GiB free (Win 3 — Research-0135 tmpfs path), "
-            "otherwise falls back to the OS temp directory.  "
-            "Pass an explicit path to override auto-selection."
-        ),
+        default=Path(tempfile.gettempdir()) / "k150k_yuv_scratch",
+        help="Scratch directory for temporary YUV files.  Cleaned per-clip.",
     )
     args = ap.parse_args()
 
@@ -1143,11 +1087,7 @@ def main() -> int:
         print("[k150k] nothing to do.", flush=True)
         return 0
 
-    # Resolve scratch directory: auto-select /dev/shm when available and
-    # large enough; fall back to OS temp dir (Win 3 — Research-0135).
-    scratch_dir: Path = _choose_scratch_dir(args.scratch_dir)
-    scratch_dir.mkdir(parents=True, exist_ok=True)
-    print(f"[k150k] scratch_dir={scratch_dir}", flush=True)
+    args.scratch_dir.mkdir(parents=True, exist_ok=True)
 
     # JSONL staging file — accumulates rows during the run for crash durability.
     # Converted to parquet exactly once at the end (Research-0135 Win 1).
@@ -1184,7 +1124,7 @@ def main() -> int:
                 mos,
                 str(args.vmaf_bin),
                 str(args.cpu_vmaf_bin),
-                str(scratch_dir),
+                str(args.scratch_dir),
                 args.threads,
                 use_cuda,
                 idx % args.threads_cuda,

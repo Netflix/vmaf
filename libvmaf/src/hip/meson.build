@@ -21,11 +21,12 @@
 # template helper in init/submit/collect/close. -ENOSYS at the
 # template layer surfaces verbatim through the consumer.
 #
-# `feature/hip/integer_ciede_hip.c` is the third kernel-template
-# consumer (ADR-0257 / ADR-0377) — registers `vmaf_fex_ciede_hip`
-# and mirrors the CUDA twin (`feature/cuda/integer_ciede_cuda.c`)
-# name-for-name. Real HSACO kernel path active when enable_hipcc=true;
-# without it init() returns -ENOSYS (scaffold posture).
+# `feature/hip/ciede_hip.c` is the third kernel-template consumer
+# (ADR-0257) — registers `vmaf_fex_ciede_hip` and mirrors the CUDA
+# twin (`feature/cuda/integer_ciede_cuda.c`). Same scaffold posture:
+# the consumer compiles host-only and `init()` surfaces -ENOSYS
+# through the kernel-template helpers until T7-10b lands real
+# `hipStreamCreate` / `hipMemcpyAsync` bodies.
 #
 # `feature/hip/float_moment_hip.c` is the fourth kernel-template
 # consumer (ADR-0258) — registers `vmaf_fex_float_moment_hip` and
@@ -76,10 +77,9 @@ hip_sources += files(
     '../feature/hip/vif_hip.c',
     '../feature/hip/motion_hip.c',
     '../feature/hip/integer_psnr_hip.c',
-    '../feature/hip/integer_ciede_hip.c',
+    '../feature/hip/ciede_hip.c',
     '../feature/hip/float_moment_hip.c',
     '../feature/hip/float_ansnr_hip.c',
-    '../feature/hip/integer_motion_hip.c',
     '../feature/hip/integer_motion_v2_hip.c',
     '../feature/hip/float_motion_hip.c',
     '../feature/hip/float_ssim_hip.c',
@@ -88,11 +88,6 @@ hip_sources += files(
     # HSACO blob is embedded and the kernel runs on device; without it
     # init() returns -ENOSYS (same scaffold-posture as the other consumers).
     '../feature/hip/float_psnr_hip.c',
-    # integer_ssim_hip: HIP port of the integer_ssim extractor — eleventh
-    # kernel-template consumer. Two-pass separable Gaussian (same design as
-    # float_ssim_hip) but emits `integer_ssim`. With `enable_hipcc=true` the
-    # HSACO blob is embedded; without it init() returns -ENOSYS.
-    '../feature/hip/integer_ssim_hip.c',
 )
 
 # T7-10b runtime linkage. ROCm ships `hip_runtime_api.h` under

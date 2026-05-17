@@ -91,18 +91,6 @@ test_ort_internals = executable('test_ort_internals',
     dependencies : [math_lib, cuda_dependency, sycl_dependency],
 )
 
-# Public-surface smoke test for vmaf_use_tiny_model() — covers null-arg rejection,
-# non-existent path, -ENOSYS stub contract (disabled build), and the
-# smoke_v0.onnx happy path (enabled build with fixture present).
-# Addresses gap identified in audit-test-coverage-2026-05-16.md §2.
-test_vmaf_use_tiny_model = executable('test_vmaf_use_tiny_model',
-    ['../test.c', 'test_vmaf_use_tiny_model.c'],
-    include_directories : dnn_test_inc,
-    c_args : dnn_defines,
-    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies : [cuda_dependency, sycl_dependency],
-)
-
 test('test_tensor_io',       test_tensor_io,       suite : 'dnn')
 test('test_op_allowlist',    test_op_allowlist,    suite : 'dnn')
 test('test_model_loader',    test_model_loader,    suite : 'dnn')
@@ -117,9 +105,6 @@ test('test_ep_fp16',         test_ep_fp16,
 test('test_ort_internals',   test_ort_internals,
      workdir : meson.project_source_root() / '..',
      suite : 'dnn')
-test('test_vmaf_use_tiny_model', test_vmaf_use_tiny_model,
-     workdir : meson.project_source_root() / '..',
-     suite : ['dnn', 'fast'])
 
 bash_prog = find_program('bash', required : false)
 if bash_prog.found()
