@@ -560,19 +560,23 @@ jobs:
             undefined)
               # UBSan deselects: test_model (NULL-to-nonnull memcpy
               # in svm.cpp parser — same defect as ASan exclusion
-              # surfaced via a different sanitizer angle); test_cambi
-              # (SIGILL in
-              # test_calculate_c_values_scalar_avx2_parity — UBSan
-              # traps on undefined behavior in the cambi scalar / AVX2
-              # parity probe). Tracked as
+              # surfaced via a different sanitizer angle). Tracked as
               # T-SANITIZER-DEFECTS-REVEALED-758.
-              EXCLUDE='test_model$|test_cambi$'
+              # test_cambi was removed from this list after PR #761
+              # (merged 2026-05-11) added a runtime __builtin_cpu_supports
+              # AVX2 gate to test_calculate_c_values_scalar_avx2_parity,
+              # eliminating the SIGILL on non-AVX2 CI runners; confirmed
+              # clean under UBSan on current master.
+              EXCLUDE='test_model$'
               ;;
             thread)
-              # TSan deselects: test_model (same defect) and
-              # test_framesync (mutex-domain mismatch on per-buffer
-              # `count` between submit/acquire paths).
-              EXCLUDE='test_model$|test_framesync$'
+              # TSan deselects: test_model (same defect as ASan/UBSan
+              # exclusion above).
+              # test_framesync was removed from this list after PR #548
+              # (merged 2026-05-09) fixed the SAN-FRAMESYNC-MUTEX-DOMAIN
+              # mutex-domain mismatch; nightly TSan job was green on
+              # 2026-05-09 and 2026-05-10 (state.md entry).
+              EXCLUDE='test_model$'
               ;;
             *)
               echo "::error::ADR-0347 deselect list is not defined for sanitizer=${{ matrix.sanitizer }}" >&2
