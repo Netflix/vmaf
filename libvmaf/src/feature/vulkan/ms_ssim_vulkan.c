@@ -49,6 +49,7 @@
 
 #include <errno.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -85,6 +86,12 @@ typedef struct {
     bool enable_db;  /* Currently unused; kept for option parity. */
     bool clip_db;
     double max_db;
+    /* `enable_chroma`: when false, only luma is dispatched.
+     * Default false mirrors CPU float_ms_ssim.c PR #939 / ssim_vulkan.c PR #956. */
+    bool enable_chroma;
+    /* Number of active planes (1 for YUV400P or !enable_chroma, 3 otherwise).
+     * v1 kernel reads data[0] only; n_planes>1 is reserved for v2. */
+    unsigned n_planes;
 
     unsigned width;
     unsigned height;
@@ -184,6 +191,14 @@ static const VmafOption options[] = {
         .name = "clip_db",
         .help = "clip dB scores",
         .offset = offsetof(MsSsimVulkanState, clip_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {
+        .name = "enable_chroma",
+        .help = "enable calculation for chroma channels (mirrors CPU PR #939 / "
+                "ssim_vulkan PR #956; v1 kernel defers multi-plane dispatch to v2)",
+        .offset = offsetof(MsSsimVulkanState, enable_chroma),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
     },
@@ -500,8 +515,16 @@ static void write_ssim_descriptor_set(MsSsimVulkanState *s, VkDescriptorSet set,
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc, unsigned w,
                 unsigned h)
 {
-    (void)pix_fmt;
     MsSsimVulkanState *s = fex->priv;
+
+    /* Derive n_planes from pix_fmt, then clamp if !enable_chroma.
+     * Mirrors integer_psnr_cuda.c::init's enable_chroma guard (ADR-0453)
+     * and ssim_vulkan.c PR #956. */
+    if (pix_fmt == VMAF_PIX_FMT_YUV400P) {
+        s->n_planes = 1U;
+    } else {
+        s->n_planes = s->enable_chroma ? 3U : 1U;
+    }
 
     /* ADR-0153 minimum resolution check: 5-level pyramid +
      * 11-tap kernel needs >= 11 << 4 = 176 in min(w, h). */

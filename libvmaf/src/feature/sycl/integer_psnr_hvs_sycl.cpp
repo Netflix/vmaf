@@ -101,6 +101,11 @@ struct PsnrHvsStateSycl {
     unsigned num_blocks[PSNR_HVS_NUM_PLANES];
     unsigned bpc;
     int32_t samplemax_sq;
+    /* enable_chroma: when false, only the luma (Y) plane is dispatched.
+     * Default true mirrors CPU integer_psnr_hvs — see ADR-0453. */
+    bool enable_chroma;
+    /* n_active_planes: 1 when enable_chroma=false or YUV400P, else 3. */
+    unsigned n_active_planes;
 
     VmafSyclState *sycl_state;
 
@@ -381,7 +386,18 @@ static void launch_psnr_hvs(sycl::queue &q, const float *ref, const float *dist,
 
 extern "C" {
 
-static const VmafOption options_psnr_hvs_sycl[] = {{0}};
+static const VmafOption options_psnr_hvs_sycl[] = {
+    {
+        .name = "enable_chroma",
+        .help = "enable psnr_hvs calculation for chroma channels (Cb and Cr); "
+                "when false only the luma plane is scored and psnr_hvs equals "
+                "psnr_hvs_y (mirrors CPU PR #946 / ADR-0453)",
+        .offset = offsetof(PsnrHvsStateSycl, enable_chroma),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = true,
+    },
+    {0},
+};
 
 static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc,
                          unsigned w, unsigned h)
@@ -427,7 +443,12 @@ static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
         return -EINVAL;
     }
 
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    /* Mirror CPU PR #946 / ADR-0453: clamp to luma-only when caller
+     * passes enable_chroma=false.  YUV400P is already rejected above,
+     * so this covers 4:2:0 / 4:2:2 / 4:4:4 callers that opt out. */
+    s->n_active_planes = s->enable_chroma ? (unsigned)PSNR_HVS_NUM_PLANES : 1U;
+
+    for (int p = 0; p < (int)s->n_active_planes; p++) {
         if (s->width[p] < (unsigned)PSNR_HVS_BLOCK || s->height[p] < (unsigned)PSNR_HVS_BLOCK) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                      "psnr_hvs_sycl: plane %d dims %ux%u smaller than 8×8 block\n", p, s->width[p],
@@ -445,7 +466,7 @@ static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     }
     s->sycl_state = fex->sycl_state;
 
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (int p = 0; p < (int)s->n_active_planes; p++) {
         const size_t plane_bytes = (size_t)s->width[p] * s->height[p] * sizeof(float);
         const size_t partials_bytes = (size_t)s->num_blocks[p] * sizeof(float);
         s->h_ref[p] = (float *)vmaf_sycl_malloc_host(s->sycl_state, plane_bytes);
@@ -508,7 +529,7 @@ static int submit_fex_sycl(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
         return -EINVAL;
     sycl::queue &q = *qptr;
 
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (int p = 0; p < (int)s->n_active_planes; p++) {
         picture_copy_plane(s->h_ref[p], ref_pic, p, s->width[p], s->height[p]);
         picture_copy_plane(s->h_dist[p], dist_pic, p, s->width[p], s->height[p]);
         const size_t plane_bytes = (size_t)s->width[p] * s->height[p] * sizeof(float);
@@ -516,7 +537,7 @@ static int submit_fex_sycl(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
         q.memcpy(s->d_dist[p], s->h_dist[p], plane_bytes);
     }
 
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (int p = 0; p < (int)s->n_active_planes; p++) {
         launch_psnr_hvs(q, s->d_ref[p], s->d_dist[p], s->d_partials[p], s->width[p], s->height[p],
                         s->num_blocks_x[p], s->num_blocks_y[p], p, (int)s->bpc);
     }
@@ -535,7 +556,7 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
         return -EINVAL;
     sycl::queue &q = *qptr;
 
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (int p = 0; p < (int)s->n_active_planes; p++) {
         const size_t partials_bytes = (size_t)s->num_blocks[p] * sizeof(float);
         q.memcpy(s->h_partials[p], s->d_partials[p], partials_bytes);
     }
@@ -543,7 +564,7 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
 
     /* Per-plane reduction matching CPU's float `ret` register. */
     double plane_score[PSNR_HVS_NUM_PLANES];
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (int p = 0; p < (int)s->n_active_planes; p++) {
         float ret = 0.0f;
         for (unsigned i = 0; i < s->num_blocks[p]; i++)
             ret += s->h_partials[p][i];
@@ -556,11 +577,16 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
     int err = 0;
     static const char *plane_features[PSNR_HVS_NUM_PLANES] = {"psnr_hvs_y", "psnr_hvs_cb",
                                                               "psnr_hvs_cr"};
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++) {
+    for (int p = 0; p < (int)s->n_active_planes; p++) {
         const double db = 10.0 * (-1.0 * std::log10(plane_score[p]));
         err |= vmaf_feature_collector_append(feature_collector, plane_features[p], db, index);
     }
-    const double combined = 0.8 * plane_score[0] + 0.1 * (plane_score[1] + plane_score[2]);
+    /* When enable_chroma=false, psnr_hvs == psnr_hvs_y (luma-only).
+     * When enable_chroma=true, use the standard 0.8·Y + 0.1·(Cb+Cr)
+     * weighted combination (matches CPU integer_psnr_hvs). */
+    const double combined = (s->n_active_planes == 1U) ?
+                                plane_score[0] :
+                                0.8 * plane_score[0] + 0.1 * (plane_score[1] + plane_score[2]);
     const double db_combined = 10.0 * (-1.0 * std::log10(combined));
     err |= vmaf_feature_collector_append(feature_collector, "psnr_hvs", db_combined, index);
     return err;

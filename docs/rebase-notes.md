@@ -7,15 +7,15 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
-## fix/saliency-per-mb-eval-2026-05-15 — integer_vif enable_chroma
+## test/output-public-api-coverage-2026-05-16
 
-**`libvmaf/src/feature/integer_vif.c`**: adds `enable_chroma` bool field to
-`VifState`, a new `VmafOption` entry, a YUV400 clamp in `init`, and eight new
-keys in `provided_features`. If upstream Netflix ever adds chroma support to
-`integer_vif`, resolve by keeping their implementation and dropping the fork's
-`extract_plane` helper, or rebasing it if the upstream approach differs.
+**No rebase impact.** All changes are confined to
+`libvmaf/test/test_output.c` and `changelog.d/`. The test file is
+fork-local; upstream Netflix/vmaf does not ship `test_output.c`.
+No upstream-shared C sources, public headers, or build files are
+modified.
 
-No rebase conflict expected on the luma path — only additive changes.
+---
 
 ## fix/sycl-motion-fps-weight-vulkan-import-status-2026-05-16
 
@@ -34987,33 +34987,141 @@ AVX2 ships with AVX-512 + NEON siblings in the same PR. Do not merge a
 cambi AVX2 kernel without the matching AVX-512 + NEON files and a dispatch
 update in `cambi.c`.
 
----
+**Smoke-test after rebase**:
 
-## `perf/chug-drop-ssimulacra2-cuda-self-vs-self-2026-05-16` — K150K/CHUG self-vs-self extraction schema v2
+```bash
+meson setup build -Denable_cuda=false -Denable_sycl=false
+ninja -C build
+meson test -C build --suite=fast
+```
 
-**Branch**: `perf/chug-drop-ssimulacra2-cuda-self-vs-self-2026-05-16`
+### feat/psnr-hvs-vulkan-enable-chroma-2026-05-16 — `enable_chroma` option for `psnr_hvs_vulkan` (ADR-0461)
 
-**Files touched**:
-`ai/scripts/extract_k150k_features.py`,
-`ai/AGENTS.md`,
-`ai/tests/test_extract_k150k_no_ssimulacra2.py`.
-
-**Rebase impact**: low. All touched files are fork-local tiny-AI
-infrastructure; upstream Netflix/vmaf does not maintain `ai/` or K150K
-extraction pipelines. No upstream-shared C/C++/headers are modified.
-
-**Invariant to preserve on rebase**: the K150K extraction script
-(`extract_k150k_features.py`) is a fork-only feature. If upstream adds
-its own `extract_features.py` or similar, keep them separate under
-different package names; do not merge them. The parquet schema v2
-(21-feature, no ssimulacra2) is now authoritative for new K150K/CHUG
-extraction runs. Existing v1 parquets (22-feature, with ssimulacra2) are
-grandfathered in; loaders must handle both by detecting feature count at
-runtime or reading a schema-version sidecar (future work).
+- **Touches**: `libvmaf/src/feature/vulkan/psnr_hvs_vulkan.c`
+- **Invariant**: `enable_chroma` defaults to `true`; do not flip. When
+  `false`, `n_planes=1`, chroma pipelines are not created, and the combined
+  `psnr_hvs` score is suppressed. `close_fex()` relies on `VK_NULL_HANDLE`
+  guards for the chroma pipeline variants.
+- **No rebase impact on upstream files** (fork-local Vulkan extractor).
 
 **Smoke-test after rebase**:
 
 ```bash
-python -m pytest ai/tests/test_extract_k150k_no_ssimulacra2.py -v
-# Expected: 3/3 PASS
+# Default (enable_chroma=true): expect psnr_hvs_y + psnr_hvs_cb + psnr_hvs_cr + psnr_hvs
+./build/tools/vmaf --reference src01_hrc00_576x324.yuv \
+    --distorted src01_hrc01_576x324.yuv \
+    --width 576 --height 324 --feature psnr_hvs_vulkan
+# Luma-only: expect only psnr_hvs_y
+./build/tools/vmaf --reference src01_hrc00_576x324.yuv \
+    --distorted src01_hrc01_576x324.yuv \
+    --width 576 --height 324 \
+    --feature-opts 'psnr_hvs_vulkan=enable_chroma=false'
 ```
+
+---
+
+## perf/adm-p-norm-fast-path-vif-arm64-malloc-2026-05-16 (ADR-0463)
+
+**What changed**: Added `adm_cm_s_p3`, `adm_csf_den_scale_s_p3`, and
+`adm_sum_cube_s_p3` fast-path variants in `adm_tools.c`; dispatch added in
+`adm.c:compute_adm`. Removed per-call `aligned_malloc` from the scalar
+fallback paths of `vif_filter1d_s`, `vif_filter1d_sq_s`, and
+`vif_filter1d_xy_s` in `vif_tools.c` — the caller-supplied `tmpbuf` is
+used instead.
+
+**Rebase impact**: low. All modified files (`adm_tools.c`, `adm_tools.h`,
+`adm.c`, `vif_tools.c`) are shared with upstream Netflix/vmaf. The ADM
+changes add new symbols (no existing signatures altered). The VIF changes
+only remove local malloc/free; the function signatures and caller-supplied
+`tmpbuf` contract are unchanged.
+
+**Invariant to preserve on rebase**: When upstream Netflix/vmaf modifies
+`adm_cm_s`, `adm_csf_den_scale_s`, or `adm_sum_cube_s`, the corresponding
+`_p3` variants in the fork must receive the same logic change (minus the
+`powf` path). When upstream modifies `vif_filter1d_*` scalar fallbacks,
+ensure they do not reintroduce `aligned_malloc` in the fallback body.
+See `libvmaf/src/feature/AGENTS.md` performance-invariant section.
+
+### fix/dispatch-strategy-registry-audit-2026-05-15 — dispatch registry deduplication + HIP/Metal fixes
+
+**Touches**: `libvmaf/src/feature/feature_extractor.c` (SYCL/Vulkan
+sections of `feature_extractor_list[]`), `libvmaf/src/hip/dispatch_strategy.c`,
+`libvmaf/src/metal/dispatch_strategy.c`.
+
+**Rebase impact**: low for the SYCL/Vulkan deduplication (purely
+cosmetic — first-match semantics mean behaviour is unchanged). Medium
+for HIP and Metal dispatch-supports: if an upstream sync adds new
+`feature_extractor_list[]` entries for HIP or Metal extractors, they
+must also be added to `g_hip_features[]` / `g_metal_features[]` in the
+same commit.
+
+**Invariant to preserve on rebase**: every `vmaf_fex_*_hip` extractor
+registered in `feature_extractor_list[]` must appear in `g_hip_features[]`
+in `libvmaf/src/hip/dispatch_strategy.c`.  Every `vmaf_fex_*_metal`
+extractor must appear (by extractor `.name` and all `provided_features[]`
+keys) in `g_metal_features[]` in `libvmaf/src/metal/dispatch_strategy.c`.
+The build does not enforce this — run `scripts/ci/check-dispatch-registry.sh`
+after any kernel addition.
+
+**Smoke-test after rebase**:
+
+```bash
+meson setup build -Denable_cuda=false -Denable_sycl=false
+ninja -C build
+meson test -C build
+scripts/ci/check-dispatch-registry.sh   # must exit 0
+```
+
+## `perf/cache-rfe-hw-flags` — cache rfe_hw_flags bitmask (F2-B)
+
+**File changed:** `libvmaf/src/libvmaf.c` — `VmafContext` struct + `vmaf_init` + `vmaf_use_feature` + `vmaf_read_pictures`.
+
+No rebase impact: the change is entirely internal to `libvmaf.c`; no public
+header touched, no FFmpeg-patch surface changed.
+
+**Invariant:** `rfe_hw_flags_dirty` must be set to `true` in `vmaf_init` (after
+the `memset` zeroes it to `false`). If a future refactor moves the `memset` or
+adds a second init path, the dirty flag must be set at every init site.
+
+**Smoke-test after rebase:**
+
+```bash
+meson setup build -Denable_cuda=true -Denable_sycl=false
+ninja -C build src/liblibvmaf.a.p/libvmaf_src_libvmaf.c.o
+# Expected: compiles without error or warning
+```
+---
+
+### PR #1067 clobbered four GPU feature options (fix/enable-chroma-pr1067-regression)
+
+PR #1067 (bootstrap name-builder refactor) merged a stale base that
+pre-dated four option additions and overwrote them:
+
+- `integer_psnr_metal.mm`: lost `enable_chroma` field + option entry + `n_planes` guard (PR #986)
+- `float_psnr_metal.mm`: lost `enable_chroma` + per-plane dispatch loop + `n_planes` (PR #978)
+- `psnr_vulkan.c`: ceiling division reverted to floor division for chroma geometry (PR #878)
+- `vif_vulkan.c`: lost `vif_skip_scale0` field + option entry + score-suppression guards (PR #1057)
+
+**Rebase impact**: any branch that adds options to these four files and was
+branched before PR #1067 merged must be rebased onto master (post-fix) to
+avoid re-clobbering these options.
+
+**Smoke-test after rebase**:
+
+```bash
+meson setup build -Denable_cuda=false -Denable_sycl=false --wipe
+ninja -C build
+meson test -C build --suite=fast
+```
+
+---
+
+## perf/chug-sidecar-bit-depth-key-f6b (2026-05-17)
+
+**File**: `libvmaf/src/feature/hip/integer_psnr_hip.c`
+
+No rebase impact: the change is additive (new option + plane-loop). If
+upstream later changes the HIP PSNR submit/collect call-graph, re-check
+that the per-plane loop in `submit_fex_hip` and `collect_fex_hip` matches
+whatever new structure upstream introduces. The kernel (`psnr_score.hip`)
+is unchanged.

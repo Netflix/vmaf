@@ -423,6 +423,98 @@ static char *test_json_empty_collector()
     return NULL;
 }
 
+/* Read entire file at `path` into a malloc'd NUL-terminated buffer.
+ * Caller frees.  Returns NULL on failure or when the file is larger than
+ * 64 KiB (tests never produce files that large). */
+static char *slurp_path(const char *path)
+{
+    FILE *f = fopen(path, "r");
+    if (!f)
+        return NULL;
+    char *out = slurp(f);
+    (void)fclose(f);
+    return out;
+}
+
+static char *test_vmaf_version()
+{
+    /* vmaf_version() must return a non-NULL string that looks like a
+     * semver-ish version (contains at least one ASCII digit). */
+    const char *ver = vmaf_version();
+    mu_assert("vmaf_version returned NULL", ver != NULL);
+    /* Verify at least one digit present — a version string with no digit
+     * would be clearly wrong. */
+    bool has_digit = false;
+    for (const char *p = ver; *p; p++) {
+        if (*p >= '0' && *p <= '9') {
+            has_digit = true;
+            break;
+        }
+    }
+    mu_assert("vmaf_version string contains no digit", has_digit);
+    return NULL;
+}
+
+static char *test_write_output_json_path()
+{
+    /* vmaf_write_output() — public path-based dispatcher — must produce a
+     * well-formed JSON file for VMAF_OUTPUT_FORMAT_JSON. */
+    VmafContext *vmaf;
+    int err = seed_normal(&vmaf);
+    mu_assert("seed_normal failed", !err);
+
+    char tmp[] = "/tmp/test_write_output_XXXXXX";
+    int fd = mkstemp(tmp);
+    mu_assert("mkstemp failed", fd >= 0);
+    (void)close(fd);
+
+    err = vmaf_write_output(vmaf, tmp, VMAF_OUTPUT_FORMAT_JSON);
+    mu_assert("vmaf_write_output(JSON) returned non-zero", !err);
+
+    char *out = slurp_path(tmp);
+    (void)unlink(tmp);
+    mu_assert("slurp_path failed after vmaf_write_output", out);
+    mu_assert("write_output json: missing '{' open brace", strstr(out, "{"));
+    mu_assert("write_output json: missing frames block", strstr(out, "\"frames\":"));
+    mu_assert("write_output json: missing feat_a score", strstr(out, "feat_a"));
+
+    free(out);
+    (void)vmaf_close(vmaf);
+    return NULL;
+}
+
+static char *test_write_output_with_format_custom()
+{
+    /* vmaf_write_output_with_format() must honour a caller-supplied printf
+     * format string.  "%.3f" of 80.0 yields "80.000"; the default "%.17g"
+     * would yield "80" or "80.000000000000000" — never "80.000" exactly. */
+    VmafContext *vmaf;
+    int err = seed_normal(&vmaf);
+    mu_assert("seed_normal failed", !err);
+
+    char tmp[] = "/tmp/test_write_output_fmt_XXXXXX";
+    int fd = mkstemp(tmp);
+    mu_assert("mkstemp failed", fd >= 0);
+    (void)close(fd);
+
+    err = vmaf_write_output_with_format(vmaf, tmp, VMAF_OUTPUT_FORMAT_JSON, "%.3f");
+    mu_assert("vmaf_write_output_with_format(JSON,%.3f) returned non-zero", !err);
+
+    char *out = slurp_path(tmp);
+    (void)unlink(tmp);
+    mu_assert("slurp_path failed after vmaf_write_output_with_format", out);
+    /* "%.3f" of 80.0 → "80.000" (exactly three decimal places). */
+    mu_assert("write_output_with_format: custom format '80.000' not found", strstr(out, "80.000"));
+    /* The default 17-significant-digit form must NOT appear — that would
+     * indicate the format string was ignored. */
+    mu_assert("write_output_with_format: default format leaked despite custom",
+              !strstr(out, "80.00000000000000"));
+
+    free(out);
+    (void)vmaf_close(vmaf);
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_csv_basic);
@@ -433,5 +525,8 @@ char *run_tests()
     mu_run_test(test_json_basic_and_format);
     mu_run_test(test_json_nan_and_inf);
     mu_run_test(test_json_empty_collector);
+    mu_run_test(test_vmaf_version);
+    mu_run_test(test_write_output_json_path);
+    mu_run_test(test_write_output_with_format_custom);
     return NULL;
 }

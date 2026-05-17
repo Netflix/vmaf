@@ -78,6 +78,14 @@ ADR-0214) catches drift but only after a full GPU run.
   `integer_psnr.c::init`, propagate it here and to the CUDA and Vulkan twins
   in the same PR.
 
+- **`integer_ms_ssim_sycl.cpp` honours `enable_chroma` option parity**
+  (mirrors ms_ssim_vulkan PR #957 / ADR-0453 pattern). The `enable_chroma`
+  option (default `false`) clamps `n_planes` to 1 in `init_fex_sycl` when
+  set to `false`, and to 3 otherwise (except YUV400P which always forces 1).
+  v1 kernel reads plane 0 only; `n_planes > 1` is reserved for v2. On rebase:
+  keep default `false` and the clamp logic aligned with the Vulkan and CUDA
+  MS-SSIM twins; all three backends must agree on the default and dispatch.
+
 - **`integer_ms_ssim_sycl.cpp` honours the `enable_lcs` GPU
   contract** (ADR-0243). Emits 15 extra metrics
   (`float_ms_ssim_{l,c,s}_scale{0..4}`) when `enable_lcs=true`.

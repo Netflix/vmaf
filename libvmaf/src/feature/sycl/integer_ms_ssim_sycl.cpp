@@ -69,6 +69,13 @@ static constexpr float BETAS[MS_SSIM_SCALES] = {0.0448f, 0.2856f, 0.3001f, 0.236
 static constexpr float GAMMAS[MS_SSIM_SCALES] = {0.0448f, 0.2856f, 0.3001f, 0.2363f, 0.1333f};
 
 struct MsSsimStateSycl {
+    /* `enable_chroma`: when false, only luma is dispatched.
+     * Default false mirrors CPU float_ms_ssim.c and ms_ssim_vulkan.c PR #957. */
+    bool enable_chroma;
+    /* Number of active planes (1 for YUV400P or !enable_chroma, 3 otherwise).
+     * v1 kernel reads plane 0 only; n_planes>1 is reserved for v2. */
+    unsigned n_planes;
+
     unsigned width;
     unsigned height;
     unsigned bpc;
@@ -273,13 +280,30 @@ static void launch_vert_lcs(sycl::queue &q, const float *h_ref_mu, const float *
 
 extern "C" {
 
-static const VmafOption options_ms_ssim_sycl[] = {{0}};
+static const VmafOption options_ms_ssim_sycl[] = {
+    {
+        .name = "enable_chroma",
+        .help = "enable calculation for chroma channels (mirrors CPU PR #939 / "
+                "ms_ssim_vulkan PR #957; v1 kernel defers multi-plane dispatch to v2)",
+        .offset = offsetof(MsSsimStateSycl, enable_chroma),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {0},
+};
 
 static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc,
                          unsigned w, unsigned h)
 {
-    (void)pix_fmt;
     auto *s = static_cast<MsSsimStateSycl *>(fex->priv);
+
+    /* Derive n_planes from pix_fmt, then clamp if !enable_chroma.
+     * Mirrors ms_ssim_vulkan.c PR #957 / integer_psnr_cuda.c (ADR-0453). */
+    if (pix_fmt == VMAF_PIX_FMT_YUV400P) {
+        s->n_planes = 1U;
+    } else {
+        s->n_planes = s->enable_chroma ? 3U : 1U;
+    }
 
     const unsigned min_dim = (unsigned)MS_SSIM_GAUSSIAN_LEN << (MS_SSIM_SCALES - 1);
     if (w < min_dim || h < min_dim) {

@@ -281,7 +281,10 @@ static char *test_model_check_default_behavior_unset_flags()
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
     mu_assert("Clipping must be enabled by default.\n", model->score_clip.enabled);
     mu_assert("Score transform must be disabled by default.\n", !model->score_transform.enabled);
-    /* TODO: add check for confidence interval */
+    /* Confidence interval is not a single-model property: it is computed by
+     * vmaf_predict_score_at_index_model_collection() from an ensemble and
+     * returned via VmafModelCollectionScore.bootstrap.ci.p95.  The collection-
+     * type assertion is in test_model_collection_bootstrap_type(). */
     mu_assert("Feature 0 name must be VMAF_feature_adm2_score.\n",
               !strcmp(model->feature[0].name, "VMAF_feature_adm2_score"));
 
@@ -305,7 +308,8 @@ static char *test_model_check_default_behavior_set_flags()
     mu_assert("Model name is inconsistent.\n", !strcmp(model->name, "some_vmaf"));
     mu_assert("Clipping must be enabled by default.\n", model->score_clip.enabled);
     mu_assert("Score transform must be disabled by default.\n", !model->score_transform.enabled);
-    /* TODO: add check for confidence interval */
+    /* See test_model_collection_bootstrap_type() for the confidence-interval
+     * (VmafModelCollectionScore.bootstrap.ci.p95) collection-scope assertion. */
     mu_assert("Feature 0 name must be VMAF_feature_adm2_score.\n",
               !strcmp(model->feature[0].name, "VMAF_feature_adm2_score"));
 
@@ -944,6 +948,30 @@ static char *test_json_model_score_transform(void)
     return NULL;
 }
 
+/* Verifies that vmaf_b_v0.6.3.json (bootstrap ensemble) parses as a
+ * collection with a bootstrap model type and more than one sub-model.
+ * Confidence-interval values (VmafModelCollectionScore.bootstrap.ci.p95)
+ * are computed at score time by vmaf_predict_score_at_index_model_collection();
+ * this test covers the structural preconditions for that path. */
+static char *test_model_collection_bootstrap_type(void)
+{
+    const char *path = JSON_MODEL_PATH "vmaf_b_v0.6.3.json";
+    VmafModel *m = NULL;
+    VmafModelCollection *mc = NULL;
+    VmafModelConfig cfg = {.name = "vmaf_b_ci"};
+    int err = vmaf_read_json_model_collection_from_path(&m, &mc, &cfg, path);
+    mu_assert("vmaf_b collection load failed", !err);
+    mu_assert("primary model must be non-null", m != NULL);
+    mu_assert("collection must be non-null", mc != NULL);
+    mu_assert("bootstrap collection must have >1 sub-models", mc->cnt > 1u);
+    mu_assert("collection model type must be a bootstrap variant",
+              mc->type == VMAF_MODEL_BOOTSTRAP_SVM_NUSVR ||
+                  mc->type == VMAF_MODEL_RESIDUE_BOOTSTRAP_SVM_NUSVR);
+    vmaf_model_destroy(m);
+    vmaf_model_collection_destroy(mc);
+    return NULL;
+}
+
 static char *test_version_next(void)
 {
     const void *next = NULL;
@@ -979,6 +1007,7 @@ char *run_tests()
     mu_run_test(test_json_model_collection_from_buffer);
     mu_run_test(test_json_model_collection_missing_path);
     mu_run_test(test_json_model_collection_malformed_buffer);
+    mu_run_test(test_model_collection_bootstrap_type);
     mu_run_test(test_json_model_score_transform);
     mu_run_test(test_json_model_synthetic_branches);
     mu_run_test(test_json_model_allows_more_than_64_features);
