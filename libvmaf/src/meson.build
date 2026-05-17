@@ -233,7 +233,6 @@ if is_hipcc_enabled and is_hip_enabled
         'ssim_score' : feature_src_dir + 'hip/float_ssim/ssim_score.hip',
         'ciede_score' : feature_src_dir + 'hip/integer_ciede/ciede_score.hip',
         'motion_v2_score' : feature_src_dir + 'hip/integer_motion_v2/motion_v2_score.hip',
-        'psnr_hvs_score' : feature_src_dir + 'hip/integer_psnr_hvs/psnr_hvs_score.hip',
         # integer_motion HIP kernel (mirrors CUDA twin motion_score.cu).
         'motion_score' : feature_src_dir + 'hip/integer_motion/motion_score.hip',
     }
