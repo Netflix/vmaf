@@ -35023,8 +35023,23 @@ options entries; no kernel or accumulation logic is modified. The SYCL
 file is fork-local (no upstream Netflix/vmaf SYCL back-end). No
 upstream-shared C/C++/headers are modified.
 
-**Invariant to preserve on rebase**: if upstream Netflix ever adds
-`enable_lcs` to the CPU `float_ms_ssim.c`, the SYCL twin's option entry
-and emit block should be reconciled with the upstream naming convention
-at that time. The 15 output feature-name strings (`float_ms_ssim_{l,c,s}_scale{0..4}`)
-must stay identical across all backends.
+**Invariant to preserve on rebase**: every new GPU extractor registration that arrives via
+a GPU-backend PR must survive any squash or rebase of `feature_extractor.c`. If a
+stale-base squash drops entries, restore them in a separate PR. Audit with:
+`grep -c 'integer_ms_ssim_hip\|integer_vif_metal' libvmaf/src/feature/feature_extractor.c`
+(must return 4).
+
+**Smoke-test after rebase**:
+
+```bash
+grep -c 'integer_ms_ssim_hip\|integer_vif_metal' libvmaf/src/feature/feature_extractor.c
+# Expected: 4
+grep 'psnr_sycl' libvmaf/src/feature/feature_extractor.c | grep -v extern
+# Expected: exactly 1 line (no duplicates in the list section)
+```
+
+## `perf/chug-scratch-tmpfs-win3` — YUV scratch auto-selected to /dev/shm
+
+- **Files changed**: `ai/scripts/extract_k150k_features.py`, `ai/AGENTS.md`
+- **Rebase impact**: no rebase impact — fork-local Python script only; no
+  upstream-shared C, headers, or public API touched.

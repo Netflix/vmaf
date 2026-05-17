@@ -615,6 +615,14 @@ threshold). When extending these scripts:
   is already loaded in `jsonl_meta` for enrichment; no extra I/O is needed.
   If any required field is absent (K150K-A clips, incomplete rows), the
   function returns `None` and `_probe_geometry(mp4)` is called as fallback.
+- **Scratch directory is auto-selected to `/dev/shm` when available
+  (Research-0135 Win 3).** `_choose_scratch_dir(requested)` returns
+  `/dev/shm/k150k_yuv_scratch` when `/dev/shm` is writable and `statvfs`
+  reports >=20 GiB free; otherwise falls back to the OS temp directory.
+  The threshold (20 GiB) covers 8 concurrent workers each holding a
+  ~1.5 GiB 1080p 10-bit 240-frame YUV clip.  Pass `--scratch-dir` to
+  override.  Do not lower the 20 GiB threshold without updating the
+  headroom analysis in Research-0135.
   Do not remove the fallback — K150K-A clips have no sidecar.
 - **Binary requirement:** the script requires `libvmaf/build-cpu/tools/vmaf`
   (fork build); the system `/usr/local/bin/vmaf` v3.0.0 lacks `ssimulacra2`

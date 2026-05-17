@@ -52,6 +52,13 @@ ffprobe geometry override (Win 2 — Research-0135):
   ffprobe is still called for ``color_meta`` (HDR transfer/primaries detection);
   a full ffprobe skip requires adding those fields to the CHUG sidecar schema.
 
+tmpfs scratch (Win 3 — Research-0135):
+  When ``/dev/shm`` is writable and has >=20 GiB free, temporary YUV files
+  are written there instead of the OS temp directory.  This eliminates NVMe
+  I/O for the intermediate per-clip raw YUV (~1.5 GiB per 1080p 30 fps 240-
+  frame clip) and reduces the per-clip wall time by an estimated 5–15 s on
+  NVMe-bound hosts.  Pass ``--scratch-dir`` to override auto-selection.
+
 Parallelism (ADR-0382): clips are dispatched to a
 ``concurrent.futures.ProcessPoolExecutor`` with ``--threads-cuda`` workers
 (default 8).  Each worker independently decodes one clip to a worker-private YUV
@@ -435,6 +442,38 @@ def _feature_arg(extractor: str, is_hdr: bool, motion_fps_weight: float) -> str:
     if not opts:
         return base
     return f"{base}=" + ":".join(opts)
+
+
+_DEV_SHM = Path("/dev/shm")
+_TMPFS_HEADROOM_BYTES = 20 * 1024 * 1024 * 1024  # 20 GiB minimum free
+
+
+def _choose_scratch_dir(requested: Path | None = None) -> Path:
+    """Return an appropriate scratch directory for temporary YUV files.
+
+    Priority (Win 3 — Research-0135):
+    1. ``requested`` — explicit caller override; always honoured.
+    2. ``/dev/shm`` — Linux tmpfs RAM-disk.  Used automatically when the
+       mount exists, is a directory, is writable by the current user, and
+       ``statvfs`` reports at least 20 GiB of free space (headroom for 8
+       concurrent workers each holding a 1080p 10-bit 240-frame clip,
+       ~1.5 GiB each).
+    3. ``tempfile.gettempdir()`` — portable fallback (NVMe or OS temp).
+
+    On non-Linux hosts ``/dev/shm`` is absent and the function always falls
+    back to (3) without raising.
+    """
+    if requested is not None:
+        return requested
+    try:
+        if _DEV_SHM.is_dir() and os.access(_DEV_SHM, os.W_OK):
+            st = os.statvfs(_DEV_SHM)
+            free = st.f_bavail * st.f_frsize
+            if free >= _TMPFS_HEADROOM_BYTES:
+                return _DEV_SHM / "k150k_yuv_scratch"
+    except OSError:
+        pass
+    return Path(tempfile.gettempdir()) / "k150k_yuv_scratch"
 
 
 def _decode_to_yuv(mp4: Path, yuv_path: Path, pix_fmt: str) -> None:
@@ -1025,8 +1064,14 @@ def main() -> int:
     ap.add_argument(
         "--scratch-dir",
         type=Path,
-        default=Path(tempfile.gettempdir()) / "k150k_yuv_scratch",
-        help="Scratch directory for temporary YUV files.  Cleaned per-clip.",
+        default=None,
+        help=(
+            "Scratch directory for temporary YUV files.  Cleaned per-clip.  "
+            "Defaults to /dev/shm/k150k_yuv_scratch when /dev/shm is writable "
+            "and has >=20 GiB free (Win 3 — Research-0135 tmpfs path), "
+            "otherwise falls back to the OS temp directory.  "
+            "Pass an explicit path to override auto-selection."
+        ),
     )
     args = ap.parse_args()
 
@@ -1098,7 +1143,11 @@ def main() -> int:
         print("[k150k] nothing to do.", flush=True)
         return 0
 
-    args.scratch_dir.mkdir(parents=True, exist_ok=True)
+    # Resolve scratch directory: auto-select /dev/shm when available and
+    # large enough; fall back to OS temp dir (Win 3 — Research-0135).
+    scratch_dir: Path = _choose_scratch_dir(args.scratch_dir)
+    scratch_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[k150k] scratch_dir={scratch_dir}", flush=True)
 
     # JSONL staging file — accumulates rows during the run for crash durability.
     # Converted to parquet exactly once at the end (Research-0135 Win 1).
@@ -1135,7 +1184,7 @@ def main() -> int:
                 mos,
                 str(args.vmaf_bin),
                 str(args.cpu_vmaf_bin),
-                str(args.scratch_dir),
+                str(scratch_dir),
                 args.threads,
                 use_cuda,
                 idx % args.threads_cuda,
