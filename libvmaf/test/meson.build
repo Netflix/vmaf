@@ -783,6 +783,23 @@ test_integer_cambi_sycl = executable('test_integer_cambi_sycl',
     c_args: ['-DHAVE_SYCL=1']
 )
 test('test_integer_cambi_sycl', test_integer_cambi_sycl, suite : ['fast', 'gpu'])
+
+# T3-15(c) / ADR-0219 / ADR-0214 — motion3 CPU vs. SYCL parity gate.
+# The motion3 post-process (host-side moving-average over blended motion2)
+# is implemented independently in integer_motion.c (CPU) and
+# integer_motion_sycl.cpp (SYCL). No cross-backend assertion existed before
+# this test; boundary-condition drift would silently pollute CHUG-extracted
+# motion3_mean/std columns. SYCL-gated: skips cleanly when no SYCL device
+# is visible (mirrors test_sycl.c pattern).
+test_sycl_motion3_parity = executable('test_sycl_motion3_parity',
+    ['test.c', 'test_sycl_motion3_parity.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: [pthread_dependency, sycl_dependency, math_lib],
+    c_args: ['-DHAVE_SYCL=1']
+)
+test('test_sycl_motion3_parity', test_sycl_motion3_parity,
+    suite : ['fast', 'gpu'])
 endif
 
 # ADR-0175 / T5-1: Vulkan backend scaffold smoke. Pins the -ENOSYS

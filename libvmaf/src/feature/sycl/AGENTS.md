@@ -55,6 +55,17 @@ twins in the **same PR**. The cross-backend parity gate at `places=4`
 ([`scripts/ci/cross_backend_parity_gate.py`](../../../../scripts/ci/cross_backend_parity_gate.py),
 ADR-0214) catches drift but only after a full GPU run.
 
+## Parity invariant — motion3 CPU and SYCL moving-average paths
+
+`integer_motion.c` (CPU) and `integer_motion_sycl.cpp` (SYCL) both implement
+the motion3 post-process as a host-side moving average over blended motion2
+scores. These two paths **must stay in numerical parity at places=4** (delta
+≤ 1e-4, per ADR-0214). The gate is enforced by
+`libvmaf/test/test_sycl_motion3_parity.c`; any change to the blend formula
+(`motion_blend()`), the moving-average guard condition, or `motion_max_val`
+clipping must be mirrored across both files (and across the CUDA / Vulkan /
+HIP / Metal motion twins listed in the Twin-update table above) in the same PR.
+
 ## Rebase-sensitive invariants
 
 - **`integer_motion_sycl.cpp::motion3_postprocess_*` honours the
