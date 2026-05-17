@@ -156,12 +156,11 @@ extern VmafFeatureExtractor vmaf_fex_float_motion_hip;
  * `feature/cuda/integer_ssim_cuda.c` and pins the two-dispatch +
  * five intermediate float buffers shape. v1: scale=1 only. */
 extern VmafFeatureExtractor vmaf_fex_float_ssim_hip;
-/* HIP ninth-consumer kernel — T7-10b batch-5 / ADR-0379.  Direct
- * port of `feature/cuda/float_vif_cuda.c`: 4-scale separable VIF
- * with per-block (num, den) partial reduction.  With
- * `enable_hipcc=true` the HSACO is embedded; without it init()
- * returns -ENOSYS (scaffold posture). */
-extern VmafFeatureExtractor vmaf_fex_float_vif_hip;
+/* HIP ninth consumer: ssimulacra2_hip. Mirrors ssimulacra2_cuda.c
+ * pipeline (host YUV→XYB + GPU IIR blur + host double-precision
+ * combine). With `enable_hipcc=true` the two HSACO blobs are loaded
+ * and the kernels run on device; without it init() returns -ENOSYS. */
+extern VmafFeatureExtractor vmaf_fex_ssimulacra2_hip;
 #endif
 #if HAVE_METAL
 /* Metal feature extractors — T8-1c through T8-1j / ADR-0421.
@@ -302,12 +301,10 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
      * float-partial readback); emits one feature (`float_ssim`)
      * once the runtime kernel arrives. v1 is scale=1 only. */
     &vmaf_fex_float_ssim_hip,
-    /* Ninth consumer (ADR-0379): `float_vif_hip` directly ports
-     * `float_vif_cuda.c`'s 4-scale separable VIF with per-block
-     * (num, den) partial reduction; emits the four vif_scale scores.
-     * With `enable_hipcc=true` the HSACO runs on device; without it
-     * init() returns -ENOSYS (scaffold posture). */
-    &vmaf_fex_float_vif_hip,
+    /* Ninth consumer: `ssimulacra2_hip` mirrors `ssimulacra2_cuda.c`
+     * pipeline (host YUV→XYB + GPU IIR blur + host double-precision
+     * combine); emits `ssimulacra2` once the HSACO kernels arrive. */
+    &vmaf_fex_ssimulacra2_hip,
 #endif
 #if HAVE_METAL
     /* T8-1 first consumer (ADR-0361): registration succeeds even on

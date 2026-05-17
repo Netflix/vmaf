@@ -88,11 +88,11 @@ hip_sources += files(
     # HSACO blob is embedded and the kernel runs on device; without it
     # init() returns -ENOSYS (same scaffold-posture as the other consumers).
     '../feature/hip/float_psnr_hip.c',
-    # T7-10b ninth consumer: float_vif_hip (ADR-0379). Mirrors
-    # `feature/cuda/float_vif_cuda.c` call-graph-for-call-graph.
-    # With `enable_hipcc=true` the HSACO blob is embedded and the kernel
-    # runs on device; without it init() returns -ENOSYS.
-    '../feature/hip/float_vif_hip.c',
+    # Ninth consumer: ssimulacra2_hip. Mirrors ssimulacra2_cuda.c pipeline
+    # (host YUV→XYB + GPU IIR blur + host double-precision combine).
+    # With `enable_hipcc=true` the two HSACO blobs are embedded and the
+    # kernels run on device; without it init() returns -ENOSYS.
+    '../feature/hip/ssimulacra2_hip.c',
 )
 
 # T7-10b runtime linkage. ROCm ships `hip_runtime_api.h` under

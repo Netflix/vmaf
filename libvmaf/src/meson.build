@@ -224,6 +224,7 @@ if is_hipcc_enabled and is_hip_enabled
     # Batch-2 (ADR-0373): float_motion_score (temporal Gaussian SAD).
     # Batch-3 (ADR-0375): moment_score, ssim_score.
     # Batch-4 (ADR-0377): ciede_score (CIEDE2000), motion_v2_score (integer SAD ping-pong).
+    # Batch-5: ssimulacra2_blur, ssimulacra2_mul (IIR blur + elementwise mul).
     hip_kernel_sources = {
         'psnr_score' : feature_src_dir + 'hip/integer_psnr/psnr_score.hip',
         'float_psnr_score' : feature_src_dir + 'hip/float_psnr/float_psnr_score.hip',
@@ -233,8 +234,8 @@ if is_hipcc_enabled and is_hip_enabled
         'ssim_score' : feature_src_dir + 'hip/float_ssim/ssim_score.hip',
         'ciede_score' : feature_src_dir + 'hip/integer_ciede/ciede_score.hip',
         'motion_v2_score' : feature_src_dir + 'hip/integer_motion_v2/motion_v2_score.hip',
-        # Batch-5 (ADR-0379): float_vif_score (4-scale separable VIF).
-        'float_vif_score' : feature_src_dir + 'hip/float_vif/float_vif_score.hip',
+        'ssimulacra2_blur' : feature_src_dir + 'hip/ssimulacra2/ssimulacra2_blur.hip',
+        'ssimulacra2_mul'  : feature_src_dir + 'hip/ssimulacra2/ssimulacra2_mul.hip',
     }
     foreach name, src : hip_kernel_sources
         hsaco_target = custom_target('hip_hsaco_' + name,
