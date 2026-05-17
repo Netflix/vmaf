@@ -25,6 +25,13 @@
  *  which buffer is "current" vs "previous" — the buffer handles are
  *  stable from init() onward (mirrors motion_vulkan.c pattern).
  *  (T-GPU-OPT-VK-4 partial / ADR-0353.)
+ *
+ *  Parity fixes (Metal #1018 audit):
+ *  - extract_force_zero: respects debug flag; motion_score emitted only
+ *    when debug=true (matching CUDA/Metal; per-frame frame_index guard
+ *    removed — always emit motion2, conditionally emit motion_score).
+ *  - flush: added vmaf_feature_collector_get_score idempotency probe
+ *    before the trailing motion2 append, matching float_motion_cuda.c.
  */
 
 #include <errno.h>
@@ -326,13 +333,12 @@ static double reduce_sad_partials(const FloatMotionVulkanState *s)
 
 static int extract_force_zero(FloatMotionVulkanState *s, unsigned index, VmafFeatureCollector *fc)
 {
-    int err = 0;
-    if (s->frame_index > 0) {
-        err |= vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict,
-                                                       "VMAF_feature_motion_score", 0.0, index);
+    int err = vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict,
+                                                      "VMAF_feature_motion2_score", 0.0, index);
+    if (s->debug && !err) {
+        err = vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict,
+                                                      "VMAF_feature_motion_score", 0.0, index);
     }
-    err |= vmaf_feature_collector_append_with_dict(fc, s->feature_name_dict,
-                                                   "VMAF_feature_motion2_score", 0.0, index);
     s->frame_index++;
     return err;
 }
@@ -452,11 +458,20 @@ static int flush(VmafFeatureExtractor *fex, VmafFeatureCollector *feature_collec
         return 1;
 
     if (s->frame_index > 1) {
-        /* Apply fps weight on the tail motion2 — mirrors the extract path.
-         * Bit-exact when motion_fps_weight = 1.0 (default). */
-        ret = vmaf_feature_collector_append_with_dict(
-            feature_collector, s->feature_name_dict, "VMAF_feature_motion2_score",
-            s->prev_motion_score * s->motion_fps_weight, s->frame_index - 1);
+        /* Idempotency guard: the post-#312 flush_context_vulkan may have already
+         * written motion2_score[frame_index-1] via the pending-collect.
+         * Probe and skip in that case (re-append would trip the
+         * "cannot be overwritten" warning and surface as a sync error).
+         * Mirrors float_motion_cuda.c flush and the Metal parity fix. */
+        double existing;
+        if (vmaf_feature_collector_get_score(feature_collector, "VMAF_feature_motion2_score",
+                                             &existing, s->frame_index - 1) != 0) {
+            /* Apply fps weight on the tail motion2 — mirrors the extract path.
+             * Bit-exact when motion_fps_weight = 1.0 (default). */
+            ret = vmaf_feature_collector_append_with_dict(
+                feature_collector, s->feature_name_dict, "VMAF_feature_motion2_score",
+                s->prev_motion_score * s->motion_fps_weight, s->frame_index - 1);
+        }
     }
     return (ret < 0) ? ret : !ret;
 }
