@@ -169,6 +169,9 @@ extern VmafFeatureExtractor vmaf_fex_float_vif_hip;
  * files in feature/metal/; the -ENOSYS scaffold .c stubs have been
  * removed. Kernels live under feature/metal/, compiled via xcrun
  * into the __TEXT,__metallib section of libvmaf. */
+/* T8-3a: integer_adm_metal — DWT-CSF-CM ADM pipeline on Metal.
+ * Port of integer_adm_cuda.c; emits adm2 + adm_scale{0..3}. */
+extern VmafFeatureExtractor vmaf_fex_integer_adm_metal;
 extern VmafFeatureExtractor vmaf_fex_integer_motion_v2_metal;
 extern VmafFeatureExtractor vmaf_fex_integer_psnr_metal;
 extern VmafFeatureExtractor vmaf_fex_float_ssim_metal;
@@ -317,7 +320,10 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_integer_psnr_metal, &vmaf_fex_float_ssim_metal, &vmaf_fex_integer_motion_metal,
     /* T8-1 batch-2 additional consumers (ADR-0361): 4 float features. */
     &vmaf_fex_float_psnr_metal, &vmaf_fex_float_ansnr_metal, &vmaf_fex_float_motion_metal,
-    &vmaf_fex_float_moment_metal, &vmaf_fex_float_vif_metal,
+    &vmaf_fex_float_moment_metal,
+    /* T8-3a: integer_adm_metal — DWT-CSF-CM ADM pipeline on Metal.
+     * Port of integer_adm_cuda.c; emits adm2 + adm_scale{0..3}. */
+    &vmaf_fex_integer_adm_metal,
 #endif
     &vmaf_fex_speed_qa, &vmaf_fex_lpips, &vmaf_fex_dists_sq, &vmaf_fex_fastdvdnet_pre,
     &vmaf_fex_mobilesal, &vmaf_fex_transnet_v2, &vmaf_fex_null, NULL};
