@@ -158,14 +158,17 @@ void ssimulacra2_linear_rgb_to_xyb_avx2(const float *lin, float *xyb, unsigned w
         const __m256 S = _mm256_sub_ps(cbrtf_lane_avx2(sv), vcbrt_bias);
 
         /* X = 0.5 * (L - M); Y = 0.5 * (L + M); B = S. */
-        const __m256 X = _mm256_mul_ps(_mm256_set1_ps(0.5f), _mm256_sub_ps(L, M));
+        /* X-channel folds 0.5*(L-M)*14 to (L-M)*7 to mirror scalar -O2's
+         * compiler-folded constant; previous mul-by-0.5 then *14 path was
+         * not bit-exact with scalar's emitted (L-M)*7. ADR-0138/0139. */
         const __m256 Y = _mm256_mul_ps(_mm256_set1_ps(0.5f), _mm256_add_ps(L, M));
         const __m256 B = S;
 
         /* MakePositiveXYB rescale in libjxl order (B uses Y before Y offset). */
         const __m256 Bfinal = _mm256_add_ps(_mm256_sub_ps(B, Y), _mm256_set1_ps(0.55f));
-        const __m256 Xfinal =
-            _mm256_add_ps(_mm256_mul_ps(X, _mm256_set1_ps(14.0f)), _mm256_set1_ps(0.42f));
+        const __m256 Xfinal = _mm256_add_ps(
+            _mm256_mul_ps(_mm256_sub_ps(L, M), _mm256_set1_ps(7.0f)),
+            _mm256_set1_ps(0.42f));
         const __m256 Yfinal = _mm256_add_ps(Y, _mm256_set1_ps(0.01f));
 
         _mm256_storeu_ps(xp + i, Xfinal);
