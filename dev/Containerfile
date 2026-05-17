@@ -259,6 +259,7 @@ USER vmaf
 # explicitly as the first positional argument to `meson setup`.
 # -Denable_metal=auto  → auto-disabled on Linux (no Metal SDK present).
 # -Denable_mcp_sse=auto → auto-disabled until POSIX socket impl is complete.
+USER root
 # Install nv-codec-headers (provides ffnvcodec/dynlink_cuda.h for CUDA backend)
 # Pinned to commit that has cuStreamCreateWithPriority; GitHub mirror lags so use code.ffmpeg.org.
 ARG NV_CODEC_HEADERS_REF=876af32a202d0de83bd1d36fe74ee0f7fcf86b0d
@@ -268,6 +269,8 @@ RUN cd /tmp \
     && cd nv-codec-headers \
     && make install PREFIX=/usr/local \
     && cd / && find /tmp -maxdepth 1 -name 'nv-codec-headers*' -exec rm -rf {} +
+
+USER vmaf
 
 
 RUN meson setup build libvmaf \
