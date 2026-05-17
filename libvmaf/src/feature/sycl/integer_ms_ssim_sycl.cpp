@@ -114,9 +114,11 @@ struct MsSsimStateSycl {
 
     VmafDictionary *feature_name_dict;
 
-    bool enable_db; /* ADR-0485: output score as dB (parity with CPU). */
-    bool clip_db;   /* ADR-0485: clamp dB to per-frame finite ceiling. */
-    double max_db;  /* ADR-0485: computed in init; INFINITY when clip_db=false. */
+    bool enable_lcs;    /* ADR-0486: emit per-scale L/C/S triples (parity with CUDA). */
+    bool enable_chroma; /* ADR-0486: accepted for symmetry; MS-SSIM is luma-only. */
+    bool enable_db;     /* ADR-0485: output score as dB (parity with CPU). */
+    bool clip_db;       /* ADR-0485: clamp dB to per-frame finite ceiling. */
+    double max_db;      /* ADR-0485: computed in init; INFINITY when clip_db=false. */
 };
 
 /* Period-2n mirror — matches ms_ssim_decimate.c::ms_ssim_decimate_mirror. */
@@ -280,6 +282,22 @@ static void launch_vert_lcs(sycl::queue &q, const float *h_ref_mu, const float *
 extern "C" {
 
 static const VmafOption options_ms_ssim_sycl[] = {
+    {
+        .name = "enable_lcs",
+        .help = "emit per-scale luminance, contrast and structure intermediates "
+                "(float_ms_ssim_{l,c,s}_scale{0..4}); parity with CPU and CUDA / ADR-0486",
+        .offset = offsetof(MsSsimStateSycl, enable_lcs),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val = {.b = false},
+    },
+    {
+        .name = "enable_chroma",
+        .help = "accepted for option-table symmetry with CUDA twin; MS-SSIM is "
+                "luma-only by construction so this flag has no effect / ADR-0486",
+        .offset = offsetof(MsSsimStateSycl, enable_chroma),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val = {.b = false},
+    },
     {
         .name = "enable_db",
         .help = "write MS-SSIM values as dB (parity with CPU float_ms_ssim / ADR-0485)",
@@ -480,8 +498,30 @@ static int collect_fex_sycl(VmafFeatureExtractor *fex, unsigned index,
         msssim = (db_val < s->max_db) ? db_val : s->max_db;
     }
 
-    return vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                   "float_ms_ssim", msssim, index);
+    int err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                      "float_ms_ssim", msssim, index);
+
+    /* ADR-0486: per-scale L/C/S intermediates — parity with CPU and CUDA. */
+    if (s->enable_lcs && !err) {
+        static const char *const l_names[MS_SSIM_SCALES] = {
+            "float_ms_ssim_l_scale0", "float_ms_ssim_l_scale1", "float_ms_ssim_l_scale2",
+            "float_ms_ssim_l_scale3", "float_ms_ssim_l_scale4",
+        };
+        static const char *const c_names[MS_SSIM_SCALES] = {
+            "float_ms_ssim_c_scale0", "float_ms_ssim_c_scale1", "float_ms_ssim_c_scale2",
+            "float_ms_ssim_c_scale3", "float_ms_ssim_c_scale4",
+        };
+        static const char *const s_names[MS_SSIM_SCALES] = {
+            "float_ms_ssim_s_scale0", "float_ms_ssim_s_scale1", "float_ms_ssim_s_scale2",
+            "float_ms_ssim_s_scale3", "float_ms_ssim_s_scale4",
+        };
+        for (int i = 0; i < MS_SSIM_SCALES; i++) {
+            err |= vmaf_feature_collector_append(feature_collector, l_names[i], l_means[i], index);
+            err |= vmaf_feature_collector_append(feature_collector, c_names[i], c_means[i], index);
+            err |= vmaf_feature_collector_append(feature_collector, s_names[i], s_means[i], index);
+        }
+    }
+    return err;
 }
 
 static int close_fex_sycl(VmafFeatureExtractor *fex)

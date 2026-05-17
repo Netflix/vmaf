@@ -35011,51 +35011,20 @@ python -m pytest ai/tests/test_extract_k150k_no_ssimulacra2.py -v
 
 ---
 
-## fix/fex-list-dedup-hip-metal-restore (2026-05-17)
+## `fix/ms-ssim-sycl-enable-lcs-parity` — SYCL float_ms_ssim enable_lcs / enable_chroma
 
-**Files touched**: `libvmaf/src/feature/feature_extractor.c`
+**Branch**: `fix/ms-ssim-sycl-enable-lcs-parity`
 
-**What changed**: Restores the deduplicated SYCL (6 dupes) and Vulkan (55 dupes)
-`feature_extractor_list[]` pointer entries that PR #1085 fixed but PR #1088 re-introduced
-via stale-base squash. Also restores `integer_ms_ssim_hip` (ADR-0285) and
-`integer_vif_metal` (ADR-0436) registrations dropped by the same squash.
+**Files touched**:
+`libvmaf/src/feature/sycl/integer_ms_ssim_sycl.cpp`.
 
-**Rebase impact**: no rebase impact. The touched file has no upstream-Netflix equivalent
-for fork-added GPU backend entries. Pure list maintenance in a fork-local block.
+**Rebase impact**: low. The change is additive — new struct fields and
+options entries; no kernel or accumulation logic is modified. The SYCL
+file is fork-local (no upstream Netflix/vmaf SYCL back-end). No
+upstream-shared C/C++/headers are modified.
 
-**Invariant to preserve on rebase**: every new GPU extractor registration that arrives via
-a GPU-backend PR must survive any squash or rebase of `feature_extractor.c`. If a
-stale-base squash drops entries, restore them in a separate PR. Audit with:
-`grep -c 'integer_ms_ssim_hip\|integer_vif_metal' libvmaf/src/feature/feature_extractor.c`
-(must return 4).
-
-**Smoke-test after rebase**:
-
-```bash
-grep -c 'integer_ms_ssim_hip\|integer_vif_metal' libvmaf/src/feature/feature_extractor.c
-# Expected: 4
-grep 'psnr_sycl' libvmaf/src/feature/feature_extractor.c | grep -v extern
-# Expected: exactly 1 line (no duplicates in the list section)
-```
-
----
-
-## perf/chug-sidecar-bit-depth-key-f6b (2026-05-17)
-
-**Files touched**: `ai/scripts/extract_k150k_features.py`
-
-**What changed**: Added `"chug_bit_depth"` to the `keep` allowlist in
-`_load_jsonl_metadata`. Without this field, `_geometry_from_sidecar` always
-returned the default `yuv420p` pix_fmt even for 10-bit CHUG clips (F6-B /
-Research-0135). Corrected module and `_process_clip` docstrings that overstated
-the ffprobe-skip extent.
-
-**Rebase impact**: no rebase impact. `ai/scripts/extract_k150k_features.py` is
-fork-local; there is no upstream-Netflix equivalent.
-
-**Smoke-test after rebase**:
-
-```bash
-python -m pytest ai/tests/test_extract_k150k_features.py -v
-# Expected: 6/6 pass (5 original + 1 new regression test)
-```
+**Invariant to preserve on rebase**: if upstream Netflix ever adds
+`enable_lcs` to the CPU `float_ms_ssim.c`, the SYCL twin's option entry
+and emit block should be reconciled with the upstream naming convention
+at that time. The 15 output feature-name strings (`float_ms_ssim_{l,c,s}_scale{0..4}`)
+must stay identical across all backends.

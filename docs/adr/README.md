@@ -454,4 +454,4 @@ ADRs may exist there for local session continuity, but the tracked
 | [ADR-0453](0453-psnr-enable-chroma-gpu-parity.md) | PSNR `enable_chroma` option parity across CUDA, SYCL, Vulkan GPU backends | Accepted | cuda, sycl, vulkan, psnr, option-parity, bug |
 | [ADR-0460](0460-integer-vif-enable-chroma.md) | Add `enable_chroma` option to `integer_vif` — mirrors psnr/ssim pattern, emits per-scale Cb/Cr VIF scores | Accepted | feature, vif, chroma |
 | [ADR-0485](0485-ms-ssim-enable-db-gpu-parity.md) | Wire `enable_db` / `clip_db` into the CUDA and SYCL MS-SSIM twins | Accepted | cuda, sycl, ms-ssim, option-parity, bug, fork-local |
-| [ADR-0486](0486-aiutils-subprocess-dedup.md) | Extract `run_cmd` subprocess helper into `aiutils` — consolidates Group 6 of the 2026-05-16 dedup audit | Accepted | ai, refactor, fork-local |
+| [ADR-0486](0486-ms-ssim-sycl-enable-lcs-parity.md) | Add `enable_lcs` / `enable_chroma` to SYCL `float_ms_ssim` twin for option-table parity with CUDA | Accepted | sycl, ms-ssim, option-parity, bug, fork-local |
