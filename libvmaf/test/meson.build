@@ -850,6 +850,22 @@ test_vulkan_pic_preallocation = executable('test_vulkan_pic_preallocation',
     c_args: ['-DHAVE_VULKAN=1']
 )
 test('test_vulkan_pic_preallocation', test_vulkan_pic_preallocation, suite : ['fast', 'gpu'])
+
+# ADR-0456 / T7-36 parity audit gap 1 — CAMBI Vulkan extractor smoke.
+# Tests: (1) vmaf_fex_cambi_vulkan is discoverable by name, (2) default
+# option values match the CPU reference extractor (cambi.c), (3) end-to-end
+# init → extract → close on a flat 576×324 YUV420P frame does not crash and
+# emits a finite non-negative CAMBI score.  Skips gracefully when no Vulkan
+# device is present.
+test_cambi_vulkan = executable('test_cambi_vulkan',
+    ['test_cambi_vulkan.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/'),
+                           include_directories('../src/feature/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: [pthread_dependency, vulkan_deps],
+    c_args: ['-DHAVE_VULKAN=1']
+)
+test('test_cambi_vulkan', test_cambi_vulkan, suite : ['gpu'], timeout : 60)
 endif
 
 # ADR-0209 / T5-2: embedded MCP scaffold smoke. Pins the -ENOSYS
