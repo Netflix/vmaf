@@ -135,12 +135,20 @@ async def _run_vmaf_score(req: ScoreRequest) -> dict[str, Any]:
             str(output),
             "--json",
         ]
-        if req.backend == "cpu":
-            argv.extend(["--no_cuda", "--no_sycl"])
-        elif req.backend == "cuda":
-            argv.extend(["--no_sycl"])
-        elif req.backend == "sycl":
-            argv.extend(["--no_cuda"])
+        # Map each named backend to the set of siblings it must disable so the
+        # vmaf binary does not probe and select a different runtime at startup.
+        # "auto" leaves all probes active (no --no_* flags added).
+        _BACKEND_DISABLE: dict[str, tuple[str, ...]] = {
+            "cpu": ("cuda", "sycl", "vulkan", "hip", "metal"),
+            "cuda": ("sycl", "vulkan", "hip", "metal"),
+            "sycl": ("cuda", "vulkan", "hip", "metal"),
+            "vulkan": ("cuda", "sycl", "hip", "metal"),
+            "hip": ("cuda", "sycl", "vulkan", "metal"),
+            "metal": ("cuda", "sycl", "vulkan", "hip"),
+        }
+        if req.backend in _BACKEND_DISABLE:
+            for sibling in _BACKEND_DISABLE[req.backend]:
+                argv.append(f"--no_{sibling}")
 
         proc = await asyncio.create_subprocess_exec(
             *argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -172,7 +180,16 @@ def _list_models() -> list[dict[str, Any]]:
 def _list_backends() -> dict[str, bool]:
     vmaf = _vmaf_binary()
     if not vmaf.exists():
-        return {"cpu": False, "cuda": False, "sycl": False, "hip": False}
+        # CPU is always available regardless of binary presence; GPU backends
+        # cannot be confirmed without running the binary.
+        return {
+            "cpu": True,
+            "cuda": False,
+            "sycl": False,
+            "vulkan": False,
+            "hip": False,
+            "metal": False,
+        }
     try:
         result = subprocess.run(
             [str(vmaf), "--version"], capture_output=True, text=True, timeout=5, check=False
@@ -184,7 +201,9 @@ def _list_backends() -> dict[str, bool]:
         "cpu": True,
         "cuda": "cuda" in blob,
         "sycl": "sycl" in blob or "oneapi" in blob,
+        "vulkan": "vulkan" in blob,
         "hip": "hip" in blob,
+        "metal": "metal" in blob,
     }
 
 

@@ -23,9 +23,11 @@ x-common-env: &common-env
   VMAF_MODEL_PATH: /workspace/model
   VMAF_TESTDATA_PATH: /workspace/testdata
   VMAF_MCP_UDS_PATH: /sockets/vmaf-mcp.sock
-  # Set NVIDIA_VISIBLE_DEVICES=all on the host to enable GPU passthrough.
-  # When not set, containers run CPU + Vulkan/lavapipe only.
-  NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-}
+  # NVIDIA GPU passthrough — NVIDIA Container Toolkit must be installed on host.
+  # All NVIDIA devices are exposed; capabilities cover compute, graphics, utility,
+  # and video (required for NVDEC/NVENC in FFmpeg).
+  NVIDIA_VISIBLE_DEVICES: all
+  NVIDIA_DRIVER_CAPABILITIES: compute,graphics,utility,video
 
 x-common-deploy: &common-deploy
   resources:
@@ -88,15 +90,24 @@ services:
         target: /probes
         read_only: false
 
-    # NVIDIA Container Toolkit runtime — only active when nvidia runtime
-    # is configured on the host Docker daemon.
+    # NVIDIA Container Toolkit runtime — requires nvidia runtime configured on host.
     # See: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
     runtime: ${CONTAINER_RUNTIME:-runc}
 
-    # Override the deploy section only when NVIDIA_VISIBLE_DEVICES is set.
-    # Uncomment to enable GPU reservation on docker compose v2+:
-    # deploy:
-    #   <<: *common-deploy
+    deploy:
+      <<: *common-deploy
+
+    # Intel Arc (Vulkan/SYCL via DRI) + AMD ROCm (HIP via /dev/kfd).
+    # /dev/dri covers all DRM render nodes (renderD128–renderD130, cards 0–2).
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/kfd:/dev/kfd
+
+    # video + render groups give the HIP runtime access to /dev/kfd and
+    # the DRI render nodes without running as root.
+    group_add:
+      - video
+      - render
 
     networks:
       - vmaf-net
@@ -140,6 +151,17 @@ services:
         read_only: false
 
     runtime: ${CONTAINER_RUNTIME:-runc}
+
+    deploy:
+      <<: *common-deploy
+
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/kfd:/dev/kfd
+
+    group_add:
+      - video
+      - render
 
     networks:
       - vmaf-net

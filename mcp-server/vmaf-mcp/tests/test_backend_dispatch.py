@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from vmaf_mcp import server as srv
 
 
@@ -95,9 +96,16 @@ def test_run_vmaf_score_emits_expected_no_flags(
 
 def test_list_backends_includes_vulkan_hip_metal_keys(monkeypatch: pytest.MonkeyPatch) -> None:
     """``_list_backends`` returns a dict with all 6 backend keys, even when
-    the local vmaf binary is missing (defensive default)."""
+    the local vmaf binary is missing (defensive default).
+
+    CPU is always True — it requires no GPU driver.  Every GPU backend is
+    False when the binary is absent (we cannot probe capabilities).
+    """
     monkeypatch.setattr(srv, "_vmaf_binary", lambda: Path("/does/not/exist/vmaf"))
     result = srv._list_backends()
     assert set(result.keys()) == {"cpu", "cuda", "sycl", "vulkan", "hip", "metal"}
-    # All False when the binary is missing.
-    assert all(v is False for v in result.values()), result
+    # CPU must be True regardless of binary presence.
+    assert result["cpu"] is True, result
+    # GPU backends are all False when the binary is missing.
+    gpu_backends = {k: v for k, v in result.items() if k != "cpu"}
+    assert all(v is False for v in gpu_backends.values()), result
