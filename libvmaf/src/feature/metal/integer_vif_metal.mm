@@ -113,7 +113,7 @@ typedef struct IntegerVifStateMetal {
     unsigned frame_h;
     unsigned bpc;
     bool     debug;
-    bool     vif_skip_scale0;
+    bool     vif_skip_scale0; /* host-side suppression mirrors integer_vif.c */
     double   vif_enhn_gain_limit;
 
     VmafDictionary *feature_name_dict;
@@ -140,13 +140,11 @@ static const VmafOption options[] = {
     },
     {
         .name = "vif_skip_scale0",
-        .help = "when set, skip scale 0 calculations",
+        .help = "skip scale 0 in VIF score computation (matches integer_vif.c behavior)",
         .alias = "ssclz",
         .offset = offsetof(IntegerVifStateMetal, vif_skip_scale0),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
-        .min = 0.0,
-        .max = 0.0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {0}
@@ -452,26 +450,47 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
         : 0.0;
 
     int err = 0;
+
+    /* vif_skip_scale0: emit 0.0 for scale0 and exclude it from the combined
+     * score accumulation — mirrors integer_vif.c and the CUDA/SYCL/Vulkan paths. */
+    if (s->vif_skip_scale0) {
+        err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+            "VMAF_integer_feature_vif_scale0_score", 0.0, index);
+    } else {
+        const double sc0 = (scale_score[0].den != 0.0f)
+            ? (double)(scale_score[0].num / scale_score[0].den) : 1.0;
+        err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+            "VMAF_integer_feature_vif_scale0_score", sc0, index);
+    }
+
+    const double sc1 = (scale_score[1].den != 0.0f)
+        ? (double)(scale_score[1].num / scale_score[1].den) : 1.0;
+    const double sc2 = (scale_score[2].den != 0.0f)
+        ? (double)(scale_score[2].num / scale_score[2].den) : 1.0;
+    const double sc3 = (scale_score[3].den != 0.0f)
+        ? (double)(scale_score[3].num / scale_score[3].den) : 1.0;
+
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-        "VMAF_integer_feature_vif_scale0_score", scale0_score, index);
+        "VMAF_integer_feature_vif_scale1_score", sc1, index);
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-        "VMAF_integer_feature_vif_scale1_score",
-        (scale_score[1].den != 0.0f) ? scale_score[1].num / scale_score[1].den : 0.0, index);
+        "VMAF_integer_feature_vif_scale2_score", sc2, index);
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-        "VMAF_integer_feature_vif_scale2_score",
-        (scale_score[2].den != 0.0f) ? scale_score[2].num / scale_score[2].den : 0.0, index);
-    err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-        "VMAF_integer_feature_vif_scale3_score",
-        (scale_score[3].den != 0.0f) ? scale_score[3].num / scale_score[3].den : 0.0, index);
+        "VMAF_integer_feature_vif_scale3_score", sc3, index);
 
     if (!s->debug) { return err; }
 
-    const double score_num = (s->vif_skip_scale0 ? 0.0 : (double)scale_score[0].num) +
-                             (double)scale_score[1].num + (double)scale_score[2].num +
-                             (double)scale_score[3].num;
-    const double score_den = (s->vif_skip_scale0 ? 0.0 : (double)scale_score[0].den) +
-                             (double)scale_score[1].den + (double)scale_score[2].den +
-                             (double)scale_score[3].den;
+    double score_num, score_den;
+    if (s->vif_skip_scale0) {
+        score_num = (double)scale_score[1].num + (double)scale_score[2].num +
+                    (double)scale_score[3].num;
+        score_den = (double)scale_score[1].den + (double)scale_score[2].den +
+                    (double)scale_score[3].den;
+    } else {
+        score_num = (double)scale_score[0].num + (double)scale_score[1].num +
+                    (double)scale_score[2].num + (double)scale_score[3].num;
+        score_den = (double)scale_score[0].den + (double)scale_score[1].den +
+                    (double)scale_score[2].den + (double)scale_score[3].den;
+    }
     const double score = (score_den == 0.0) ? 1.0 : score_num / score_den;
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
@@ -481,14 +500,15 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
         "integer_vif_den", score_den, index);
 
-    /* Debug per-scale num/den: emit 0.0 / -1.0 sentinels for scale-0 when
-     * vif_skip_scale0 is active, matching integer_vif.c and GPU twins. */
+    /* When vif_skip_scale0 is set, suppress scale-0 debug values to match
+     * integer_vif.c which emits 0.0 for num_scale0 / den_scale0 in that mode. */
+    const double dbg_num_sc0 = s->vif_skip_scale0 ? 0.0 : (double)scale_score[0].num;
+    const double dbg_den_sc0 = s->vif_skip_scale0 ? 0.0 : (double)scale_score[0].den;
+
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-        "integer_vif_num_scale0",
-        s->vif_skip_scale0 ? 0.0 : (double)scale_score[0].num, index);
+        "integer_vif_num_scale0", dbg_num_sc0, index);
     err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-        "integer_vif_den_scale0",
-        s->vif_skip_scale0 ? -1.0 : (double)scale_score[0].den, index);
+        "integer_vif_den_scale0", dbg_den_sc0, index);
 
     for (unsigned sc = 1; sc < VIF_SCALES; sc++) {
         char name_num[64], name_den[64];
