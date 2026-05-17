@@ -1221,7 +1221,7 @@ if is_cuda_enabled
         feature_src_dir + 'cuda/integer_psnr_cuda.c',
         feature_src_dir + 'cuda/integer_moment_cuda.c',
         feature_src_dir + 'cuda/integer_ciede_cuda.c',
-        feature_src_dir + 'cuda/integer_ssim_cuda.c',
+        feature_src_dir + 'cuda/float_ssim_cuda.c',
         feature_src_dir + 'cuda/integer_ms_ssim_cuda.c',
         feature_src_dir + 'cuda/integer_psnr_hvs_cuda.c',
         feature_src_dir + 'cuda/float_ansnr_cuda.c',
