@@ -77,7 +77,6 @@ struct MotionV2StateSycl {
     bool has_pending;
     unsigned pending_index;
     unsigned frame_index;
-    double motion_fps_weight;
 
     /* fps-aware weight applied to the v2 SAD score in flush().
      * Default 1.0 is a no-op. Mirrors motion_sycl and motion_cuda
