@@ -388,6 +388,19 @@ test_psnr = executable('test_psnr',
     dependencies: [pthread_dependency, sycl_dependency],
 )
 
+# Closes the C-unit-test gap identified in
+# .workingdir/audit-test-coverage-2026-05-16.md §1: the integer_vif
+# vif_skip_scale0 option (which zeroes scale-0 output) had zero coverage
+# at the C level; only Python bindings exercised it.  This test exercises
+# both true/false paths through the public API so that a future GPU port of
+# the option has a concrete CPU ground truth to compare against.
+test_vif_skip_scale0 = executable('test_vif_skip_scale0',
+    ['test.c', 'test_vif_skip_scale0.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: [pthread_dependency, math_lib, gpu_all_deps],
+)
+
 test_framesync = executable('test_framesync',
     ['test.c', 'test_framesync.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
@@ -929,6 +942,7 @@ if host_machine.system() != 'windows'
     test('test_cli_parse_long_only_args', test_cli_parse_long_only_args, suite : ['fast'])
 endif
 test('test_psnr', test_psnr, suite : ['fast'])
+test('test_vif_skip_scale0', test_vif_skip_scale0, suite : ['fast'])
 test('test_framesync', test_framesync, suite : ['fast'])
 test('test_propagate_metadata', test_propagate_metadata, suite : ['fast'])
 test('test_adm_csf', test_adm_csf, suite : ['fast'])
