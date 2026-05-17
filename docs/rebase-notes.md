@@ -7,6 +7,16 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
+## fix/restore-cuda-kernel-lifecycle-helpers
+
+**No rebase impact.** Investigation confirmed `VmafCudaKernelLifecycle`,
+`VmafCudaKernelReadback`, and helper functions are intact in
+`libvmaf/src/cuda/kernel_template.h` (fork-local, ADR-0246). Changes confined
+to `docs/state.md` and `changelog.d/` -- both fork-local, not present in
+Netflix upstream.
+
+---
+
 ## refactor/aiutils-vmaftune-corpus-dedup — no rebase impact
 
 `tools/vmaf-tune/` is fork-local. `ai/src/aiutils/` is fork-local.
