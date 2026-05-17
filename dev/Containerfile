@@ -336,7 +336,7 @@ RUN git clone --depth=1 --branch ${FFMPEG_TAG} https://git.ffmpeg.org/ffmpeg.git
 WORKDIR /build/ffmpeg
 
 # Apply every patch from ffmpeg-patches/series.txt in order.
-RUN while IFS= read -r patch_name; do \
+RUN git config user.email "vmaf-dev-mcp@localhost" && git config user.name "vmaf dev-mcp" && while IFS= read -r patch_name; do \
         case "${patch_name}" in \
             ""|"#"*) continue ;; \
         esac ; \
