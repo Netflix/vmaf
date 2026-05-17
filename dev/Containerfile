@@ -284,11 +284,11 @@ USER vmaf
 
 
 RUN cd libvmaf && CC=icx CXX=icpx meson setup build \
-        -Denable_cuda=false \
-        -Denable_sycl=false \
+        -Denable_cuda=true \
+        -Denable_sycl=true \
         -Denable_vulkan=enabled \
-        -Denable_hip=false \
-        -Denable_hipcc=false \
+        -Denable_hip=true \
+        -Denable_hipcc=true \
         -Denable_metal=auto \
         -Denable_dnn=enabled \
         -Denable_mcp=true \
