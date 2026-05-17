@@ -300,7 +300,7 @@ class TestProcessClipFfprobeSkip:
 
         def mock_probe(mp4: Path) -> tuple:
             probe_called.append(mp4)
-            return 1280, 720, "yuv420p", "30/1"
+            return 1280, 720, "yuv420p", "30/1", {}
 
         with (
             patch("extract_k150k_features._probe_geometry", side_effect=mock_probe),
@@ -339,7 +339,7 @@ class TestProcessClipFfprobeSkip:
 
         def mock_probe(mp4: Path) -> tuple:
             probe_called.append(mp4)
-            return 854, 480, "yuv420p", "24/1"
+            return 854, 480, "yuv420p", "24/1", {}
 
         with (
             patch("extract_k150k_features._probe_geometry", side_effect=mock_probe),

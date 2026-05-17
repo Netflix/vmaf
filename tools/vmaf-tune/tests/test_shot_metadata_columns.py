@@ -36,12 +36,21 @@ class _FakeCompleted:
 def _shot_runner_for(shot_ranges: list[tuple[int, int]]):
     """Return a fake subprocess runner that emits TransNet JSON with
     inclusive end-frames matching ``shot_ranges`` (half-open input).
+
+    The new protocol writes JSON to the ``--output`` tmpfile (not stdout);
+    the runner finds the path in ``cmd`` and writes the fixture there.
     """
     inclusive = [{"start_frame": s, "end_frame": e - 1} for s, e in shot_ranges]
     payload = json.dumps({"shots": inclusive})
 
     def runner(cmd, capture_output, text, check):  # noqa: ARG001
-        return _FakeCompleted(returncode=0, stdout=payload)
+        out_path = Path(cmd[cmd.index("--output") + 1])
+        out_path.write_text(payload, encoding="utf-8")
+        n = len(inclusive)
+        return _FakeCompleted(
+            returncode=0,
+            stdout=f"vmaf-perShot: wrote {n} shot(s) to {out_path}\n",
+        )
 
     return runner
 

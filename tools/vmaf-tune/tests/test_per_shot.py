@@ -105,7 +105,12 @@ def test_detect_shots_parses_per_shot_json(tmp_path):
         assert cmd[0] == "vmaf-perShot"
         assert "--reference" in cmd
         assert "--format" in cmd and cmd[cmd.index("--format") + 1] == "json"
-        return _FakeCompleted(returncode=0, stdout=payload)
+        # The new protocol writes JSON to the --output tmpfile, not stdout.
+        # Find the path passed as --output and write the fixture JSON there.
+        out_path = Path(cmd[cmd.index("--output") + 1])
+        out_path.write_text(payload, encoding="utf-8")
+        progress = f"vmaf-perShot: wrote 3 shot(s) to {out_path}\n"
+        return _FakeCompleted(returncode=0, stdout=progress)
 
     shots = detect_shots(
         src,
@@ -317,7 +322,11 @@ def test_cli_tune_per_shot_binds_bisect_predicate(tmp_path, monkeypatch):
 
     def fake_run(cmd, capture_output, text, check):
         if cmd[0] == "vmaf-perShot":
-            return _FakeCompleted(returncode=0, stdout=payload)
+            # New protocol: write JSON to the --output tmpfile, not stdout.
+            out_path = Path(cmd[cmd.index("--output") + 1])
+            out_path.write_text(payload, encoding="utf-8")
+            progress = f"vmaf-perShot: wrote 2 shot(s) to {out_path}\n"
+            return _FakeCompleted(returncode=0, stdout=progress)
         assert cmd[0] == "ffmpeg"
         assert "-f" in cmd and "rawvideo" in cmd
         out_path = Path(cmd[-1])

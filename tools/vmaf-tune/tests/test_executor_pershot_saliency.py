@@ -91,8 +91,18 @@ _PERSHOT_JSON_TWO_SHOTS = json.dumps(
 
 
 def _shot_runner_ok(cmd, *, capture_output=True, text=True, check=False):
-    """Stub vmaf-perShot runner returning two 10-frame shots."""
-    return SimpleNamespace(returncode=0, stdout=_PERSHOT_JSON_TWO_SHOTS, stderr="")
+    """Stub vmaf-perShot runner returning two 10-frame shots.
+
+    The new protocol writes JSON to the ``--output`` tmpfile (not stdout);
+    the runner finds the path in ``cmd`` and writes the fixture there.
+    """
+    out_path = Path(cmd[cmd.index("--output") + 1])
+    out_path.write_text(_PERSHOT_JSON_TWO_SHOTS, encoding="utf-8")
+    return SimpleNamespace(
+        returncode=0,
+        stdout=f"vmaf-perShot: wrote 2 shot(s) to {out_path}\n",
+        stderr="",
+    )
 
 
 def _shot_runner_fail(cmd, *, capture_output=True, text=True, check=False):

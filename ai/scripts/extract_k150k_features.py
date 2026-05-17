@@ -863,15 +863,18 @@ def _process_clip(
     out_json = scratch_dir / f"{stem}.json"
 
     try:
-        # Always probe for color_meta (needed for HDR detection).
-        # Win 2: override with sidecar geometry when available — ffprobe
-        # geometry is less reliable than the manifest fields for CHUG clips,
-        # and the sidecar skips an extra ffprobe call for the geometry fields.
-        _pw, _ph, _ppf, fps_str, color_meta = _probe_geometry(mp4)
-        geom = _geometry_from_sidecar(sidecar_meta) if sidecar_meta else None
+        # Win 2: if the CHUG sidecar provides complete geometry, skip ffprobe
+        # entirely for that clip (Research-0135).  Only fall back to ffprobe
+        # when the sidecar is absent or missing required fields.
+        # When sidecar geometry is present, color_meta defaults to {} so that
+        # _is_hdr_source fails-safe to SDR (its documented behaviour on
+        # missing metadata — see the function docstring).
+        geom = _geometry_from_sidecar(sidecar_meta)
         if geom is not None:
             width, height, pix_fmt, fps_str = geom
+            color_meta: dict[str, str] = {}
         else:
+            _pw, _ph, _ppf, fps_str, color_meta = _probe_geometry(mp4)
             width, height, pix_fmt = _pw, _ph, _ppf
         is_hdr = _is_hdr_source(pix_fmt, color_meta)
         fps = _parse_fps(fps_str)

@@ -40,6 +40,7 @@ import math
 import shutil
 import statistics
 import subprocess
+import tempfile
 from collections.abc import Callable, Iterable, Sequence
 from io import StringIO
 from pathlib import Path
@@ -163,6 +164,16 @@ def _detect_shots_with_status(
     if binary is None:
         return _single_shot_fallback(total_frames), False
 
+    # vmaf-perShot always writes "vmaf-perShot: wrote N shot(s) to PATH" to
+    # stdout regardless of the --output value (including "--output -"). When
+    # "--output -" was used, the JSON landed in a file literally named "-"
+    # in the CWD while stdout carried the progress string, which made
+    # json.loads(stdout) fail with JSONDecodeError. Use a real tmpfile so
+    # stdout is exclusively the progress message and the JSON is read from
+    # the file the binary actually wrote. See fix/vmaf-tune-pershot-stdout-json-protocol.
+    with tempfile.NamedTemporaryFile(suffix=".json", prefix="vmaf_pershot_", delete=False) as _tmp:
+        tmp_path = Path(_tmp.name)
+
     cmd = [
         per_shot_bin,
         "--reference",
@@ -176,21 +187,35 @@ def _detect_shots_with_status(
         "--bitdepth",
         str(bitdepth),
         "--output",
-        "-",  # stdout
+        str(tmp_path),
         "--format",
         "json",
     ]
 
-    runner_fn = runner or subprocess.run
-    completed = runner_fn(  # type: ignore[operator]
-        cmd, capture_output=True, text=True, check=False
-    )
-    rc = int(getattr(completed, "returncode", 1))
-    stdout = getattr(completed, "stdout", "") or ""
-    if rc != 0 or not stdout.strip():
-        return _single_shot_fallback(total_frames), False
+    try:
+        runner_fn = runner or subprocess.run
+        completed = runner_fn(  # type: ignore[operator]
+            cmd, capture_output=True, text=True, check=False
+        )
+        rc = int(getattr(completed, "returncode", 1))
+        if rc != 0:
+            return _single_shot_fallback(total_frames), False
 
-    return _parse_per_shot_json(stdout), True
+        # Read the JSON payload from the tmpfile the binary wrote.
+        try:
+            payload = tmp_path.read_text(encoding="utf-8")
+        except OSError:
+            return _single_shot_fallback(total_frames), False
+        if not payload.strip():
+            return _single_shot_fallback(total_frames), False
+    finally:
+        # Best-effort cleanup; unlink failure is non-fatal.
+        try:
+            tmp_path.unlink()
+        except OSError:
+            pass
+
+    return _parse_per_shot_json(payload), True
 
 
 def _bitdepth_aware_pix(pix_fmt: str) -> str:
