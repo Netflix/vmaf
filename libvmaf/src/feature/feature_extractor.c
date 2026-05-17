@@ -154,12 +154,12 @@ extern VmafFeatureExtractor vmaf_fex_float_motion_hip;
  * `feature/cuda/integer_ssim_cuda.c` and pins the two-dispatch +
  * five intermediate float buffers shape. v1: scale=1 only. */
 extern VmafFeatureExtractor vmaf_fex_float_ssim_hip;
-/* HIP ninth consumer: integer_adm_hip (2026-05-16). Full port of the
- * CUDA twin `feature/cuda/integer_adm_cuda.c`. With `enable_hipcc=true`
- * the four HSACO blobs (adm_dwt2, adm_csf, adm_csf_den, adm_cm) are
- * embedded and the complete 4-scale DWT+CSF+CM pipeline runs on device.
- * Without it init() returns -ENOSYS (scaffold posture). */
-extern VmafFeatureExtractor vmaf_fex_integer_adm_hip;
+/* HIP ninth-consumer kernel — T7-10b batch-5 / ADR-0379.  Direct
+ * port of `feature/cuda/float_vif_cuda.c`: 4-scale separable VIF
+ * with per-block (num, den) partial reduction.  With
+ * `enable_hipcc=true` the HSACO is embedded; without it init()
+ * returns -ENOSYS (scaffold posture). */
+extern VmafFeatureExtractor vmaf_fex_float_vif_hip;
 #endif
 #if HAVE_METAL
 /* Metal feature extractors — T8-1c through T8-1j / ADR-0421.
@@ -175,7 +175,7 @@ extern VmafFeatureExtractor vmaf_fex_float_psnr_metal;
 extern VmafFeatureExtractor vmaf_fex_float_ansnr_metal;
 extern VmafFeatureExtractor vmaf_fex_float_motion_metal;
 extern VmafFeatureExtractor vmaf_fex_float_moment_metal;
-extern VmafFeatureExtractor vmaf_fex_integer_ms_ssim_metal;
+extern VmafFeatureExtractor vmaf_fex_float_vif_metal;
 #endif
 /* SpEED-QA NR metric scaffold — ADR-0253. */
 extern VmafFeatureExtractor vmaf_fex_speed_qa;
@@ -297,10 +297,12 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
      * float-partial readback); emits one feature (`float_ssim`)
      * once the runtime kernel arrives. v1 is scale=1 only. */
     &vmaf_fex_float_ssim_hip,
-    /* Ninth consumer (2026-05-16): `integer_adm_hip` — full port of the
-     * CUDA twin. Emits VMAF_integer_feature_adm2_score + 4 scale scores.
-     * With enable_hipcc=true runs on device; without it, -ENOSYS. */
-    &vmaf_fex_integer_adm_hip,
+    /* Ninth consumer (ADR-0379): `float_vif_hip` directly ports
+     * `float_vif_cuda.c`'s 4-scale separable VIF with per-block
+     * (num, den) partial reduction; emits the four vif_scale scores.
+     * With `enable_hipcc=true` the HSACO runs on device; without it
+     * init() returns -ENOSYS (scaffold posture). */
+    &vmaf_fex_float_vif_hip,
 #endif
 #if HAVE_METAL
     /* T8-1 first consumer (ADR-0361): registration succeeds even on
@@ -313,9 +315,7 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_integer_psnr_metal, &vmaf_fex_float_ssim_metal, &vmaf_fex_integer_motion_metal,
     /* T8-1 batch-2 additional consumers (ADR-0361): 4 float features. */
     &vmaf_fex_float_psnr_metal, &vmaf_fex_float_ansnr_metal, &vmaf_fex_float_motion_metal,
-    &vmaf_fex_float_moment_metal,
-    /* Metal MS-SSIM (integer_ms_ssim_cuda port). */
-    &vmaf_fex_integer_ms_ssim_metal,
+    &vmaf_fex_float_moment_metal, &vmaf_fex_float_vif_metal,
 #endif
     &vmaf_fex_speed_qa, &vmaf_fex_lpips, &vmaf_fex_dists_sq, &vmaf_fex_fastdvdnet_pre,
     &vmaf_fex_mobilesal, &vmaf_fex_transnet_v2, &vmaf_fex_null, NULL};
