@@ -820,6 +820,32 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="emit the JSON plan to this path (default: stdout)",
     )
+    auto.add_argument(
+        "--execute",
+        action="store_true",
+        help=(
+            "Phase F execute mode (ADR-0454): after planning, run real FFmpeg "
+            "encodes and libvmaf scores for the selected cell(s). Results are "
+            "written to --runs-dir/tune_results.jsonl. Default: plan-only."
+        ),
+    )
+    auto.add_argument(
+        "--runs-dir",
+        type=Path,
+        default=Path("runs"),
+        help=(
+            "output directory for encoded files and tune_results.jsonl "
+            "(used with --execute; default: runs/)"
+        ),
+    )
+    auto.add_argument(
+        "--execute-all",
+        action="store_true",
+        help=(
+            "with --execute: run every plan cell, not just the selected winner "
+            "(useful for post-hoc A/B comparison)."
+        ),
+    )
 
     fast = sub.add_parser(
         "fast",
@@ -2053,11 +2079,15 @@ def _load_per_shot_predicate(spec: str) -> PerShotPredicateFn:
 
 
 def _run_auto(args: argparse.Namespace) -> int:
-    """Phase F — ``vmaf-tune auto`` (ADR-0364).
+    """Phase F — ``vmaf-tune auto`` (ADR-0364 / ADR-0454).
 
     Runs the Phase F decision tree. Non-smoke mode probes source
     geometry, duration, and HDR metadata before planning; ``--smoke``
     exercises the same composition with synthetic metadata.
+
+    When ``--execute`` is set, the selected plan cell(s) are realised as
+    actual FFmpeg encodes followed by libvmaf scores; results land in
+    ``--runs-dir/tune_results.jsonl`` (ADR-0454).
     """
     from .auto import emit_plan_json, run_auto
 
@@ -2087,6 +2117,28 @@ def _run_auto(args: argparse.Namespace) -> int:
         sys.stdout.write(rendered)
         if not rendered.endswith("\n"):
             sys.stdout.write("\n")
+
+    execute = getattr(args, "execute", False)
+    if execute:
+        from .executor import run_plan
+
+        runs_dir: Path = getattr(args, "runs_dir", Path("runs"))
+        execute_all: bool = getattr(args, "execute_all", False)
+        sys.stderr.write(f"vmaf-tune auto: execute mode — runs dir: {runs_dir}\n")
+        results = run_plan(
+            plan,
+            args.src,
+            runs_dir,
+            execute_all=execute_all,
+        )
+        n_ok = sum(1 for r in results if r.score is not None and r.score.exit_status == 0)
+        sys.stderr.write(
+            f"vmaf-tune auto: executed {len(results)} cell(s), "
+            f"{n_ok} scored successfully → {runs_dir / 'tune_results.jsonl'}\n"
+        )
+        if n_ok == 0 and results:
+            return 1
+
     return 0
 
 

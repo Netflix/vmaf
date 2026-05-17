@@ -2227,6 +2227,88 @@ Winner statuses:
 cell is the next encode target, not a substitute for the final
 encode/score verification pass.
 
+### Execute mode (ADR-0454)
+
+After the planning pass, `--execute` drives real FFmpeg encodes and libvmaf scores
+for the selected cell(s):
+
+```shell
+vmaf-tune auto \
+    --src reference.mp4 \
+    --target-vmaf 93 \
+    --max-budget-bitrate 5000 \
+    --allow-codecs libx264,libx265 \
+    --output plan.json \
+    --execute \
+    --runs-dir runs/
+```
+
+`--execute` flags:
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--execute` | off | Enable execute mode; plan-only when absent. |
+| `--runs-dir PATH` | `runs/` | Destination for encoded files and `tune_results.jsonl`. |
+| `--execute-all` | off | Run every plan cell instead of only the `selected` winner. |
+
+Results are appended to `<runs-dir>/tune_results.jsonl` one row per executed
+cell. Each row carries the cell metadata (codec, preset, CRF, estimated
+VMAF/bitrate) merged with encode outcomes (size, encode time, FFmpeg version)
+and score outcomes (measured VMAF, per-feature means/stds, vmaf-binary version).
+The file appends on each run so partial runs and incremental re-runs do not
+overwrite previous results.
+
+The CLI exits with status 1 if at least one cell was executed but none scored
+successfully (encode failures, vmaf binary absent, etc.); it exits 0 on plan-only
+runs regardless of plan content.
+
+#### Per-shot execution (ADR-0468)
+
+`run_plan_per_shot` splits the source into shot boundaries (via `vmaf-perShot` /
+TransNet V2, [ADR-0222](../adr/0222-vmaf-pershot-transnet-v2.md)) and scores each
+segment independently. Results land in `<runs-dir>/tune_results_per_shot.jsonl`:
+
+```python
+from vmaftune.executor import run_plan_per_shot
+
+per_shot_results = run_plan_per_shot(
+    plan, src=Path("reference.mp4"), out_dir=Path("runs/"),
+    vmaf_model="vmaf_v0.6.1",
+)
+for r in per_shot_results:
+    print(f"cell {r.row['cell_index']}: "
+          f"{r.row['shot_count']} shots, "
+          f"weighted VMAF={r.weighted_vmaf:.2f}")
+```
+
+Each top-level row carries `shot_count` and `weighted_vmaf` (frame-length-weighted
+mean of per-shot scores). When `vmaf-perShot` is absent, the call falls back to a
+single-shot range covering the whole clip; `shot_count == 1` signals this.
+
+#### Saliency execution (ADR-0468)
+
+`run_plan_saliency` applies saliency-aware encoding via
+`saliency_aware_encode` (see [§ Saliency-aware encoding](#saliency-aware-encoding-recommend-saliency---saliency-aware))
+before scoring. Results land in `<runs-dir>/tune_results_saliency.jsonl`:
+
+```python
+from vmaftune.executor import run_plan_saliency
+
+sal_results = run_plan_saliency(
+    plan, src=Path("reference.mp4"), out_dir=Path("runs/"),
+    saliency_model_path=Path("model/tiny/saliency_student_v1.onnx"),
+    duration_frames=total_frame_count,
+)
+for r in sal_results:
+    print(f"cell {r.row['cell_index']}: "
+          f"saliency_available={r.saliency_available}, "
+          f"VMAF={r.row['vmaf_score']}")
+```
+
+`saliency_available` in the result row is `True` when the ONNX model ran; `False`
+means the encoder fell back to a plain encode (model file missing or onnxruntime not
+installed). The encode and score always proceed regardless.
+
 ### Confidence-aware fallbacks (F.3)
 
 F.2 treats the predictor's verdict as a binary GOSPEL / FALL_BACK gate
