@@ -7,16 +7,12 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
-## refactor/context-api-contract-doc — GPU backend context-API contract
+## perf/ort-run-stack-arrays-2026-05-16 — vmaf_ort_run stack arrays
 
-No rebase impact: docs-only change. `docs/backends/context-api-contract.md` and
-`docs/adr/0486-context-api-contract-doc.md` are fork-local files not present in
-Netflix upstream; upstream syncs do not touch them. No source files modified.
-
-## docs/fix-state-md-pipe-escaping — docs/state.md table escaping
-
-No rebase impact: doc-only change. `docs/state.md` is fork-local and not
-present in Netflix upstream; upstream syncs do not touch it.
+**`libvmaf/src/dnn/ort_backend.c`**: replaces five `calloc`/`free` pairs in
+`vmaf_ort_run` with fixed-size stack arrays guarded by `VMAF_ORT_MAX_IO = 8`.
+Pure fork-local DNN infrastructure; upstream Netflix/vmaf does not maintain
+`libvmaf/src/dnn/`. No rebase conflict expected.
 
 ## fix/saliency-per-mb-eval-2026-05-15 — integer_vif enable_chroma
 
