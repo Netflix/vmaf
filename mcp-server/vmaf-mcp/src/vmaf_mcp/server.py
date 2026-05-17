@@ -55,10 +55,34 @@ def _repo_root() -> Path:
 
 
 def _vmaf_binary() -> Path:
+    """Return the path to the vmaf binary.
+
+    Resolution order:
+    1. ``VMAF_BIN`` environment variable (explicit override).
+    2. ``/usr/local/bin/vmaf``  -- installed by ``make install`` or the
+       container image.
+    3. ``<repo>/libvmaf/build/tools/vmaf`` -- in-tree fork build.
+    4. ``<repo>/build/tools/vmaf`` -- legacy / alternate build-dir name.
+
+    Returns the first candidate that exists on disk.  If none exist the
+    last candidate path is returned anyway so that the caller's
+    ``vmaf.exists()`` check produces a clear error message.
+    """
     env = os.environ.get("VMAF_BIN")
     if env:
         return Path(env)
-    return _repo_root() / "build" / "tools" / "vmaf"
+
+    candidates = [
+        Path("/usr/local/bin/vmaf"),
+        _repo_root() / "libvmaf" / "build" / "tools" / "vmaf",
+        _repo_root() / "build" / "tools" / "vmaf",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    # None found -- return the most-likely path so the caller can emit a
+    # useful "not found at <path>" error.
+    return candidates[1]
 
 
 def _allowed_roots() -> list[Path]:
@@ -517,6 +541,11 @@ async def _run_benchmark(ref: Path, dis: Path, width: int, height: int) -> dict[
     script = _repo_root() / "testdata" / "bench_all.sh"
     if not script.exists():
         raise FileNotFoundError(f"benchmark harness not found: {script}")
+    # Inherit the full environment so that PATH, LD_LIBRARY_PATH, and any
+    # GPU-runtime variables are preserved.  Explicitly inject VMAF_ROOT so
+    # bench_all.sh's ``cd "${VMAF_ROOT:-...}"`` resolves correctly even when
+    # git is unavailable (container) or the hard-coded host path does not exist.
+    bench_env = {**os.environ, "VMAF_ROOT": str(_repo_root())}
     proc = await asyncio.create_subprocess_exec(
         str(script),
         "-r",
@@ -529,6 +558,7 @@ async def _run_benchmark(ref: Path, dis: Path, width: int, height: int) -> dict[
         str(height),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=bench_env,
     )
     stdout, stderr = await proc.communicate()
     return {
