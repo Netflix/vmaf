@@ -173,7 +173,7 @@ extern VmafFeatureExtractor vmaf_fex_float_psnr_metal;
 extern VmafFeatureExtractor vmaf_fex_float_ansnr_metal;
 extern VmafFeatureExtractor vmaf_fex_float_motion_metal;
 extern VmafFeatureExtractor vmaf_fex_float_moment_metal;
-extern VmafFeatureExtractor vmaf_fex_integer_moment_metal;
+extern VmafFeatureExtractor vmaf_fex_integer_ms_ssim_metal;
 #endif
 /* SpEED-QA NR metric scaffold — ADR-0253. */
 extern VmafFeatureExtractor vmaf_fex_speed_qa;
@@ -311,9 +311,8 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     /* T8-1 batch-2 additional consumers (ADR-0361): 4 float features. */
     &vmaf_fex_float_psnr_metal, &vmaf_fex_float_ansnr_metal, &vmaf_fex_float_motion_metal,
     &vmaf_fex_float_moment_metal,
-    /* T8-1k (ADR-0421): integer_moment Metal twin — uint32 hi/lo reduction,
-     * emits the same four float_moment_* features as the CUDA/float_moment path. */
-    &vmaf_fex_integer_moment_metal,
+    /* Metal MS-SSIM (integer_ms_ssim_cuda port). */
+    &vmaf_fex_integer_ms_ssim_metal,
 #endif
     &vmaf_fex_speed_qa, &vmaf_fex_lpips, &vmaf_fex_dists_sq, &vmaf_fex_fastdvdnet_pre,
     &vmaf_fex_mobilesal, &vmaf_fex_transnet_v2, &vmaf_fex_null, NULL};
