@@ -162,11 +162,12 @@ Operates on the Y plane only.
 
 #### Options
 
-| Option                 | Alias | Type   | Default | Range      | Effect                                                                 |
-|------------------------|-------|--------|---------|------------|------------------------------------------------------------------------|
-| `debug`                | —     | bool   | `false` | —          | Emit `vif`, `vif_num`, `vif_den`, plus per-scale numerator/denominator |
-| `vif_enhn_gain_limit`  | `egl` | double | `1.4`   | `1.0–1.4`  | Cap enhancement-gain ratio so over-sharpened output cannot saturate    |
-| `vif_kernelscale`      | —     | double | `1.0`   | `0.1–4.0`  | Scale the Gaussian kernel std-dev — only `float_vif`                   |
+| Option                 | Alias   | Type   | Default | Range      | Effect                                                                                                                          |
+|------------------------|---------|--------|---------|------------|---------------------------------------------------------------------------------------------------------------------------------|
+| `debug`                | —       | bool   | `false` | —          | Emit `vif`, `vif_num`, `vif_den`, plus per-scale numerator/denominator                                                          |
+| `vif_enhn_gain_limit`  | `egl`   | double | `1.4`   | `1.0–1.4`  | Cap enhancement-gain ratio so over-sharpened output cannot saturate                                                             |
+| `vif_kernelscale`      | —       | double | `1.0`   | `0.1–4.0`  | Scale the Gaussian kernel std-dev — only `float_vif`                                                                            |
+| `vif_skip_scale0`      | `ssclz` | bool   | `false` | —          | Skip scale-0 (lowest-resolution pyramid level) calculations; scale-0 outputs are set to `0.0` and excluded from the fused score |
 
 `egl=1.0` disables the enhancement-gain path entirely (matches pre-v1.3
 behaviour).

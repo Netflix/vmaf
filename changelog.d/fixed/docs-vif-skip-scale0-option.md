@@ -1,0 +1,1 @@
+**docs(metrics):** Add missing `vif_skip_scale0` option (`ssclz` alias) to the VIF options table in `docs/metrics/features.md`. The option was shipped in `integer_vif.c` and `float_vif.c` but absent from the per-extractor reference page.
