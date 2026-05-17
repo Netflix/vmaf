@@ -123,7 +123,9 @@ diff --git a/libavfilter/vf_libvmaf.c b/libavfilter/vf_libvmaf.c
 +                    OFFSET(n_subsample), AV_OPT_TYPE_INT, {.i64=1}, 1, UINT_MAX, MTL_FLAGS},
 +    {"model",     "Set the model to be used for computing vmaf.",
 +                  OFFSET(model_cfg), AV_OPT_TYPE_STRING, {.str="version=vmaf_v0.6.1"}, 0, 1, MTL_FLAGS},
-+    {"feature",   "Set the feature to be used for computing vmaf.",
++    {"feature",   "Pipe-separated feature specs; each must start with 'name='. "
++                  "Use escaped colons for intra-feature options: "
++                  "feature='name=psnr\\:enable_chroma=true|name=ciede'.",
 +                  OFFSET(feature_cfg), AV_OPT_TYPE_STRING, {.str=NULL}, 0, 1, MTL_FLAGS},
 +    { NULL }
 +};

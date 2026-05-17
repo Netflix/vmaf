@@ -62,15 +62,15 @@ filter name inside an `-lavfi` expression, colon-separated:
 libvmaf=model=version=vmaf_v0.6.1:log_path=/dev/stdout:log_fmt=json:n_threads=4
 ```
 
-| Option        | Type                                    | Default             | Effect                                                                  |
-|---------------|-----------------------------------------|---------------------|-------------------------------------------------------------------------|
-| `model`       | string (pipe-separated `version=` / `path=`) | `version=vmaf_v0.6.1` | Load a built-in or file-backed model. Supports multiple models stacked  |
-| `log_path`    | path                                    | (stderr only)       | Where to write the per-frame report (`/dev/stdout` is common)            |
-| `log_fmt`     | `xml` / `json` / `csv` / `sub`          | `xml`               | Report format; matches the `vmaf` CLI output modes                       |
-| `feature`     | string (pipe-separated `name=` entries) | (only model features) | Attach additional feature extractors (`name=psnr`, `name=ciede`, …)     |
-| `pool`        | `mean` / `min` / `harmonic_mean`        | `mean`              | Pooling method for the per-frame scores                                  |
-| `n_threads`   | integer                                 | `0` (library default)| Number of worker threads libvmaf is allowed to spawn                    |
-| `n_subsample` | integer `≥ 1`                           | `1`                 | Compute VMAF on every Nth frame only — useful for long-clip QC          |
+| Option | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `model` | string (pipe-separated `version=` / `path=`) | `version=vmaf_v0.6.1` | Load a built-in or file-backed model; supports stacked models. |
+| `log_path` | path | (stderr only) | Where to write the per-frame report (`/dev/stdout` is common). |
+| `log_fmt` | `xml` / `json` / `csv` / `sub` | `xml` | Report format; matches the `vmaf` CLI output modes. |
+| `feature` | string (pipe-separated `name=` entries; escaped-colon intra-feature options) | (only model features) | Attach extra feature extractors. See [Feature option syntax](#feature-option-syntax) below. |
+| `pool` | `mean` / `min` / `harmonic_mean` | `mean` | Pooling method for the per-frame scores. |
+| `n_threads` | integer | `0` (library default) | Number of worker threads libvmaf is allowed to spawn. |
+| `n_subsample` | integer `≥ 1` | `1` | Compute VMAF on every Nth frame only — useful for long-clip QC. |
 
 The filter publishes the final pooled score to FFmpeg's log as
 `VMAF score: <mean>`; the structured log at `log_path` is authoritative.
