@@ -44,6 +44,7 @@ glslc = find_program('glslc', required : true)
 vulkan_shader_sources = [
     'shaders/vif.comp',
     'shaders/motion.comp',
+    'shaders/integer_motion.comp',
     'shaders/motion_v2.comp',
     'shaders/adm.comp',
     'shaders/psnr.comp',
@@ -164,6 +165,7 @@ vulkan_sources += files(
     '../feature/vulkan/adm_vulkan.c',
     '../feature/vulkan/vif_vulkan.c',
     '../feature/vulkan/motion_vulkan.c',
+    '../feature/vulkan/integer_motion_vulkan.c',
     '../feature/vulkan/motion_v2_vulkan.c',
     '../feature/vulkan/psnr_vulkan.c',
     '../feature/vulkan/moment_vulkan.c',

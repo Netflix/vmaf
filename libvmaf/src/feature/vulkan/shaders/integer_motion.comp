@@ -1,0 +1,207 @@
+/* Copyright 2026 Lusoris and Claude (Anthropic)
+ * SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
+ *
+ * Vulkan compute shader for the integer_motion_vulkan feature extractor.
+ *
+ * This is a direct port of the CUDA kernel in
+ * libvmaf/src/feature/cuda/integer_motion/motion_score.cu and mirrors
+ * the CPU reference in libvmaf/src/feature/integer_motion.c.
+ *
+ * Algorithm — V->H separable 5-tap Gaussian blur of the reference luma
+ * plane, followed by SAD against the previous blurred frame:
+ *
+ *   1. Vertical filter:
+ *        v[i,j] = (sum_k FILTER[k] * src[mirror(i-2+k), j]
+ *                  + (1 << (bpc-1))) >> bpc
+ *   2. Horizontal filter:
+ *        b[i,j] = (sum_k FILTER[k] * v[i, mirror(j-2+k)]
+ *                  + 32768) >> 16
+ *   3. SAD (frame_index > 0 only):
+ *        sad += |b[i,j] - prev_b[i,j]|
+ *
+ * Filter (integer, sums to 65536):
+ *   {3571, 16004, 26386, 16004, 3571}
+ *
+ * Mirror padding (reflect-101, matching CPU edge_8 / edge_16):
+ *   idx < 0     => -idx
+ *   idx >= sup  =>  2*(sup-1) - idx
+ *
+ * Resource layout (std430 SSBOs):
+ *   binding 0  ref_in       — packed source pixels (uint8 or uint16)
+ *   binding 1  cur_blur     — blurred output this frame (uint32/pixel)
+ *   binding 2  prev_blur    — blurred output previous frame (read-only)
+ *   binding 3  sad_out      — per-WG int64 SAD partials
+ *
+ * Push constants (Params):
+ *   width, height, bpc, compute_sad, num_workgroups_x
+ *
+ * Specialisation constants:
+ *   id=0 WIDTH, id=1 HEIGHT, id=2 BPC, id=3 SUBGROUP_SIZE
+ *
+ * Workgroup: 32 x 4 = 128 threads.
+ * Tile: (WG_X + FW-1) x (WG_Y + FW-1) = 36 x 8.
+ */
+
+#version 460
+#extension GL_KHR_shader_subgroup_arithmetic             : require
+#extension GL_KHR_shader_subgroup_basic                  : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_shader_subgroup_extended_types_int64   : require
+
+layout(local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
+
+layout(constant_id = 0) const int WIDTH        = 0;
+layout(constant_id = 1) const int HEIGHT       = 0;
+layout(constant_id = 2) const int BPC          = 8;
+layout(constant_id = 3) const int SUBGROUP_SIZE = 32;
+
+const int FW          = 5;
+const int HALF_FW     = 2;
+const int WG_X        = 32;
+const int WG_Y        = 4;
+const int WG_SIZE     = WG_X * WG_Y;
+const int MAX_SUBGROUPS = WG_SIZE;
+
+const uint FILTER[5] = uint[5](3571u, 16004u, 26386u, 16004u, 3571u);
+
+const int TILE_H = WG_Y + FW - 1;   /* 4 + 4 = 8  */
+const int TILE_W = WG_X + FW - 1;   /* 32 + 4 = 36 */
+
+shared uint     s_tile[TILE_H * TILE_W]; /* raw source pixels        */
+shared uint     s_vert[WG_Y * TILE_W];  /* vertically filtered rows  */
+shared int64_t  s_sad[MAX_SUBGROUPS];   /* per-subgroup partial SAD  */
+
+layout(set = 0, binding = 0, std430) readonly buffer RefIn  { uint pixels[]; } ref_in;
+layout(set = 0, binding = 1, std430)          buffer CurB   { uint b[];      } cur_blur;
+layout(set = 0, binding = 2, std430) readonly buffer PrevB  { uint b[];      } prev_blur;
+layout(set = 0, binding = 3, std430)          buffer Sad    { int64_t v[];   } sad_out;
+
+layout(push_constant) uniform Params {
+    uint width;
+    uint height;
+    uint bpc;
+    uint compute_sad;
+    uint num_workgroups_x;
+} pc;
+
+/* Reflect-101 mirror padding — mirrors CPU edge_8 / edge_16 exactly. */
+int dev_mirror(int idx, int sup) {
+    if (idx < 0)   return -idx;
+    if (idx >= sup) return 2 * (sup - 1) - idx;
+    return idx;
+}
+
+/* Unpack one source pixel at (y, x). BPC <= 8: 4 px / uint32 word;
+ * BPC > 8: 2 px / uint32 word. Mirrors integer_motion_cuda.c read logic. */
+uint read_src(int y, int x) {
+    if (BPC <= 8) {
+        uint stride_words = (uint(pc.width) + 3u) >> 2;
+        uint word = ref_in.pixels[uint(y) * stride_words + (uint(x) >> 2)];
+        return (word >> ((uint(x) & 3u) * 8u)) & 0xFFu;
+    } else {
+        uint stride_words = (uint(pc.width) + 1u) >> 1;
+        uint word = ref_in.pixels[uint(y) * stride_words + (uint(x) >> 1)];
+        return (word >> ((uint(x) & 1u) * 16u)) & 0xFFFFu;
+    }
+}
+
+void main()
+{
+    int gx  = int(gl_GlobalInvocationID.x);
+    int gy  = int(gl_GlobalInvocationID.y);
+    int lx  = int(gl_LocalInvocationID.x);
+    int ly  = int(gl_LocalInvocationID.y);
+    uint lid = uint(ly * WG_X + lx);
+    bool valid = (gx < int(pc.width) && gy < int(pc.height));
+
+    uint shift_v = pc.bpc;
+    uint round_v = 1u << (pc.bpc - 1u);
+
+    /* ----------------------------------------------------------------
+     * Phase 1: cooperative tile load with mirror padding.
+     * ---------------------------------------------------------------- */
+    int tile_oy = int(gl_WorkGroupID.y) * WG_Y - HALF_FW;
+    int tile_ox = int(gl_WorkGroupID.x) * WG_X - HALF_FW;
+    int tile_elems = TILE_H * TILE_W;
+
+    bool interior =
+        (tile_oy >= 0) && (tile_oy + TILE_H <= int(pc.height)) &&
+        (tile_ox >= 0) && (tile_ox + TILE_W <= int(pc.width));
+
+    for (int i = int(lid); i < tile_elems; i += WG_SIZE) {
+        int tr = i / TILE_W;
+        int tc = i - tr * TILE_W;
+        int py = tile_oy + tr;
+        int px = tile_ox + tc;
+        if (!interior) {
+            py = dev_mirror(py, int(pc.height));
+            px = dev_mirror(px, int(pc.width));
+        }
+        s_tile[tr * TILE_W + tc] = read_src(py, px);
+    }
+    barrier();
+
+    /* ----------------------------------------------------------------
+     * Phase 2: vertical convolution -> s_vert (WG_Y x TILE_W).
+     * ---------------------------------------------------------------- */
+    int vert_total = WG_Y * TILE_W;
+    for (int i = int(lid); i < vert_total; i += WG_SIZE) {
+        int r = i / TILE_W;
+        int c = i - r * TILE_W;
+        uint acc = 0u;
+        for (int k = 0; k < FW; k++) {
+            acc += FILTER[k] * s_tile[(r + k) * TILE_W + c];
+        }
+        s_vert[r * TILE_W + c] = (acc + round_v) >> shift_v;
+    }
+    barrier();
+
+    /* ----------------------------------------------------------------
+     * Phase 3: horizontal convolution + optional SAD per thread.
+     * ---------------------------------------------------------------- */
+    int64_t abs_diff = 0L;
+
+    if (valid) {
+        uint h = 0u;
+        for (int k = 0; k < FW; k++) {
+            h += FILTER[k] * s_vert[ly * TILE_W + (lx + k)];
+        }
+        uint blurred = (h + 32768u) >> 16;
+        cur_blur.b[uint(gy) * pc.width + uint(gx)] = blurred & 0xFFFFu;
+
+        if (pc.compute_sad != 0u) {
+            uint prev = prev_blur.b[uint(gy) * pc.width + uint(gx)] & 0xFFFFu;
+            int diff = int(blurred) - int(prev);
+            abs_diff = int64_t(diff < 0 ? -diff : diff);
+        }
+    }
+
+    /* ----------------------------------------------------------------
+     * Phase 4: subgroup + workgroup SAD reduction.
+     * ---------------------------------------------------------------- */
+    if (pc.compute_sad != 0u) {
+        int64_t sg_sum = subgroupAdd(abs_diff);
+        uint sg_id    = gl_SubgroupID;
+        uint n_sg     = gl_NumSubgroups;
+
+        if (subgroupElect()) {
+            s_sad[sg_id] = sg_sum;
+        }
+        barrier();
+
+        if (lid == 0u) {
+            int64_t total = 0L;
+            for (uint s = 0u; s < n_sg; s++) {
+                total += s_sad[s];
+            }
+            uint wg_idx = gl_WorkGroupID.y * pc.num_workgroups_x + gl_WorkGroupID.x;
+            sad_out.v[wg_idx] = total;
+        }
+    } else {
+        /* Frame 0: zero the slot so the host reducer sees no garbage. */
+        if (lid == 0u) {
+            uint wg_idx = gl_WorkGroupID.y * pc.num_workgroups_x + gl_WorkGroupID.x;
+            sad_out.v[wg_idx] = 0L;
+        }
+    }
+}

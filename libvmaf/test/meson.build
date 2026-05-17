@@ -817,6 +817,19 @@ test_vulkan_pic_preallocation = executable('test_vulkan_pic_preallocation',
     c_args: ['-DHAVE_VULKAN=1']
 )
 test('test_vulkan_pic_preallocation', test_vulkan_pic_preallocation, suite : ['fast', 'gpu'])
+
+# integer_motion_vulkan smoke: registration + init() contract gates
+# (min-dim rejection, five-frame-window -ENOTSUP, happy-path skipped
+# when no Vulkan compute device is present).
+test_integer_motion_vulkan_smoke = executable('test_integer_motion_vulkan_smoke',
+    ['test.c', 'test_integer_motion_vulkan_smoke.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: [pthread_dependency],
+    c_args: ['-DHAVE_VULKAN=1']
+)
+test('test_integer_motion_vulkan_smoke', test_integer_motion_vulkan_smoke,
+     suite : ['fast', 'gpu'])
 endif
 
 # ADR-0209 / T5-2: embedded MCP scaffold smoke. Pins the -ENOSYS
