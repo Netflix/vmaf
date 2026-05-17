@@ -58,15 +58,13 @@ def _vmaf_binary() -> Path:
     """Return the path to the vmaf binary.
 
     Resolution order:
-    1. ``VMAF_BIN`` environment variable (explicit override).
-    2. ``/usr/local/bin/vmaf``  -- installed by ``make install`` or the
-       container image.
-    3. ``<repo>/libvmaf/build/tools/vmaf`` -- in-tree fork build.
-    4. ``<repo>/build/tools/vmaf`` -- legacy / alternate build-dir name.
+    1. VMAF_BIN environment variable (explicit override).
+    2. /usr/local/bin/vmaf -- installed by make install or the container.
+    3. <repo>/libvmaf/build/tools/vmaf -- in-tree fork build.
+    4. <repo>/build/tools/vmaf -- legacy build-dir name.
 
-    Returns the first candidate that exists on disk.  If none exist the
-    last candidate path is returned anyway so that the caller's
-    ``vmaf.exists()`` check produces a clear error message.
+    Returns the first candidate that exists on disk. If none exist the
+    last candidate path is returned so the caller can emit a clear error.
     """
     env = os.environ.get("VMAF_BIN")
     if env:
@@ -80,8 +78,7 @@ def _vmaf_binary() -> Path:
     for candidate in candidates:
         if candidate.exists():
             return candidate
-    # None found -- return the most-likely path so the caller can emit a
-    # useful "not found at <path>" error.
+    # None found -- return the most-likely path for a clear error message.
     return candidates[1]
 
 
@@ -542,9 +539,9 @@ async def _run_benchmark(ref: Path, dis: Path, width: int, height: int) -> dict[
     if not script.exists():
         raise FileNotFoundError(f"benchmark harness not found: {script}")
     # Inherit the full environment so that PATH, LD_LIBRARY_PATH, and any
-    # GPU-runtime variables are preserved.  Explicitly inject VMAF_ROOT so
-    # bench_all.sh's ``cd "${VMAF_ROOT:-...}"`` resolves correctly even when
-    # git is unavailable (container) or the hard-coded host path does not exist.
+    # GPU-runtime variables are preserved. Explicitly inject VMAF_ROOT so
+    # bench_all.sh resolves its cd correctly even when git is unavailable
+    # (container) or the hard-coded host path does not exist.
     bench_env = {**os.environ, "VMAF_ROOT": str(_repo_root())}
     proc = await asyncio.create_subprocess_exec(
         str(script),
