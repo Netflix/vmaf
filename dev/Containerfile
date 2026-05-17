@@ -165,6 +165,13 @@ RUN curl -fsSL https://repo.radeon.com/rocm/rocm.gpg.key \
 # instead, which gives the HIP runtime + headers + hipcc dependency without
 # the multi-GPU collective stack.
 # hadolint ignore=DL3008
+# `rocm-hip-sdk` pulls in `rccl` (multi-GPU collectives) which depends on
+# `libdrm-amdgpu-amdgpu1` + `libdrm2-amdgpu` — packages NOT in the ROCm
+# 6.4 noble repo as of 2026-05. We don't need rccl for libvmaf's HIP
+# feature kernels (single-GPU per worker). Use `rocm-hip-runtime-dev`
+# instead, which gives the HIP runtime + headers + hipcc dep without the
+# multi-GPU collective stack.
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     rocm-hip-runtime-dev \
     hipcc \
