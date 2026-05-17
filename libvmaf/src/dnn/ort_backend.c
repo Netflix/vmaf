@@ -52,6 +52,10 @@ struct VmafOrtSession {
     bool fp16_io;
     /* EP actually attached, for diagnostics. "CPU" when nothing else bound. */
     const char *ep_name;
+    /* Cached CPU memory info — created once at open, released at close.
+     * Avoids a per-frame ORT round-trip in vmaf_ort_infer / vmaf_ort_run
+     * (perf audit finding F2-A / F3-A, 2026-05-16). */
+    OrtMemoryInfo *cpu_mem_info;
 };
 
 /* ------------------------------------------------------------------ */
@@ -469,6 +473,16 @@ int vmaf_ort_open(VmafOrtSession **out, const char *onnx_path, const VmafDnnConf
         sess->api->ReleaseTypeInfo(ti);
     }
 
+    /* Pre-create the CPU memory info once so vmaf_ort_infer / vmaf_ort_run
+     * can reuse it across all frames instead of allocating it per call. */
+    OrtStatus *mi_st =
+        sess->api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &sess->cpu_mem_info);
+    if (mi_st != NULL) {
+        sess->api->ReleaseStatus(mi_st);
+        vmaf_ort_close(sess);
+        return -EIO;
+    }
+
     *out = sess;
     return 0;
 }
@@ -562,18 +576,16 @@ int vmaf_ort_infer(VmafOrtSession *sess, const float *input, const int64_t *inpu
     if (!sess || !input || !input_shape || !output)
         return -EINVAL;
 
-    OrtMemoryInfo *mem = NULL;
-    OrtStatus *st = sess->api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &mem);
-    if (st) {
-        sess->api->ReleaseStatus(st);
-        return -EIO;
-    }
+    /* Use the session-level cached OrtMemoryInfo (created once at vmaf_ort_open)
+     * to avoid a per-frame ORT allocation round-trip (perf audit F2-A). */
+    OrtMemoryInfo *mem = sess->cpu_mem_info;
+    if (!mem)
+        return -EINVAL;
 
     OrtValue *in_tensor = NULL;
     void *in_scratch = NULL;
     int rc =
         build_input_tensor(sess, mem, 0u, input, input_shape, input_rank, &in_tensor, &in_scratch);
-    sess->api->ReleaseMemoryInfo(mem);
     if (rc != 0)
         return rc;
 
@@ -649,6 +661,8 @@ void vmaf_ort_close(VmafOrtSession *sess)
     assert(sess != NULL);
     if (sess->api) {
         assert(sess->api != NULL);
+        if (sess->cpu_mem_info)
+            sess->api->ReleaseMemoryInfo(sess->cpu_mem_info);
         if (sess->alloc && sess->input_names) {
             assert(sess->n_inputs > 0u);
             for (size_t i = 0; i < sess->n_inputs; ++i) {
@@ -721,20 +735,24 @@ int vmaf_ort_run(VmafOrtSession *sess, const VmafOrtTensorIn *inputs, size_t n_i
     if (n_inputs != sess->n_inputs || n_outputs != sess->n_outputs)
         return -EINVAL;
 
-    OrtMemoryInfo *mem = NULL;
-    OrtStatus *st0 = sess->api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &mem);
-    if (st0) {
-        sess->api->ReleaseStatus(st0);
-        return -EIO;
-    }
-
-    /* Bounds guard: n_inputs/n_outputs were already validated against
-     * sess->n_inputs/n_outputs above; this catches any future caller that
-     * bypasses that path and prevents out-of-bounds writes into the fixed-size
-     * stack arrays below (replacing the per-call calloc/free pairs — F3-B). */
-    if (n_inputs > VMAF_ORT_MAX_IO || n_outputs > VMAF_ORT_MAX_IO) {
-        sess->api->ReleaseMemoryInfo(mem);
+    /* Reuse the session-level cached OrtMemoryInfo (perf audit F2-A / F3-A). */
+    OrtMemoryInfo *mem = sess->cpu_mem_info;
+    if (!mem)
         return -EINVAL;
+
+    const char **in_names = (const char **)calloc(n_inputs, sizeof(char *));
+    const char **out_names = (const char **)calloc(n_outputs, sizeof(char *));
+    OrtValue **in_vals = (OrtValue **)calloc(n_inputs, sizeof(OrtValue *));
+    OrtValue **out_vals = (OrtValue **)calloc(n_outputs, sizeof(OrtValue *));
+    void **in_scratch = (void **)calloc(n_inputs, sizeof(void *));
+    if (!in_names || !out_names || !in_vals || !out_vals || !in_scratch) {
+        /* mem is session-owned; do not release it here. */
+        free(in_names);
+        free(out_names);
+        free(in_vals);
+        free(out_vals);
+        free(in_scratch);
+        return -ENOMEM;
     }
 
     const char *in_names[VMAF_ORT_MAX_IO];
@@ -818,9 +836,12 @@ cleanup:
         if (out_vals[i])
             sess->api->ReleaseValue(out_vals[i]);
     }
-    sess->api->ReleaseMemoryInfo(mem);
-    /* in_names, out_names, in_vals, out_vals, in_scratch are stack arrays —
-     * no free() needed (replaced calloc per F3-B). */
+    /* mem is session-owned (cpu_mem_info); released in vmaf_ort_close. */
+    free(in_names);
+    free(out_names);
+    free(in_vals);
+    free(out_vals);
+    free(in_scratch);
     return rc;
 }
 

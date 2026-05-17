@@ -7,18 +7,22 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
-## fix/restore-rfe-hw-flags-cache
+No rebase impact: `fix/nvtx-cuda-dependency-guard-2026-05-16` adds a
+meson `error()` guard to `libvmaf/src/meson.build` for the
+`enable_nvtx=true` + `enable_cuda=false` combination. The guard is
+fork-additive: upstream Netflix/vmaf does not enable NVTX, so no
+sync-upstream conflict is expected. If upstream ever adds their own
+NVTX guard, the merge is a no-op (both sides add the same intent).
+## perf/ort-meminfo-cache-vk6-desc-2026-05-16
 
-No rebase impact: `libvmaf/src/libvmaf.c` is mirrored from upstream Netflix but the
-`rfe_hw_flags_cache` / `rfe_hw_flags_dirty` fields and their three read/write sites are
-purely additive fork-local additions inside `#ifdef HAVE_CUDA` guards. If upstream Netflix
-ever modifies `VmafContext`, `vmaf_init`, `vmaf_use_feature`, or `vmaf_read_pictures`,
-verify the five cache sites are preserved after the merge. ADR-0485.
+**`libvmaf/src/dnn/ort_backend.c`**: adds `cpu_mem_info` field to the internal
+`VmafOrtSession` struct. No upstream rebase conflict expected — the struct and its
+file are fork-local (Netflix upstream has no DNN/ORT backend). If upstream ever
+adds an ORT backend, the field must be merged.
 
-## docs/fix-state-md-pipe-escaping — docs/state.md table escaping
-
-No rebase impact: doc-only change. `docs/state.md` is fork-local and not
-present in Netflix upstream; upstream syncs do not touch it.
+**`libvmaf/src/feature/vulkan/psnr_hvs_vulkan.c`**: moves `write_descriptor_set`
+call from `extract()` to `init()`. Entirely fork-local; no Netflix upstream
+equivalent.
 
 ## fix/saliency-per-mb-eval-2026-05-15 — integer_vif enable_chroma
 

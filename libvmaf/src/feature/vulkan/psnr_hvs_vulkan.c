@@ -314,6 +314,12 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
     if (err)
         return err;
 
+    /* Write descriptor sets once here — the buffer bindings are fixed after
+     * alloc_buffers() and never change.  This avoids a per-frame
+     * vkUpdateDescriptorSets for all active planes (perf audit VK-6, 2026-05-16). */
+    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++)
+        write_descriptor_set(s, s->pre_sets[p], p);
+
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features, fex->options, s);
     if (!s->feature_name_dict)
@@ -414,10 +420,8 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
             return err;
     }
 
-    /* Pre-allocated descriptor sets — just rebind the buffer
-     * pointers per frame (T-GPU-OPT-VK-4 / ADR-0256). */
-    for (int p = 0; p < PSNR_HVS_NUM_PLANES; p++)
-        write_descriptor_set(s, s->pre_sets[p], p);
+    /* Descriptor sets were written once in init() — no per-frame update needed
+     * because the buffer bindings are invariant (perf audit VK-6, 2026-05-16). */
 
     /* Acquire the pre-allocated cmd buffer + fence (slot 0) from
      * the submit pool. Reset + begin happens inside acquire. */
