@@ -363,4 +363,5 @@
 0446-extractor-hdr-and-hfr-feature-options
 0467-ssimulacra2-avx512-neon-ulp-audit
 0456-ssimulacra2-cuda-blur-fusion-transpose
+0452-vif-scratch-buf-hoist-to-vifstate
 

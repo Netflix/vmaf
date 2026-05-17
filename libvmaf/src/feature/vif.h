@@ -16,7 +16,15 @@
  *
  */
 
+#include <stddef.h>
+
+/*
+ * data_buf must point to a caller-owned allocation of at least
+ * 10 * ALIGN_CEIL(w * sizeof(float)) * h bytes.  The buffer is used as
+ * scratch space; its contents are undefined on return.  Passing NULL causes
+ * compute_vif to return -1 immediately.
+ */
 int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride,
                 double *score, double *score_num, double *score_den, double *scores,
                 double vif_enhn_gain_limit, double vif_kernelscale, int vif_skip_scale0,
-                double vif_sigma_nsq);
+                double vif_sigma_nsq, float *data_buf);

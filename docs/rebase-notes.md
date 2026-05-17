@@ -97,6 +97,28 @@ cover several PRs in one workstream; cross-link from the ID heading.
 
 ## Entries (backfilled 2026-04-18 per ADR-0108 adoption)
 
+### perf/vif-cpu-workspace-hoist-2026-05-16 — VifState scratch buffer hoist (ADR-0452)
+
+- **Touches**: `libvmaf/src/feature/vif.c`, `libvmaf/src/feature/float_vif.c`,
+  `libvmaf/src/feature/vif.h`.
+- **Invariant**: `VifState` gains a `float *vif_buf` field
+  (`VIF_SCRATCH_BUF_CNT × scaled_float_stride × scaled_h` bytes, allocated in
+  `init`, freed in `close`). `compute_vif`'s signature gains a trailing
+  `float *data_buf` parameter — callers must pass a buffer of at least
+  `10 × ALIGN_CEIL(w * sizeof(float)) × h` bytes. If an upstream Netflix commit
+  modifies `compute_vif`'s signature or adds fields to the implicit scratch
+  layout, the fork's extra parameter must be reconciled with the upstream
+  change. The fork does NOT carry the upstream per-frame allocation; if
+  upstream adds a new scratch sub-plane, extend `VIF_SCRATCH_BUF_CNT` and the
+  `VifState::vif_buf` allocation size in the same PR.
+- **Re-test**:
+
+  ```shell
+  ninja -C build
+  meson test -C build 2>&1 | grep -E "Ok|Fail"
+  # Confirm 0 failures
+
+
 ### perf/cambi-sycl-event-chain-2026-05-16 — CAMBI SYCL GPU-to-GPU event chains (SY-1)
 
 - **Touches**: `libvmaf/src/feature/sycl/integer_cambi_sycl.cpp`,
@@ -142,6 +164,7 @@ cover several PRs in one workstream; cross-link from the ID heading.
       --backends cpu cuda --features psnr --places 4 \
       --feature-opts 'psnr=enable_chroma=false' \
       --feature-opts 'psnr_cuda=enable_chroma=false'
+
   ```
 
 

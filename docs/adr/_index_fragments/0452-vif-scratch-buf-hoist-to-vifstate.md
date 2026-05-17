@@ -1,0 +1,1 @@
+| [ADR-0452](0452-vif-scratch-buf-hoist-to-vifstate.md) | Hoist VIF 10-plane scratch buffer from per-frame allocation to VifState init/close lifecycle; eliminates ~79 MB/frame allocator traffic at 1080p | Accepted | perf, vif, cpu, build, fork-local |

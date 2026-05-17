@@ -35,6 +35,9 @@
 #define DEFAULT_VIF_MIN_VAL (0.0)
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 
+/* Number of float-plane-sized scratch buffers required by compute_vif. */
+#define VIF_SCRATCH_BUF_CNT 10
+
 typedef struct VifState {
     size_t float_stride;
     size_t scaled_float_stride;
@@ -44,6 +47,13 @@ typedef struct VifState {
     float *ref_scaled;
     float *dist;
     float *dist_scaled;
+    /*
+     * vif_buf: single allocation of VIF_SCRATCH_BUF_CNT scratch planes,
+     * each ALIGN_CEIL(scaled_w * sizeof(float)) * scaled_h bytes.
+     * Allocated once in init(), freed in close(), reused every frame.
+     * Per-frame heap traffic on this path is zero.
+     */
+    float *vif_buf;
     bool debug;
     double vif_sigma_nsq;
     bool vif_skip_scale0;
@@ -197,6 +207,18 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
     if (!s->dist_scaled)
         goto fail;
 
+    /*
+     * Allocate VIF scratch buffer once.  compute_vif carves 10 equal-sized
+     * sub-planes out of this contiguous block.  The geometry is fixed after
+     * init, so a single aligned_malloc here replaces an aligned_malloc +
+     * aligned_free on every frame — eliminating ~79 MB/frame of allocator
+     * traffic at 1080p.  See ADR-0452.
+     */
+    const size_t vif_plane_sz = s->scaled_float_stride * s->scaled_h;
+    s->vif_buf = aligned_malloc(vif_plane_sz * VIF_SCRATCH_BUF_CNT, MAX_ALIGN);
+    if (!s->vif_buf)
+        goto fail;
+
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features, fex->options, s);
     if (!s->feature_name_dict)
@@ -213,6 +235,8 @@ fail:
         aligned_free(s->ref_scaled);
     if (s->dist_scaled)
         aligned_free(s->dist_scaled);
+    if (s->vif_buf)
+        aligned_free(s->vif_buf);
     vmaf_dictionary_free(&s->feature_name_dict);
     return -ENOMEM;
 }
@@ -247,7 +271,7 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
     err = compute_vif(s->ref_scaled, s->dist_scaled, s->scaled_w, s->scaled_h,
                       s->scaled_float_stride, s->scaled_float_stride, &score, &score_num,
                       &score_den, scores, s->vif_enhn_gain_limit, s->vif_kernelscale,
-                      s->vif_skip_scale0, s->vif_sigma_nsq);
+                      s->vif_skip_scale0, s->vif_sigma_nsq, s->vif_buf);
     if (err)
         return err;
 
@@ -330,6 +354,8 @@ static int close(VmafFeatureExtractor *fex)
         aligned_free(s->ref_scaled);
     if (s->dist_scaled)
         aligned_free(s->dist_scaled);
+    if (s->vif_buf)
+        aligned_free(s->vif_buf);
     vmaf_dictionary_free(&s->feature_name_dict);
     return 0;
 }

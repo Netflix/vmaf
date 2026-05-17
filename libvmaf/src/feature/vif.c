@@ -45,12 +45,21 @@ void apply_frame_differencing(const float *current_frame, const float *previous_
     }
 }
 
+/*
+ * compute_vif: compute Visual Information Fidelity for a single frame pair.
+ *
+ * data_buf: caller-owned scratch buffer of at least VIF_BUF_CNT *
+ *           ALIGN_CEIL(w * sizeof(float)) * h bytes.  Must not be NULL.
+ *           Contents are undefined on return.
+ *           The caller is responsible for allocation (once, at init time)
+ *           and deallocation (once, at close time).
+ *           Per-frame heap allocation is intentionally absent from this path.
+ */
 int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride,
                 double *score, double *score_num, double *score_den, double *scores,
                 double vif_enhn_gain_limit, double vif_kernelscale, int vif_skip_scale0,
-                double vif_sigma_nsq)
+                double vif_sigma_nsq, float *data_buf)
 {
-    float *data_buf = 0;
     char *data_top;
 
     float *ref_scale;
@@ -104,20 +113,15 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
         goto fail_or_end;
     }
 
-    // Code optimized to save on multiple buffer copies
-    // hence the reduction in the number of buffers required from 15 to 10
-#define VIF_BUF_CNT 10
-    if (SIZE_MAX / buf_sz_one < VIF_BUF_CNT) {
-        printf("error: SIZE_MAX / buf_sz_one < VIF_BUF_CNT, buf_sz_one = %zu.\n", buf_sz_one);
+    if (!data_buf) {
+        printf("error: compute_vif called with NULL data_buf.\n");
         fflush(stdout);
         goto fail_or_end;
     }
 
-    if (!(data_buf = aligned_malloc(buf_sz_one * VIF_BUF_CNT, MAX_ALIGN))) {
-        printf("error: aligned_malloc failed for data_buf.\n");
-        fflush(stdout);
-        goto fail_or_end;
-    }
+    // Code optimized to save on multiple buffer copies
+    // hence the reduction in the number of buffers required from 15 to 10
+#define VIF_BUF_CNT 10
 
     data_top = (char *)data_buf;
 
@@ -281,7 +285,6 @@ int compute_vif(const float *ref, const float *dis, int w, int h, int ref_stride
 
     ret = 0;
 fail_or_end:
-    aligned_free(data_buf);
     return ret;
 }
 
@@ -302,6 +305,7 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
     float *dis_diff_buf = 0;
     float *prev_dis_buf = 0;
     float *temp_buf = 0;
+    float *vif_data_buf = 0;
     size_t data_sz;
     int stride;
     int ret = 1;
@@ -317,6 +321,13 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
     }
 
     data_sz = (size_t)stride * h;
+
+    /* Guard against overflow before multiplying by VIF_BUF_CNT. */
+    if (SIZE_MAX / data_sz < VIF_BUF_CNT) {
+        printf("error: SIZE_MAX / data_sz < VIF_BUF_CNT, data_sz = %zu.\n", data_sz);
+        fflush(stdout);
+        goto fail_or_end;
+    }
 
     if (!(ref_buf = aligned_malloc(data_sz, MAX_ALIGN))) {
         printf("error: aligned_malloc failed for ref_buf.\n");
@@ -350,6 +361,16 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
     }
     if (!(temp_buf = aligned_malloc(data_sz * 2, MAX_ALIGN))) {
         printf("error: aligned_malloc failed for temp_buf.\n");
+        fflush(stdout);
+        goto fail_or_end;
+    }
+    /*
+     * Allocate VIF scratch buffer once for the entire video sequence.
+     * This buffer is passed into compute_vif and reused across frames —
+     * it is pure scratch (all writes happen before any cross-frame read).
+     */
+    if (!(vif_data_buf = aligned_malloc(data_sz * VIF_BUF_CNT, MAX_ALIGN))) {
+        printf("error: aligned_malloc failed for vif_data_buf.\n");
         fflush(stdout);
         goto fail_or_end;
     }
@@ -399,7 +420,7 @@ int vifdiff(int (*read_frame)(float *ref_data, float *main_data, float *temp_dat
             // compute
             if ((ret = compute_vif(ref_diff_buf, dis_diff_buf, w, h, stride, stride, &score,
                                    &score_num, &score_den, scores, DEFAULT_VIF_ENHN_GAIN_LIMIT,
-                                   DEFAULT_VIF_KERNELSCALE, 0, 2.0))) {
+                                   DEFAULT_VIF_KERNELSCALE, 0, 2.0, vif_data_buf))) {
                 printf("error: compute_vifdiff failed.\n");
                 fflush(stdout);
                 goto fail_or_end;
@@ -432,6 +453,7 @@ fail_or_end:
     aligned_free(dis_diff_buf);
     aligned_free(prev_dis_buf);
     aligned_free(temp_buf);
+    aligned_free(vif_data_buf);
 
     return ret;
 }

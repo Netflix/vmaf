@@ -740,3 +740,15 @@ after a port-upstream of any of these files.
   port from `d3647c73` (`speed_chroma` + `speed_temporal`) is
   PR #213 (open). 32-bit ADM/cpu fallbacks (`8a289703` +
   `1b6c3886`) are PR #212 (open).
+
+- **Per-frame `malloc`/`aligned_malloc` for geometry-sized buffers is forbidden
+  on hot paths** (ADR-0452): any buffer whose size is determined by the input
+  geometry (`w`, `h`, `stride`) MUST be hoisted to `init_fex` and freed in
+  `close_fex`. The geometry is known at init time. Per-frame heap traffic for
+  geometry-sized scratch eliminates up to ~79 MB/frame of allocator pressure at
+  1080p and causes arena lock contention in threaded mode. Examples: `float_vif`
+  hoists `10 × plane_sz` to `VifState::vif_buf` per ADR-0452; `ssimulacra2`
+  hoists its workspace similarly. If an upstream port re-introduces a per-frame
+  allocation for a geometry-sized buffer, move it to init/close in the same PR.
+  Small constant-size (geometry-independent) allocations inside hot paths
+  are acceptable but must be justified in the PR description.
