@@ -84,10 +84,23 @@ typedef struct PsnrStateHip {
     void *ref_in;
     void *dis_in;
 #endif /* HAVE_HIPCC */
+    double min_sse;
     VmafDictionary *feature_name_dict;
 } PsnrStateHip;
 
-static const VmafOption options[] = {{0}};
+static const VmafOption options[] = {
+    {
+        .name = "min_sse",
+        .help = "minimum SSE floor; non-zero overrides the psnr_max ceiling",
+        .offset = offsetof(PsnrStateHip, min_sse),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = 0.0,
+        .min = 0.0,
+        .max = 1e16,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {0},
+};
 
 #define PSNR_HIP_BX 16
 #define PSNR_HIP_BY 16
@@ -219,8 +232,15 @@ static int init_fex_hip(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->frame_w = w;
     s->frame_h = h;
     s->peak = (1u << bpc) - 1u;
-    /* psnr_max formula mirrors CPU integer_psnr.c::init min_sse==0 branch. */
-    s->psnr_max_y = (double)(6u * bpc) + 12.0;
+    /* psnr_max formula: mirrors CPU integer_psnr.c::init (lines 128-138).
+     * When min_sse > 0 the user overrides the ceiling to match the MSE
+     * floor; otherwise use the (6*bpc)+12 default. */
+    if (s->min_sse != 0.0) {
+        const double mse = s->min_sse / ((double)w * (double)h);
+        s->psnr_max_y = ceil(10.0 * log10((double)s->peak * (double)s->peak / mse));
+    } else {
+        s->psnr_max_y = (double)(6u * bpc) + 12.0;
+    }
 
     /* Readback pair (device uint64 SSE accumulator + pinned host slot). */
     err = vmaf_hip_kernel_readback_alloc(&s->rb, s->ctx, sizeof(uint64_t));

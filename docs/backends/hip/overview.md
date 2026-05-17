@@ -77,7 +77,11 @@ libvmaf/src/feature/hip/          # per-feature kernels
 
 - **`float_psnr_hip`** — float (ref-dis)² reduction per block. Emits `float_psnr`.
 - **`integer_psnr_hip`** — uint64 atomic-SSE kernel, warp-64 `__shfl_down`
-  reduction. Emits `psnr_y`.
+  reduction. Emits `psnr_y`. Options: `min_sse` (double, default 0.0) — when
+  set to a positive value, overrides the PSNR ceiling to `ceil(10·log₁₀(peak²/
+  (min_sse/(w·h))))`, matching `integer_psnr.c` init behaviour. All other CPU
+  options (`enable_chroma`, `enable_mse`, `enable_apsnr`, `reduced_hbd_peak`)
+  are not yet wired; luma-only PSNR is the current scope.
 - **`float_ansnr_hip`** — per-block (sig, noise) float-partial kernel, 3×3 ref +
   5×5 dis filter with shared-memory mirror-padded tile. Emits `float_ansnr` +
   `float_anpsnr`.
