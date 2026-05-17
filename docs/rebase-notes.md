@@ -7,38 +7,11 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
-## fix/adm-min-val-gpu-parity — adm_min_val option on CUDA/SYCL/Vulkan
+## refactor/context-api-contract-doc — GPU backend context-API contract
 
-**`libvmaf/src/feature/cuda/integer_adm_cuda.c`**,
-**`libvmaf/src/feature/sycl/integer_adm_sycl.cpp`**,
-**`libvmaf/src/feature/vulkan/adm_vulkan.c`**: adds `adm_min_val` field
-and option to each GPU backend's state struct and `options[]` table. All
-three files are fork-local (GPU backends); no upstream rebase conflict is
-expected. If upstream Netflix ever adds their own `adm_min_val` to the
-CPU `integer_adm.c` options, the GPU entries here should be cross-checked
-for consistency.
-
-## refactor/aiutils-subprocess-dedup — subprocess helper extraction
-
-PR #947 added `enable_chroma` (bool, default `false`) to `float_ansnr` so
-the extractor can emit `float_ansnr_cb/cr` and `float_anpsnr_cb/cr` in
-addition to luma. PR #1067 inadvertently clobbered that with the pre-#947
-luma-only version. This PR restores all four elements: struct field,
-`options[]` entry, per-plane name arrays, and the plane loop in `extract()`.
-
-**Rebase impact**: any branch that patches `libvmaf/src/feature/float_ansnr.c`
-against the pre-restore base will conflict on the `enable_chroma` region.
-Resolve by keeping the PR #947 enable-chroma logic (plane loop + option table).
-
-**Smoke-test after rebase**:
-
-```bash
-meson setup build -Denable_cuda=false -Denable_sycl=false
-ninja -C build src/liblibvmaf_feature.a.p/feature_float_ansnr.c.o
-# must exit 0 with no undefined-reference warnings
-```
-
----
+No rebase impact: docs-only change. `docs/backends/context-api-contract.md` and
+`docs/adr/0486-context-api-contract-doc.md` are fork-local files not present in
+Netflix upstream; upstream syncs do not touch them. No source files modified.
 
 ## docs/fix-state-md-pipe-escaping — docs/state.md table escaping
 
