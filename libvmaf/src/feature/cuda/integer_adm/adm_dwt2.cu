@@ -171,7 +171,9 @@ adm_dwt2_8_vert_hori_kernel(const T *d_picture, cuda_adm_dwt_band_t dst,
     {
         int x = threadIdx.x + blockIdx.x * 2 * horz_out_tile_cols;
         // For each output at position x of the horizontal pass we have to read the range [2*x-1, 2*x+2]. Thus start one element to the left
-        x = max(0, x - 1); // TODO when using abs instead we'd already do the x-mirroring here.
+        x = max(0, x - 1); /* Deferred: abs(x - 1) would fold the left-edge mirror into this
+                            * line; requires auditing the horizontal-pass tile overlap to ensure
+                            * the mirrored read is within the shared-memory window. */
 
         const int y_out =
             (threadIdx.y + blockIdx.y * horz_out_tile_rows / v_rows_per_thread) * v_rows_per_thread;

@@ -343,7 +343,11 @@ int vmaf_cuda_fetch_preallocated_picture(VmafContext *vmaf, VmafPicture *pic)
     if (!vmaf->cuda.ring_buffer)
         return -EINVAL;
 
-    //TODO: preallocate host pics
+    /* Deferred: PREALLOCATION_METHOD_HOST currently allocates a fresh
+     * VmafPicture on every call instead of vending from a pre-populated pool.
+     * Wiring HOST through vmaf_gpu_picture_pool_fetch() requires a separate
+     * pool initialised with vmaf_picture_alloc / vmaf_picture_unref callbacks
+     * (no CUDA streams, no synchronise step).  Tracked as T9.x backlog. */
 
     switch (vmaf->cuda.cfg.pic_prealloc_method) {
     case VMAF_CUDA_PICTURE_PREALLOCATION_METHOD_DEVICE:
