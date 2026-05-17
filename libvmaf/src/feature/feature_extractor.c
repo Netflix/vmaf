@@ -112,6 +112,8 @@ extern VmafFeatureExtractor vmaf_fex_float_vif_vulkan;
 extern VmafFeatureExtractor vmaf_fex_float_adm_vulkan;
 extern VmafFeatureExtractor vmaf_fex_ssimulacra2_vulkan;
 extern VmafFeatureExtractor vmaf_fex_cambi_vulkan;
+/* integer_cambi_vulkan — Strategy II integer variant (fused spatial-mask shader). */
+extern VmafFeatureExtractor vmaf_fex_integer_cambi_vulkan;
 #endif
 #if HAVE_HIP
 /* HIP first-consumer kernel — T7-10 / ADR-0241. Registration succeeds
@@ -237,6 +239,9 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_integer_ms_ssim_vulkan,
     /* T7-36 / ADR-0205: cambi Vulkan twin (Strategy II hybrid). */
     &vmaf_fex_cambi_vulkan,
+    /* integer_cambi_vulkan: fused spatial-mask shader, Strategy II hybrid,
+     * Vulkan twin of integer_cambi_cuda.c (ADR-0360). */
+    &vmaf_fex_integer_cambi_vulkan,
 #endif
 #if HAVE_CUDA
     &vmaf_fex_integer_adm_cuda, &vmaf_fex_integer_vif_cuda, &vmaf_fex_integer_motion_cuda,

@@ -1,0 +1,90 @@
+/* Copyright 2026 Lusoris and Claude (Anthropic)
+ * SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
+ *
+ * Vulkan GLSL compute shader: CAMBI integer spatial-mask kernel.
+ * Ported from cuda/integer_cambi/cambi_score.cu::cambi_spatial_mask_kernel.
+ *
+ * Computes the 7x7 box-sum of the per-pixel derivative (h_eq && v_eq)
+ * and thresholds against mask_index in a single fused pass.
+ *
+ * CPU reference:
+ *   libvmaf/src/feature/cambi.c::get_spatial_mask_for_index()
+ *   libvmaf/src/feature/cambi.c::get_derivative_data_for_row()
+ *
+ * Algorithm:
+ *   For each pixel (y, x):
+ *     h_eq = (x == width-1) || image[y,x] == image[y,x+1]
+ *     v_eq = (y == height-1) || image[y,x] == image[y+1,x]
+ *     deriv = (h_eq && v_eq) ? 1 : 0
+ *
+ *   Then 7x7 box-sum of deriv[y,x] around each pixel, compared to
+ *   mask_index. Implemented via a thread-local neighbourhood loop
+ *   (brute-force O(49) per pixel). Correct for all image sizes.
+ *
+ * Bindings:
+ *   binding 0: image_in  — uint16 packed in uint32 (uint32 words, stride_words wide)
+ *   binding 1: mask_out  — uint16 packed in uint32 (uint32 words, stride_words wide)
+ *
+ * Push constants:
+ *   width, height, stride_words, mask_index
+ *
+ * Precision contract: bit-exact integer — matches CPU and CUDA.
+ */
+
+#version 460
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer ImageIn { uint pixels[]; } image_in;
+layout(set = 0, binding = 1, std430)          buffer MaskOut { uint pixels[]; } mask_out;
+
+layout(push_constant) uniform Params {
+    uint width;
+    uint height;
+    uint stride_words;  /* = (width + 1) >> 1 */
+    uint mask_index;
+} pc;
+
+uint read_image_u16(int y, int x) {
+    uint word = image_in.pixels[uint(y) * pc.stride_words + (uint(x) >> 1)];
+    return (word >> ((uint(x) & 1u) * 16u)) & 0xFFFFu;
+}
+
+void write_mask_u16(int y, int x, uint v) {
+    uint idx = uint(y) * pc.stride_words + (uint(x) >> 1);
+    uint shift = (uint(x) & 1u) * 16u;
+    uint msk = 0xFFFFu << shift;
+    atomicAnd(mask_out.pixels[idx], ~msk);
+    atomicOr (mask_out.pixels[idx], (v & 0xFFFFu) << shift);
+}
+
+void main() {
+    int x = int(gl_GlobalInvocationID.x);
+    int y = int(gl_GlobalInvocationID.y);
+    if (x >= int(pc.width) || y >= int(pc.height))
+        return;
+
+    /* 7x7 box-sum of derivative values, half-width pad = 3. */
+    int pad = 3;
+    int W = int(pc.width);
+    int H = int(pc.height);
+    int box_sum = 0;
+
+    for (int dy = -pad; dy <= pad; dy++) {
+        int ny = y + dy;
+        if (ny < 0 || ny >= H)
+            continue;
+        for (int dx = -pad; dx <= pad; dx++) {
+            int nx = x + dx;
+            if (nx < 0 || nx >= W)
+                continue;
+            uint cur = read_image_u16(ny, nx);
+            bool h_eq = (nx == W - 1) || (cur == read_image_u16(ny, nx + 1));
+            bool v_eq = (ny == H - 1) || (cur == read_image_u16(ny + 1, nx));
+            box_sum += (h_eq && v_eq) ? 1 : 0;
+        }
+    }
+
+    uint m = (box_sum > int(pc.mask_index)) ? 1u : 0u;
+    write_mask_u16(y, x, m);
+}
