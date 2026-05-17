@@ -29,10 +29,4 @@ void cambi_decrement_range_neon(uint16_t *arr, int left, int right);
 void get_derivative_data_for_row_neon(const uint16_t *image_data, uint16_t *derivative_buffer,
                                       int width, int height, int row, int stride);
 
-void calculate_c_values_row_neon(float *c_values, const uint16_t *histograms, const uint16_t *image,
-                                 const uint16_t *mask, int row, int width, ptrdiff_t stride,
-                                 const uint16_t num_diffs, const uint16_t *tvi_thresholds,
-                                 uint16_t vlt_luma, const int *diff_weights, const int *all_diffs,
-                                 const float *reciprocal_lut);
-
 #endif /* ARM64_NEON_CAMBI_H_ */

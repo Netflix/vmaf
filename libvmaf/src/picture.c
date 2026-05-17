@@ -153,14 +153,6 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt, unsigned 
         return -EINVAL;
     if (bpc < 8 || bpc > 16)
         return -EINVAL;
-    /* Guard against integer overflow in picture_compute_geometry:
-     * (w + DATA_ALIGN - 1u) wraps to 0 when w >= 0xFFFFFFC1 on 32-bit
-     * unsigned arithmetic, producing a zero-byte allocation that passes
-     * but causes OOB on any pixel access.  32768 is well above any
-     * real VMAF input size and keeps the addition in safe range.
-     * CERT INT30-C. */
-    if (w == 0 || w > 32768u || h == 0 || h > 32768u)
-        return -EINVAL;
 
     memset(pic, 0, sizeof(*pic));
     pic->pix_fmt = pix_fmt;

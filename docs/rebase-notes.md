@@ -34987,12 +34987,35 @@ AVX2 ships with AVX-512 + NEON siblings in the same PR. Do not merge a
 cambi AVX2 kernel without the matching AVX-512 + NEON files and a dispatch
 update in `cambi.c`.
 
+---
+
+## `perf/chug-drop-ssimulacra2-cuda-self-vs-self-2026-05-16` — K150K/CHUG self-vs-self extraction schema v2
+
+**Branch**: `perf/chug-drop-ssimulacra2-cuda-self-vs-self-2026-05-16`
+
+**Files touched**:
+`ai/scripts/extract_k150k_features.py`,
+`ai/AGENTS.md`,
+`ai/tests/test_extract_k150k_no_ssimulacra2.py`.
+
+**Rebase impact**: low. All touched files are fork-local tiny-AI
+infrastructure; upstream Netflix/vmaf does not maintain `ai/` or K150K
+extraction pipelines. No upstream-shared C/C++/headers are modified.
+
+**Invariant to preserve on rebase**: the K150K extraction script
+(`extract_k150k_features.py`) is a fork-only feature. If upstream adds
+its own `extract_features.py` or similar, keep them separate under
+different package names; do not merge them. The parquet schema v2
+(21-feature, no ssimulacra2) is now authoritative for new K150K/CHUG
+extraction runs. Existing v1 parquets (22-feature, with ssimulacra2) are
+grandfathered in; loaders must handle both by detecting feature count at
+runtime or reading a schema-version sidecar (future work).
+
 **Smoke-test after rebase**:
 
 ```bash
-meson setup build -Denable_cuda=false -Denable_sycl=false
-ninja -C build
-meson test -C build --suite=fast
+python -m pytest ai/tests/test_extract_k150k_no_ssimulacra2.py -v
+# Expected: 3/3 PASS
 ```
 
 ### feat/psnr-hvs-vulkan-enable-chroma-2026-05-16 — `enable_chroma` option for `psnr_hvs_vulkan` (ADR-0461)

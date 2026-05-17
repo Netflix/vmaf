@@ -585,10 +585,7 @@ static int dispatch_mask(CambiStateCuda *s, CudaFunctions *cu_f, CUstream stream
 {
     const unsigned grid_x = (w + CAMBI_CUDA_BLOCK_X - 1u) / CAMBI_CUDA_BLOCK_X;
     const unsigned grid_y = (h + CAMBI_CUDA_BLOCK_Y - 1u) / CAMBI_CUDA_BLOCK_Y;
-    /* Bug fix (Issue #857): cuLaunchKernel params[i] must point to the VALUE
-     * to pass, not to the VmafCudaBuffer struct. Pass &buf->data (address of the
-     * CUdeviceptr field) so the driver reads the device pointer, not buf->size. */
-    void *params[] = {&s->d_image->data, &s->d_mask->data, &w, &h, &stride_words, &mask_index};
+    void *params[] = {(void *)s->d_image, (void *)s->d_mask, &w, &h, &stride_words, &mask_index};
     CHECK_CUDA_RETURN(cu_f, cuLaunchKernel(s->func_mask, grid_x, grid_y, 1u, CAMBI_CUDA_BLOCK_X,
                                            CAMBI_CUDA_BLOCK_Y, 1u, 0u, stream, params, NULL));
     return 0;
@@ -603,8 +600,8 @@ static int dispatch_decimate(CambiStateCuda *s, CudaFunctions *cu_f, CUstream st
 {
     const unsigned grid_x = (out_w + CAMBI_CUDA_BLOCK_X - 1u) / CAMBI_CUDA_BLOCK_X;
     const unsigned grid_y = (out_h + CAMBI_CUDA_BLOCK_Y - 1u) / CAMBI_CUDA_BLOCK_Y;
-    /* Bug fix (Issue #857): pass device pointer addresses, not struct addresses. */
-    void *params[] = {&src->data, &dst->data, &out_w, &out_h, &src_stride_words, &dst_stride_words};
+    void *params[] = {(void *)src, (void *)dst,       &out_w,
+                      &out_h,      &src_stride_words, &dst_stride_words};
     CHECK_CUDA_RETURN(cu_f, cuLaunchKernel(s->func_decimate, grid_x, grid_y, 1u, CAMBI_CUDA_BLOCK_X,
                                            CAMBI_CUDA_BLOCK_Y, 1u, 0u, stream, params, NULL));
     return 0;
@@ -619,8 +616,7 @@ static int dispatch_filter_mode(CambiStateCuda *s, CudaFunctions *cu_f, CUstream
 {
     const unsigned grid_x = (w + CAMBI_CUDA_BLOCK_X - 1u) / CAMBI_CUDA_BLOCK_X;
     const unsigned grid_y = (h + CAMBI_CUDA_BLOCK_Y - 1u) / CAMBI_CUDA_BLOCK_Y;
-    /* Bug fix (Issue #857): pass device pointer addresses, not struct addresses. */
-    void *params[] = {&in->data, &out->data, &w, &h, &stride_words, &axis};
+    void *params[] = {(void *)in, (void *)out, &w, &h, &stride_words, &axis};
     CHECK_CUDA_RETURN(cu_f,
                       cuLaunchKernel(s->func_filter_mode, grid_x, grid_y, 1u, CAMBI_CUDA_BLOCK_X,
                                      CAMBI_CUDA_BLOCK_Y, 1u, 0u, stream, params, NULL));
@@ -707,11 +703,10 @@ static int submit_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
     const ptrdiff_t src_stride_bytes = s->pics[0].stride[0];
     for (unsigned row = 0; row < s->proc_height; row++) {
         const uint8_t *src_row = (const uint8_t *)src_data + (size_t)row * (size_t)src_stride_bytes;
-        /* Arithmetic on CUdeviceptr (unsigned long long) directly — avoids
-         * the UB of casting an integer through uint8_t* and back. */
-        const CUdeviceptr dst_dptr =
-            s->d_image->data + (CUdeviceptr)((size_t)row * s->proc_width * sizeof(uint16_t));
-        CHECK_CUDA_RETURN(cu_f, cuMemcpyHtoDAsync(dst_dptr, src_row, row_bytes, stream));
+        uint8_t *dst_row =
+            (uint8_t *)s->d_image->data + (size_t)row * s->proc_width * sizeof(uint16_t);
+        CHECK_CUDA_RETURN(cu_f,
+                          cuMemcpyHtoDAsync((CUdeviceptr)dst_row, src_row, row_bytes, stream));
     }
 
     /* Step 3: spatial mask at full scale. */
@@ -893,15 +888,16 @@ static int submit_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
         uint16_t *dst1 = (uint16_t *)s->pics[1].data[0];
         for (unsigned row = 0; row < scaled_h; row++) {
             uint8_t *d0_row = (uint8_t *)dst0 + (size_t)row * (size_t)pic_stride_bytes;
-            /* Arithmetic on CUdeviceptr directly — avoids UB of casting integer
-             * through uint8_t* and back (same pattern as the HtoD loop above). */
-            const CUdeviceptr s0_dptr =
-                s->d_image->data + (CUdeviceptr)((size_t)row * scaled_w * sizeof(uint16_t));
-            CHECK_CUDA_RETURN(cu_f, cuMemcpyDtoH(d0_row, s0_dptr, scaled_w * sizeof(uint16_t)));
+            const uint8_t *s0_row =
+                (const uint8_t *)s->d_image->data + (size_t)row * scaled_w * sizeof(uint16_t);
+            /* cuMemcpyDtoH(dst_host, src_device_ptr, bytes) */
+            CHECK_CUDA_RETURN(
+                cu_f, cuMemcpyDtoH(d0_row, (CUdeviceptr)s0_row, scaled_w * sizeof(uint16_t)));
             uint8_t *d1_row = (uint8_t *)dst1 + (size_t)row * (size_t)pic_stride_bytes;
-            const CUdeviceptr s1_dptr =
-                s->d_mask->data + (CUdeviceptr)((size_t)row * scaled_w * sizeof(uint16_t));
-            CHECK_CUDA_RETURN(cu_f, cuMemcpyDtoH(d1_row, s1_dptr, scaled_w * sizeof(uint16_t)));
+            const uint8_t *s1_row =
+                (const uint8_t *)s->d_mask->data + (size_t)row * scaled_w * sizeof(uint16_t);
+            CHECK_CUDA_RETURN(
+                cu_f, cuMemcpyDtoH(d1_row, (CUdeviceptr)s1_row, scaled_w * sizeof(uint16_t)));
         }
 
         /* CPU residual: calculate_c_values + spatial pooling. */

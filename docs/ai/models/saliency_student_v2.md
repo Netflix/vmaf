@@ -8,11 +8,9 @@ under `model/tiny/`. v1 remains the production weights for the C-side
 `mobilesal` extractor; v2 is staged for a future production-flip PR
 after empirical validation in real ROI encodes.
 
-> **Status — Production (default 2026-05-15).** Promoted to production
-> default for the `mobilesal` extractor; supersedes `saliency_student_v1`
-> (IoU 0.7105 vs 0.6558, +8.3%). See
-> [ADR-0444](../../adr/0444-saliency-student-v2-production-promotion.md),
-> [ADR-0332](../../adr/0332-saliency-student-v2-resize-decoder.md),
+> **Status — staged 2026-05-09.** Architectural ablation; production
+> flip is gated on a follow-up A/B PR. See
+> [ADR-0332](../../adr/0332-saliency-student-v2-resize-decoder.md)
 > and [Research-0089](../../research/0089-saliency-student-v2-resize-decoder.md).
 
 ## What changed vs v1
@@ -137,17 +135,15 @@ unzip DUTS-TR.zip
 .venv/bin/python ai/scripts/validate_model_registry.py
 ```
 
-## Promotion history
+## Why ship a parallel artefact instead of replacing v1
 
-`saliency_student_v2` was initially shipped 2026-05-09 as a parallel
-artefact alongside v1 (per
-[ADR-0332](../../adr/0332-saliency-student-v2-resize-decoder.md)),
-with v1 remaining as the production weight pending ROI A/B validation.
-On 2026-05-15,
-[ADR-0444](../../adr/0444-saliency-student-v2-production-promotion.md)
-promoted v2 to the production default based on robust held-out IoU
-improvement (+8.3 % relative). v1 is retained in the registry for
-regression baselines and backwards compatibility.
+Per the user direction captured in
+[ADR-0332](../../adr/0332-saliency-student-v2-resize-decoder.md)'s
+References: "v1 stays as production weight. v2 ships as a parallel
+artifact; promotion to production is a future PR after empirical
+validation in real ROI encodes." Held-out IoU on a 5 % validation
+fold is necessary but not sufficient — real-encode A/B is the
+production-flip gate.
 
 ## Known limitations
 

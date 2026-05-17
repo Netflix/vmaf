@@ -7,12 +7,9 @@ It runs through the same `feature_mobilesal.c` extractor as before
 (no C changes, no public-API changes); the only delta is the ONNX
 weights it loads.
 
-> **Status — Superseded 2026-05-15.** `saliency_student_v2` is now the
-> production default for the `mobilesal` extractor (IoU 0.7105 vs 0.6558,
-> +8.3%; [ADR-0444](../../adr/0444-saliency-student-v2-production-promotion.md)).
-> `saliency_student_v1` is retained in the registry for regression
-> baselines and backwards compatibility. Supersedes `mobilesal_placeholder_v0`
-> (which remains with `smoke: true` for legacy reasons). See
+> **Status — shipped 2026-05-03.** Supersedes
+> `mobilesal_placeholder_v0` (which remains in the registry with
+> `smoke: true` for legacy reasons). See
 > [ADR-0286](../../adr/0286-saliency-student-fork-trained-on-duts.md)
 > and [Research-0054](../../research/0062-saliency-student-from-scratch-on-duts.md).
 
