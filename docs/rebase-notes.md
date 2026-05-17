@@ -7,7 +7,18 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
-## fix/float-ansnr-enable-chroma-restore — `enable_chroma` option in `float_ansnr`
+## fix/adm-min-val-gpu-parity — adm_min_val option on CUDA/SYCL/Vulkan
+
+**`libvmaf/src/feature/cuda/integer_adm_cuda.c`**,
+**`libvmaf/src/feature/sycl/integer_adm_sycl.cpp`**,
+**`libvmaf/src/feature/vulkan/adm_vulkan.c`**: adds `adm_min_val` field
+and option to each GPU backend's state struct and `options[]` table. All
+three files are fork-local (GPU backends); no upstream rebase conflict is
+expected. If upstream Netflix ever adds their own `adm_min_val` to the
+CPU `integer_adm.c` options, the GPU entries here should be cross-checked
+for consistency.
+
+## refactor/aiutils-subprocess-dedup — subprocess helper extraction
 
 PR #947 added `enable_chroma` (bool, default `false`) to `float_ansnr` so
 the extractor can emit `float_ansnr_cb/cr` and `float_anpsnr_cb/cr` in
@@ -35052,8 +35063,24 @@ grep 'psnr_sycl' libvmaf/src/feature/feature_extractor.c | grep -v extern
 # Expected: exactly 1 line (no duplicates in the list section)
 ```
 
-## `perf/chug-scratch-tmpfs-win3` — YUV scratch auto-selected to /dev/shm
+---
 
-- **Files changed**: `ai/scripts/extract_k150k_features.py`, `ai/AGENTS.md`
-- **Rebase impact**: no rebase impact — fork-local Python script only; no
-  upstream-shared C, headers, or public API touched.
+## perf/chug-sidecar-bit-depth-key-f6b (2026-05-17)
+
+**Files touched**: `ai/scripts/extract_k150k_features.py`
+
+**What changed**: Added `"chug_bit_depth"` to the `keep` allowlist in
+`_load_jsonl_metadata`. Without this field, `_geometry_from_sidecar` always
+returned the default `yuv420p` pix_fmt even for 10-bit CHUG clips (F6-B /
+Research-0135). Corrected module and `_process_clip` docstrings that overstated
+the ffprobe-skip extent.
+
+**Rebase impact**: no rebase impact. `ai/scripts/extract_k150k_features.py` is
+fork-local; there is no upstream-Netflix equivalent.
+
+**Smoke-test after rebase**:
+
+```bash
+python -m pytest ai/tests/ -k "k150k" -v
+# Expected: all pass
+```

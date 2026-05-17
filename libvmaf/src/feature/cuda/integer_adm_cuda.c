@@ -56,6 +56,7 @@ typedef struct AdmStateCuda {
     double adm_csf_scale;
     double adm_csf_diag_scale;
     double adm_noise_weight;
+    double adm_min_val;          /* ADR-0487: minimum score floor (mirrors CPU option). */
     unsigned submit_w, submit_h; // stored by submit for collect
     void (*dwt2_8)(const uint8_t *src, const cuda_adm_dwt_band_t *dst, void *tmp_buf,
                    AdmBufferCuda *buf, int w, int h, int src_stride, int dst_stride,
@@ -648,6 +649,17 @@ static const VmafOption options_cuda[] = {
         .max = 100.0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
+    {
+        .name = "adm_min_val",
+        .alias = "min",
+        .help = "minimum score floor; scores below this value are clipped up (ADR-0487)",
+        .offset = offsetof(AdmStateCuda, adm_min_val),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_ADM_MIN_VAL,
+        .min = 0.0,
+        .max = 1.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
     {0}};
 
 typedef struct write_score_parameters_adm {
@@ -701,6 +713,9 @@ static void write_scores(write_score_parameters_adm *params)
     } else {
         score = num / den;
     }
+    /* ADR-0487: apply minimum score floor, matching CPU integer_adm behaviour. */
+    if (score < s->adm_min_val)
+        score = s->adm_min_val;
     score_num = num;
     score_den = den;
 

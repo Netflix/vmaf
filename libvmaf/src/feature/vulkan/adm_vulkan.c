@@ -111,6 +111,7 @@ typedef struct {
     double adm_csf_scale;
     double adm_csf_diag_scale;
     double adm_noise_weight;
+    double adm_min_val; /* ADR-0487: minimum score floor (mirrors CPU option). */
 
     /* Frame geometry. */
     unsigned width;
@@ -256,6 +257,18 @@ static const VmafOption options[] = {{
                                          .default_val.d = DEFAULT_ADM_NOISE_WEIGHT,
                                          .min = 0.0,
                                          .max = 100.0,
+                                         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+                                     },
+                                     {
+                                         .name = "adm_min_val",
+                                         .alias = "min",
+                                         .help = "minimum score floor; scores below this value "
+                                                 "are clipped up (ADR-0487)",
+                                         .offset = offsetof(AdmVulkanState, adm_min_val),
+                                         .type = VMAF_OPT_TYPE_DOUBLE,
+                                         .default_val.d = DEFAULT_ADM_MIN_VAL,
+                                         .min = 0.0,
+                                         .max = 1.0,
                                          .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
                                      },
                                      {0}};
@@ -923,6 +936,9 @@ static int reduce_and_emit(AdmVulkanState *s, unsigned index, VmafFeatureCollect
     if (den < numden_limit)
         den = 0.0;
     double score = (den == 0.0) ? 1.0 : num / den;
+    /* ADR-0487: apply minimum score floor, matching CPU integer_adm behaviour. */
+    if (score < s->adm_min_val)
+        score = s->adm_min_val;
 
     int err = vmaf_feature_collector_append_with_dict(
         fc, s->feature_name_dict, "VMAF_integer_feature_adm2_score", score, index);
