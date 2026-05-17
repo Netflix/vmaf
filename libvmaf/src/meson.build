@@ -234,8 +234,8 @@ if is_hipcc_enabled and is_hip_enabled
         'ssim_score' : feature_src_dir + 'hip/float_ssim/ssim_score.hip',
         'ciede_score' : feature_src_dir + 'hip/integer_ciede/ciede_score.hip',
         'motion_v2_score' : feature_src_dir + 'hip/integer_motion_v2/motion_v2_score.hip',
-        'ssimulacra2_blur' : feature_src_dir + 'hip/ssimulacra2/ssimulacra2_blur.hip',
-        'ssimulacra2_mul'  : feature_src_dir + 'hip/ssimulacra2/ssimulacra2_mul.hip',
+        # integer_ssim_hip: eleventh HIP kernel-template consumer.
+        'integer_ssim_score' : feature_src_dir + 'hip/integer_ssim/integer_ssim_score.hip',
     }
     foreach name, src : hip_kernel_sources
         hsaco_target = custom_target('hip_hsaco_' + name,

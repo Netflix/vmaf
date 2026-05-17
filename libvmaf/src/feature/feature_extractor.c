@@ -156,19 +156,11 @@ extern VmafFeatureExtractor vmaf_fex_float_motion_hip;
  * `feature/cuda/integer_ssim_cuda.c` and pins the two-dispatch +
  * five intermediate float buffers shape. v1: scale=1 only. */
 extern VmafFeatureExtractor vmaf_fex_float_ssim_hip;
-/* HIP ninth-consumer kernel — real ssimulacra2 port. Two kernels
- * (IIR blur + elementwise multiply); host-side XYB + double-precision
- * SSIM/EdgeDiff combine; 108-weight libjxl pooling. With
- * `enable_hipcc=true` the HSACO blobs are loaded and the kernels run
- * on device; without it init() returns -ENOSYS. Emits `ssimulacra2`
- * (same feature name as the CPU and CUDA twins). */
-extern VmafFeatureExtractor vmaf_fex_ssimulacra2_hip;
-/* HIP tenth-consumer kernel — CAMBI banding-detection HIP port.
- * Strategy II hybrid (three GPU kernels + host CPU residual via
- * cambi_internal.h). With `enable_hipcc=true` the HSACO blob is
- * embedded and the kernels run on device; without it init() returns
- * -ENOSYS. Emits `Cambi_feature_cambi_score` (same as CPU/CUDA twins). */
-extern VmafFeatureExtractor vmaf_fex_cambi_hip;
+/* HIP eleventh-consumer kernel — integer_ssim_hip. Two-pass separable
+ * Gaussian (same design as float_ssim_hip) but emits `integer_ssim`.
+ * With `enable_hipcc=true` the HSACO blob is embedded and the kernel
+ * runs on device; without it init() returns -ENOSYS. v1: scale=1 only. */
+extern VmafFeatureExtractor vmaf_fex_integer_ssim_hip;
 #endif
 #if HAVE_METAL
 /* Metal feature extractors — T8-1c through T8-1j / ADR-0421.
@@ -309,16 +301,11 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
      * float-partial readback); emits one feature (`float_ssim`)
      * once the runtime kernel arrives. v1 is scale=1 only. */
     &vmaf_fex_float_ssim_hip,
-    /* Ninth consumer: real ssimulacra2_hip port. Two kernels (IIR blur
-     * + elementwise multiply), host-side XYB + double-precision
-     * SSIM/EdgeDiff combine, 108-weight libjxl pooling. With
-     * `enable_hipcc=true` HSACO blobs are loaded; otherwise -ENOSYS. */
-    &vmaf_fex_ssimulacra2_hip,
-    /* Tenth consumer: cambi_hip — CAMBI banding-detection HIP port
-     * (Strategy II hybrid). Three GPU kernels + host CPU residual.
-     * With `enable_hipcc=true` the HSACO is loaded; otherwise -ENOSYS.
-     * Emits `Cambi_feature_cambi_score`. */
-    &vmaf_fex_cambi_hip,
+    /* Eleventh consumer: integer_ssim_hip — two-pass separable Gaussian,
+     * same design as float_ssim_hip but emits `integer_ssim`. With
+     * `enable_hipcc=true` the HSACO is embedded; otherwise -ENOSYS.
+     * v1: scale=1 only. */
+    &vmaf_fex_integer_ssim_hip,
 #endif
 #if HAVE_METAL
     /* T8-1 first consumer (ADR-0361): registration succeeds even on

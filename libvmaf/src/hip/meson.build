@@ -88,11 +88,11 @@ hip_sources += files(
     # HSACO blob is embedded and the kernel runs on device; without it
     # init() returns -ENOSYS (same scaffold-posture as the other consumers).
     '../feature/hip/float_psnr_hip.c',
-    # Ninth consumer: ssimulacra2_hip. Mirrors ssimulacra2_cuda.c pipeline
-    # (host YUV→XYB + GPU IIR blur + host double-precision combine).
-    # With `enable_hipcc=true` the two HSACO blobs are embedded and the
-    # kernels run on device; without it init() returns -ENOSYS.
-    '../feature/hip/ssimulacra2_hip.c',
+    # integer_ssim_hip: HIP port of the integer_ssim extractor — eleventh
+    # kernel-template consumer. Two-pass separable Gaussian (same design as
+    # float_ssim_hip) but emits `integer_ssim`. With `enable_hipcc=true` the
+    # HSACO blob is embedded; without it init() returns -ENOSYS.
+    '../feature/hip/integer_ssim_hip.c',
 )
 
 # T7-10b runtime linkage. ROCm ships `hip_runtime_api.h` under
