@@ -1,0 +1,1 @@
+- **test(libvmaf)**: add `test_public_api_score` covering three previously-untested public entry points: `vmaf_score_at_index()`, `vmaf_model_collection_load()`, and `vmaf_write_output()` — closes coverage gap identified in audit-test-coverage-2026-05-16.md §2.

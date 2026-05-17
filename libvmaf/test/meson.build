@@ -63,6 +63,18 @@ test_log = executable('test_log',
     dependencies: [pthread_dependency, sycl_dependency],
 )
 
+# Public API coverage test: vmaf_score_at_index, vmaf_model_collection_load,
+# vmaf_write_output.  Uses the full libvmaf link (no .c include-tricks) so that
+# the public VMAF_EXPORT entry points are exercised through the shared library
+# ABI rather than through static compilation of internals.
+# Addresses .workingdir/audit-test-coverage-2026-05-16.md §2.
+test_public_api_score = executable('test_public_api_score',
+    ['test.c', 'test_public_api_score.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies : [pthread_dependency, thread_lib, gpu_all_deps],
+)
+
 test_thread_pool = executable('test_thread_pool',
     ['test.c', 'test_thread_pool.c', '../src/thread_pool.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
@@ -907,6 +919,7 @@ endif
 test('test_picture', test_picture, suite : ['fast'])
 test('test_feature_collector', test_feature_collector, suite : ['fast'])
 test('test_output', test_output, suite : ['fast'])
+test('test_public_api_score', test_public_api_score, suite : ['fast'])
 test('test_thread_pool', test_thread_pool, suite : ['fast'])
 test('test_model', test_model, suite : ['fast'])
 test('test_predict', test_predict, suite : ['fast'])
