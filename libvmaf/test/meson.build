@@ -655,6 +655,23 @@ test_cuda_preallocation_leak = executable('test_cuda_preallocation_leak',
     c_args: ['-DHAVE_CUDA=1']
 )
 test('test_cuda_preallocation_leak', test_cuda_preallocation_leak, suite : ['fast', 'gpu'])
+
+# CHUG audit gap-fill — motion3 CPU vs. CUDA parity (ADR-0214 gate).
+# The motion3 post-process (moving-average over blended motion2) is
+# implemented independently in integer_motion.c (CPU) and
+# integer_motion_cuda.c (CUDA).  No cross-backend assertion existed before
+# this test; boundary-condition drift would silently pollute CHUG-extracted
+# motion3_mean/std columns.  GPU-gated: skips cleanly when no CUDA device
+# is visible (mirrors test_cuda_buffer_alloc_oom pattern).
+test_cuda_motion3_parity = executable('test_cuda_motion3_parity',
+    ['test.c', 'test_cuda_motion3_parity.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: [pthread_dependency, cuda_dependency, math_lib],
+    c_args: ['-DHAVE_CUDA=1']
+)
+test('test_cuda_motion3_parity', test_cuda_motion3_parity,
+    suite : ['fast', 'gpu'])
 endif
 
 # T6-2b / ADR-0247 — vmaf-roi sidecar core helpers (per-CTU mean reduce

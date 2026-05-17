@@ -70,6 +70,17 @@ ciede / moment), [ADR-0188](../../../../docs/adr/0188-gpu-long-tail-batch-2.md)
 (ssim / ms_ssim / psnr_hvs), [ADR-0192](../../../../docs/adr/0192-gpu-long-tail-batch-3.md)
 (motion_v2 / float_ansnr / float-twins / ssimulacra2 / cambi).
 
+## Parity invariant — motion3 CPU and CUDA moving-average paths
+
+`integer_motion.c` (CPU) and `integer_motion_cuda.c` (CUDA) both implement
+the motion3 post-process as a host-side moving average over blended motion2
+scores. These two paths **must stay in numerical parity at places=4** (delta
+≤ 1e-4, per ADR-0214). The gate is enforced by
+`libvmaf/test/test_cuda_motion3_parity.c`; any change to the blend formula
+(`motion_blend()`), the moving-average guard condition, or `motion_max_val`
+clipping must be mirrored across both files (and across the SYCL / Vulkan /
+HIP / Metal motion twins listed in the Twin-update table below) in the same PR.
+
 ## Rebase-sensitive invariants
 
 - **`integer_ms_ssim_cuda.c` honours the `enable_lcs`, `enable_db`,
