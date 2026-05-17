@@ -35380,17 +35380,15 @@ is unchanged.
 
 ---
 
-## fix/adm-skip-scale0-sycl-metal-hip-parity
+## fix/adm-metal-missing-options
 
-**Files**: `libvmaf/src/feature/sycl/integer_adm_sycl.cpp`,
-`libvmaf/src/feature/hip/integer_adm_hip.c`,
-`libvmaf/src/feature/metal/integer_adm_metal.mm`
+**File**: `libvmaf/src/feature/metal/integer_adm_metal.mm`
 
-No rebase impact: the changes are additive (two new options per backend +
-host-side suppression guard in write_scores/collect). The GPU kernels are
-unchanged. If upstream later refactors the collect path, re-check that the
-`adm_skip_scale0` guard and `adm_min_val` floor are applied after the
-per-scale loop in each backend.
+No rebase impact: the change moves three implicit defaults from `init_fex_metal`
+into the options table. The struct fields and kernel dispatch are unchanged.
+If upstream adds its own Metal ADM options or renames the default macros,
+re-check that `DEFAULT_ADM_CSF_SCALE`, `DEFAULT_ADM_CSF_DIAG_SCALE`, and
+`DEFAULT_ADM_NOISE_WEIGHT` still resolve correctly.
 
 ---
 

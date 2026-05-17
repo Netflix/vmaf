@@ -134,8 +134,6 @@ typedef struct IntegerAdmStateMetal {
     double adm_csf_scale;
     double adm_csf_diag_scale;
     double adm_noise_weight;
-    double adm_min_val;    /* ADR-0487: minimum score floor (mirrors CPU + CUDA option). */
-    bool   adm_skip_scale0; /* host-side suppression: scale-0 excluded from score when set */
 
     /* Collected scores (filled during collect). */
     double num[ADM_NUM_SCALES];
@@ -293,24 +291,36 @@ static const VmafOption options[] = {
         .flags   = 0,
     },
     {
-        .name    = "adm_min_val",
-        .alias   = "min",
-        .help    = "minimum score floor; scores below this value are clipped up (ADR-0487)",
-        .offset  = offsetof(IntegerAdmStateMetal, adm_min_val),
+        .name    = "adm_csf_scale",
+        .alias   = "cs",
+        .help    = "CSF band-scale multiplier for h/v bands (default 1.0 = no scaling)",
+        .offset  = offsetof(IntegerAdmStateMetal, adm_csf_scale),
         .type    = VMAF_OPT_TYPE_DOUBLE,
-        .default_val = { .d = DEFAULT_ADM_MIN_VAL },
+        .default_val = { .d = DEFAULT_ADM_CSF_SCALE },
         .min     = 0.0,
-        .max     = 1.0,
+        .max     = 100.0,
         .flags   = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {
-        .name    = "adm_skip_scale0",
-        .alias   = "ss0",
-        .help    = "skip scale-0 contribution: exclude scale-0 from overall ADM score "
-                   "and emit 0.0 for adm_scale0 (parity with CPU integer_adm option)",
-        .offset  = offsetof(IntegerAdmStateMetal, adm_skip_scale0),
-        .type    = VMAF_OPT_TYPE_BOOL,
-        .default_val = { .b = false },
+        .name    = "adm_csf_diag_scale",
+        .alias   = "cds",
+        .help    = "CSF band-scale multiplier for diagonal bands (default 1.0 = no scaling)",
+        .offset  = offsetof(IntegerAdmStateMetal, adm_csf_diag_scale),
+        .type    = VMAF_OPT_TYPE_DOUBLE,
+        .default_val = { .d = DEFAULT_ADM_CSF_DIAG_SCALE },
+        .min     = 0.0,
+        .max     = 100.0,
+        .flags   = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name    = "adm_noise_weight",
+        .alias   = "nw",
+        .help    = "noise floor weight for CM numerator (default 0.03125 = 1/32)",
+        .offset  = offsetof(IntegerAdmStateMetal, adm_noise_weight),
+        .type    = VMAF_OPT_TYPE_DOUBLE,
+        .default_val = { .d = DEFAULT_ADM_NOISE_WEIGHT },
+        .min     = 0.0,
+        .max     = 100.0,
         .flags   = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     { 0 }
@@ -326,13 +336,12 @@ static int init_fex_metal(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fm
     s->frame_h = h;
     s->bpc     = bpc;
 
-    /* Apply option defaults not set by vmaf_feature_name_dict path. */
-    if (s->adm_enhn_gain_limit <= 0.0) { s->adm_enhn_gain_limit = DEFAULT_ADM_NOISE_WEIGHT; }
+    /* Apply fallback defaults for options not yet handled by VmafOption. */
+    if (s->adm_enhn_gain_limit <= 0.0) { s->adm_enhn_gain_limit = DEFAULT_ADM_ENHN_GAIN_LIMIT; }
     if (s->adm_norm_view_dist  <= 0.0) { s->adm_norm_view_dist  = DEFAULT_ADM_NORM_VIEW_DIST; }
     if (s->adm_ref_display_height <= 0){ s->adm_ref_display_height = DEFAULT_ADM_REF_DISPLAY_HEIGHT; }
-    s->adm_csf_scale      = DEFAULT_ADM_CSF_SCALE;
-    s->adm_csf_diag_scale = DEFAULT_ADM_CSF_DIAG_SCALE;
-    s->adm_noise_weight   = DEFAULT_ADM_NOISE_WEIGHT;
+    /* adm_csf_scale, adm_csf_diag_scale, adm_noise_weight are now set by VmafOption
+     * (default_val in options[]). No hardcoded override needed. */
 
     int err = vmaf_metal_context_new(&s->ctx, 0);
     if (err != 0) { return err; }
@@ -660,10 +669,6 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
 
     double total_num = 0.0, total_den = 0.0;
 
-    static const char *scale_names[ADM_NUM_SCALES] = {
-        "adm_scale0", "adm_scale1", "adm_scale2", "adm_scale3"
-    };
-
     for (int sc = 0; sc < ADM_NUM_SCALES; ++sc) {
         AdmScaleBuffersMetal *sb = &s->scales[sc];
         const size_t cnt = sb->partials_count;
@@ -688,30 +693,20 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
         s->num[sc] = num;
         s->den[sc] = den;
 
-        /* adm_skip_scale0: exclude scale 0 from total num/den accumulation,
-         * mirroring CPU integer_adm.c fast-path. Emit 0.0 for the scale-0
-         * per-scale score. GPU kernel still ran; suppression is host-side. */
-        if (sc == 0 && s->adm_skip_scale0) {
-            int err = vmaf_feature_collector_append_with_dict(
-                feature_collector, s->feature_name_dict, scale_names[0], 0.0, index);
-            if (err != 0) { return err; }
-            continue;
-        }
-
         double adm_scale = (den > 0.0) ? (num / den) : 1.0;
         total_num += num;
         total_den += den;
 
+        static const char *scale_names[ADM_NUM_SCALES] = {
+            "adm_scale0", "adm_scale1", "adm_scale2", "adm_scale3"
+        };
         int err = vmaf_feature_collector_append_with_dict(
             feature_collector, s->feature_name_dict,
             scale_names[sc], adm_scale, index);
         if (err != 0) { return err; }
     }
 
-    double adm2 = (total_den > 0.0) ? (total_num / total_den) : 1.0;
-    /* ADR-0487: apply minimum score floor, matching CPU integer_adm behaviour. */
-    if (adm2 < s->adm_min_val)
-        adm2 = s->adm_min_val;
+    const double adm2 = (total_den > 0.0) ? (total_num / total_den) : 1.0;
     return vmaf_feature_collector_append_with_dict(
         feature_collector, s->feature_name_dict, "adm2", adm2, index);
 }
