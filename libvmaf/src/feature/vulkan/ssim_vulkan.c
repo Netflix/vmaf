@@ -32,9 +32,19 @@
  *    - vmaf_vulkan_kernel_descriptor_sets_alloc (one set at init)
  *  All 8 SSBO bindings are init-time-stable; no per-frame
  *  vkUpdateDescriptorSets needed. (T-GPU-OPT-VK-4 / ADR-0256.)
+ *
+ *  Option parity with CPU float_ssim.c (mirrors CUDA fix commit
+ *  1c4f41eb and Metal ADR-0484):
+ *    enable_lcs — accepted for CLI parity; logs a warning in v1
+ *                 because the GLSL kernel emits only combined SSIM
+ *                 partials, not separate L/C/S sums. LCS output
+ *                 requires a kernel variant (v2 scope).
+ *    enable_db  — host-side -10*log10(1-ssim) conversion.
+ *    clip_db    — clamp dB to a finite max derived from bpc + dims.
  */
 
 #include <errno.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -65,6 +75,12 @@ typedef struct {
     unsigned height;
     unsigned bpc;
     int scale_override;
+
+    /* Options — CPU float_ssim.c parity (mirrors CUDA 1c4f41eb / Metal ADR-0484). */
+    bool enable_lcs; /* v1: accepted but not implemented; logs a warning at init. */
+    bool enable_db;  /* convert score to dB: -10*log10(1-ssim) */
+    bool clip_db;    /* clamp dB output to max_db */
+    double max_db;   /* INFINITY unless clip_db; computed in init() */
 
     /* Output dims after the convolve "valid" reduction. */
     unsigned w_horiz; /* W - 10 */
@@ -126,6 +142,31 @@ typedef struct {
 } SsimVulkanState;
 
 static const VmafOption options[] = {
+    {
+        .name = "enable_lcs",
+        .help = "emit luminance, contrast and structure sub-scores "
+                "(float_ssim_l, float_ssim_c, float_ssim_s). "
+                "v1: accepted for CLI parity but produces no LCS output; "
+                "the Vulkan kernel emits only combined SSIM partials. "
+                "LCS output requires a separate kernel variant (v2 scope).",
+        .offset = offsetof(SsimVulkanState, enable_lcs),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {
+        .name = "enable_db",
+        .help = "convert SSIM score to dB domain: -10*log10(1 - ssim)",
+        .offset = offsetof(SsimVulkanState, enable_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {
+        .name = "clip_db",
+        .help = "clamp dB output to a finite maximum derived from frame size and bpc",
+        .offset = offsetof(SsimVulkanState, clip_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
     {
         .name = "scale",
         .help = "decimation scale factor (0=auto, 1=no downscaling). "
@@ -275,6 +316,13 @@ static int compute_scale(unsigned w, unsigned h, int override)
     return scaled < 1 ? 1 : scaled;
 }
 
+/* Mirrors float_ssim.c::convert_to_db and the CUDA twin (commit 1c4f41eb). */
+static double ssim_to_db(double ssim, double max_db)
+{
+    const double db = -10.0 * log10(1.0 - ssim);
+    return db < max_db ? db : max_db;
+}
+
 static int write_descriptor_set(SsimVulkanState *s, VkDescriptorSet set)
 {
     VkDescriptorBufferInfo dbi[SSIM_NUM_BINDINGS] = {
@@ -338,6 +386,27 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
         vmaf_log(VMAF_LOG_LEVEL_ERROR,
                  "ssim_vulkan: input %ux%u smaller than 11×11 Gaussian footprint.\n", w, h);
         return -EINVAL;
+    }
+
+    /* enable_lcs is accepted for CLI parity but not yet implemented.
+     * The GLSL kernel only emits combined SSIM partials; separate L/C/S
+     * partial-sum buffers require a new kernel variant (v2 scope).
+     * Same precedent as CUDA (commit 1c4f41eb) and Metal (ADR-0484). */
+    if (s->enable_lcs) {
+        vmaf_log(VMAF_LOG_LEVEL_WARNING,
+                 "ssim_vulkan: enable_lcs=true is not yet implemented on the Vulkan path "
+                 "(requires a kernel variant emitting L/C/S partial sums separately). "
+                 "The option is accepted for CLI parity but produces no LCS output. "
+                 "Use the CPU float_ssim extractor for LCS sub-scores.\n");
+    }
+
+    /* Compute max_db cap (mirrors float_ssim.c::init and CUDA 1c4f41eb). */
+    if (s->clip_db) {
+        const double peak = (double)((1u << bpc) - 1u);
+        const double mse = 0.5 / ((double)w * (double)h);
+        s->max_db = ceil(10.0 * log10(peak * peak / mse));
+    } else {
+        s->max_db = INFINITY;
     }
 
     s->width = w;
@@ -493,7 +562,13 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
         for (unsigned i = 0; i < s->wg_count; i++)
             total += (double)partials[i];
         const double n_pixels = (double)s->w_final * (double)s->h_final;
-        const double score = total / n_pixels;
+        double score = total / n_pixels;
+
+        /* Apply dB conversion when requested (mirrors float_ssim.c and
+         * CUDA fix commit 1c4f41eb). clip_db cap is INFINITY when
+         * clip_db=false, so the min() inside ssim_to_db is a no-op. */
+        if (s->enable_db)
+            score = ssim_to_db(score, s->max_db);
 
         err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                                       "float_ssim", score, index);
