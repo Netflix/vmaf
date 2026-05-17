@@ -283,7 +283,7 @@ RUN cd /tmp \
 USER vmaf
 
 
-RUN meson setup build libvmaf \
+RUN CC=icx CXX=icpx meson setup build libvmaf \
         -Denable_cuda=true \
         -Denable_sycl=true \
         -Denable_vulkan=enabled \
