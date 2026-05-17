@@ -16,9 +16,15 @@
  *
  *  v1: scale=1 only — same constraint as ssim_vulkan. Auto-
  *  decimation is rejected at init with -EINVAL.
+ *
+ *  enable_chroma: mirrors CPU integer_ssim.c PR #939 option.
+ *  Default false (luma-only). When true, n_planes follows pix_fmt
+ *  (1 for YUV400P, 3 otherwise). Multi-plane kernel dispatch is
+ *  deferred to v2 (the kernel currently reads data[0] only).
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -52,6 +58,12 @@ typedef struct SsimStateCuda {
     CUfunction func_horiz_16;
     CUfunction func_vert;
     int scale_override;
+    /* `enable_chroma` option: when false, only luma is dispatched.
+     * Default false mirrors CPU integer_ssim.c PR #939. */
+    bool enable_chroma;
+    /* Number of active planes (1 for YUV400P or !enable_chroma, 3 otherwise).
+     * v1 kernel reads data[0] only; n_planes>1 is reserved for v2. */
+    unsigned n_planes;
 
     /* 5 intermediate float buffers — kept outside the template's
      * readback bundle since the bundle models a single device+host
@@ -106,14 +118,29 @@ static const VmafOption options[] = {
         .min = 0,
         .max = 10,
     },
+    {
+        .name = "enable_chroma",
+        .help = "enable calculation for chroma channels (mirrors CPU PR #939; "
+                "v1 kernel defers multi-plane dispatch to v2)",
+        .offset = offsetof(SsimStateCuda, enable_chroma),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
     {0},
 };
 
 static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc,
                          unsigned w, unsigned h)
 {
-    (void)pix_fmt;
     SsimStateCuda *s = fex->priv;
+
+    /* Derive n_planes from pix_fmt, then clamp if !enable_chroma.
+     * Mirrors integer_psnr_cuda.c::init's enable_chroma guard (ADR-0453). */
+    if (pix_fmt == VMAF_PIX_FMT_YUV400P) {
+        s->n_planes = 1U;
+    } else {
+        s->n_planes = s->enable_chroma ? 3U : 1U;
+    }
 
     int scale = compute_scale(w, h, s->scale_override);
     if (scale != 1) {
@@ -224,6 +251,10 @@ static int submit_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic, Vmaf
     const unsigned grid_x = (s->w_final + SSIM_BLOCK_X - 1) / SSIM_BLOCK_X;
     const unsigned grid_y = (s->h_final + SSIM_BLOCK_Y - 1) / SSIM_BLOCK_Y;
     s->partials_count = grid_x * grid_y;
+
+    /* v1 dispatches luma plane only (kernel reads data[0]).
+     * When enable_chroma=true, n_planes=3 but the kernel loop is deferred
+     * to v2 (requires passing plane index into the kernel). */
 
     /* Sync ref-side stream against dist's ready event (matches
      * psnr_cuda's pattern). */
