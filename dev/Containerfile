@@ -380,6 +380,7 @@ FROM libvmaf-build AS dev-mcp
 # vmaf-mcp: embedded MCP JSON-RPC server
 # vmaf-train: tiny-AI training harness (ai/)
 # vmaf-tune: encode automation / VMAF-tune CLI
+USER root
 RUN python3 -m venv /opt/vmaf-venv \
     && /opt/vmaf-venv/bin/pip install --upgrade pip \
     && /opt/vmaf-venv/bin/pip install -e /build/vmaf/mcp-server/vmaf-mcp \
