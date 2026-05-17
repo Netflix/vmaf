@@ -160,6 +160,7 @@ FEATURE_METRICS: dict[str, tuple[str, ...]] = {
         "adm_scale3",
     ),
     "ssimulacra2": ("ssimulacra2",),
+    "cambi": ("Cambi_feature_cambi_score",),
 }
 
 # ---------------------------------------------------------------------------
@@ -201,6 +202,8 @@ FEATURE_TOLERANCE: dict[str, float] = {
     "psnr_hvs": 5e-4,  # DCT + per-block float reductions — places=3.
     # XYB cube root + IIR blur reassociation — places=2 per ADR-0192.
     "ssimulacra2": 5e-3,
+    # Integer pipeline — places=4 (5e-5). ADR-0360.
+    "cambi": 5e-5,
 }
 
 # Backend → extractor-name suffix and CLI device-selection flag.
