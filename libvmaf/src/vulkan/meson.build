@@ -168,6 +168,7 @@ vulkan_sources += files(
     '../feature/vulkan/psnr_vulkan.c',
     '../feature/vulkan/moment_vulkan.c',
     '../feature/vulkan/ciede_vulkan.c',
+    '../feature/vulkan/integer_ciede_vulkan.c',
     '../feature/vulkan/ssim_vulkan.c',
     '../feature/vulkan/ms_ssim_vulkan.c',
     '../feature/vulkan/integer_ms_ssim_vulkan.c',
