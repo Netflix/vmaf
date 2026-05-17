@@ -41,6 +41,7 @@
 #include <sycl/sycl.hpp>
 
 #include <cerrno>
+#include <cfloat>
 #include <cmath>
 #include <cstdint>
 #include <cstddef>
@@ -69,10 +70,16 @@ struct PsnrStateSycl {
     unsigned bpc;
     uint32_t peak;
     /* Per-plane psnr_max — `(6 * bpc) + 12` in the default branch
-     * (CPU integer_psnr.c::init's `min_sse == 0.0` path). The array
-     * layout leaves `min_sse`-driven per-plane formulas a one-line
-     * change away. */
+     * (CPU integer_psnr.c::init's `min_sse == 0.0` path); or the
+     * ceil(10*log10(peak^2 / mse_floor)) formula when min_sse > 0. */
     double psnr_max[PSNR_NUM_PLANES];
+    /* `min_sse` option: constrains the minimum possible SSE per frame.
+     * Non-zero value drives psnr_max[p] via CPU parity formula:
+     *   mse_floor = min_sse / (pw * ph);
+     *   psnr_max[p] = ceil(10 * log10(peak^2 / mse_floor)).
+     * Default 0.0 (disabled) matches CPU — the fixed (6*bpc)+12 formula
+     * is used in that case. Mirrors integer_psnr.c::init's min_sse branch. */
+    double min_sse;
     /* `enable_chroma` option: when false, only luma is dispatched.
      * Default true mirrors CPU integer_psnr.c — see ADR-0453. */
     bool enable_chroma;
@@ -233,6 +240,15 @@ static const VmafOption options_psnr_sycl[] = {{
                                                    .type = VMAF_OPT_TYPE_BOOL,
                                                    .default_val.b = true,
                                                },
+                                               {
+                                                   .name = "min_sse",
+                                                   .help = "constrain the minimum possible sse",
+                                                   .offset = offsetof(PsnrStateSycl, min_sse),
+                                                   .type = VMAF_OPT_TYPE_DOUBLE,
+                                                   .default_val.d = 0.0,
+                                                   .min = 0.0,
+                                                   .max = DBL_MAX,
+                                               },
                                                {0}};
 
 static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc,
@@ -271,10 +287,24 @@ static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     s->bpc = bpc;
     s->peak = (1u << bpc) - 1u;
-    /* Match CPU integer_psnr.c::init's psnr_max default branch
-     * (`min_sse == 0.0`): psnr_max[p] = (6 * bpc) + 12. */
-    for (unsigned p = 0; p < PSNR_NUM_PLANES; p++)
-        s->psnr_max[p] = (double)(6U * bpc) + 12.0;
+    /* Mirror CPU integer_psnr.c::init's psnr_max computation exactly.
+     * When min_sse == 0.0 (default), use the fixed (6*bpc)+12 formula.
+     * When min_sse > 0, derive the per-plane cap from the SSE floor —
+     * ceiling division for chroma plane dimensions mirrors picture.c
+     * Research-0094 fix (odd luma → ceil(luma/2) chroma samples). */
+    for (unsigned p = 0; p < PSNR_NUM_PLANES; p++) {
+        if (s->min_sse != 0.0) {
+            const int ss_hor = (pix_fmt != VMAF_PIX_FMT_YUV444P);
+            const int ss_ver = (pix_fmt == VMAF_PIX_FMT_YUV420P);
+            const unsigned pw = (p != 0U && ss_hor) ? (w + 1U) >> 1 : w;
+            const unsigned ph = (p != 0U && ss_ver) ? (h + 1U) >> 1 : h;
+            const double mse_floor = s->min_sse / ((double)pw * (double)ph);
+            const double peak_sq = (double)s->peak * (double)s->peak;
+            s->psnr_max[p] = ceil(10.0 * log10(peak_sq / mse_floor));
+        } else {
+            s->psnr_max[p] = (double)(6U * bpc) + 12.0;
+        }
+    }
 
     if (!fex->sycl_state) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR, "psnr_sycl: no SYCL state\n");
