@@ -88,6 +88,11 @@ hip_sources += files(
     # HSACO blob is embedded and the kernel runs on device; without it
     # init() returns -ENOSYS (same scaffold-posture as the other consumers).
     '../feature/hip/float_psnr_hip.c',
+    # integer_vif_hip: real HIP port of the integer VIF extractor.
+    # Eight kernels in integer_vif/vif_statistics.hip (four vertical +
+    # four horizontal, one per scale); compiled to HSACO when
+    # enable_hipcc=true. Without it init() returns -ENOSYS.
+    '../feature/hip/integer_vif_hip.c',
 )
 
 # T7-10b runtime linkage. ROCm ships `hip_runtime_api.h` under
