@@ -35439,6 +35439,16 @@ the marker (it originates in libsvm upstream and may reappear).
 
 ---
 
+## model/tiny/vmaf_tiny_v1_medium.onnx
+
+**Files**: `model/tiny/vmaf_tiny_v1_medium.onnx` (binary, inline repack),
+`model/tiny/vmaf_tiny_v1_medium.onnx.data` (deleted),
+`changelog.d/fixed/model-tiny-v1-medium-external-data.md`.
+
+No rebase impact: model-only binary change, no C-API or registry schema change.
+If upstream Netflix ever ships a file with this name, treat as a conflict and
+keep the fork's version (it is a fork-local model, not an upstream artifact).
+
 ## docs/motion-dedicated-page
 
 **Files**: `docs/metrics/motion.md` (new), `docs/metrics/features.md`,
