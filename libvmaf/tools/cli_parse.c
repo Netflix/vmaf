@@ -404,6 +404,22 @@ static CLIModelConfig parse_model_config(const char *const optarg, const char *c
     return model_cfg;
 }
 
+/* CLI alias map: user-facing "integer_*" names to the internal extractor
+ * registration names.  Extractors register without the "integer_" prefix (or
+ * with a completely different name), so passing the prefix verbatim yields
+ * "problem loading feature extractor".  Adding the map here — at the parse
+ * layer — keeps the rewrite in one place and leaves the extractor registry
+ * unchanged.  See the commit that introduced this table for the full list of
+ * affected names. */
+static const struct {
+    const char *alias;
+    const char *target;
+} cli_feature_aliases[] = {
+    {"integer_motion", "motion"}, {"integer_motion2", "motion_v2"},
+    {"integer_ssim", "ssim"},     {"integer_ms_ssim", "float_ms_ssim"},
+    {"integer_psnr", "psnr"},
+};
+
 static CLIFeatureConfig parse_feature_config(const char *const optarg, const char *const app)
 {
     const size_t optarg_sz = strnlen(optarg, 1024);
@@ -419,6 +435,16 @@ static CLIFeatureConfig parse_feature_config(const char *const optarg, const cha
         .opts_dict = NULL,
         .buf = buf,
     };
+
+    /* Rewrite user-facing "integer_*" aliases to the names the extractor
+     * registry actually uses.  The rewrite only touches the name field; any
+     * key=value options that follow the "=" separator are unaffected. */
+    for (unsigned ai = 0; ai < sizeof(cli_feature_aliases) / sizeof(cli_feature_aliases[0]); ai++) {
+        if (!strcmp(feature_cfg.name, cli_feature_aliases[ai].alias)) {
+            feature_cfg.name = cli_feature_aliases[ai].target;
+            break;
+        }
+    }
 
     char *key_val;
     while ((key_val = strsep(&optarg_copy, ":")) != NULL) {
