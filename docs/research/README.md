@@ -103,3 +103,4 @@ Conventions:
 *(Index seeded by [ADR-0108](../adr/0108-deep-dive-deliverables-rule.md)'s
 adoption PR; backfilled digests for the existing major workstreams
 will be added as their authors revisit the corresponding code.)*
+| [0135](0135-cambi-cuda-smem-tile-2026-05-16.md) | CAMBI CUDA spatial-mask SLM tile -- design analysis: img-tile correctness bug, 26x read reduction via direct zd_tile load, bank-conflict accepted at uint8 row access | Active | [ADR-0464](../adr/0464-cambi-cuda-smem-tile.md) |

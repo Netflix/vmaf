@@ -7,38 +7,40 @@
  *
  *  Strategy II hybrid (mirrors the Vulkan precedent from ADR-0205 and
  *  ADR-0210): three GPU kernels handle the embarrassingly parallel stages
- *  (spatial mask, 2× decimate, 3-tap separable mode filter), while the
- *  precision-sensitive sliding-histogram `calculate_c_values` pass and
+ *  (spatial mask, 2x decimate, 3-tap separable mode filter), while the
+ *  precision-sensitive sliding-histogram calculate_c_values pass and
  *  top-K spatial pooling run on the host CPU via the shared wrappers in
- *  `cambi_internal.h`. This keeps the CUDA port bit-exact at `places=4`
+ *  cambi_internal.h. This keeps the CUDA port bit-exact at places=4
  *  w.r.t. the CPU extractor (ULP=0 on the emitted score) at no extra
  *  development risk from a fully-on-GPU histogram pass.
  *
  *  GPU kernel inventory:
  *
- *    cambi_spatial_mask_kernel — derivative (pixel == right AND == below)
- *        + 7×7 summed-area table in-register, then threshold compare.
- *        One thread per output pixel; 2-pass SAT (row-scan → col-scan
- *        in shared memory) is unnecessary because the 7×7 window fits in
- *        the per-thread accum register without smem pressure at 16×16
- *        blocks. Bit-exact with cambi.c::get_spatial_mask_for_index.
+ *    cambi_spatial_mask_kernel -- derivative (pixel == right AND == below)
+ *        + 7x7 box sum from a shared-memory zero_deriv tile, then threshold
+ *        compare.  A 22x22 uint8 tile (ZD_TILE) is populated cooperatively
+ *        by the 16x16 block (2-pass, 256 threads, 484 elements = 3x484 = 1452
+ *        global reads total per block) and then each thread sums its 7x7
+ *        window from SLM.  Global reads fall from 49*3 = 147 per thread to
+ *        ~1.9 average (1452/768 effective lanes).  Bit-exact with
+ *        cambi.c::get_spatial_mask_for_index.  (ADR-0464 / perf-audit win 3)
  *
- *    cambi_decimate_kernel — strict 2× stride-2 subsample of a uint16
+ *    cambi_decimate_kernel -- strict 2x stride-2 subsample of a uint16
  *        luma buffer. One thread per output pixel. Bit-exact with
  *        cambi.c::decimate.
  *
- *    cambi_filter_mode_kernel — separable 3-tap mode filter, horizontal
+ *    cambi_filter_mode_kernel -- separable 3-tap mode filter, horizontal
  *        pass first then vertical, each in a separate kernel launch
- *        (axis == 0 → H, axis == 1 → V). One thread per output pixel.
+ *        (axis == 0 -> H, axis == 1 -> V). One thread per output pixel.
  *        Bit-exact with cambi.c::filter_mode.
  *
- *  All buffers are flat `uint16_t` device arrays; the host glue converts
- *  from/to `VmafPicture` layout via DtoH / HtoD memcpy.
+ *  All buffers are flat uint16_t device arrays; the host glue converts
+ *  from/to VmafPicture layout via DtoH / HtoD memcpy.
  *
- *  Precision contract: `places=4` (ULP=0 on host-emitted score).
+ *  Precision contract: places=4 (ULP=0 on host-emitted score).
  *  The three GPU phases are integer + bit-exact w.r.t. CPU scalar.
  *  The host residual runs the exact CPU code path from cambi_internal.h,
- *  so the final CAMBI score is bit-for-bit identical to `vmaf_fex_cambi`.
+ *  so the final CAMBI score is bit-for-bit identical to vmaf_fex_cambi.
  */
 
 #include "cuda_helper.cuh"
@@ -46,94 +48,153 @@
 #include "common.h"
 
 /* ------------------------------------------------------------------
- * Kernel 1: Spatial mask
+ * Shared-memory tile constants for cambi_spatial_mask_kernel.
  *
- * Input:  `image`  — flat uint16 array, stride_words columns per row.
- * Output: `mask`   — flat uint16 array, same layout; 1 = edge, 0 = flat.
+ * The 7x7 zero_deriv box sum for each output pixel in a 16x16 block
+ * touches a (16+6) x (16+6) = 22x22 = 484-element footprint of
+ * zero_deriv values.  We pre-compute those 484 values cooperatively
+ * from global memory (3 reads per element = 1452 total reads per block)
+ * and store them in a __shared__ tile.  Then each thread sums its 7x7
+ * window from the tile (49 SLM reads, no global traffic).
  *
- * Algorithm (matches cambi.c::get_spatial_mask_for_index via the SAT
- * path):
- *   1. For each pixel (x,y): zero_deriv[y][x] = (image[y][x] == image[y][x+1])
- *                                             && (image[y][x] == image[y+1][x]).
- *      Border pixels treat out-of-bounds neighbours as "equal".
- *   2. Compute the 7×7 box sum of zero_deriv around each pixel using
- *      a naive loop (7×7 = 49 reads, cheap for warp parallelism).
- *   3. mask[y][x] = (box_sum > mask_index) ? 1 : 0.
+ * ZD_TILE_STRIDE is padded to 32 to keep each row on a 32-byte boundary
+ * and reduce false sharing at row edges; 4-way shared-memory bank
+ * conflicts on uint8 within a row are accepted (SLM is still >10x faster
+ * than L2 for this access pattern).  Total smem per block: 22x32 = 704 B.
+ * ------------------------------------------------------------------ */
+#define SMEM_HALF 3u       /* (MASK_FILTER_SIZE=7) >> 1               */
+#define ZD_TILE_H 22u      /* BLOCK_Y + 2*SMEM_HALF = 16 + 6          */
+#define ZD_TILE_W 22u      /* BLOCK_X + 2*SMEM_HALF = 16 + 6          */
+#define ZD_TILE_STRIDE 32u /* padded row stride (uint8 cols)           */
+
+/* ------------------------------------------------------------------
+ * Kernel 1: Spatial mask  (ADR-0464 SLM-tile optimisation)
  *
- * `mask_index` is the integer threshold computed by
- * cambi.c::get_mask_index (filter_size=7, area-dependent formula).
- * ------------------------------------------------------------------*/
+ * Input:  image  -- flat uint16 array, stride_words columns per row.
+ * Output: mask   -- flat uint16 array, same layout; 1 = edge, 0 = flat.
+ *
+ * Algorithm (matches cambi.c::get_spatial_mask_for_index):
+ *   Phase A (cooperative, all threads): populate zd_tile[22][32].
+ *     For each tile position (i,j) in [0,22) x [0,22):
+ *       gx = clamp(bx*16 - 3 + j, 0, width-1)
+ *       gy = clamp(by*16 - 3 + i, 0, height-1)
+ *       p  = image[gy][gx]
+ *       r  = image[gy][gx == width-1  ? gx : gx+1]
+ *       b  = image[gy == height-1 ? gy : gy+1][gx]
+ *       zd = (gx==width-1  || p==r) && (gy==height-1 || p==b)
+ *     This is identical to the inline computation in the original kernel.
+ *   __syncthreads()
+ *
+ *   Phase B (per-thread): 7x7 box sum from zd_tile.
+ *     For dy in [-3,3], dx in [-3,3]:
+ *       box_sum += zd_tile[ly+3+dy][lx+3+dx]
+ *     No bounds check needed: (ly+3+dy) in [0,21] and (lx+3+dx) in [0,21].
+ *     mask[y][x] = (box_sum > mask_index) ? 1 : 0.
+ *
+ * Bit-exactness: Phase A produces the same zero_deriv values as the
+ * original per-thread computation (same clamping, same integer arithmetic).
+ * Phase B sums the same values in the same order (row-major, dy inner).
+ * ULP=0 guaranteed (integer-only path).
+ * ------------------------------------------------------------------ */
 extern "C" {
 
-__global__ void cambi_spatial_mask_kernel(const uint16_t *image, uint16_t *mask, unsigned width,
-                                          unsigned height, unsigned stride_words,
-                                          unsigned mask_index)
+__global__ __launch_bounds__(256) void cambi_spatial_mask_kernel(const uint16_t *image,
+                                                                 uint16_t *mask, unsigned width,
+                                                                 unsigned height,
+                                                                 unsigned stride_words,
+                                                                 unsigned mask_index)
 {
-    const int x = (int)(blockIdx.x * blockDim.x + threadIdx.x);
-    const int y = (int)(blockIdx.y * blockDim.y + threadIdx.y);
+    /* Shared-memory zero_deriv tile: 22 rows x 32 padded uint8 cols = 704 B. */
+    __shared__ uint8_t zd_tile[ZD_TILE_H][ZD_TILE_STRIDE];
+
+    const int bx = (int)(blockIdx.x * blockDim.x);
+    const int by = (int)(blockIdx.y * blockDim.y);
+    const int lx = (int)threadIdx.x;
+    const int ly = (int)threadIdx.y;
+    const int tid = ly * (int)blockDim.x + lx; /* 0..255 */
+
+    /* ------------------------------------------------------------------
+     * Phase A: populate zd_tile cooperatively (2 passes, 256 threads,
+     * 484 elements).  Thread tid loads element tid in pass 0, and element
+     * tid+256 in pass 1 (only the 228 threads with tid < 228 do pass 1).
+     * ------------------------------------------------------------------ */
+    /* Pass 0 */
+    {
+        const int k = tid; /* k in [0, 255] -- all < ZD_TILE_H*ZD_TILE_W=484 */
+        const int ti = k / (int)ZD_TILE_W;
+        const int tj = k % (int)ZD_TILE_W;
+        const int raw_gy = by - (int)SMEM_HALF + ti;
+        const int raw_gx = bx - (int)SMEM_HALF + tj;
+        const int gy = (raw_gy < 0) ? 0 : ((raw_gy >= (int)height) ? (int)height - 1 : raw_gy);
+        const int gx = (raw_gx < 0) ? 0 : ((raw_gx >= (int)width) ? (int)width - 1 : raw_gx);
+        const uint16_t p = image[(size_t)gy * stride_words + (unsigned)gx];
+        const unsigned r_gx = (unsigned)((gx == (int)width - 1) ? gx : gx + 1);
+        const unsigned b_gy = (unsigned)((gy == (int)height - 1) ? gy : gy + 1);
+        const uint16_t r = image[(size_t)gy * stride_words + r_gx];
+        const uint16_t b = image[(size_t)b_gy * stride_words + (unsigned)gx];
+        const int eq_r = (gx == (int)width - 1) || (p == r);
+        const int eq_b = (gy == (int)height - 1) || (p == b);
+        zd_tile[ti][tj] = (uint8_t)(eq_r & eq_b);
+    }
+    /* Pass 1: elements 256..483 (228 threads active). */
+    if (tid < (int)(ZD_TILE_H * ZD_TILE_W) - 256) {
+        const int k = tid + 256;
+        const int ti = k / (int)ZD_TILE_W;
+        const int tj = k % (int)ZD_TILE_W;
+        const int raw_gy = by - (int)SMEM_HALF + ti;
+        const int raw_gx = bx - (int)SMEM_HALF + tj;
+        const int gy = (raw_gy < 0) ? 0 : ((raw_gy >= (int)height) ? (int)height - 1 : raw_gy);
+        const int gx = (raw_gx < 0) ? 0 : ((raw_gx >= (int)width) ? (int)width - 1 : raw_gx);
+        const uint16_t p = image[(size_t)gy * stride_words + (unsigned)gx];
+        const unsigned r_gx = (unsigned)((gx == (int)width - 1) ? gx : gx + 1);
+        const unsigned b_gy = (unsigned)((gy == (int)height - 1) ? gy : gy + 1);
+        const uint16_t r = image[(size_t)gy * stride_words + r_gx];
+        const uint16_t b = image[(size_t)b_gy * stride_words + (unsigned)gx];
+        const int eq_r = (gx == (int)width - 1) || (p == r);
+        const int eq_b = (gy == (int)height - 1) || (p == b);
+        zd_tile[ti][tj] = (uint8_t)(eq_r & eq_b);
+    }
+    __syncthreads();
+
+    /* ------------------------------------------------------------------
+     * Phase B: per-thread 7x7 box sum from SLM.  Guard against threads
+     * outside the image boundary writing to mask (they still participated
+     * in Phase A to fill the full tile cooperatively).
+     * ------------------------------------------------------------------ */
+    const int x = bx + lx;
+    const int y = by + ly;
     if (x >= (int)width || y >= (int)height)
         return;
 
-    /* Derivative at (x,y): 1 if equal to both right and bottom neighbours.
-     * Edge pixels treat out-of-bound as "equal" (matches CPU). */
-    const uint16_t here = image[(size_t)y * stride_words + (unsigned)x];
-    const int right_eq =
-        (x == (int)width - 1 || here == image[(size_t)y * stride_words + (unsigned)(x + 1)]);
-    const int below_eq =
-        (y == (int)height - 1 || here == image[(size_t)(y + 1) * stride_words + (unsigned)x]);
-    /* zero_deriv[y][x] = 1 when both horizontal and vertical derivatives are zero. */
-
-    /* 7×7 SAT — compute box sum over the clamped [y-3,y+3] × [x-3,x+3] window.
-     * For the purposes of this kernel each pixel computes its own window
-     * independently (no shared-memory SAT). The 7×7 window is 49 pixels;
-     * the warp executes them in parallel so the serial loop is unrolled
-     * by the compiler. The approach matches the CPU SAT intent but avoids
-     * the cyclic-row DP complexity by paying ~49 global reads per thread.
-     * At 1080p (2M pixels × 49 reads = ~100M 16-bit reads) this is
-     * memory-bandwidth bound but well within RTX 4090 bandwidth budget. */
-    const int HALF = 3; /* (MASK_FILTER_SIZE=7) >> 1 */
-    unsigned box_sum = 0;
-    for (int dy = -HALF; dy <= HALF; dy++) {
-        int ry = y + dy;
-        if (ry < 0)
-            ry = 0;
-        if (ry >= (int)height)
-            ry = (int)height - 1;
-        for (int dx = -HALF; dx <= HALF; dx++) {
-            int rx = x + dx;
-            if (rx < 0)
-                rx = 0;
-            if (rx >= (int)width)
-                rx = (int)width - 1;
-            const uint16_t p = image[(size_t)ry * stride_words + (unsigned)rx];
-            const uint16_t r =
-                image[(size_t)ry * stride_words + (unsigned)(rx == (int)width - 1 ? rx : rx + 1)];
-            const uint16_t b =
-                image[(size_t)(ry == (int)height - 1 ? ry : ry + 1) * stride_words + (unsigned)rx];
-            const int eq_right = (rx == (int)width - 1) || (p == r);
-            const int eq_below = (ry == (int)height - 1) || (p == b);
-            box_sum += (unsigned)(eq_right && eq_below);
+    /* zd_tile[ly+3+dy][lx+3+dx] accesses rows [0,21] and cols [0,21]
+     * -- always in-bounds by construction of ZD_TILE_H / ZD_TILE_W. */
+    unsigned box_sum = 0u;
+    {
+        /* Unrolled 7x7 loop: rows first to maximise SLM row reuse. */
+        const int base_row = ly + (int)SMEM_HALF; /* 3..18 */
+        const int base_col = lx + (int)SMEM_HALF; /* 3..18 */
+#pragma unroll
+        for (int dy = -(int)SMEM_HALF; dy <= (int)SMEM_HALF; dy++) {
+#pragma unroll
+            for (int dx = -(int)SMEM_HALF; dx <= (int)SMEM_HALF; dx++) {
+                box_sum += (unsigned)zd_tile[base_row + dy][base_col + dx];
+            }
         }
     }
-    /* Mask pixel equals the pixel's own zero_deriv, not the neighbour's.
-     * The CPU code computes: mask[i][j] = (box_sum > mask_index).
-     * The box_sum is over the zero_deriv field of the (2×pad+1)² window
-     * centred on (i,j). We have already computed that above. */
-    mask[(size_t)y * stride_words + (unsigned)x] = (uint16_t)(box_sum > mask_index ? 1u : 0u);
-    (void)right_eq;
-    (void)below_eq;
+    mask[(size_t)(unsigned)y * stride_words + (unsigned)x] =
+        (uint16_t)(box_sum > mask_index ? 1u : 0u);
 }
 
 /* ------------------------------------------------------------------
- * Kernel 2: 2× decimate
+ * Kernel 2: 2x decimate
  *
  * Output pixel (x,y) samples input pixel (2x, 2y). Matches cambi.c::decimate
  * (strict even-pixel subsample, no filtering). Input and output are in
- * separate flat buffers (`src` and `dst`); both use `stride_words` columns
- * (the output width is `(width+1)/2`, `(height+1)/2`).
+ * separate flat buffers (src and dst); both use stride_words columns
+ * (the output width is (width+1)/2, (height+1)/2).
  *
- * `src_stride_words` is the stride of the source (larger) buffer.
- * `dst_stride_words` is the stride of the destination (smaller) buffer.
+ * src_stride_words is the stride of the source (larger) buffer.
+ * dst_stride_words is the stride of the destination (smaller) buffer.
  * Both strides are in uint16_t words.
  * ------------------------------------------------------------------ */
 __global__ void cambi_decimate_kernel(const uint16_t *src, uint16_t *dst, unsigned out_width,
@@ -145,7 +206,7 @@ __global__ void cambi_decimate_kernel(const uint16_t *src, uint16_t *dst, unsign
     if (x >= out_width || y >= out_height)
         return;
 
-    /* Sample at stride-2 — exact match of cambi.c::decimate:
+    /* Sample at stride-2 -- exact match of cambi.c::decimate:
      *   data[i * stride + j] = data[(i<<1) * stride + (j<<1)]; */
     dst[(size_t)y * dst_stride_words + x] = src[(size_t)(y * 2u) * src_stride_words + x * 2u];
 }
@@ -155,7 +216,7 @@ __global__ void cambi_decimate_kernel(const uint16_t *src, uint16_t *dst, unsign
  *
  * One kernel, two launches: axis=0 (horizontal), axis=1 (vertical).
  * The mode of three equal-length 1-D triplets is the value that appears
- * at least twice, or the minimum if all three are distinct — matching
+ * at least twice, or the minimum if all three are distinct -- matching
  * cambi.c::mode3.
  *
  * For axis=0 (H pass): each thread (x,y) writes
@@ -168,11 +229,11 @@ __global__ void cambi_decimate_kernel(const uint16_t *src, uint16_t *dst, unsign
  *
  * Matches cambi.c::filter_mode's row-by-row logic; the only difference
  * is that the GPU computes all rows in parallel (no rolling 3-row buffer
- * trick needed — we have enough global memory).
+ * trick needed -- we have enough global memory).
  * ------------------------------------------------------------------ */
 __device__ static inline uint16_t mode3_dev(uint16_t a, uint16_t b, uint16_t c)
 {
-    /* Two equal → that value. All distinct → min of the three. */
+    /* Two equal -> that value. All distinct -> min of the three. */
     if (a == b || a == c)
         return a;
     if (b == c)

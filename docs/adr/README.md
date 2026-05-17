@@ -461,3 +461,6 @@ ADRs may exist there for local session continuity, but the tracked
 | [ADR-0484](0484-kernel-scaffolding-hip-metal-doc.md) | Extend `docs/backends/kernel-scaffolding.md` with HIP and Metal lifecycle template sections and a shared four-phase lifecycle contract | Accepted | docs, hip, metal, gpu, fork-local |
 | [ADR-0488](0488-gpu-dispatch-env-shared-snapshot.md) | Shared once-snapshot helper for GPU dispatch env variables — replaces bespoke CUDA pthread_once and closes Vulkan/SYCL concurrency-mt-unsafe exposure | Accepted | gpu, cuda, vulkan, sycl, dispatch, threading, refactor, fork-local |
 | [ADR-0489](0489-cambi-sycl-event-chain.md) | CAMBI SYCL — replace GPU-to-GPU `q.wait()` calls with `sycl::event` chains (SY-1) | Accepted | sycl, gpu, cambi, performance, fork-local |
+| [ADR-0464](0464-cambi-cuda-smem-tile.md) | CAMBI CUDA spatial-mask kernel: cooperative 22x22 shared-memory zero_deriv tile reduces global reads 26x (from 147 to ~5.7 per thread); adds __launch_bounds__(256) and AGENTS.md invariant for high-overlap stencil kernels | Accepted | cuda, gpu, cambi, performance, kernel, fork-local |
+
+
