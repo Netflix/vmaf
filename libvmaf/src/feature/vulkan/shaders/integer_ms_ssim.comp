@@ -1,0 +1,223 @@
+/* Copyright 2026 Lusoris and Claude (Anthropic)
+ * SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
+ *
+ * Vulkan compute shader for the integer_ms_ssim_vulkan feature
+ * extractor (port of CUDA integer_ms_ssim_cuda.c / ADR-0190 follow-up).
+ *
+ * This shader is structurally identical to ms_ssim.comp (float_ms_ssim
+ * Vulkan twin) except that the PASS=0 horizontal path reads input as
+ * uint32 samples (packed uint8 or uint16 depending on BPC) and normalises
+ * them to float-in-[0,255] inline, eliminating the host-side picture_copy
+ * that ms_ssim_vulkan.c needs. The PASS=1 vertical+lcs path is identical
+ * to ms_ssim.comp — it operates on the float intermediates produced by
+ * the horizontal pass.
+ *
+ * BPC selection (spec constant):
+ *   BPC=8  → each uint element holds one 8-bit luma sample; scale ÷ 1
+ *   BPC=10 → each uint element holds one 10-bit luma sample; scale ÷ (1023/255)
+ *   BPC=12 → each uint element holds one 12-bit luma sample; scale ÷ (4095/255)
+ *   BPC=16 → each uint element holds one 16-bit luma sample; scale ÷ (65535/255)
+ *
+ * Input buffer layout: strided uint32 array, stride_pixels elements per row.
+ * The host sets pc.stride_pixels = pitch_bytes / bpc_bytes so the shader
+ * can address samples correctly without knowing the buffer memory layout.
+ *
+ * Two passes (selected by PASS spec constant):
+ *   0. main_horiz: reads integer ref/cmp from binding 0/1 (uint), normalises
+ *      to float, applies 11-tap separable Gaussian horizontally → 5 float
+ *      intermediates in bindings 2–6.
+ *   1. main_vert_lcs: reads float intermediates, applies vertical 11-tap,
+ *      per-pixel l/c/s accumulation, three per-WG partial sums → bindings
+ *      7–9.
+ *
+ * Specialization constants:
+ *   constant_id = 0  WIDTH          (input W after decimation)
+ *   constant_id = 1  HEIGHT         (input H after decimation)
+ *   constant_id = 2  PASS           (0 = horiz, 1 = vert+lcs)
+ *   constant_id = 3  SUBGROUP_SIZE
+ *   constant_id = 4  BPC            (bits per component: 8, 10, 12, or 16)
+ */
+#version 460
+#extension GL_KHR_shader_subgroup_arithmetic : require
+#extension GL_KHR_shader_subgroup_basic      : require
+
+layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;
+
+layout(constant_id = 0) const int WIDTH         = 0;
+layout(constant_id = 1) const int HEIGHT        = 0;
+layout(constant_id = 2) const int PASS          = 0;
+layout(constant_id = 3) const int SUBGROUP_SIZE = 32;
+layout(constant_id = 4) const int BPC           = 8;
+
+const int WG_X     = 16;
+const int WG_Y     = 8;
+const int WG_SIZE  = WG_X * WG_Y;
+const int MAX_SG   = WG_SIZE;
+const int K        = 11;
+
+/* 11-tap normalised Gaussian — matches g_gaussian_window_h in
+ * libvmaf/src/feature/iqa/ssim_tools.h.  Same coefficients as
+ * ms_ssim.comp; kept local so the shader is self-contained. */
+const float G[K] = float[](
+    0.001028, 0.007599, 0.036001, 0.109361, 0.213006,
+    0.266012,
+    0.213006, 0.109361, 0.036001, 0.007599, 0.001028);
+
+/* Per-subgroup shared partials (PASS=1 only). */
+shared float s_l[MAX_SG];
+shared float s_c[MAX_SG];
+shared float s_s[MAX_SG];
+
+/* PASS=0 bindings — integer input planes. */
+layout(set = 0, binding = 0, std430) readonly buffer RefInt  { uint v[]; } ref_int;
+layout(set = 0, binding = 1, std430) readonly buffer CmpInt  { uint v[]; } cmp_int;
+
+/* PASS=0 outputs / PASS=1 inputs — float intermediates. */
+layout(set = 0, binding = 2, std430)          buffer HRefMu  { float v[]; } h_ref_mu;
+layout(set = 0, binding = 3, std430)          buffer HCmpMu  { float v[]; } h_cmp_mu;
+layout(set = 0, binding = 4, std430)          buffer HRefSq  { float v[]; } h_ref_sq;
+layout(set = 0, binding = 5, std430)          buffer HCmpSq  { float v[]; } h_cmp_sq;
+layout(set = 0, binding = 6, std430)          buffer HRefCmp { float v[]; } h_refcmp;
+
+/* PASS=1 outputs — per-WG partial sums for l, c, s. */
+layout(set = 0, binding = 7, std430)          buffer LPart   { float v[]; } l_partials;
+layout(set = 0, binding = 8, std430)          buffer CPart   { float v[]; } c_partials;
+layout(set = 0, binding = 9, std430)          buffer SPart   { float v[]; } s_partials;
+
+layout(push_constant) uniform Params {
+    uint width;         /* input width (may be stride when BPC<8-stride) */
+    uint height;
+    uint w_horiz;       /* width  - 10 */
+    uint h_horiz;       /* height (unchanged) */
+    uint w_final;       /* width  - 10 */
+    uint h_final;       /* height - 10 */
+    uint num_wg_x;      /* work-group count in X for partial buffer indexing */
+    uint stride_pixels; /* buffer row stride in uint elements (= pitch / bpc_bytes) */
+    float c1;
+    float c2;
+    float c3;
+} pc;
+
+/* Normalise an integer sample to float [0, 255]. The scale factor maps
+ * the max integer value of the given BPC to 255.0 so that the SSIM
+ * constants (K1, K2 set for L=255) apply without change. */
+float normalise(uint raw) {
+    float scale;
+    if (BPC == 8)
+        scale = 1.0;
+    else if (BPC == 10)
+        scale = 255.0 / 1023.0;
+    else if (BPC == 12)
+        scale = 255.0 / 4095.0;
+    else
+        scale = 255.0 / 65535.0; /* BPC == 16 */
+    return float(raw) * scale;
+}
+
+void main_horiz(uint x, uint y) {
+    if (x >= pc.w_horiz || y >= pc.h_horiz)
+        return;
+
+    float ref_mu_h = 0.0;
+    float cmp_mu_h = 0.0;
+    float ref_sq_h = 0.0;
+    float cmp_sq_h = 0.0;
+    float refcmp_h = 0.0;
+
+    for (int u = 0; u < K; u++) {
+        uint src_x   = x + uint(u);
+        uint src_idx = y * pc.stride_pixels + src_x;
+        float r = normalise(ref_int.v[src_idx]);
+        float c = normalise(cmp_int.v[src_idx]);
+        float w = G[u];
+        ref_mu_h += w * r;
+        cmp_mu_h += w * c;
+        ref_sq_h += w * (r * r);
+        cmp_sq_h += w * (c * c);
+        refcmp_h += w * (r * c);
+    }
+
+    uint dst_idx        = y * pc.w_horiz + x;
+    h_ref_mu.v[dst_idx] = ref_mu_h;
+    h_cmp_mu.v[dst_idx] = cmp_mu_h;
+    h_ref_sq.v[dst_idx] = ref_sq_h;
+    h_cmp_sq.v[dst_idx] = cmp_sq_h;
+    h_refcmp.v[dst_idx] = refcmp_h;
+}
+
+void main_vert_lcs(uint x, uint y) {
+    float my_l = 0.0;
+    float my_c = 0.0;
+    float my_s = 0.0;
+
+    if (x < pc.w_final && y < pc.h_final) {
+        float ref_mu = 0.0;
+        float cmp_mu = 0.0;
+        float ref_sq = 0.0;
+        float cmp_sq = 0.0;
+        float refcmp = 0.0;
+
+        for (int v = 0; v < K; v++) {
+            uint  src_y  = y + uint(v);
+            uint  src_idx = src_y * pc.w_horiz + x;
+            float w = G[v];
+            ref_mu += w * h_ref_mu.v[src_idx];
+            cmp_mu += w * h_cmp_mu.v[src_idx];
+            ref_sq += w * h_ref_sq.v[src_idx];
+            cmp_sq += w * h_cmp_sq.v[src_idx];
+            refcmp += w * h_refcmp.v[src_idx];
+        }
+
+        /* σ² = E[x²] − μ²; clamp to 0 (flat-region rounding guard). */
+        float ref_var = max(ref_sq - ref_mu * ref_mu, 0.0);
+        float cmp_var = max(cmp_sq - cmp_mu * cmp_mu, 0.0);
+        float covar   = refcmp - ref_mu * cmp_mu;
+        float sigma_xy_geom = sqrt(ref_var * cmp_var);
+        float clamped_sigma_xy = (covar < 0.0 && sigma_xy_geom <= 0.0) ? 0.0 : covar;
+
+        float l = (2.0 * ref_mu * cmp_mu + pc.c1) /
+                  (ref_mu * ref_mu + cmp_mu * cmp_mu + pc.c1);
+        float c = (2.0 * sigma_xy_geom + pc.c2) / (ref_var + cmp_var + pc.c2);
+        float s = (clamped_sigma_xy + pc.c3) / (sigma_xy_geom + pc.c3);
+        my_l = l;
+        my_c = c;
+        my_s = s;
+    }
+
+    /* Three parallel per-WG reductions: subgroup sums → shared → one
+     * float per partial buffer per WG.  Mirrors ms_ssim.comp pass 1. */
+    float sg_l = subgroupAdd(my_l);
+    float sg_c = subgroupAdd(my_c);
+    float sg_s = subgroupAdd(my_s);
+    if (subgroupElect()) {
+        s_l[gl_SubgroupID] = sg_l;
+        s_c[gl_SubgroupID] = sg_c;
+        s_s[gl_SubgroupID] = sg_s;
+    }
+    barrier();
+
+    if (gl_LocalInvocationIndex == 0u) {
+        float wg_l = 0.0;
+        float wg_c = 0.0;
+        float wg_s = 0.0;
+        for (uint i = 0u; i < gl_NumSubgroups; ++i) {
+            wg_l += s_l[i];
+            wg_c += s_c[i];
+            wg_s += s_s[i];
+        }
+        uint wg_idx = gl_WorkGroupID.y * pc.num_wg_x + gl_WorkGroupID.x;
+        l_partials.v[wg_idx] = wg_l;
+        c_partials.v[wg_idx] = wg_c;
+        s_partials.v[wg_idx] = wg_s;
+    }
+}
+
+void main() {
+    uint gx = gl_GlobalInvocationID.x;
+    uint gy = gl_GlobalInvocationID.y;
+    if (PASS == 0) {
+        main_horiz(gx, gy);
+    } else {
+        main_vert_lcs(gx, gy);
+    }
+}

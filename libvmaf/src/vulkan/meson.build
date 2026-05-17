@@ -66,6 +66,9 @@ vulkan_shader_sources = [
     'shaders/vif_reduce.comp',
     'shaders/adm_reduce.comp',
     'shaders/motion_reduce.comp',
+    # integer_ms_ssim_vulkan — integer-input MS-SSIM Vulkan port of
+    # integer_ms_ssim_cuda.c (port of CUDA ADR-0188 / ADR-0190).
+    'shaders/integer_ms_ssim.comp',
     # T7-36 / ADR-0205 — cambi Vulkan integration.
     'shaders/cambi_preprocess.comp',
     'shaders/cambi_derivative.comp',
@@ -165,6 +168,7 @@ vulkan_sources += files(
     '../feature/vulkan/ciede_vulkan.c',
     '../feature/vulkan/ssim_vulkan.c',
     '../feature/vulkan/ms_ssim_vulkan.c',
+    '../feature/vulkan/integer_ms_ssim_vulkan.c',
     '../feature/vulkan/psnr_hvs_vulkan.c',
     '../feature/vulkan/float_ansnr_vulkan.c',
     '../feature/vulkan/float_psnr_vulkan.c',
