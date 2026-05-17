@@ -1,0 +1,354 @@
+/* Copyright 2026 Lusoris and Claude (Anthropic)
+ * SPDX-License-Identifier: BSD-3-Clause-Plus-Patent
+ *
+ * Vulkan compute shader for the integer_psnr_hvs feature extractor.
+ * Port of the CUDA twin (feature/cuda/integer_psnr_hvs_cuda.c +
+ * feature/cuda/integer_psnr_hvs/psnr_hvs_score.cu) to GLSL, following
+ * the psnr_hvs.comp design but reading raw integer samples (uint8 or
+ * uint16) directly from the SSBO instead of float pre-normalised input.
+ *
+ * Reads raw packed uint samples (1 element per sample):
+ *   8bpc  → low 8 bits of each uint element.
+ *   10bpc → low 16 bits; integer value is the raw sample (0..1023).
+ *   12bpc → low 16 bits; integer value is the raw sample (0..4095).
+ * No host-side float normalisation is needed: the integer DCT operates
+ * directly on the raw sample values, as the CPU path does.
+ *
+ * Design mirrors psnr_hvs.comp:
+ *   - One workgroup per 8×8 block (step=7 sliding window).
+ *   - 64 threads/WG for cooperative sample load into shared memory.
+ *   - Thread 0 performs all per-block arithmetic (scalar DCT + masking)
+ *     to match CPU's exact i,j summation order bit-for-bit.
+ *   - Per-WG float partial written to partials_out[blk_y*num_blocks_x + blk_x].
+ *
+ * Specialization constants:
+ *   0  BPC           bits per component (8, 10, 12)
+ *   1  PLANE         0 = Y, 1 = Cb, 2 = Cr (selects CSF table)
+ *   2  SUBGROUP_SIZE compile-time sizing (unused in serial path)
+ *
+ * Resource bindings:
+ *   0: ref plane  (uint[], packed raw integer samples, row-major, no stride padding)
+ *   1: dist plane (same convention)
+ *   2: per-block float partials
+ *
+ * Host accumulates:
+ *   score = sum(partials) / (num_blocks * 64) / samplemax²
+ *   db    = 10 * log10(1 / score)
+ * Combined: psnr_hvs = 0.8·Y + 0.1·(Cb + Cr) (in linear score domain).
+ */
+#version 460
+#extension GL_KHR_shader_subgroup_arithmetic : require
+#extension GL_KHR_shader_subgroup_basic      : require
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(constant_id = 0) const int BPC           = 8;
+layout(constant_id = 1) const int PLANE         = 0;
+layout(constant_id = 2) const int SUBGROUP_SIZE = 32;
+
+const int WG_X    = 8;
+const int WG_Y    = 8;
+const int WG_SIZE = WG_X * WG_Y;
+const int MAX_SUBGROUPS = WG_SIZE;
+
+/* Per-plane CSF — same constants as csf_y / csf_cb420 / csf_cr420
+ * in third_party/xiph/psnr_hvs.c. Selected at compile time via PLANE. */
+const float CSF_Y[64] = float[64](
+    1.6193873005, 2.2901594831, 2.08509755623, 1.48366094411, 1.00227514334, 0.678296995242, 0.466224900598, 0.3265091542,
+    2.2901594831, 1.94321815382, 2.04793073064, 1.68731108984, 1.2305666963, 0.868920337363, 0.61280991668, 0.436405793551,
+    2.08509755623, 2.04793073064, 1.34329019223, 1.09205635862, 0.875748795257, 0.670882927016, 0.501731932449, 0.372504254596,
+    1.48366094411, 1.68731108984, 1.09205635862, 0.772819797575, 0.605636379554, 0.48309405692, 0.380429446972, 0.295774038565,
+    1.00227514334, 1.2305666963, 0.875748795257, 0.605636379554, 0.448996256676, 0.352889268808, 0.283006984131, 0.226951348204,
+    0.678296995242, 0.868920337363, 0.670882927016, 0.48309405692, 0.352889268808, 0.27032073436, 0.215017739696, 0.17408067321,
+    0.466224900598, 0.61280991668, 0.501731932449, 0.380429446972, 0.283006984131, 0.215017739696, 0.168869545842, 0.136153931001,
+    0.3265091542, 0.436405793551, 0.372504254596, 0.295774038565, 0.226951348204, 0.17408067321, 0.136153931001, 0.109083846276
+);
+
+const float CSF_CB[64] = float[64](
+    1.91113096927, 2.46074210438, 1.18284184739, 1.14982565193, 1.05017074788, 0.898018824055, 0.74725392039, 0.615105596242,
+    2.46074210438, 1.58529308355, 1.21363250036, 1.38190029285, 1.33100189972, 1.17428548929, 0.996404342439, 0.830890433625,
+    1.18284184739, 1.21363250036, 0.978712413627, 1.02624506078, 1.03145147362, 0.960060382087, 0.849823426169, 0.731221236837,
+    1.14982565193, 1.38190029285, 1.02624506078, 0.861317501629, 0.801821139099, 0.751437590932, 0.685398513368, 0.608694761374,
+    1.05017074788, 1.33100189972, 1.03145147362, 0.801821139099, 0.676555426187, 0.605503172737, 0.55002013668, 0.495804539034,
+    0.898018824055, 1.17428548929, 0.960060382087, 0.751437590932, 0.605503172737, 0.514674450957, 0.454353482512, 0.407050308965,
+    0.74725392039, 0.996404342439, 0.849823426169, 0.685398513368, 0.55002013668, 0.454353482512, 0.389234902883, 0.342353999733,
+    0.615105596242, 0.830890433625, 0.731221236837, 0.608694761374, 0.495804539034, 0.407050308965, 0.342353999733, 0.295530605237
+);
+
+const float CSF_CR[64] = float[64](
+    2.03871978502, 2.62502345193, 1.26180942886, 1.11019789803, 1.01397751469, 0.867069376285, 0.721500455585, 0.593906509971,
+    2.62502345193, 1.69112867013, 1.17180569821, 1.3342742857, 1.28513006198, 1.13381474809, 0.962064122248, 0.802254508198,
+    1.26180942886, 1.17180569821, 0.944981930573, 0.990876405848, 0.995903384143, 0.926972725286, 0.820534991409, 0.706020324706,
+    1.11019789803, 1.3342742857, 0.990876405848, 0.831632933426, 0.77418706195, 0.725539939514, 0.661776842059, 0.587716619023,
+    1.01397751469, 1.28513006198, 0.995903384143, 0.77418706195, 0.653238524286, 0.584635025748, 0.531064164893, 0.478717061273,
+    0.867069376285, 1.13381474809, 0.926972725286, 0.725539939514, 0.584635025748, 0.496936637883, 0.438694579826, 0.393021669543,
+    0.721500455585, 0.962064122248, 0.820534991409, 0.661776842059, 0.531064164893, 0.438694579826, 0.375820256136, 0.330555063063,
+    0.593906509971, 0.802254508198, 0.706020324706, 0.587716619023, 0.478717061273, 0.393021669543, 0.330555063063, 0.285345396658
+);
+
+float csf(int idx) {
+    if (PLANE == 0) return CSF_Y[idx];
+    if (PLANE == 1) return CSF_CB[idx];
+    return CSF_CR[idx];
+}
+
+/* Binding 0+1: raw integer samples, one uint per sample.
+ *   8bpc  → low 8 bits live (0..255).
+ *   10bpc → low 16 bits live (0..1023).
+ *   12bpc → low 16 bits live (0..4095).
+ * Host packs rows contiguously (stride = width * bytes_per_sample). */
+layout(set = 0, binding = 0, std430) readonly buffer RefIn    { uint v[]; } ref_in;
+layout(set = 0, binding = 1, std430) readonly buffer DistIn   { uint v[]; } dist_in;
+layout(set = 0, binding = 2, std430)          buffer Partials { float v[]; } partials_out;
+
+layout(push_constant) uniform Params {
+    uint width;
+    uint height;
+    uint num_blocks_x;
+    uint num_blocks_y;
+} pc;
+
+/* Shared memory: 8×8 raw integer samples for ref + dist.
+ * Cooperative load — all per-block arithmetic in thread 0 only. */
+shared int s_ref[64];
+shared int s_dist[64];
+
+/* Read one raw integer sample from the SSBO.
+ * 8bpc  → bits[7:0]  (0..255).
+ * 10bpc → bits[15:0] (0..1023).
+ * 12bpc → bits[15:0] (0..4095).
+ * No normalisation — we feed the raw integer to the DCT directly,
+ * matching the CPU path (calc_psnrhvs receives raw uint samples). */
+int read_ref_int(uint x, uint y) {
+    uint raw = ref_in.v[y * pc.width + x];
+    if (BPC <= 8)
+        return int(raw & 0xFFu);
+    return int(raw & 0xFFFFu);
+}
+
+int read_dist_int(uint x, uint y) {
+    uint raw = dist_in.v[y * pc.width + x];
+    if (BPC <= 8)
+        return int(raw & 0xFFu);
+    return int(raw & 0xFFFFu);
+}
+
+/* OD_UNBIASED_RSHIFT32: round-to-zero right shift matching the macro
+ * in xiph/psnr_hvs.c — needed because GLSL signed `>>` is arithmetic
+ * (rounds toward -inf for negatives), but the Xiph DCT requires
+ * round-toward-zero semantics. */
+int od_dct_rshift(int a, int b) {
+    return int((uint(a) >> uint(32 - b)) + uint(a)) >> b;
+}
+
+/* Forward 8-point DCT — port of od_bin_fdct8 from
+ * libvmaf/src/feature/third_party/xiph/psnr_hvs.c. */
+void od_bin_fdct8(out int y0, out int y1, out int y2, out int y3,
+                  out int y4, out int y5, out int y6, out int y7,
+                  int x0, int x1, int x2, int x3, int x4, int x5, int x6, int x7) {
+    int t0 = x0;
+    int t4 = x1;
+    int t2 = x2;
+    int t6 = x3;
+    int t7 = x4;
+    int t3 = x5;
+    int t5 = x6;
+    int t1 = x7;
+    int t1h, t4h, t6h;
+    t1 = t0 - t1;
+    t1h = od_dct_rshift(t1, 1);
+    t0 -= t1h;
+    t4 += t5;
+    t4h = od_dct_rshift(t4, 1);
+    t5 -= t4h;
+    t3 = t2 - t3;
+    t2 -= od_dct_rshift(t3, 1);
+    t6 += t7;
+    t6h = od_dct_rshift(t6, 1);
+    t7 = t6h - t7;
+    t0 += t6h;
+    t6 = t0 - t6;
+    t2 = t4h - t2;
+    t4 = t2 - t4;
+    t0 -= (t4 * 13573 + 16384) >> 15;
+    t4 += (t0 * 11585 + 8192) >> 14;
+    t0 -= (t4 * 13573 + 16384) >> 15;
+    t6 -= (t2 * 21895 + 16384) >> 15;
+    t2 += (t6 * 15137 + 8192) >> 14;
+    t6 -= (t2 * 21895 + 16384) >> 15;
+    t3 += (t5 * 19195 + 16384) >> 15;
+    t5 += (t3 * 11585 + 8192) >> 14;
+    t3 -= (t5 * 7489 + 4096) >> 13;
+    t7 = od_dct_rshift(t5, 1) - t7;
+    t5 -= t7;
+    t3 = t1h - t3;
+    t1 -= t3;
+    t7 += (t1 * 3227 + 16384) >> 15;
+    t1 -= (t7 * 6393 + 16384) >> 15;
+    t7 += (t1 * 3227 + 16384) >> 15;
+    t5 += (t3 * 2485 + 4096) >> 13;
+    t3 -= (t5 * 18205 + 16384) >> 15;
+    t5 += (t3 * 2485 + 4096) >> 13;
+    y0 = t0; y1 = t1; y2 = t2; y3 = t3;
+    y4 = t4; y5 = t5; y6 = t6; y7 = t7;
+}
+
+void od_bin_fdct8x8_in_place(inout int blk[64]) {
+    int z[64];
+    for (int i = 0; i < 8; i++) {
+        int y0, y1, y2, y3, y4, y5, y6, y7;
+        od_bin_fdct8(y0, y1, y2, y3, y4, y5, y6, y7,
+                     blk[0*8+i], blk[1*8+i], blk[2*8+i], blk[3*8+i],
+                     blk[4*8+i], blk[5*8+i], blk[6*8+i], blk[7*8+i]);
+        z[i*8+0]=y0; z[i*8+1]=y1; z[i*8+2]=y2; z[i*8+3]=y3;
+        z[i*8+4]=y4; z[i*8+5]=y5; z[i*8+6]=y6; z[i*8+7]=y7;
+    }
+    for (int i = 0; i < 8; i++) {
+        int y0, y1, y2, y3, y4, y5, y6, y7;
+        od_bin_fdct8(y0, y1, y2, y3, y4, y5, y6, y7,
+                     z[0*8+i], z[1*8+i], z[2*8+i], z[3*8+i],
+                     z[4*8+i], z[5*8+i], z[6*8+i], z[7*8+i]);
+        blk[i*8+0]=y0; blk[i*8+1]=y1; blk[i*8+2]=y2; blk[i*8+3]=y3;
+        blk[i*8+4]=y4; blk[i*8+5]=y5; blk[i*8+6]=y6; blk[i*8+7]=y7;
+    }
+}
+
+void main() {
+    uint blk_x = gl_WorkGroupID.x;
+    uint blk_y = gl_WorkGroupID.y;
+    uint lx = gl_LocalInvocationID.x;
+    uint ly = gl_LocalInvocationID.y;
+    uint local_idx = ly * 8u + lx;
+
+    uint x0 = blk_x * 7u;
+    uint y0 = blk_y * 7u;
+
+    bool valid_block = (blk_x < pc.num_blocks_x && blk_y < pc.num_blocks_y &&
+                        x0 + 7u < pc.width && y0 + 7u < pc.height);
+
+    /* Cooperative load: each thread loads one (i, j) sample as raw int. */
+    int my_ref  = 0;
+    int my_dist = 0;
+    if (valid_block) {
+        uint sx = x0 + lx;
+        uint sy = y0 + ly;
+        my_ref  = read_ref_int(sx, sy);
+        my_dist = read_dist_int(sx, sy);
+    }
+    s_ref[local_idx]  = my_ref;
+    s_dist[local_idx] = my_dist;
+    barrier();
+
+    /* All per-block arithmetic in thread 0 only — matches CPU's linear
+     * i,j summation order bit-exactly (same rationale as psnr_hvs.comp). */
+    if (local_idx == 0u) {
+        int dct_s[64];
+        int dct_d[64];
+        for (int i = 0; i < 64; i++) dct_s[i] = s_ref[i];
+        for (int i = 0; i < 64; i++) dct_d[i] = s_dist[i];
+
+        /* Per-block accumulators matching calc_psnrhvs in psnr_hvs.c.
+         * `precise` blocks FMA contraction — the CPU does scalar mul+add
+         * (two roundings), not FMA (one rounding). */
+        precise float s_means[4]; precise float d_means[4];
+        precise float s_vars[4];  precise float d_vars[4];
+        precise float s_gmean = 0.0; precise float d_gmean = 0.0;
+        precise float s_gvar  = 0.0; precise float d_gvar  = 0.0;
+        precise float s_mc    = 0.0; precise float d_mc    = 0.0;
+        for (int i = 0; i < 4; i++) {
+            s_means[i] = d_means[i] = s_vars[i] = d_vars[i] = 0.0;
+        }
+
+        /* Pass 1: means. */
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                int sub = ((i & 12) >> 2) + ((j & 12) >> 1);
+                s_gmean += float(dct_s[i*8+j]);
+                d_gmean += float(dct_d[i*8+j]);
+                s_means[sub] += float(dct_s[i*8+j]);
+                d_means[sub] += float(dct_d[i*8+j]);
+            }
+        }
+        s_gmean /= 64.0;
+        d_gmean /= 64.0;
+        for (int i = 0; i < 4; i++) s_means[i] /= 16.0;
+        for (int i = 0; i < 4; i++) d_means[i] /= 16.0;
+
+        /* Pass 2: variances. */
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                int sub = ((i & 12) >> 2) + ((j & 12) >> 1);
+                float ds = float(dct_s[i*8+j]) - s_gmean;
+                float dd = float(dct_d[i*8+j]) - d_gmean;
+                s_gvar += ds * ds;
+                d_gvar += dd * dd;
+                float qs = float(dct_s[i*8+j]) - s_means[sub];
+                float qd = float(dct_d[i*8+j]) - d_means[sub];
+                s_vars[sub] += qs * qs;
+                d_vars[sub] += qd * qd;
+            }
+        }
+        s_gvar *= 1.0 / 63.0 * 64.0;
+        d_gvar *= 1.0 / 63.0 * 64.0;
+        for (int i = 0; i < 4; i++) s_vars[i] *= 1.0 / 15.0 * 16.0;
+        for (int i = 0; i < 4; i++) d_vars[i] *= 1.0 / 15.0 * 16.0;
+
+        if (s_gvar > 0.0)
+            s_gvar = (s_vars[0] + s_vars[1] + s_vars[2] + s_vars[3]) / s_gvar;
+        if (d_gvar > 0.0)
+            d_gvar = (d_vars[0] + d_vars[1] + d_vars[2] + d_vars[3]) / d_gvar;
+
+        /* Forward 8×8 DCT in place. */
+        od_bin_fdct8x8_in_place(dct_s);
+        od_bin_fdct8x8_in_place(dct_d);
+
+        /* Pass 3: masking. */
+        float mask[64];
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                float c = csf(i*8+j);
+                float m = c * 0.3885746225901003;
+                mask[i*8+j] = m * m;
+            }
+        }
+        for (int i = 0; i < 8; i++) {
+            int j0 = (i == 0) ? 1 : 0;
+            for (int j = j0; j < 8; j++) {
+                int sq = dct_s[i*8+j] * dct_s[i*8+j];
+                s_mc += float(sq) * mask[i*8+j];
+            }
+        }
+        for (int i = 0; i < 8; i++) {
+            int j0 = (i == 0) ? 1 : 0;
+            for (int j = j0; j < 8; j++) {
+                int sq = dct_d[i*8+j] * dct_d[i*8+j];
+                d_mc += float(sq) * mask[i*8+j];
+            }
+        }
+        float sm = sqrt(s_mc * s_gvar) / 32.0;
+        float dm = sqrt(d_mc * d_gvar) / 32.0;
+        if (dm > sm) sm = dm;
+        float thresh = sm;
+
+        /* Pass 4: per-coefficient masked-error accumulation.
+         * `precise` to block FMA contraction (matches CPU mul+add). */
+        precise float ret = 0.0;
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                precise float c   = csf(i*8+j);
+                precise float err = abs(float(dct_s[i*8+j]) - float(dct_d[i*8+j]));
+                if (i != 0 || j != 0) {
+                    precise float t = thresh / mask[i*8+j];
+                    err = err < t ? 0.0 : err - t;
+                }
+                precise float ec   = err * c;
+                precise float term = ec * ec;
+                ret += term;
+            }
+        }
+        if (!valid_block) ret = 0.0;
+
+        uint slot = blk_y * pc.num_blocks_x + blk_x;
+        partials_out.v[slot] = ret;
+    }
+}
