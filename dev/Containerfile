@@ -143,6 +143,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     intel-basekit \
     && rm -rf /var/lib/apt/lists/*
 
+# Level Zero loader (libze_loader) for SYCL
+ARG LEVEL_ZERO_VER=1.28.6
+RUN curl -fsSL "https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VER}/libze1_${LEVEL_ZERO_VER}%2Bu24.04_amd64.deb" -o /tmp/libze1.deb \
+    && curl -fsSL "https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VER}/libze-dev_${LEVEL_ZERO_VER}%2Bu24.04_amd64.deb" -o /tmp/libze-dev.deb \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends /tmp/libze1.deb /tmp/libze-dev.deb \
+    && find /tmp -maxdepth 1 -name 'libze*.deb' -delete \
+    && find /var/lib/apt/lists -mindepth 1 -delete
+
+
 # oneAPI env — source /opt/intel/oneapi/setvars.sh in interactive shells;
 # for CI/build steps we set the critical vars explicitly.
 ENV ONEAPI_ROOT=/opt/intel/oneapi
