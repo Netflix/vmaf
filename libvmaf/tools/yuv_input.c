@@ -19,10 +19,18 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <io.h>
+#define yuv_fileno _fileno
+#else
+#include <unistd.h>
+#define yuv_fileno fileno
+#endif
+#include <sys/stat.h>
 
 #include "vidinput.h"
 
-#include "libvmaf/libvmaf.h"
+#include "libvmaf/picture.h"
 
 /** Linkage will break without this if using a C++ compiler, and will issue
  * warnings without this for a C compiler*/
@@ -42,6 +50,55 @@ typedef struct yuv_input {
     int src_c_dec_v, src_c_dec_h;
     int dst_c_dec_h, dst_c_dec_v;
 } yuv_input;
+
+/* Validate file size against declared geometry + bit depth so that a
+ * mismatched --bitdepth flag surfaces a clear error instead of heap
+ * corruption (malloc fastbin misalignment) at the first fread.
+ *
+ * Exits with code 2 on any geometry/depth mismatch (following the
+ * cli_parse.c convention of calling exit() directly for bad-usage errors).
+ * Returns silently when the fd is not a regular file (pipe, socket) — the
+ * reader will discover EOF naturally.
+ *
+ * Uses fstat rather than fseek/ftell to avoid disturbing the stream
+ * position and to correctly handle sizes >2 GiB via the
+ * _LARGEFILE64_SOURCE / _FILE_OFFSET_BITS=64 definitions in vidinput.h.
+ */
+static void yuv_check_file_size(FILE *fin, const yuv_input *yuv)
+{
+    struct stat st;
+    if (fstat(yuv_fileno(fin), &st) != 0 || !S_ISREG(st.st_mode))
+        return; /* pipe or fstat failure — skip, let reader hit EOF */
+
+    off_t file_sz = st.st_size;
+    size_t frame_sz = yuv->dst_buf_sz;
+    unsigned bpp = yuv->bitdepth > 8u ? 2u : 1u;
+    const char *fmt_name = yuv->pix_fmt == VMAF_PIX_FMT_YUV420P ? "yuv420p" :
+                           yuv->pix_fmt == VMAF_PIX_FMT_YUV422P ? "yuv422p" :
+                                                                  "yuv444p";
+
+    if (file_sz < (off_t)frame_sz) {
+        (void)fprintf(stderr,
+                      "yuv: file too small for declared geometry — "
+                      "need at least %zu bytes for one %ux%u %u-bit %s frame, "
+                      "got %lld bytes\n",
+                      frame_sz, yuv->width, yuv->height, yuv->bitdepth, fmt_name,
+                      (long long)file_sz);
+        exit(
+            2); // NOLINT(concurrency-mt-unsafe) — CLI single-threaded at open time; mirrors cli_parse.c exit() pattern
+    }
+    if (file_sz % (off_t)frame_sz != 0) {
+        (void)fprintf(stderr,
+                      "yuv: file size mismatch — expected a multiple of %zu bytes "
+                      "for %ux%u %u-bit %s, got %lld bytes "
+                      "(hint: check --bitdepth and --pixel_format; "
+                      "%u-bit frames need %u byte%s per sample)\n",
+                      frame_sz, yuv->width, yuv->height, yuv->bitdepth, fmt_name,
+                      (long long)file_sz, yuv->bitdepth, bpp, bpp == 1u ? "" : "s");
+        exit(
+            2); // NOLINT(concurrency-mt-unsafe) — CLI single-threaded at open time; mirrors cli_parse.c exit() pattern
+    }
+}
 
 static yuv_input *yuv_input_open(FILE *_fin, unsigned width, unsigned height,
                                  enum VmafPixelFormat pix_fmt, unsigned bitdepth)
@@ -80,6 +137,8 @@ static yuv_input *yuv_input_open(FILE *_fin, unsigned width, unsigned height,
         goto fail;
     }
 
+    yuv_check_file_size(_fin, yuv); /* exits with code 2 on mismatch */
+
     yuv->dst_buf = malloc(yuv->dst_buf_sz);
     if (!yuv->dst_buf) {
         (void)fprintf(stderr, "Could not allocate yuv reader buffer.\n");
@@ -116,7 +175,8 @@ static void yuv_input_get_info(yuv_input *_yuv, video_input_info *_info)
     _info->depth = _yuv->bitdepth;
 }
 
-static int yuv_input_fetch_frame(yuv_input *yuv, FILE *fin, video_input_ycbcr _ycbcr, char _tag[5])
+static int yuv_input_fetch_frame(yuv_input *yuv, FILE *fin, video_input_ycbcr _ycbcr,
+                                 const char _tag[5])
 {
     size_t bytes_read = fread(yuv->dst_buf, 1, yuv->dst_buf_sz, fin);
     if (bytes_read == 0)
@@ -157,6 +217,7 @@ static void yuv_input_close(yuv_input *_yuv)
     free(_yuv->dst_buf);
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) — extern linkage required: vidinput.c references this symbol via `extern video_input_vtbl YUV_INPUT_VTBL`
 OC_EXTERN const video_input_vtbl YUV_INPUT_VTBL = {
     (raw_input_open_func)yuv_input_open, (video_input_open_func)NULL,
     (video_input_get_info_func)yuv_input_get_info,
