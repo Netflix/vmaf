@@ -72,13 +72,14 @@ ciede / moment), [ADR-0188](../../../../docs/adr/0188-gpu-long-tail-batch-2.md)
 
 ## Rebase-sensitive invariants
 
-- **`integer_ms_ssim_cuda.c::extract_metrics_*` honours the
-  `enable_lcs` GPU contract** (ADR-0243). Emits 15 extra metrics
-  (`float_ms_ssim_{l,c,s}_scale{0..4}`) when `enable_lcs=true`,
-  matching the CPU `float_ms_ssim` extractor metric-wise (all
-  `l_scale*` first, then `c_*`, then `s_*`). Renaming or
-  reordering breaks the public API surface and the cross-backend
-  parity gate. See [../../AGENTS.md §"MS-SSIM `enable_lcs` GPU
+- **`integer_ms_ssim_cuda.c` honours the `enable_lcs`, `enable_db`,
+  and `clip_db` GPU contracts** (ADR-0243, ADR-0460). Emits 15 extra
+  metrics (`float_ms_ssim_{l,c,s}_scale{0..4}`) when `enable_lcs=true`,
+  all `l_scale*` first then `c_*` then `s_*` (metric ordering is
+  public API; renaming or reordering breaks the cross-backend parity
+  gate). Returns dB-domain score (`-10*log10(1-ms_ssim)`) when
+  `enable_db=true`, optionally clipping via `clip_db`. See
+  [../../AGENTS.md §"MS-SSIM `enable_lcs` GPU
   contract"](../../AGENTS.md).
 
 - **`integer_motion_cuda.c::motion3_postprocess_*` honours the
