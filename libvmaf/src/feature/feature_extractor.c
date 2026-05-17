@@ -156,11 +156,19 @@ extern VmafFeatureExtractor vmaf_fex_float_motion_hip;
  * `feature/cuda/integer_ssim_cuda.c` and pins the two-dispatch +
  * five intermediate float buffers shape. v1: scale=1 only. */
 extern VmafFeatureExtractor vmaf_fex_float_ssim_hip;
-/* HIP ninth consumer: ssimulacra2_hip. Mirrors ssimulacra2_cuda.c
- * pipeline (host YUV→XYB + GPU IIR blur + host double-precision
- * combine). With `enable_hipcc=true` the two HSACO blobs are loaded
- * and the kernels run on device; without it init() returns -ENOSYS. */
+/* HIP ninth-consumer kernel — real ssimulacra2 port. Two kernels
+ * (IIR blur + elementwise multiply); host-side XYB + double-precision
+ * SSIM/EdgeDiff combine; 108-weight libjxl pooling. With
+ * `enable_hipcc=true` the HSACO blobs are loaded and the kernels run
+ * on device; without it init() returns -ENOSYS. Emits `ssimulacra2`
+ * (same feature name as the CPU and CUDA twins). */
 extern VmafFeatureExtractor vmaf_fex_ssimulacra2_hip;
+/* HIP tenth-consumer kernel — CAMBI banding-detection HIP port.
+ * Strategy II hybrid (three GPU kernels + host CPU residual via
+ * cambi_internal.h). With `enable_hipcc=true` the HSACO blob is
+ * embedded and the kernels run on device; without it init() returns
+ * -ENOSYS. Emits `Cambi_feature_cambi_score` (same as CPU/CUDA twins). */
+extern VmafFeatureExtractor vmaf_fex_cambi_hip;
 #endif
 #if HAVE_METAL
 /* Metal feature extractors — T8-1c through T8-1j / ADR-0421.
@@ -179,7 +187,8 @@ extern VmafFeatureExtractor vmaf_fex_float_psnr_metal;
 extern VmafFeatureExtractor vmaf_fex_float_ansnr_metal;
 extern VmafFeatureExtractor vmaf_fex_float_motion_metal;
 extern VmafFeatureExtractor vmaf_fex_float_moment_metal;
-extern VmafFeatureExtractor vmaf_fex_float_vif_metal;
+extern VmafFeatureExtractor vmaf_fex_float_ms_ssim_metal;
+extern VmafFeatureExtractor vmaf_fex_psnr_hvs_metal;
 #endif
 /* SpEED-QA NR metric scaffold — ADR-0253. */
 extern VmafFeatureExtractor vmaf_fex_speed_qa;
@@ -301,10 +310,16 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
      * float-partial readback); emits one feature (`float_ssim`)
      * once the runtime kernel arrives. v1 is scale=1 only. */
     &vmaf_fex_float_ssim_hip,
-    /* Ninth consumer: `ssimulacra2_hip` mirrors `ssimulacra2_cuda.c`
-     * pipeline (host YUV→XYB + GPU IIR blur + host double-precision
-     * combine); emits `ssimulacra2` once the HSACO kernels arrive. */
+    /* Ninth consumer: real ssimulacra2_hip port. Two kernels (IIR blur
+     * + elementwise multiply), host-side XYB + double-precision
+     * SSIM/EdgeDiff combine, 108-weight libjxl pooling. With
+     * `enable_hipcc=true` HSACO blobs are loaded; otherwise -ENOSYS. */
     &vmaf_fex_ssimulacra2_hip,
+    /* Tenth consumer: cambi_hip — CAMBI banding-detection HIP port
+     * (Strategy II hybrid). Three GPU kernels + host CPU residual.
+     * With `enable_hipcc=true` the HSACO is loaded; otherwise -ENOSYS.
+     * Emits `Cambi_feature_cambi_score`. */
+    &vmaf_fex_cambi_hip,
 #endif
 #if HAVE_METAL
     /* T8-1 first consumer (ADR-0361): registration succeeds even on
@@ -318,9 +333,11 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     /* T8-1 batch-2 additional consumers (ADR-0361): 4 float features. */
     &vmaf_fex_float_psnr_metal, &vmaf_fex_float_ansnr_metal, &vmaf_fex_float_motion_metal,
     &vmaf_fex_float_moment_metal,
-    /* T8-3a: integer_adm_metal — DWT-CSF-CM ADM pipeline on Metal.
-     * Port of integer_adm_cuda.c; emits adm2 + adm_scale{0..3}. */
-    &vmaf_fex_integer_adm_metal,
+    /* T8-2a: float_ms_ssim_metal — 5-scale MS-SSIM pyramid on Metal (ADR-0435). */
+    &vmaf_fex_float_ms_ssim_metal,
+    /* psnr_hvs_metal — integer DCT + CSF masking on Metal, port of
+     * integer_psnr_hvs_cuda.c + psnr_hvs_score.cu. */
+    &vmaf_fex_psnr_hvs_metal,
 #endif
     &vmaf_fex_speed_qa, &vmaf_fex_lpips, &vmaf_fex_dists_sq, &vmaf_fex_fastdvdnet_pre,
     &vmaf_fex_mobilesal, &vmaf_fex_transnet_v2, &vmaf_fex_null, NULL};
