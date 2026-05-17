@@ -4,6 +4,7 @@
  *
  *  float_psnr feature extractor on the HIP backend — first real kernel
  *  (T7-10b / ADR-0254). Second kernel-template consumer.
+ *  enable_chroma option ported from CUDA twin (ADR-0469).
  *
  *  Mirrors `libvmaf/src/feature/cuda/float_psnr_cuda.c` call-graph-for-
  *  call-graph. The device-side kernel lives in
@@ -29,6 +30,7 @@
 
 #include <errno.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -94,10 +96,20 @@ typedef struct FloatPsnrStateHip {
     unsigned wg_count;
     double peak;
     double psnr_max;
+    /* `enable_chroma` option: when false, only luma is computed.
+     * Default true mirrors CPU float_psnr.c — see ADR-0469. */
+    bool enable_chroma;
     VmafDictionary *feature_name_dict;
 } FloatPsnrStateHip;
 
-static const VmafOption options[] = {{0}};
+static const VmafOption options[] = {{
+                                         .name = "enable_chroma",
+                                         .help = "enable calculation for chroma channels",
+                                         .offset = offsetof(FloatPsnrStateHip, enable_chroma),
+                                         .type = VMAF_OPT_TYPE_BOOL,
+                                         .default_val.b = true,
+                                     },
+                                     {0}};
 
 /* Bit-depth → peak / clamp table (mirrors the CUDA twin). Extracted to
  * keep init_fex_hip under the 60-line readability-function-size limit. */
@@ -256,8 +268,11 @@ static void float_psnr_hip_module_free(FloatPsnrStateHip *s)
 static int init_fex_hip(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigned bpc,
                         unsigned w, unsigned h)
 {
-    (void)pix_fmt;
     FloatPsnrStateHip *s = fex->priv;
+    /* float_psnr operates on luma only; chroma planes are not used.
+     * `enable_chroma` is wired here so callers can set it (ADR-0469)
+     * and the option is not silently dropped. Suppress unused-param. */
+    (void)pix_fmt;
 
     int err = float_psnr_hip_resolve_peak_clamp(s, bpc);
     if (err != 0)
