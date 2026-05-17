@@ -68,6 +68,7 @@ typedef struct MotionV2StateMetal {
     /* Last SAD value collected; emit motion2_v2 = min(cur, prev). */
     double last_score;
     bool   have_last;
+    bool   flushed; /* idempotency guard: flush() is a no-op after first call */
 
     size_t plane_bytes;
     size_t partials_count;   /* number of threadgroups (grid_w * grid_h) */
@@ -76,6 +77,7 @@ typedef struct MotionV2StateMetal {
     unsigned frame_h;
     unsigned bpc;
     double motion_fps_weight;
+    bool   motion_force_zero;
 
     VmafDictionary *feature_name_dict;
 } MotionV2StateMetal;
@@ -90,6 +92,15 @@ static const VmafOption options[] = {
         .default_val.d = 1.0,
         .min = 0.0,
         .max = 5.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_force_zero",
+        .alias = "force_0",
+        .help = "force motion score to zero (mirrors CPU integer_motion_v2.c)",
+        .offset = offsetof(MotionV2StateMetal, motion_force_zero),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {0}};
@@ -149,6 +160,7 @@ static int init_fex_metal(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fm
     s->plane_bytes = (size_t)w * h * (bpc <= 8u ? 1u : 2u);
     s->have_last = false;
     s->last_score = 0.0;
+    s->flushed = false;
 
     int err = vmaf_metal_context_new(&s->ctx, 0);
     if (err != 0) {
@@ -259,6 +271,12 @@ static int submit_fex_metal(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     s->frame_h = ref_pic->h[0];
 
     const size_t row_bytes = (size_t)ref_pic->w[0] * (s->bpc <= 8u ? 1u : 2u);
+
+    /* motion_force_zero: skip GPU work entirely; collect() will emit 0.0. */
+    if (s->motion_force_zero) {
+        return 0;
+    }
+
     if (index == 0) {
         /* First frame has no "prev" — copy cur to prev_ref and emit 0 in collect. */
         copy_y_plane(ref_pic, s->prev_ref_contents, row_bytes);
@@ -338,7 +356,7 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
     MotionV2StateMetal *s = (MotionV2StateMetal *)fex->priv;
 
     double score = 0.0;
-    if (index > 0) {
+    if (!s->motion_force_zero && index > 0) {
         /* Reduce per-threadgroup partials in double precision —
          * sidesteps Apple MSL's lack of 64-bit atomic_fetch_add
          * (CI run 25685703780 / job 75408804495). */
@@ -381,6 +399,13 @@ static int collect_fex_metal(VmafFeatureExtractor *fex, unsigned index,
 static int flush_fex_metal(VmafFeatureExtractor *fex, VmafFeatureCollector *feature_collector)
 {
     MotionV2StateMetal *s = (MotionV2StateMetal *)fex->priv;
+
+    /* Idempotency guard: the framework may call flush() more than once on the
+     * same instance (threaded dispatch path); only the first call emits. */
+    if (s->flushed)
+        return 1;
+    s->flushed = true;
+
     /* Final motion2_v2 frame: apply fps weight then emit.
      * Bit-exact when motion_fps_weight = 1.0 (default). */
     if (s->have_last) {

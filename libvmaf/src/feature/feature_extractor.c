@@ -134,6 +134,11 @@ extern VmafFeatureExtractor vmaf_fex_float_moment_hip;
  * -ENOSYS until T7-10b. */
 extern VmafFeatureExtractor vmaf_fex_float_ansnr_hip;
 extern VmafFeatureExtractor vmaf_fex_integer_motion_v2_hip;
+/* HIP integer_motion consumer: mirrors `feature/cuda/integer_motion_cuda.c`
+ * call-graph-for-call-graph. Provides motion_score (debug), motion2_score,
+ * and motion3_score. With enable_hipcc=true the HSACO is loaded and the
+ * kernel runs on device; without it init() returns -ENOSYS. */
+extern VmafFeatureExtractor vmaf_fex_integer_motion_hip;
 /* HIP seventh-consumer kernel — T7-10b follow-up / ADR-0273. Same
  * scaffold posture; mirrors the CUDA twin
  * `feature/cuda/float_motion_cuda.c` and pins the temporal-extractor
@@ -249,6 +254,11 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     /* T7-10b fifth + sixth consumers (ADR-0266 / ADR-0267): same
      * scaffold-posture registration as the first consumer. */
     &vmaf_fex_float_ansnr_hip, &vmaf_fex_integer_motion_v2_hip,
+    /* integer_motion HIP consumer: mirrors integer_motion_cuda.c; emits
+     * motion_score (debug), motion2_score, and motion3_score.
+     * With enable_hipcc=true the HSACO is loaded and the kernel runs on
+     * device; without it init() returns -ENOSYS (scaffold posture). */
+    &vmaf_fex_integer_motion_hip,
     /* Seventh consumer (ADR-0273): `float_motion_hip` mirrors
      * `float_motion_cuda.c`'s call graph (TEMPORAL flag,
      * raw-pixel cache + blurred-frame ping-pong, `flush()`

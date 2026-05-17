@@ -95,22 +95,34 @@ typedef struct {
 
     unsigned frame_index;
     double motion_fps_weight;
+    bool motion_force_zero;
+    bool flushed; /* idempotency guard: flush() is a no-op after first call */
 
     VmafDictionary *feature_name_dict;
 } MotionV2VulkanState;
 
-static const VmafOption options[] = {{
-                                         .name = "motion_fps_weight",
-                                         .alias = "mfw",
-                                         .help = "fps-aware multiplicative weight/correction",
-                                         .offset = offsetof(MotionV2VulkanState, motion_fps_weight),
-                                         .type = VMAF_OPT_TYPE_DOUBLE,
-                                         .default_val.d = 1.0,
-                                         .min = 0.0,
-                                         .max = 5.0,
-                                         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
-                                     },
-                                     {0}};
+static const VmafOption options[] = {
+    {
+        .name = "motion_fps_weight",
+        .alias = "mfw",
+        .help = "fps-aware multiplicative weight/correction",
+        .offset = offsetof(MotionV2VulkanState, motion_fps_weight),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = 1.0,
+        .min = 0.0,
+        .max = 5.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_force_zero",
+        .alias = "force_0",
+        .help = "force motion score to zero (mirrors CPU integer_motion_v2.c)",
+        .offset = offsetof(MotionV2VulkanState, motion_force_zero),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {0}};
 
 /* Push constants — must mirror `Params` in motion_v2.comp. */
 typedef struct {
@@ -250,6 +262,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt, unsigne
     s->bpc = bpc;
     s->frame_index = 0;
     s->cur_ref_idx = 0;
+    s->flushed = false;
 
     s->ctx = vmaf_vulkan_state_get_context(fex->vulkan_state);
     if (s->ctx) {
@@ -325,6 +338,14 @@ static int extract(VmafFeatureExtractor *fex, VmafPicture *ref_pic, VmafPicture 
     (void)dist_pic_90;
     MotionV2VulkanState *s = fex->priv;
     int err = 0;
+
+    /* motion_force_zero: skip GPU work, emit 0 for every frame. */
+    if (s->motion_force_zero) {
+        s->frame_index++;
+        return vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                       "VMAF_integer_feature_motion_v2_sad_score",
+                                                       0.0, index);
+    }
 
     /* Frame 0: store the ref pixels (so frame 1 has a "prev"); emit 0. */
     if (s->frame_index == 0) {
@@ -403,6 +424,12 @@ cleanup:
 static int flush(VmafFeatureExtractor *fex, VmafFeatureCollector *feature_collector)
 {
     MotionV2VulkanState *s = fex->priv;
+
+    /* Idempotency guard: framework may call flush() more than once on the
+     * same instance (threaded dispatch path); only the first call emits. */
+    if (s->flushed)
+        return 1;
+    s->flushed = true;
 
     unsigned n_frames = 0;
     double dummy;

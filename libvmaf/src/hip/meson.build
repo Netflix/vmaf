@@ -80,6 +80,7 @@ hip_sources += files(
     '../feature/hip/ciede_hip.c',
     '../feature/hip/float_moment_hip.c',
     '../feature/hip/float_ansnr_hip.c',
+    '../feature/hip/integer_motion_hip.c',
     '../feature/hip/integer_motion_v2_hip.c',
     '../feature/hip/float_motion_hip.c',
     '../feature/hip/float_ssim_hip.c',
