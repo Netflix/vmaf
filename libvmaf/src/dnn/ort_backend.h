@@ -49,6 +49,13 @@ int vmaf_ort_run(VmafOrtSession *sess, const VmafOrtTensorIn *inputs, size_t n_i
 int vmaf_ort_io_count(VmafOrtSession *sess, size_t *n_inputs, size_t *n_outputs);
 
 /**
+ * Maximum number of graph inputs or outputs supported by vmaf_ort_run.
+ * Callers with more IO must use a dedicated path; the limit covers every
+ * VMAF model shipped to date (max observed: 6).
+ */
+#define VMAF_ORT_MAX_IO 8
+
+/**
  * Fetch the static shape of input 0. @p max_rank caps the number of dims
  * written; actual rank is returned via @p out_rank. Dimensions marked dynamic
  * (symbolic) in the model are reported as -1. Returns 0 on success.

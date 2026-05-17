@@ -734,27 +734,19 @@ int vmaf_ort_run(VmafOrtSession *sess, const VmafOrtTensorIn *inputs, size_t n_i
     assert(outputs != NULL);
     if (n_inputs != sess->n_inputs || n_outputs != sess->n_outputs)
         return -EINVAL;
+    /* Guard: n_inputs/n_outputs are already validated equal to sess->n_{in,out}
+     * which were set at open time from the model graph.  VMAF_ORT_MAX_IO (8)
+     * exceeds every model shipped to date (max observed: 6).  Stack arrays
+     * avoid 5 per-call calloc/free pairs on the per-frame hot path (F3-B). */
+    if (n_inputs > VMAF_ORT_MAX_IO || n_outputs > VMAF_ORT_MAX_IO)
+        return -EINVAL;
 
     /* Reuse the session-level cached OrtMemoryInfo (perf audit F2-A / F3-A). */
     OrtMemoryInfo *mem = sess->cpu_mem_info;
     if (!mem)
         return -EINVAL;
 
-    const char **in_names = (const char **)calloc(n_inputs, sizeof(char *));
-    const char **out_names = (const char **)calloc(n_outputs, sizeof(char *));
-    OrtValue **in_vals = (OrtValue **)calloc(n_inputs, sizeof(OrtValue *));
-    OrtValue **out_vals = (OrtValue **)calloc(n_outputs, sizeof(OrtValue *));
-    void **in_scratch = (void **)calloc(n_inputs, sizeof(void *));
-    if (!in_names || !out_names || !in_vals || !out_vals || !in_scratch) {
-        /* mem is session-owned; do not release it here. */
-        free(in_names);
-        free(out_names);
-        free(in_vals);
-        free(out_vals);
-        free(in_scratch);
-        return -ENOMEM;
-    }
-
+    /* Stack-allocated IO arrays — no heap allocation on the hot path. */
     const char *in_names[VMAF_ORT_MAX_IO];
     const char *out_names[VMAF_ORT_MAX_IO];
     OrtValue *in_vals[VMAF_ORT_MAX_IO];
@@ -836,12 +828,9 @@ cleanup:
         if (out_vals[i])
             sess->api->ReleaseValue(out_vals[i]);
     }
-    /* mem is session-owned (cpu_mem_info); released in vmaf_ort_close. */
-    free(in_names);
-    free(out_names);
-    free(in_vals);
-    free(out_vals);
-    free(in_scratch);
+    /* mem is session-owned (cpu_mem_info); released in vmaf_ort_close.
+     * Stack arrays (in_names, out_names, in_vals, out_vals, in_scratch)
+     * are automatically reclaimed — no free() needed. */
     return rc;
 }
 
