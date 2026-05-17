@@ -81,7 +81,8 @@ cythonize-deps: $(VENV_PIP)
 
 .PHONY: lint lint-c lint-py lint-sh format format-check sec sbom \
         test-netflix-golden test-sanitizers test-fast hooks-install help \
-        coverage coverage-html coverage-check assertion-density pr-check
+        coverage coverage-html coverage-check assertion-density pr-check \
+        docs-build docs-serve
 
 # Top-level lint — runs every analyzer we own. Uses the meson compile_commands.json.
 lint: lint-c lint-py lint-sh docs-fragments-check
@@ -273,6 +274,22 @@ hooks-install:
 # Usage:
 #   make pr-check PR=260
 #   make pr-check BODY=pr-body.md
+# docs-build — local equivalent of the docs.yml `mkdocs build --strict` CI gate.
+# Developers pushing doc changes should run this before pushing; it is the
+# fastest way to catch MkDocs strict-mode errors (broken references, missing
+# anchor links, unknown nav entries) that otherwise require a CI round-trip.
+#
+# Usage:
+#   make docs-build        # strict build; non-zero exit on any warning/error
+#   make docs-serve        # live-reload preview at http://localhost:8000
+docs-build:
+	@command -v mkdocs >/dev/null || { echo "mkdocs not found — pip install mkdocs-material"; exit 1; }
+	mkdocs build --strict
+
+docs-serve:
+	@command -v mkdocs >/dev/null || { echo "mkdocs not found — pip install mkdocs-material"; exit 1; }
+	mkdocs serve
+
 pr-check:
 	@if [ -n "$(PR)" ]; then \
 	    echo "--- pr-check: fetching PR $(PR) body via gh ---"; \
@@ -302,6 +319,8 @@ help:
 	@echo "  make coverage-html    — render HTML coverage report"
 	@echo "  make coverage-check   — enforce ≥70% overall / ≥85% critical"
 	@echo "  make assertion-density — Power-of-10 rule 5 density check"
+	@echo "  make docs-build       — mkdocs build --strict (local docs.yml gate)"
+	@echo "  make docs-serve       — mkdocs serve (live-reload preview)"
 	@echo "  make hooks-install    — wire up pre-commit git hooks"
 	@echo ""
 	@echo "Upstream targets: build, test, debug, install, clean, distclean, cythonize"
