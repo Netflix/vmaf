@@ -353,3 +353,8 @@ CUevent vmaf_cuda_picture_get_finished_event(VmafPicture *pic)
     VmafPicturePrivate *priv = pic->priv;
     return priv->cuda.finished;
 }
+
+enum VmafPixelFormat vmaf_cuda_picture_get_pix_fmt(const VmafPicture *pic)
+{
+    return pic->pix_fmt;
+}

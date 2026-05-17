@@ -34972,31 +34972,55 @@ meson test -C build --suite=fast
 
 ---
 
-## `fix/ms-ssim-sycl-enable-lcs-parity` — SYCL float_ms_ssim enable_lcs / enable_chroma
+## `libvmaf/test/meson.build` — register test_context and test_log (fix/meson-register-test-context-log)
 
-**Branch**: `fix/ms-ssim-sycl-enable-lcs-parity`
+**Files touched**: `libvmaf/test/meson.build`.
 
-**Files touched**:
-`libvmaf/src/feature/sycl/integer_ms_ssim_sycl.cpp`.
+**Rebase impact**: low. Two `test()` calls added immediately before the
+existing bulk-registration block. Upstream Netflix/vmaf does not maintain
+these fork-side tests; no conflict expected on upstream sync.
 
-**Rebase impact**: low. The change is additive — new struct fields and
-options entries; no kernel or accumulation logic is modified. The SYCL
-file is fork-local (no upstream Netflix/vmaf SYCL back-end). No
-upstream-shared C/C++/headers are modified.
+**Invariant to preserve on rebase**: every `executable()` defined in
+`libvmaf/test/meson.build` must have a corresponding `test()` call. After
+any merge or cherry-pick touching this file, verify with:
 
-**Invariant to preserve on rebase**: every new GPU extractor registration that arrives via
-a GPU-backend PR must survive any squash or rebase of `feature_extractor.c`. If a
-stale-base squash drops entries, restore them in a separate PR. Audit with:
-`grep -c 'integer_ms_ssim_hip\|integer_vif_metal' libvmaf/src/feature/feature_extractor.c`
-(must return 4).
+```bash
+grep "= executable(" libvmaf/test/meson.build | \
+    sed "s/.*= executable('\([^']*\)'.*/\1/" | \
+    while read name; do
+        grep -q "test('$name'" libvmaf/test/meson.build || echo "MISSING test() for $name"
+    done
+```
 
 **Smoke-test after rebase**:
 
 ```bash
-grep -c 'integer_ms_ssim_hip\|integer_vif_metal' libvmaf/src/feature/feature_extractor.c
-# Expected: 4
-grep 'psnr_sycl' libvmaf/src/feature/feature_extractor.c | grep -v extern
-# Expected: exactly 1 line (no duplicates in the list section)
+meson setup build -Denable_cuda=false -Denable_sycl=false
+ninja -C build
+meson test -C build test_context test_log   # must exit 0
+```
+
+## `fix/restore-vmaf-cuda-picture-get-pix-fmt` — restore dropped accessor (PR #1067 regression)
+
+**Files touched**: `libvmaf/src/cuda/picture_cuda.c`,
+`libvmaf/src/cuda/picture_cuda.h`.
+
+**Rebase impact**: low. Two isolated additions at the end of the file —
+a function definition after `vmaf_cuda_picture_get_finished_event` and a
+declaration + Doxygen block before `#endif`. No upstream Netflix/vmaf
+analogue; no conflict expected on upstream sync.
+
+**Invariant to preserve on rebase**: `vmaf_cuda_picture_get_pix_fmt` must
+remain declared in `picture_cuda.h` and defined in `picture_cuda.c`.
+If a future refactor removes it, update all callers that replaced
+open-coded `pic->pix_fmt` field accesses with this accessor.
+
+**Smoke-test after rebase** (CPU-only build sufficient; no CUDA hardware required):
+
+```bash
+meson setup build -Denable_cuda=false -Denable_sycl=false
+ninja -C build
+grep -q "vmaf_cuda_picture_get_pix_fmt" libvmaf/src/cuda/picture_cuda.h && echo "PASS"
 ```
 
 ---
