@@ -677,6 +677,18 @@ test_read_pictures_monotonic = executable('test_read_pictures_monotonic',
 )
 test('test_read_pictures_monotonic', test_read_pictures_monotonic, suite : ['fast'])
 
+# audit-test-coverage-2026-05-16 §2 — model-collection public API entry
+# points (vmaf_model_collection_load, vmaf_use_features_from_model_collection,
+# vmaf_score_at_index_model_collection, vmaf_score_pooled_model_collection)
+# had zero C-unit-test coverage.
+test_model_collection_api = executable('test_model_collection_api',
+    ['test.c', 'test_model_collection_api.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: [math_lib, pthread_dependency, thread_lib],
+)
+test('test_model_collection_api', test_model_collection_api, suite : ['fast'])
+
 # ADR-0154 — score_pooled returns -EAGAIN instead of -EINVAL for
 # not-yet-written features (Netflix#755).
 test_score_pooled_eagain = executable('test_score_pooled_eagain',
