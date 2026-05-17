@@ -2730,7 +2730,16 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
      * hence pending is 57-shift's done based on width and height
      */
 
-    float f_accum_h = (float)((float)accum_h / pow(2, (52 - shift_xhcub - shift_inner_accum)));
+    /* ADR-0138 bit-exactness fix: scalar (integer_adm.c:2009) computes
+     *   f_accum_h = (float)(accum_h / pow(2, ...))
+     * which is int64 → double → divide → float.  The AVX2 path originally
+     * had a spurious inner `(float)` cast on accum_h only:
+     *   (float)((float)accum_h / pow(...))
+     * This converts int64 to float first — losing mantissa bits for large
+     * accum_h — before the division, producing up to 498M ULP error on
+     * adm_scale3 (max 2.3e-6 in the final score).  Mirror the scalar
+     * exactly for all three accumulators. */
+    float f_accum_h = (float)(accum_h / pow(2, (52 - shift_xhcub - shift_inner_accum)));
     float f_accum_v = (float)(accum_v / pow(2, (52 - shift_xvcub - shift_inner_accum)));
     float f_accum_d = (float)(accum_d / pow(2, (57 - shift_xdcub - shift_inner_accum)));
 

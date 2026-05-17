@@ -244,7 +244,15 @@ static inline void vif_stat_consts_init(struct vif_stat_consts *c, double vif_en
                                         double vif_sigma_nsq)
 {
     c->sigma_nsq = (float)vif_sigma_nsq;
-    c->sigma_max_inv = powf((float)vif_sigma_nsq, 2.0f) / (255.0f * 255.0f);
+    /* Bit-exactness fix (ADR-0138): scalar computes
+     *   sigma_max_inv = powf(vif_sigma_nsq, 2.0f) / (255.0 * 255.0)
+     * where "255.0 * 255.0" is a double-precision multiplication (255.0
+     * is a double literal).  Using 255.0f here switches to a float-only
+     * division that produces a different rounding, causing 1-5e-6
+     * divergence starting at frame 3 of src01_hrc00/hrc01.
+     * Mirror the scalar expression exactly: powf result (float), then
+     * divide by the double-precision constant 65025.0. */
+    c->sigma_max_inv = (float)(powf((float)vif_sigma_nsq, 2.0f) / (255.0 * 255.0));
     c->eps = 1.0e-10f;
     c->vif_egl_f = (float)vif_enhn_gain_limit;
     c->v_sigma_nsq = _mm256_set1_ps(c->sigma_nsq);
