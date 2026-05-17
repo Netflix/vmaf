@@ -95,12 +95,11 @@ struct svm_model {
 
     /* for classification only */
 
-    int *label; /* label of each class (label[k]) */
-    int *nSV;   /* number of SVs for each class (nSV[k]) */
-                /* nSV[0] + nSV[1] + ... + nSV[k-1] = l */
-    /* XXX */
-    int free_sv; /* 1 if svm_model is created by svm_load_model*/
-    /* 0 if svm_model is created by svm_train */
+    int *label;  /* label of each class (label[k]) */
+    int *nSV;    /* number of SVs for each class (nSV[k]) */
+                 /* nSV[0] + nSV[1] + ... + nSV[k-1] = l */
+    int free_sv; /* 1 if svm_model is created by svm_load_model */
+                 /* 0 if svm_model is created by svm_train */
 };
 
 struct svm_model *svm_train(const struct svm_problem *prob, const struct svm_parameter *param);

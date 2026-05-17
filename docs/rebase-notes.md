@@ -35401,3 +35401,14 @@ No rebase impact: the change adds a new CI job (`docs-lint`) and a new
 entry in the required-aggregator check list. Both are purely additive and
 contain no fork-local logic that upstream could change. If upstream adds
 its own docs-lint CI, dedup by dropping our job or merging the two.
+
+---
+
+## chore/svm-h-remove-orphaned-xxx-marker
+
+**File**: `libvmaf/src/svm.h`
+
+No rebase impact: removes an empty `/* XXX */` comment from the vendored
+libsvm header and folds two trailing comment lines on `free_sv` into one
+two-line block. If upstream libsvm updates `svm.h`, re-apply by re-removing
+the marker (it originates in libsvm upstream and may reappear).
