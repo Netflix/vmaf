@@ -35426,3 +35426,15 @@ No rebase impact: removes an empty `/* XXX */` comment from the vendored
 libsvm header and folds two trailing comment lines on `free_sv` into one
 two-line block. If upstream libsvm updates `svm.h`, re-apply by re-removing
 the marker (it originates in libsvm upstream and may reappear).
+
+---
+
+## docs/motion-dedicated-page
+
+**Files**: `docs/metrics/motion.md` (new), `docs/metrics/features.md`,
+`docs/adr/0491-motion-dedicated-doc-page.md`, `docs/adr/README.md`,
+`changelog.d/added/motion-dedicated-doc-page.md`.
+
+No rebase impact: doc-only addition. If upstream Netflix adds a motion
+extractor or renames existing ones, update `docs/metrics/motion.md` to
+match — no code change required.

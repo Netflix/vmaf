@@ -181,6 +181,9 @@ quality," IEEE TIP 15(2):430–444, 2006.
 
 ### Motion2
 
+See the [dedicated Motion page](motion.md) for the full options table, output
+ranges, and per-variant backend coverage matrix.
+
 A simple temporal-difference feature: blur both frames with a fixed
 low-pass filter and take the mean absolute pixel difference between the
 current reference and the previous reference luma. Published as `motion2`
