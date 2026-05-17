@@ -65,6 +65,13 @@ struct SsimStateSycl {
     unsigned height;
     unsigned bpc;
     int scale_override;
+    /* `enable_chroma` option: when false, only luma is processed.
+     * Default false — v1 kernel reads data[0] only; multi-plane
+     * dispatch deferred to v2. Mirrors CUDA twin (PR #950). */
+    bool enable_chroma;
+    /* Number of active planes (always 1 in v1; kept for v2
+     * forward-compatibility). */
+    unsigned n_planes;
 
     unsigned w_horiz;
     unsigned h_horiz;
@@ -237,6 +244,29 @@ static const VmafOption options_ssim_sycl[] = {
         .min = 0,
         .max = 10,
     },
+    {
+        .name = "enable_chroma",
+        .help = "enable calculation for chroma channels",
+        .offset = offsetof(SsimStateSycl, enable_chroma),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {
+        .name = "enable_db",
+        .help = "convert SSIM score to dB domain: -10*log10(1-ssim)",
+        .offset = offsetof(SsimStateSycl, enable_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "clip_db",
+        .help = "clip dB output to a maximum finite value (mirrors CPU float_ssim)",
+        .offset = offsetof(SsimStateSycl, clip_db),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
     {0},
 };
 
@@ -259,6 +289,12 @@ static int init_fex_sycl(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
                  "ssim_sycl: input %ux%u smaller than 11x11 Gaussian footprint.\n", w, h);
         return -EINVAL;
     }
+
+    /* v1 kernel processes luma only.  Clamp n_planes to 1 regardless
+     * of enable_chroma — multi-plane dispatch deferred to v2.
+     * Mirrors CUDA twin (PR #950). */
+    s->n_planes = 1U;
+    (void)s->enable_chroma; /* reserved; used by v2 multi-plane path */
 
     s->width = w;
     s->height = h;
