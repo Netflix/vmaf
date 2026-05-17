@@ -253,6 +253,17 @@ HIP / Metal motion twins listed in the Twin-update table below) in the same PR.
   Netflix one. This is upstream-mirror — keep both headers
   verbatim on rebase.
 
+- **Every CUDA reduce kernel SHOULD use warp-reduce + `atomicAdd_int64`
+  into a single accumulator; a separate per-thread scratch buffer plus a
+  separate reduce kernel launch is the pre-fix legacy pattern.**
+  Scale 0 of ADM CM (`adm_cm_line_kernel_8` in `integer_adm/adm_cm.cu`)
+  is the canonical model: compute per-pixel result, warp-reduce the
+  int64 accumulator, first lane atomicAdds into `accum_global`.
+  Scales 1-3 were migrated to this pattern by `i4_adm_cm_line_kernel_fused`
+  (PR perf/adm-cm-cuda-warp-reduce-fusion).  Any future reduce kernel
+  that writes to a scratch buffer and launches a second kernel to sum it
+  should be refactored to the fused pattern instead.
+
 - **`kernel_template.h` mirror with HIP** (ADR-0241). The CUDA
   `cuda/kernel_template.h` (one level up) and HIP
   `../hip/kernel_template.h` move in lockstep. Any change to

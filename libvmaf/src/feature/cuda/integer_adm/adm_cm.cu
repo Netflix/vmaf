@@ -136,12 +136,16 @@ __device__ __forceinline__ int16_t inline_s0_decouple_r(const cuda_adm_dwt_band_
     return decouple_r_s0(oh, ov, od, th, tv, td, band_idx, angle_flag, adm_enhn_gain_limit);
 }
 
+/* Fused compute + warp-reduce + atomicAdd kernel for ADM CM scales 1-3 (i4 path).
+ * Eliminates the separate adm_cm_reduce_line_kernel_4 launch and the accum_per_thread
+ * scratch buffer round-trip.  Scale 0 uses adm_cm_line_kernel_8 (int16 path);
+ * this kernel mirrors its warp-reduce + atomicAdd_int64 pattern for int32. */
 extern "C" {
-__global__ void i4_adm_cm_line_kernel(AdmBufferCuda buf, int h, int w, int top, int bottom,
-                                      int left, int right, int start_row, int end_row,
-                                      int start_col, int end_col, int src_stride, int csf_a_stride,
-                                      int scale, int buffer_h, int buffer_stride,
-                                      int32_t *accum_per_thread, AdmFixedParametersCuda params)
+__global__ void i4_adm_cm_line_kernel_fused(AdmBufferCuda buf, int h, int w, int top, int bottom,
+                                            int left, int right, int start_row, int end_row,
+                                            int start_col, int end_col, int src_stride,
+                                            int csf_a_stride, int scale, int64_t *accum_global,
+                                            AdmFixedParametersCuda params)
 {
     const cuda_i4_adm_dwt_band_t *ref = &buf.i4_ref_dwt2;
     const cuda_i4_adm_dwt_band_t *dis = &buf.i4_dis_dwt2;
@@ -157,13 +161,20 @@ __global__ void i4_adm_cm_line_kernel(AdmBufferCuda buf, int h, int w, int top, 
     const uint32_t shift_dst = 28;
     const int32_t add_bef_shift_dst = (1u << (shift_dst - 1));
 
-    uint32_t shift_cub = __float2uint_ru(__log2f(w));
+    /* Cubic-accumulation shifts — match adm_cm_reduce_line_kernel for scale != 0. */
+    const uint32_t shift_sq = 30;
+    const int32_t add_shift_sq = 536870912; /* 1 << 29 */
+    const uint32_t shift_cub = __float2uint_ru(__log2f((float)w));
+    const int32_t add_shift_cub = (int32_t)(1u << (shift_cub - 1));
+    const uint32_t shift_inner_accum = __float2uint_ru(__log2f((float)h));
+    const int32_t add_shift_inner_accum = (int32_t)(1u << (shift_inner_accum - 1));
 
     const int32_t shift_sub = 0;
 
     int i = start_row + blockIdx.y;
     int j = start_col + blockIdx.x * blockDim.x + threadIdx.x;
 
+    /* Per-pixel compute (identical to the retired i4_adm_cm_line_kernel). */
     int32_t accum_thread = 0;
     if (i < end_row && j < end_col) {
 
@@ -212,18 +223,21 @@ __global__ void i4_adm_cm_line_kernel(AdmBufferCuda buf, int h, int w, int top, 
         x = abs(x) - (thr >> shift_sub);
         accum_thread = x < 0 ? 0 : x;
     }
-    if ((blockIdx.x * blockDim.x + threadIdx.x) < buffer_stride)
-        accum_per_thread[(blockIdx.z * buffer_h + blockIdx.y) * buffer_stride +
-                         blockIdx.x * blockDim.x + threadIdx.x] = accum_thread;
+
+    /* Warp-level cubic accumulation + reduction — eliminates the separate reduce kernel
+     * and the accum_per_thread scratch buffer round-trip (mirrors adm_cm_line_kernel_8). */
+    const int32_t x_sq =
+        (int32_t)(((int64_t)accum_thread * accum_thread + add_shift_sq) >> shift_sq);
+    int64_t lane_accum = (((int64_t)x_sq * accum_thread) + add_shift_cub) >> shift_cub;
+    lane_accum = warp_reduce(lane_accum);
+
+    if ((threadIdx.x % VMAF_CUDA_THREADS_PER_WARP) == 0) {
+        atomicAdd_int64(&accum_global[blockIdx.z],
+                        (lane_accum + add_shift_inner_accum) >> shift_inner_accum);
+    }
 }
 }
 __constant__ const int32_t shift_sub[3] = {10, 10, 12};
-__constant__ const int fixed_shift[3] = {4, 4, 3};
-
-// accumulation
-__constant__ const int32_t shift_xsq[3] = {29, 29, 30};
-__constant__ const int32_t add_shift_xsq[3] = {268435456, 268435456, 536870912};
-
 // HACK: the 256 byte alignment is required to ensure that the struct is not moved to lmem
 struct WarpShift {
     uint32_t shift_cub[3];
@@ -340,54 +354,12 @@ adm_cm_line_kernel(AdmBufferCuda buf, int h, int w, int top, int bottom, int lef
     }
 }
 
-template <int val_per_thread>
-__device__ __forceinline__ void adm_cm_reduce_line_kernel(int h, int w, int scale, int buffer_h,
-                                                          int buffer_stride, const int32_t *buffer,
-                                                          int64_t *accum)
-{
-    const int band = blockIdx.z;
-    const int line = blockIdx.y;
-    const int off = band * (buffer_h * buffer_stride);
-    const int b_off = off + line * buffer_stride;
-
-    uint32_t shift_cub = __float2uint_ru(__log2f(w));
-    uint32_t add_shift_cub = 1 << (shift_cub - 1);
-    int32_t shift_sq = 30;
-    int32_t add_shift_sq = 536870912; // 2^29
-    if (scale == 0) {
-        shift_cub = __float2uint_ru(__log2f(w) - fixed_shift[band]);
-        add_shift_cub = 1 << (shift_cub - 1);
-        shift_sq = shift_xsq[band];
-        add_shift_sq = add_shift_xsq[band];
-    }
-
-    int64_t temp_value = 0;
-    const int buffer_col = (blockDim.x * blockIdx.x + threadIdx.x) * val_per_thread;
-    const int32_t *buffer_loc = buffer + b_off + buffer_col;
-    for (int i = 0; i < val_per_thread; ++i) {
-        if ((buffer_col + i) < buffer_stride) {
-            const int32_t x = buffer_loc[i];
-            const int32_t x_sq = (int32_t)((((int64_t)x * x) + add_shift_sq) >> shift_sq);
-            temp_value += (((int64_t)x_sq * x) + add_shift_cub) >> shift_cub;
-        }
-    }
-    temp_value = warp_reduce(temp_value);
-
-    if ((threadIdx.x % VMAF_CUDA_THREADS_PER_WARP) == 0) {
-        const uint32_t shift_inner_accum = __float2uint_ru(__log2f(h));
-        const uint32_t add_shift_inner_accum = 1 << (shift_inner_accum - 1);
-        atomicAdd_int64(&accum[band], (temp_value + add_shift_inner_accum) >> shift_inner_accum);
-    }
-}
-
-#define ADM_CM_REDUCE_LINE(val_per_thread)                                                         \
-    __global__ void adm_cm_reduce_line_kernel_##val_per_thread(                                    \
-        int h, int w, int scale, int buffer_h, int buffer_stride, const int32_t *buffer,           \
-        int64_t *accum)                                                                            \
-    {                                                                                              \
-        adm_cm_reduce_line_kernel<val_per_thread>(h, w, scale, buffer_h, buffer_stride, buffer,    \
-                                                  accum);                                          \
-    }
+/* adm_cm_reduce_line_kernel template and ADM_CM_REDUCE_LINE macro removed.
+ * The two-kernel reduce pattern (compute → global scratch, then reduce separately)
+ * has been superseded by i4_adm_cm_line_kernel_fused which integrates the
+ * warp-reduce + atomicAdd_int64 step directly into the compute kernel.
+ * Scale 0 already used the fused pattern (adm_cm_line_kernel_8); scales 1-3
+ * were migrated in PR perf/adm-cm-cuda-warp-reduce-fusion. */
 
 #define ADM_CM_LINE(rows_per_thread)                                                               \
     __global__ void adm_cm_line_kernel_##rows_per_thread(                                          \
@@ -405,6 +377,6 @@ __device__ __forceinline__ void adm_cm_reduce_line_kernel(int h, int w, int scal
 
 extern "C" {
 // 128 = warps_per_thread * val_per_thread = 32 * 4 -- assuming 32 threads per warp, this might change in the future
-ADM_CM_REDUCE_LINE(4); // adm_cm_reduce_line_kernel_4
-ADM_CM_LINE(8);        // adm_cm_line_kernel_8
+/* adm_cm_reduce_line_kernel_4 removed: fused into i4_adm_cm_line_kernel_fused (scales 1-3). */
+ADM_CM_LINE(8); // adm_cm_line_kernel_8
 }

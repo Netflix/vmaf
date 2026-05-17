@@ -78,7 +78,8 @@ typedef struct AdmStateCuda {
         // adm_csf_den kernel
         func_adm_csf_den_scale_line_kernel, func_adm_csf_den_s123_line_kernel,
         // adm_cm kernel
-        func_adm_cm_reduce_line_kernel_4, func_adm_cm_line_kernel_8, func_i4_adm_cm_line_kernel;
+        /* func_adm_cm_reduce_line_kernel_4 removed: fused into i4_adm_cm_line_kernel_fused. */
+        func_adm_cm_line_kernel_8, func_i4_adm_cm_line_kernel_fused;
 
 } AdmStateCuda;
 
@@ -370,7 +371,6 @@ int i4_adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src_
                      int csf_a_stride, int scale, AdmFixedParametersCuda *p, CudaFunctions *cu_f,
                      CUstream c_stream)
 {
-
     int left = w * (float)(ADM_BORDER_FACTOR)-0.5f;
     int top = h * (float)(ADM_BORDER_FACTOR)-0.5f;
     int right = w - left;
@@ -384,6 +384,11 @@ int i4_adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src_
     int buffer_stride = end_col - start_col;
     int buffer_h = end_row - start_row;
 
+    /* Fused compute + warp-reduce + atomicAdd kernel: one launch replaces the previous
+     * i4_adm_cm_line_kernel (compute → scratch) + adm_cm_reduce_line_kernel_4 (reduce) pair.
+     * Eliminates 3 × (reduce kernel launch + global-scratch round-trip) per frame.
+     * Block shape: 128 threads × 1 row × 3 bands (blockIdx.z).  Each thread handles one
+     * output pixel; threads in the same warp are consecutive columns → coalesced reads. */
     {
         const int BLOCKX = 128;
 
@@ -401,24 +406,11 @@ int i4_adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src_
                         &src_stride,
                         &csf_a_stride,
                         &scale,
-                        &buffer_h,
-                        &buffer_stride,
-                        &buf->tmp_accum->data,
+                        &buf->adm_cm[scale],
                         &*p};
-        CHECK_CUDA_RETURN(cu_f, cuLaunchKernel(s->func_i4_adm_cm_line_kernel,
+        CHECK_CUDA_RETURN(cu_f, cuLaunchKernel(s->func_i4_adm_cm_line_kernel_fused,
                                                DIV_ROUND_UP(buffer_stride, BLOCKX), buffer_h, 3,
                                                BLOCKX, 1, 1, 0, c_stream, args, NULL));
-    }
-    {
-        const int val_per_thread = 4;
-        const int warps_per_cta = 4;
-        const int BLOCKX = VMAF_CUDA_THREADS_PER_WARP * warps_per_cta;
-
-        void *args[] = {
-            &h, &w, &scale, &buffer_h, &buffer_stride, &buf->tmp_accum->data, &buf->adm_cm[scale]};
-        CHECK_CUDA_RETURN(cu_f, cuLaunchKernel(s->func_adm_cm_reduce_line_kernel_4,
-                                               DIV_ROUND_UP(buffer_stride, BLOCKX * val_per_thread),
-                                               buffer_h, 3, BLOCKX, 1, 1, 0, c_stream, args, NULL));
     }
     return 0;
 }
@@ -1169,18 +1161,15 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
                                         "adm_csf_den_s123_line_kernel_8_128"),
                     fail);
 
-    CHECK_CUDA_GOTO(cu_f,
-                    cuModuleGetFunction(&s->func_adm_cm_reduce_line_kernel_4, adm_cm_module,
-                                        "adm_cm_reduce_line_kernel_4"),
-                    fail);
+    /* adm_cm_reduce_line_kernel_4 removed: fused into i4_adm_cm_line_kernel_fused. */
     CHECK_CUDA_GOTO(
         cu_f,
         cuModuleGetFunction(&s->func_adm_cm_line_kernel_8, adm_cm_module, "adm_cm_line_kernel_8"),
         fail);
-    CHECK_CUDA_GOTO(
-        cu_f,
-        cuModuleGetFunction(&s->func_i4_adm_cm_line_kernel, adm_cm_module, "i4_adm_cm_line_kernel"),
-        fail);
+    CHECK_CUDA_GOTO(cu_f,
+                    cuModuleGetFunction(&s->func_i4_adm_cm_line_kernel_fused, adm_cm_module,
+                                        "i4_adm_cm_line_kernel_fused"),
+                    fail);
 
     CHECK_CUDA_GOTO(cu_f, cuCtxPopCurrent(NULL), fail_after_pop);
 

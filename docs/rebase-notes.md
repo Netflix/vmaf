@@ -35127,6 +35127,36 @@ meson test -C build --suite=fast
 
 ---
 
+## `perf/adm-cm-cuda-warp-reduce-fusion` — ADM CM i4 warp-reduce fusion (2026-05-16)
+
+**What changed**: `integer_adm/adm_cm.cu` — `i4_adm_cm_line_kernel` (writes INT32
+per-thread values to `accum_per_thread` global scratch) + `adm_cm_reduce_line_kernel_4`
+(reads scratch, cubic-accumulates, warp-reduces) replaced by a single
+`i4_adm_cm_line_kernel_fused` kernel that does all three steps internally and
+writes via `atomicAdd_int64`.  `integer_adm_cuda.c` updated: one `cuLaunchKernel`
+per scale (was two), `func_adm_cm_reduce_line_kernel_4` removed from `AdmStateCuda`.
+
+**Rebase impact**: low. All touched files are fork-local CUDA kernels and their
+host glue; Netflix upstream does not maintain GPU ADM CM kernels.
+
+**Invariant to preserve on rebase**: the fused kernel's shift constants
+(`shift_sq=30`, `add_shift_sq=1<<29`, `shift_cub=ceil(log2(w))`,
+`shift_inner_accum=ceil(log2(h))`) must match those used by
+`adm_cm_reduce_line_kernel` in the same file for `scale != 0`.  If the reduce
+kernel's constants are ever changed, the fused kernel's constants must be updated
+in lockstep.
+
+**Smoke-test after rebase**:
+
+```bash
+meson setup build -Denable_cuda=true -Denable_sycl=false
+ninja -C build
+python3 scripts/ci/cross_backend_parity_gate.py --features adm --backends cpu cuda --places 4
+```
+
+
+---
+
 ### Ghost `moment_vulkan.c` removed (fix/drop-ghost-moment-vulkan-c)
 
 PR #1067 re-introduced the pre-rename `moment_vulkan.c` alongside the new
@@ -35198,3 +35228,4 @@ upstream later changes the HIP PSNR submit/collect call-graph, re-check
 that the per-plane loop in `submit_fex_hip` and `collect_fex_hip` matches
 whatever new structure upstream introduces. The kernel (`psnr_score.hip`)
 is unchanged.
+
