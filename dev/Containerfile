@@ -69,6 +69,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vulkan-tools \
     mesa-vulkan-drivers \
     libglvnd-dev \
+    libva-dev \
+    libva-drm2 \
+    libvpl-dev \
     # GLSL shader compiler (glslc) — required by the Vulkan backend at build time
     glslang-tools \
     glslc \
@@ -262,7 +265,7 @@ ARG NV_CODEC_HEADERS_REF=876af32a202d0de83bd1d36fe74ee0f7fcf86b0d
 RUN cd /tmp \
     && curl -fsSL "https://code.ffmpeg.org/FFmpeg/nv-codec-headers/archive/${NV_CODEC_HEADERS_REF}.tar.gz" -o nv-codec-headers.tgz \
     && tar xzf nv-codec-headers.tgz \
-    && cd nv-codec-headers-${NV_CODEC_HEADERS_REF} \
+    && cd nv-codec-headers \
     && make install PREFIX=/usr/local \
     && cd / && find /tmp -maxdepth 1 -name 'nv-codec-headers*' -exec rm -rf {} +
 
