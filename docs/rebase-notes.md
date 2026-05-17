@@ -35037,3 +35037,25 @@ grep -c 'integer_ms_ssim_hip\|integer_vif_metal' libvmaf/src/feature/feature_ext
 grep 'psnr_sycl' libvmaf/src/feature/feature_extractor.c | grep -v extern
 # Expected: exactly 1 line (no duplicates in the list section)
 ```
+
+---
+
+## perf/chug-sidecar-bit-depth-key-f6b (2026-05-17)
+
+**Files touched**: `ai/scripts/extract_k150k_features.py`
+
+**What changed**: Added `"chug_bit_depth"` to the `keep` allowlist in
+`_load_jsonl_metadata`. Without this field, `_geometry_from_sidecar` always
+returned the default `yuv420p` pix_fmt even for 10-bit CHUG clips (F6-B /
+Research-0135). Corrected module and `_process_clip` docstrings that overstated
+the ffprobe-skip extent.
+
+**Rebase impact**: no rebase impact. `ai/scripts/extract_k150k_features.py` is
+fork-local; there is no upstream-Netflix equivalent.
+
+**Smoke-test after rebase**:
+
+```bash
+python -m pytest ai/tests/test_extract_k150k_features.py -v
+# Expected: 6/6 pass (5 original + 1 new regression test)
+```

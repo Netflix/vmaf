@@ -41,13 +41,16 @@ I/O strategy (perf win — Research-0135):
   remains the primary restartability signal; the JSONL staging file handles recovery
   of in-memory rows after an unclean exit.
 
-ffprobe skip (Win 2 — Research-0135):
+ffprobe geometry override (Win 2 — Research-0135):
   When ``--metadata-jsonl`` is provided and the sidecar contains
   ``chug_width_manifest``, ``chug_height_manifest``, and
-  ``chug_framerate_manifest`` for a clip, ffprobe is skipped for that clip.
-  The pixel format is inferred from ``chug_bit_depth`` (10 → ``yuv420p10le``,
-  else ``yuv420p``) or defaults to ``yuv420p``.  ffprobe remains necessary for
-  clips not covered by the sidecar.
+  ``chug_framerate_manifest`` for a clip, those values are used in place of
+  ffprobe's geometry output.  The pixel format is inferred from
+  ``chug_bit_depth`` (10 → ``yuv420p10le``, else ``yuv420p``); prior to the
+  F6-B fix ``chug_bit_depth`` was not loaded from the sidecar, so the pixel
+  format always defaulted to ``yuv420p`` regardless of actual bit depth.
+  ffprobe is still called for ``color_meta`` (HDR transfer/primaries detection);
+  a full ffprobe skip requires adding those fields to the CHUG sidecar schema.
 
 Parallelism (ADR-0382): clips are dispatched to a
 ``concurrent.futures.ProcessPoolExecutor`` with ``--threads-cuda`` workers
@@ -719,6 +722,10 @@ def _load_jsonl_metadata(path: Path | None, *, split_seed: str) -> dict[str, dic
         "chug_content_name",
         "chug_height_manifest",
         "chug_width_manifest",
+        # Required by _geometry_from_sidecar to infer yuv420p10le for 10-bit
+        # CHUG clips; omitting it caused that function to always fall back to
+        # the yuv420p default regardless of actual bit depth (F6-B / Research-0135).
+        "chug_bit_depth",
     )
     out: dict[str, dict[str, Any]] = {}
     with path.open("r", encoding="utf-8") as fh:
@@ -839,8 +846,12 @@ def _process_clip(
 
     When ``sidecar_meta`` contains the required CHUG geometry fields
     (``chug_width_manifest``, ``chug_height_manifest``,
-    ``chug_framerate_manifest``), ffprobe is skipped for that clip (Win 2,
-    Research-0135).
+    ``chug_framerate_manifest``), geometry from ffprobe is overridden by the
+    sidecar values (Win 2, Research-0135).  ``chug_bit_depth`` must also be
+    present in ``sidecar_meta`` for 10-bit clips to be decoded as
+    ``yuv420p10le``; it is now loaded from the sidecar in
+    ``_load_jsonl_metadata`` (F6-B fix).  ffprobe is still called for
+    HDR color metadata (color_transfer, color_primaries).
 
     Returns a dict with keys: clip_name, mos, width, height, <feat>_mean/std.
     Raises on any failure so the caller can log and skip.
