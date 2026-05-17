@@ -2489,11 +2489,9 @@ static float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_s
     float f_accum_v = (float)(accum_v / final_shift[scale - 1]);
     float f_accum_d = (float)(accum_d / final_shift[scale - 1]);
 
-    // TODO: if we integrate adm_p_norm, adm_p_norm=3.0f here
-    // This would mean:
-    // float num_scale_h = powf(f_accum_h, 1.0f / adm_p_norm) + powf((bottom - top) * (right - left) * adm_noise_weight, 1.0f / adm_p_norm);
-    // float num_scale_v = powf(f_accum_v, 1.0f / adm_p_norm) + powf((bottom - top) * (right - left) * adm_noise_weight, 1.0f / adm_p_norm);
-    // float num_scale_d = powf(f_accum_d, 1.0f / adm_p_norm) + powf((bottom - top) * (right - left) * adm_noise_weight, 1.0f / adm_p_norm);
+    /* adm_p_norm is fixed at 3.0f to match the Netflix training-data contract.
+     * Changing this value would invalidate model scores; a model retrain is
+     * required before it can become a runtime parameter. */
     float num_scale_h = powf(f_accum_h, 1.0f / 3.0f) +
                         powf((bottom - top) * (right - left) * adm_noise_weight, 1.0f / 3.0f);
     float num_scale_v = powf(f_accum_v, 1.0f / 3.0f) +
