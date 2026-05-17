@@ -7,6 +7,12 @@ PR that touches upstream-shared paths or establishes a rebase-sensitive
 invariant adds an entry here. PRs with no rebase impact state "no
 rebase impact" in the PR description and skip the entry.
 
+## refactor/aiutils-subprocess-dedup — subprocess helper extraction
+
+**`ai/src/aiutils/subprocess_utils.py`** (new file): no upstream equivalent;
+pure fork-local utility. No rebase-sensitive invariant — upstream changes to
+`ai/scripts/` do not touch `aiutils`.
+
 ## fix/cuda-libvmaf-fixme-clarify — CUDA FIXME/TODO comment cleanup
 
 **`libvmaf/src/libvmaf.c`**: comment-only change; replaces bare `FIXME` / `TODO`
