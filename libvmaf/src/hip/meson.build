@@ -88,6 +88,15 @@ hip_sources += files(
     # HSACO blob is embedded and the kernel runs on device; without it
     # init() returns -ENOSYS (same scaffold-posture as the other consumers).
     '../feature/hip/float_psnr_hip.c',
+    # integer_adm_hip (2026-05-16): full port of integer_adm_cuda.c.
+    # Four HSACO blobs (adm_dwt2, adm_csf, adm_csf_den, adm_cm) are
+    # embedded by the hipcc pipeline when enable_hipcc=true; the
+    # scaffold-only path (enable_hip=true, enable_hipcc=false) compiles
+    # host-only and every lifecycle function returns -ENOSYS.
+    # Kernel sources live in feature/hip/integer_adm/*.hip and are
+    # compiled via the hip_hsaco_sources custom_target pipeline
+    # (same pattern as float_psnr_hip / ADR-0372).
+    '../feature/hip/integer_adm_hip.c',
 )
 
 # T7-10b runtime linkage. ROCm ships `hip_runtime_api.h` under

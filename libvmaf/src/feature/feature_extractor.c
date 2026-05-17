@@ -152,12 +152,12 @@ extern VmafFeatureExtractor vmaf_fex_float_motion_hip;
  * `feature/cuda/integer_ssim_cuda.c` and pins the two-dispatch +
  * five intermediate float buffers shape. v1: scale=1 only. */
 extern VmafFeatureExtractor vmaf_fex_float_ssim_hip;
-/* HIP ninth-consumer kernel — ADR-0285. Mirrors the CUDA twin
- * `feature/cuda/integer_ms_ssim_cuda.c`: 5-level pyramid,
- * three kernels (decimate, horiz, vert_lcs), per-scale l/c/s
- * float partial readbacks. Emits `float_ms_ssim` + optional
- * per-scale l/c/s triples when enable_lcs=true. */
-extern VmafFeatureExtractor vmaf_fex_integer_ms_ssim_hip;
+/* HIP ninth consumer: integer_adm_hip (2026-05-16). Full port of the
+ * CUDA twin `feature/cuda/integer_adm_cuda.c`. With `enable_hipcc=true`
+ * the four HSACO blobs (adm_dwt2, adm_csf, adm_csf_den, adm_cm) are
+ * embedded and the complete 4-scale DWT+CSF+CM pipeline runs on device.
+ * Without it init() returns -ENOSYS (scaffold posture). */
+extern VmafFeatureExtractor vmaf_fex_integer_adm_hip;
 #endif
 #if HAVE_METAL
 /* Metal feature extractors — T8-1c through T8-1j / ADR-0421.
@@ -294,12 +294,10 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
      * float-partial readback); emits one feature (`float_ssim`)
      * once the runtime kernel arrives. v1 is scale=1 only. */
     &vmaf_fex_float_ssim_hip,
-    /* Ninth consumer (ADR-0285): `integer_ms_ssim_hip` mirrors
-     * `integer_ms_ssim_cuda.c`'s call graph (5-level pyramid,
-     * decimate + horiz + vert_lcs kernels, per-scale l/c/s float
-     * partial readbacks); emits `float_ms_ssim` + optional per-scale
-     * l/c/s triples once the runtime kernel arrives. */
-    &vmaf_fex_integer_ms_ssim_hip,
+    /* Ninth consumer (2026-05-16): `integer_adm_hip` — full port of the
+     * CUDA twin. Emits VMAF_integer_feature_adm2_score + 4 scale scores.
+     * With enable_hipcc=true runs on device; without it, -ENOSYS. */
+    &vmaf_fex_integer_adm_hip,
 #endif
 #if HAVE_METAL
     /* T8-1 first consumer (ADR-0361): registration succeeds even on
