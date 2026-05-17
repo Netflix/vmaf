@@ -116,6 +116,33 @@ files.
    cross-backend gate (mirrors the `enable_vulkan` and `enable_hip`
    roadmaps).
 
+## Feature extractor options
+
+### `float_ssim_metal`
+
+`float_ssim_metal` now reaches full option parity with the CPU `float_ssim`
+extractor (ADR-0484):
+
+- `enable_lcs` (bool, default `false`) — emit per-frame luminance
+  (`float_ssim_l`), contrast (`float_ssim_c`), and structure (`float_ssim_s`)
+  sub-scores alongside the composite SSIM score.  When enabled, the
+  `float_ssim_vert_combine` kernel accumulates three additional per-WG partial
+  sums (L, C, S) in a single threadgroup reduction pass — no extra dispatch.
+- `enable_db` (bool, default `false`) — convert the SSIM score to decibels:
+  `-10·log10(1 − SSIM)`.  Applied host-side after the partial-sum reduction.
+- `clip_db` (bool, default `false`) — clamp the dB output to a finite maximum
+  derived from frame dimensions and bit depth.  Mirrors the CPU helper exactly.
+- `scale` (int, default `0` = auto-detect) — decimation scale factor.
+  v1 supports scale=1 only; `scale=0` on frames where auto-detect would choose
+  `scale>1` returns `-EINVAL` at init time with a log message.
+
+Usage example:
+
+```bash
+vmaf --feature float_ssim_metal:enable_lcs=true:enable_db=true \
+     --reference ref.yuv --distorted dist.yuv ...
+```
+
 ## Coordination with NEON
 
 The Metal backend targets the GPU on Apple Silicon. The NEON SIMD
