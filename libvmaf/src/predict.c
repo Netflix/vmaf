@@ -557,7 +557,6 @@ static int bootstrap_append_named_scores(VmafModelCollection *model_collection,
                                          VmafFeatureCollector *feature_collector, unsigned index,
                                          VmafModelCollectionScore *score)
 {
-    //TODO: dedupe, vmaf_score_pooled_model_collection()
     const char *suffix_lo = "_ci_p95_lo";
     const char *suffix_hi = "_ci_p95_hi";
     const char *suffix_bagging = "_bagging";

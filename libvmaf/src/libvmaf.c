@@ -2232,7 +2232,6 @@ int vmaf_score_pooled_model_collection(VmafContext *vmaf, VmafModelCollection *m
 
     score->type = VMAF_MODEL_COLLECTION_SCORE_BOOTSTRAP;
 
-    //TODO: dedupe, vmaf_bootstrap_predict_score_at_index()
     const char *suffix_lo = "_ci_p95_lo";
     const char *suffix_hi = "_ci_p95_hi";
     const char *suffix_bagging = "_bagging";
