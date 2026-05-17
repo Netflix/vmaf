@@ -71,7 +71,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglvnd-dev \
     # GLSL shader compiler (glslc) — required by the Vulkan backend at build time
     glslang-tools \
-    shaderc \
+    glslc \
     # Misc
     jq \
     && rm -rf /var/lib/apt/lists/*
