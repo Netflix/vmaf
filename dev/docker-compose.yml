@@ -87,7 +87,12 @@ services:
     runtime: ${CONTAINER_RUNTIME:-runc}
 
     deploy:
-      <<: *common-deploy
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
     # Intel Arc (Vulkan/SYCL via DRI) + AMD ROCm (HIP via /dev/kfd).
     # /dev/dri covers all DRM render nodes (renderD128–renderD130, cards 0–2).
