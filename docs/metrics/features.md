@@ -24,32 +24,32 @@ limitations in the same PR as the code.
 
 ## Extractor overview
 
-| Feature name       | Invocation name | Core feature? | Output metrics                                                                                | SIMD                | GPU                |
-|--------------------|-----------------|---------------|-----------------------------------------------------------------------------------------------|---------------------|--------------------|
-| VIF (fixed-point)  | `vif`           | Yes           | `vif_scale0`, `vif_scale1`, `vif_scale2`, `vif_scale3`                                        | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
-| VIF (float)        | `float_vif`     | Yes           | `float_vif_scale0..3`                                                                         | —                   | CUDA, SYCL, Vulkan |
-| Motion2 (fixed)    | `motion`        | Yes           | `motion2` (+ `motion` if `debug=true`)                                                        | AVX2, AVX-512, NEON | CUDA, Vulkan       |
-| Motion v2 (fixed)  | `motion_v2`     | No            | `VMAF_integer_feature_motion_v2_sad_score`, `VMAF_integer_feature_motion2_v2_score`           | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
-| Motion2 (float)    | `float_motion`  | Yes           | `float_motion2` (+ `float_motion` if `debug=true`)                                            | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
-| ADM (fixed-point)  | `adm`           | Yes           | `adm2`, `adm_scale0`, `adm_scale1`, `adm_scale2`, `adm_scale3`                                | AVX2, AVX-512, NEON | CUDA, Vulkan       |
-| ADM (float)        | `float_adm`     | Yes           | `float_adm2`, `float_adm_scale0..3`                                                           | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
-| [CAMBI](cambi.md)  | `cambi`         | No            | `cambi`                                                                                       | —                   | Vulkan⁴            |
-| CIEDE2000          | `ciede`         | No            | `ciede2000`                                                                                   | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
-| PSNR (fixed)       | `psnr`          | No            | `psnr_y`, `psnr_cb`, `psnr_cr` (+ MSE / APSNR optional)                                       | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan¹|
-| PSNR (float)       | `float_psnr`    | No            | `float_psnr` (luma only — the CPU extractor emits a single luma score)                        | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
-| PSNR-HVS           | `psnr_hvs`      | No            | `psnr_hvs`, `psnr_hvs_y`, `psnr_hvs_cb`, `psnr_hvs_cr`                                        | AVX2, NEON          | CUDA, SYCL, Vulkan |
-| SSIM (fixed)       | `ssim`          | No            | `ssim`                                                                                        | —                   | Vulkan²            |
-| SSIM (float)       | `float_ssim`    | No            | `float_ssim` (+ L/C/S if enabled)                                                             | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
-| MS-SSIM            | `float_ms_ssim` | No            | `float_ms_ssim` (+ per-scale L/C/S if enabled)                                                | AVX2, AVX-512, NEON | CUDA, SYCL, Vulkan |
-| ANSNR              | `float_ansnr`   | No            | `float_ansnr`, `float_anpsnr`                                                                 | —                   | CUDA, SYCL, Vulkan |
-| SSIMULACRA 2       | `ssimulacra2`   | No            | `ssimulacra2`                                                                                 | AVX2, AVX-512, NEON, SVE2 | CUDA, SYCL, Vulkan |
-| Float moment       | `float_moment`  | No            | `float_moment_ref1st`, `float_moment_dis1st`, `float_moment_ref2nd`, `float_moment_dis2nd`    | AVX2, NEON          | CUDA, SYCL, Vulkan |
-| LPIPS (tiny-AI)    | `lpips`         | No            | `lpips`                                                                                       | —                   | via ORT EP³        |
-| DISTS-Sq (tiny-AI) | `dists_sq`      | No            | `dists_sq`                                                                                    | —                   | via ORT EP³        |
-| FastDVDnet pre     | `fastdvdnet_pre`| No            | `fastdvdnet_pre_l1_residual`                                                                  | —                   | —                  |
-| TransNet V2        | `transnet_v2`   | No            | `shot_boundary_probability`, `shot_boundary`                                                  | —                   | —                  |
-| Speed (chroma)     | `speed_chroma`  | No            | `speed_chroma_y/u/v_score`, `speed_chroma_uv_score` (only when `VMAF_FLOAT_FEATURES` enabled) | —                   | —                  |
-| Speed (temporal)   | `speed_temporal`| No            | `speed_temporal_score` family (only when `VMAF_FLOAT_FEATURES` enabled)                        | —                   | —                  |
+| Feature name       | Invocation name | Core feature? | Output metrics                                                                                 | SIMD                      | GPU                |
+|--------------------|-----------------|---------------|------------------------------------------------------------------------------------------------|---------------------------|--------------------|
+| VIF (fixed-point)  | `vif`           | Yes           | `vif_scale0`, `vif_scale1`, `vif_scale2`, `vif_scale3`                                         | AVX2, AVX-512, NEON       | CUDA, SYCL, Vulkan |
+| VIF (float)        | `float_vif`     | Yes           | `float_vif_scale0..3`                                                                          | —                         | CUDA, SYCL, Vulkan |
+| Motion2 (fixed)    | `motion`        | Yes           | `motion2` (+ `motion` if `debug=true`)                                                         | AVX2, AVX-512, NEON       | CUDA, Vulkan       |
+| Motion v2 (fixed)  | `motion_v2`     | No            | `VMAF_integer_feature_motion_v2_sad_score`, `VMAF_integer_feature_motion2_v2_score`            | AVX2, AVX-512, NEON       | CUDA, SYCL, Vulkan |
+| Motion2 (float)    | `float_motion`  | Yes           | `float_motion2` (+ `float_motion` if `debug=true`)                                             | AVX2, AVX-512, NEON       | CUDA, SYCL, Vulkan |
+| ADM (fixed-point)  | `adm`           | Yes           | `adm2`, `adm_scale0`, `adm_scale1`, `adm_scale2`, `adm_scale3`                                 | AVX2, AVX-512, NEON       | CUDA, Vulkan       |
+| ADM (float)        | `float_adm`     | Yes           | `float_adm2`, `float_adm_scale0..3`                                                            | AVX2, AVX-512, NEON       | CUDA, SYCL, Vulkan |
+| [CAMBI](cambi.md)  | `cambi`         | No            | `cambi`                                                                                        | —                         | Vulkan⁴            |
+| CIEDE2000          | `ciede`         | No            | `ciede2000`                                                                                    | AVX2, AVX-512, NEON       | CUDA, SYCL, Vulkan |
+| PSNR (fixed)       | `psnr`          | No            | `psnr_y`, `psnr_cb`, `psnr_cr` (+ MSE / APSNR optional)                                        | AVX2, AVX-512, NEON       | CUDA, SYCL, Vulkan¹|
+| PSNR (float)       | `float_psnr`    | No            | `float_psnr` (luma only — the CPU extractor emits a single luma score)                         | AVX2, AVX-512, NEON       | CUDA, SYCL, Vulkan |
+| PSNR-HVS           | `psnr_hvs`      | No            | `psnr_hvs`, `psnr_hvs_y`, `psnr_hvs_cb`, `psnr_hvs_cr`                                         | AVX2, NEON                | CUDA, SYCL, Vulkan |
+| SSIM (fixed)       | `ssim`          | No            | `ssim`                                                                                         | —                         | Vulkan²            |
+| SSIM (float)       | `float_ssim`    | No            | `float_ssim` (+ L/C/S if enabled)                                                              | AVX2, AVX-512, NEON       | CUDA, SYCL, Vulkan |
+| MS-SSIM            | `float_ms_ssim` | No            | `float_ms_ssim` (+ per-scale L/C/S if enabled)                                                 | AVX2, AVX-512, NEON       | CUDA, SYCL, Vulkan |
+| ANSNR              | `float_ansnr`   | No            | `float_ansnr`, `float_anpsnr`                                                                  | —                         | CUDA, SYCL, Vulkan |
+| SSIMULACRA 2       | `ssimulacra2`   | No            | `ssimulacra2`                                                                                  | AVX2, AVX-512, NEON, SVE2 | CUDA, SYCL, Vulkan |
+| Float moment       | `float_moment`  | No            | `float_moment_ref1st`, `float_moment_dis1st`, `float_moment_ref2nd`, `float_moment_dis2nd`     | AVX2, NEON                | CUDA, SYCL, Vulkan |
+| LPIPS (tiny-AI)    | `lpips`         | No            | `lpips`                                                                                        | —                         | via ORT EP³        |
+| DISTS-Sq (tiny-AI) | `dists_sq`      | No            | `dists_sq`                                                                                     | —                         | via ORT EP³        |
+| FastDVDnet pre     | `fastdvdnet_pre`| No            | `fastdvdnet_pre_l1_residual`                                                                   | —                         | —                  |
+| TransNet V2        | `transnet_v2`   | No            | `shot_boundary_probability`, `shot_boundary`                                                   | —                         | —                  |
+| Speed (chroma)     | `speed_chroma`  | No            | `speed_chroma_y/u/v_score`, `speed_chroma_uv_score` (only when `VMAF_FLOAT_FEATURES` enabled)  | —                         | —                  |
+| Speed (temporal)   | `speed_temporal`| No            | `speed_temporal_score` family (only when `VMAF_FLOAT_FEATURES` enabled)                        | —                         | —                  |
 
 **Core** extractors are required inputs for the shipped VMAF models (see
 [models/overview.md](../models/overview.md)); non-core extractors are
@@ -327,20 +327,25 @@ only.
 
 #### Options
 
-| Option                   | Alias | Type   | Default   | Range       | Effect                                                                                                                                                   |
-|--------------------------|-------|--------|-----------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `debug`                  | —     | bool   | `false`   | —           | Emit debug metrics                                                                                                                                        |
-| `adm_enhn_gain_limit`    | `egl` | double | `1.2`     | `1.0–1.2`   | Cap enhancement-gain ratio                                                                                                                                |
-| `adm_norm_view_dist`     | `nvd` | double | `3.0`     | `0.75–24.0` | Normalised viewing distance (distance ÷ display height)                                                                                                   |
-| `adm_ref_display_height` | `rdf` | int    | `1080`    | `1–4320`    | Reference display height in pixels (for viewing-distance scaling)                                                                                         |
-| `adm_csf_mode`           | `csf` | int    | `0`       | `0–9`       | Contrast-sensitivity-function model index                                                                                                                 |
-| `adm_csf_scale`          | —     | double | `1.0`     | `>0`        | Uniform scale on H/V-axis CSF sensitivity (`rfactor_h/v = scale / quant_step`); `1.0` = upstream-canonical                                               |
-| `adm_csf_diag_scale`     | —     | double | `1.0`     | `>0`        | Separate scale on diagonal-axis CSF sensitivity (`rfactor_d = diag_scale / quant_step`); `1.0` = upstream-canonical                                      |
-| `noise_weight`           | —     | double | `0.03125` | `>0`        | Weight in `(area × noise_weight)^(1/3)` noise-floor term in `adm_cm` / `adm_csf_den`; default `1/32 ≈ 0.03125` = upstream-canonical noise-floor divisor |
+| Option                   | Alias  | Type   | Default   | Range       | Effect                                                                                                                                                    |
+| ------------------------ | ------ | ------ | --------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `debug`                  | —      | bool   | `false`   | —           | Emit debug metrics                                                                                                                                        |
+| `adm_enhn_gain_limit`    | `egl`  | double | `1.2`     | `1.0–1.2`   | Cap enhancement-gain ratio                                                                                                                                |
+| `adm_norm_view_dist`     | `nvd`  | double | `3.0`     | `0.75–24.0` | Normalised viewing distance (distance ÷ display height)                                                                                                   |
+| `adm_ref_display_height` | `rdh`  | int    | `1080`    | `1–4320`    | Reference display height in pixels (for viewing-distance scaling)                                                                                         |
+| `adm_csf_mode`           | `csf`  | int    | `0`       | `0–3`       | Contrast-sensitivity-function model index                                                                                                                 |
+| `adm_csf_scale`          | —      | double | `1.0`     | `>0`        | Uniform scale on H/V-axis CSF sensitivity (`rfactor_h/v = scale / quant_step`); `1.0` = upstream-canonical                                                |
+| `adm_csf_diag_scale`     | —      | double | `1.0`     | `>0`        | Separate scale on diagonal-axis CSF sensitivity (`rfactor_d = diag_scale / quant_step`); `1.0` = upstream-canonical                                       |
+| `adm_noise_weight`       | `nw`   | double | `0.03125` | `0–1500`    | Weight in `(area × noise_weight)^(1/3)` noise-floor term in `adm_cm` / `adm_csf_den`; default `1/32 ≈ 0.03125` = upstream-canonical noise-floor divisor   |
+| `adm_dlm_weight`         | `dlmw` | double | `0.5`     | `0.0–1.0`   | Linear blend between DLM and AIM scores; `1.0` = DLM-only (no AIM contribution), `0.0` = AIM-only                                                         |
+| `adm_skip_aim`           | —      | bool   | `false`   | —           | Skip the AIM (Additive Impairment Metric) sub-band calculation entirely; forces AIM contribution to zero                                                  |
+| `adm_skip_scale0`        | `ssz`  | bool   | `false`   | —           | Skip scale-0 (finest wavelet level) calculation; scale-0 outputs forced to `0.0` and excluded from the fused score. Matches GPU-backend parity mode.      |
+| `adm_min_val`            | `min`  | double | `0.0`     | `0.0–1.0`   | Floor value: fused ADM scores below this threshold are clipped up to it                                                                                   |
 
-All three parameters are available on every backend (`adm` and `float_adm`)
-including CUDA, SYCL, and Vulkan. Setting all three to their defaults
-(`1.0`, `1.0`, `0.03125`) produces output bit-identical to upstream Netflix ADM.
+All parameters are available on every backend (`adm` and `float_adm`)
+including CUDA, SYCL, HIP, Vulkan, and Metal. Setting `adm_csf_scale`,
+`adm_csf_diag_scale`, and `adm_noise_weight` to their defaults (`1.0`, `1.0`,
+`0.03125`) produces output bit-identical to upstream Netflix ADM.
 
 **Backends** — `adm`: AVX2, AVX-512, NEON, CUDA, SYCL, Vulkan.
 `float_adm`: AVX2, AVX-512, NEON, CUDA, SYCL, Vulkan.
@@ -790,7 +795,7 @@ LPIPS before ONNX inference.
 
 | Option       | Type   | Default | Effect                                                                                                                             |
 |--------------|--------|---------|------------------------------------------------------------------------------------------------------------------------------------|
-| `model_path` | string | unset   | Filesystem path to the DISTS-Sq ONNX model (two-input). If unset, falls back to the `VMAF_DISTS_SQ_MODEL_PATH` environment variable. |
+| `model_path` | string | unset   | Filesystem path to the DISTS-Sq ONNX model (two-input). If unset, falls back to `VMAF_DISTS_SQ_MODEL_PATH` environment variable.   |
 
 **Backends** — scalar only on the libvmaf side. ONNX execution follows the
 configured tiny-AI provider selected via `--tiny-device`.
