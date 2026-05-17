@@ -18,7 +18,7 @@ costs were identified outside the vmaf binary hot path:
    redundant read mass: ~1.1 GB across the 30 cycles.
 
 2. **F6-B (Win 2)**: For every clip, a `ffprobe` subprocess was spawned to get
-   width / height / fps.  CHUG has a JSONL sidecar (`.workingdir2/chug/chug.jsonl`)
+   width / height / fps.  CHUG has a JSONL sidecar (`.corpus/chug/chug.jsonl`)
    that already carries `chug_width_manifest`, `chug_height_manifest`, and
    `chug_framerate_manifest` for every distorted clip.  At ~100–300 ms per
    `ffprobe` invocation and 5992 clips this is 600 s – 1800 s (10–30 min) of
