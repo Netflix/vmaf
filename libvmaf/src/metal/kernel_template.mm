@@ -25,6 +25,7 @@
 #import <Metal/Metal.h>
 
 extern "C" {
+#include "../kernel_lifecycle_common.h"
 #include "common.h"
 #include "kernel_template.h"
 }
@@ -65,9 +66,7 @@ int vmaf_metal_kernel_lifecycle_init(VmafMetalKernelLifecycle *lc, VmafMetalCont
     if (lc == NULL) {
         return -EINVAL;
     }
-    lc->cmd_queue = 0;
-    lc->submit    = 0;
-    lc->finished  = 0;
+    VMAF_LIFECYCLE_ZERO(lc);
 
     if (ctx == NULL) {
         return -EINVAL;
@@ -104,9 +103,8 @@ int vmaf_metal_kernel_buffer_alloc(VmafMetalKernelBuffer *buf, VmafMetalContext 
     if (buf == NULL) {
         return -EINVAL;
     }
-    buf->buffer    = 0;
-    buf->host_view = NULL;
-    buf->bytes     = bytes;
+    VMAF_LIFECYCLE_ZERO(buf);
+    buf->bytes = bytes;
 
     if (ctx == NULL) {
         return -EINVAL;

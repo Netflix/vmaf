@@ -20,6 +20,7 @@
 #define __HIP_PLATFORM_AMD__ 1
 #include <hip/hip_runtime_api.h>
 
+#include "../kernel_lifecycle_common.h"
 #include "common.h"
 #include "kernel_template.h"
 
@@ -60,9 +61,7 @@ int vmaf_hip_kernel_lifecycle_init(VmafHipKernelLifecycle *lc, VmafHipContext *c
     /* NASA P10 r5: pin the precondition + the post-init invariants
      * the rest of the lifecycle depends on. */
     assert(lc != NULL);
-    lc->str = 0;
-    lc->submit = 0;
-    lc->finished = 0;
+    VMAF_LIFECYCLE_ZERO(lc);
 
     hipStream_t stream = NULL;
     hipError_t rc = hipStreamCreateWithFlags(&stream, hipStreamNonBlocking);
@@ -97,8 +96,7 @@ int vmaf_hip_kernel_readback_alloc(VmafHipKernelReadback *rb, VmafHipContext *ct
     if (rb == NULL) {
         return -EINVAL;
     }
-    rb->device = NULL;
-    rb->host_pinned = NULL;
+    VMAF_LIFECYCLE_ZERO(rb);
     rb->bytes = bytes;
     if (bytes == 0) {
         return -EINVAL;

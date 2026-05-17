@@ -28,6 +28,30 @@ keys in `provided_features`. If upstream Netflix ever adds chroma support to
 
 No rebase conflict expected on the luma path — only additive changes.
 
+## refactor/kernel-lifecycle-zero-dedup
+
+No rebase impact: adds `libvmaf/src/kernel_lifecycle_common.h` (new fork-local
+internal header) and edits `libvmaf/src/hip/kernel_template.c` and
+`libvmaf/src/metal/kernel_template.mm`, both of which are wholly fork-local
+files with no Netflix/vmaf upstream counterpart. No upstream-shared C sources,
+headers, build rules, or feature extractor logic is touched.
+
+## refactor/bootstrap-name-builder-dedup-2026-05-16
+
+**`libvmaf/src/bootstrap_names.h`** is a new fork-local internal header.
+If upstream Netflix ever refactors `predict.c` or `libvmaf.c` in the
+bootstrap-score-pooling area, check whether the suffix constants remain
+identical and update `bootstrap_names.h` accordingly.  No public API
+change; no rebase conflict expected in practice since upstream has not
+touched these functions since the fork diverged.
+
+**Smoke-test after rebase**:
+
+```bash
+meson setup build -Denable_cuda=false -Denable_sycl=false && ninja -C build
+meson test -C build --suite=fast 2>&1 | grep -E 'predict|model|FAIL|PASS'
+```
+
 ## fix/sycl-motion-fps-weight-vulkan-import-status-2026-05-16
 
 **Sub-task B -- `integer_motion_v2_sycl.cpp`**: adds `motion_fps_weight`
