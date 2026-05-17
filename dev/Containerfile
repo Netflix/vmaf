@@ -170,7 +170,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -fsSL https://repositories.intel.com/gpu/intel-graphics.key \
         | gpg --dearmor \
         | tee /usr/share/keyrings/intel-graphics.gpg > /dev/null \
-    && printf 'deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu/24.04/lts noble flex\n' \
+    && printf 'deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu noble unified\n' \
         > /etc/apt/sources.list.d/intel-gpu.list
 
 # hadolint ignore=DL3008
