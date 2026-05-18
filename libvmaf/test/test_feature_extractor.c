@@ -56,7 +56,7 @@ static char *test_feature_extractor_context_pool()
 {
     int err = 0;
 
-    const unsigned n_threads = 8;
+    enum { n_threads = 8 };
     VmafFeatureExtractorContextPool *pool;
     err = vmaf_fex_ctx_pool_create(&pool, n_threads);
     mu_assert("problem during vmaf_fex_ctx_pool_create", !err);
