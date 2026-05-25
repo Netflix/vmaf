@@ -1,6 +1,6 @@
 /**
  *
- *  Copyright 2016-2020 Netflix, Inc.
+ *  Copyright 2016-2026 Netflix, Inc.
  *
  *     Licensed under the BSD+Patent License (the "License");
  *     you may not use this file except in compliance with the License.
@@ -16,21 +16,24 @@
  *
  */
 
+
 #include <errno.h>
-#include <math.h>
+#include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "cpu.h"
-#include "common/alignment.h"
 #include "dict.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "feature_name.h"
 #include "integer_motion.h"
-#include "log.h"
-#include "mem.h"
 #include "motion_blend_tools.h"
-#include "picture.h"
+
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+/* Default maximum value allowed for motion */
+#define DEFAULT_MOTION_MAX_VAL (10000.0)
 
 #if ARCH_X86
 #include "x86/motion_avx2.h"
@@ -39,41 +42,27 @@
 #endif
 #endif
 
-/* Default maximum value allowed for motion */
-#define DEFAULT_MOTION_MAX_VAL (10000.0)
+typedef uint64_t (*motion_pipeline_fn)(const uint8_t *, ptrdiff_t,
+                                       const uint8_t *, ptrdiff_t,
+                                       int32_t *, unsigned, unsigned,
+                                       unsigned bpc);
 
 typedef struct MotionState {
-    VmafPicture tmp;
-    VmafPicture blur[5];
-    unsigned index;
-    double score;
-    bool debug;
-    bool motion_five_frame_window;
-    bool motion_force_zero;
-    bool motion_moving_average;
-    double motion_fps_weight;
+    int32_t *y_row;
+    unsigned w, h, bpc;
+    motion_pipeline_fn pipeline;
+    double motion_max_val;
     double motion_blend_factor;
     double motion_blend_offset;
-    double motion_max_val;
-    double previous_score;
-    void (*y_convolution)(void *src, uint16_t *dst, unsigned width,
-                          unsigned height, ptrdiff_t src_stride,
-                          ptrdiff_t dst_stride, unsigned inp_size_bits);
-    void (*x_convolution)(const uint16_t *src, uint16_t *dst, unsigned width,
-                          unsigned height, ptrdiff_t src_stride,
-                          ptrdiff_t dst_stride);
-    void (*sad)(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad);
+    double motion_fps_weight;
+    bool motion_five_frame_window;
+    bool motion_moving_average;
+    bool motion_force_zero;
+    bool debug;
     VmafDictionary *feature_name_dict;
 } MotionState;
 
 static const VmafOption options[] = {
-    {
-        .name = "debug",
-        .help = "debug mode: enable additional output",
-        .offset = offsetof(MotionState, debug),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = true,
-    },
     {
         .name = "motion_force_zero",
         .alias = "force_0",
@@ -118,6 +107,7 @@ static const VmafOption options[] = {
     },
     {
         .name = "motion_max_val",
+        .alias = "mmxv",
         .help = "maximum value allowed; larger values will be clipped to this value",
         .offset = offsetof(MotionState, motion_max_val),
         .type = VMAF_OPT_TYPE_DOUBLE,
@@ -125,7 +115,6 @@ static const VmafOption options[] = {
         .min = 0.0,
         .max = 10000.0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
-        .alias = "mmxv",
     },
     {
         .name = "motion_five_frame_window",
@@ -145,322 +134,162 @@ static const VmafOption options[] = {
         .default_val.b = false,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
+    {
+        .name = "debug",
+        .help = "debug mode: enable additional output",
+        .offset = offsetof(MotionState, debug),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
     { 0 }
 };
 
-static inline void
-x_convolution_16(const uint16_t *src, uint16_t *dst, unsigned width,
-                 unsigned height, ptrdiff_t src_stride,
-                 ptrdiff_t dst_stride)
+static inline int mirror(int idx, int size)
 {
-    const unsigned radius = filter_width / 2;
-    const unsigned left_edge = vmaf_ceiln(radius, 1);
-    const unsigned right_edge = vmaf_floorn(width - (filter_width - radius), 1);
-    const unsigned shift_add_round = 32768;
+    if (idx < 0) return -idx;
+    if (idx >= size) return 2 * size - idx - 2;
+    return idx;
+}
 
-    uint16_t *src_p = (uint16_t*) src + (left_edge - radius);
-    for (unsigned i = 0; i < height; ++i) {
-        for (unsigned j = 0; j < left_edge; j++) {
-            dst[i * dst_stride + j] =
-                (edge_16(true, src, width, height, src_stride, i, j) +
-                 shift_add_round) >> 16;
-        }
+static uint64_t
+motion_score_pipeline_8(const uint8_t *prev, ptrdiff_t prev_stride,
+                        const uint8_t *cur, ptrdiff_t cur_stride,
+                        int32_t *y_row, unsigned w, unsigned h,
+                        unsigned bpc)
+{
+    (void)bpc;
+    const int radius = filter_width / 2;
+    const int32_t y_round = 1 << 7;
+    const int32_t x_round = 1 << 15;
 
-        uint16_t *src_p1 = src_p;
-        for (unsigned j = left_edge; j < right_edge; j++) {
-            uint32_t accum = 0;
-            uint16_t *src_p2 = src_p1;
-            for (int k = 0; k < filter_width; ++k) {
-                accum += filter[k] * (*src_p2);
-                src_p2++;
+    uint64_t sad = 0;
+
+    for (unsigned i = 0; i < h; i++) {
+        // Fused diff + y_conv for row i (shift by 8, matching v1 precision)
+        int32_t any_nonzero = 0;
+        for (unsigned j = 0; j < w; j++) {
+            int32_t accum = 0;
+            for (int k = 0; k < filter_width; k++) {
+                const int row = mirror((int)i - radius + k, (int)h);
+                int32_t diff = prev[row * prev_stride + j]
+                             - cur[row * cur_stride + j];
+                accum += (int32_t)filter[k] * diff;
             }
-            src_p1++;
-            dst[i * dst_stride + j] = (accum + shift_add_round) >> 16;
+            y_row[j] = (accum + y_round) >> 8;
+            any_nonzero |= y_row[j];
         }
 
-        for (unsigned j = right_edge; j < width; j++) {
-            dst[i * dst_stride + j] =
-                (edge_16(true, src, width, height, src_stride, i, j) +
-                 shift_add_round) >> 16;
-        }
+        if (!any_nonzero) continue;
 
-        src_p += src_stride;
-    }
-}
-
-static inline void
-y_convolution_16(void *src, uint16_t *dst, unsigned width,
-                 unsigned height, ptrdiff_t src_stride,
-                 ptrdiff_t dst_stride, unsigned inp_size_bits)
-{
-    const unsigned radius = filter_width / 2;
-    const unsigned top_edge = vmaf_ceiln(radius, 1);
-    const unsigned bottom_edge = vmaf_floorn(height - (filter_width - radius), 1);
-    const unsigned add_before_shift = (int) pow(2, (inp_size_bits - 1));
-    const unsigned shift_var = inp_size_bits;
-
-    uint16_t *src_p = (uint16_t*) src + (top_edge - radius) * src_stride;
-    for (unsigned i = 0; i < top_edge; i++) {
-        for (unsigned j = 0; j < width; ++j) {
-            dst[i * dst_stride + j] =
-                (edge_16(false, src, width, height, src_stride, i, j) +
-                 add_before_shift) >> shift_var;
-        }
-    }
-
-    for (unsigned i = top_edge; i < bottom_edge; i++) {
-        uint16_t *src_p1 = src_p;
-        for (unsigned j = 0; j < width; ++j) {
-            uint16_t *src_p2 = src_p1;
-            uint32_t accum = 0;
-            for (int k = 0; k < filter_width; ++k) {
-                accum += filter[k] * (*src_p2);
-                src_p2 += src_stride;
+        // x_conv + abs + accumulate for row i
+        uint32_t row_sad = 0;
+        for (unsigned j = 0; j < w; j++) {
+            int64_t accum = 0;
+            for (int k = 0; k < filter_width; k++) {
+                const int col = mirror((int)j - radius + k, (int)w);
+                accum += (int64_t)filter[k] * y_row[col];
             }
-            dst[i * dst_stride + j] = (accum + add_before_shift) >> shift_var;
-            src_p1++;
+            int32_t val = (int32_t)((accum + x_round) >> 16);
+            row_sad += abs(val);
         }
-        src_p += src_stride;
+        sad += row_sad;
     }
 
-    for (unsigned i = bottom_edge; i < height; i++) {
-        for (unsigned j = 0; j < width; ++j) {
-            dst[i * dst_stride + j] =
-                (edge_16(false, src, width, height, src_stride, i, j) +
-                 add_before_shift) >> shift_var;
-        }
-    }
+    return sad;
 }
 
-static inline uint32_t
-edge_8(const uint8_t *src, int height, int stride, int i, int j)
+static inline uint64_t
+motion_score_pipeline_16(const uint8_t *prev_u8, ptrdiff_t prev_stride,
+                         const uint8_t *cur_u8, ptrdiff_t cur_stride,
+                         int32_t *y_row, unsigned w, unsigned h,
+                         unsigned bpc)
 {
-    int radius = filter_width / 2;
-    uint32_t accum = 0;
+    const uint16_t *prev = (const uint16_t *)prev_u8;
+    const uint16_t *cur = (const uint16_t *)cur_u8;
+    const ptrdiff_t p_stride = prev_stride / 2;
+    const ptrdiff_t c_stride = cur_stride / 2;
 
-    // MIRROR | ЯOЯЯIM
-    for (int k = 0; k < filter_width; ++k) {
-        int i_tap = i - radius + k;
-        int j_tap = j;
+    const int radius = filter_width / 2;
+    const int32_t y_round = 1 << (bpc - 1);
+    const int32_t x_round = 1 << 15;
 
-        if (i_tap < 0)
-            i_tap = -i_tap;
-        else if (i_tap >= height)
-            i_tap = height - (i_tap - height + 2);
+    uint64_t sad = 0;
 
-        accum += filter[k] * src[i_tap * stride + j_tap];
-    }
-    return accum;
-}
-
-static inline void
-y_convolution_8(void *src, uint16_t *dst, unsigned width,
-                unsigned height, ptrdiff_t src_stride, ptrdiff_t dst_stride,
-                unsigned inp_size_bits)
-{
-    (void) inp_size_bits;
-    const unsigned radius = filter_width / 2;
-    const unsigned top_edge = vmaf_ceiln(radius, 1);
-    const unsigned bottom_edge = vmaf_floorn(height - (filter_width - radius), 1);
-    const unsigned shift_var = 8;
-    const unsigned add_before_shift = (int) pow(2, (shift_var - 1));
-
-    for (unsigned i = 0; i < top_edge; i++) {
-        for (unsigned j = 0; j < width; ++j) {
-            dst[i * dst_stride + j] =
-                (edge_8(src, height, src_stride, i, j) +
-                 add_before_shift) >> shift_var;
-        }
-    }
-
-    uint8_t *src_p = (uint8_t*) src + (top_edge - radius) * src_stride;
-    for (unsigned i = top_edge; i < bottom_edge; i++) {
-        uint8_t *src_p1 = src_p;
-        for (unsigned j = 0; j < width; ++j) {
-            uint8_t *src_p2 = src_p1;
-            uint32_t accum = 0;
-            for (int k = 0; k < filter_width; ++k) {
-                accum += filter[k] * (*src_p2);
-                src_p2 += src_stride;
+    for (unsigned i = 0; i < h; i++) {
+        // Fused diff + y_conv for row i
+        int32_t any_nonzero = 0;
+        for (unsigned j = 0; j < w; j++) {
+            int64_t accum = 0;
+            for (int k = 0; k < filter_width; k++) {
+                const int row = mirror((int)i - radius + k, (int)h);
+                int32_t diff = prev[row * p_stride + j]
+                             - cur[row * c_stride + j];
+                accum += (int64_t)filter[k] * diff;
             }
-            dst[i * dst_stride + j] = (accum + add_before_shift) >> shift_var;
-            src_p1++;
+            y_row[j] = (int32_t)((accum + y_round) >> bpc);
+            any_nonzero |= y_row[j];
         }
-        src_p += src_stride;
+
+        if (!any_nonzero) continue;
+
+        // x_conv + abs + accumulate for row i
+        uint32_t row_sad = 0;
+        for (unsigned j = 0; j < w; j++) {
+            int64_t accum = 0;
+            for (int k = 0; k < filter_width; k++) {
+                const int col = mirror((int)j - radius + k, (int)w);
+                accum += (int64_t)filter[k] * y_row[col];
+            }
+            int32_t val = (int32_t)((accum + x_round) >> 16);
+            row_sad += abs(val);
+        }
+        sad += row_sad;
     }
 
-    for (unsigned i = bottom_edge; i < height; i++) {
-        for (unsigned j = 0; j < width; ++j) {
-            dst[i * dst_stride + j] =
-                (edge_8(src, height, src_stride, i, j) +
-                 add_before_shift) >> shift_var;
-        }
-    }
-}
-
-static void sad_c(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad)
-{
-    *sad = 0;
-
-    uint16_t *a = pic_a->data[0];
-    uint16_t *b = pic_b->data[0];
-    for (unsigned i = 0; i < pic_a->h[0]; i++) {
-        uint32_t inner_sad = 0;
-        for (unsigned j = 0; j < pic_a->w[0]; j++) {
-            inner_sad += abs(a[j] - b[j]);
-        }
-        *sad += inner_sad;
-        a += (pic_a->stride[0] / 2);
-        b += (pic_b->stride[0] / 2);
-    }
-}
-
-static int extract_force_zero(VmafFeatureExtractor *fex,
-                              VmafPicture *ref_pic, VmafPicture *ref_pic_90,
-                              VmafPicture *dist_pic, VmafPicture *dist_pic_90,
-                              unsigned index,
-                              VmafFeatureCollector *feature_collector)
-{
-    MotionState *s = fex->priv;
-
-    (void) fex;
-    (void) ref_pic;
-    (void) ref_pic_90;
-    (void) dist_pic;
-    (void) dist_pic_90;
-
-    int err =
-        vmaf_feature_collector_append_with_dict(feature_collector,
-                s->feature_name_dict, "VMAF_integer_feature_motion2_score", 0.,
-                index);
-
-    if (!s->debug) return err;
-
-    err =
-        vmaf_feature_collector_append_with_dict(feature_collector,
-                s->feature_name_dict, "VMAF_integer_feature_motion3_score", 0.,
-                index);
-
-    if (!s->debug) return err;
-
-    err = vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "VMAF_integer_feature_motion_score", 0.,
-            index);
-
-    return err;
-}
-
-static int close_force_zero(VmafFeatureExtractor *fex)
-{
-    MotionState *s = fex->priv;
-
-    return vmaf_dictionary_free(&s->feature_name_dict);
+    return sad;
 }
 
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
     (void) pix_fmt;
-
     MotionState *s = fex->priv;
-    int err = 0;
-    unsigned flags = vmaf_get_cpu_flags();
+
+    s->w = w;
+    s->h = h;
+    s->bpc = bpc;
 
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features,
                 fex->options, s);
-    if (!s->feature_name_dict) goto fail;
+    if (!s->feature_name_dict) return -ENOMEM;
 
-    if (s->motion_force_zero) {
-        fex->extract = extract_force_zero;
-        fex->flush = NULL;
-        fex->close = close_force_zero;
-        return 0;
-    }
+    s->y_row = malloc(sizeof(*s->y_row) * w);
+    if (!s->y_row) return -ENOMEM;
 
-    err |= vmaf_picture_alloc(&s->tmp, VMAF_PIX_FMT_YUV400P, 16, w, h);
-    err |= vmaf_picture_alloc(&s->blur[0], VMAF_PIX_FMT_YUV400P, 16, w, h);
-    err |= vmaf_picture_alloc(&s->blur[1], VMAF_PIX_FMT_YUV400P, 16, w, h);
-    err |= vmaf_picture_alloc(&s->blur[2], VMAF_PIX_FMT_YUV400P, 16, w, h);
-    err |= vmaf_picture_alloc(&s->blur[3], VMAF_PIX_FMT_YUV400P, 16, w, h);
-    err |= vmaf_picture_alloc(&s->blur[4], VMAF_PIX_FMT_YUV400P, 16, w, h);
-    if (err) goto fail;
-
-    s->y_convolution = bpc == 8 ? y_convolution_8 : y_convolution_16;
-    s->x_convolution = x_convolution_16;
-    s->sad = sad_c;
+    if (bpc == 8)
+        s->pipeline = motion_score_pipeline_8;
+    else
+        s->pipeline = motion_score_pipeline_16;
 
 #if ARCH_X86
-    if (flags & VMAF_X86_CPU_FLAG_AVX2) {
-        s->y_convolution = bpc == 8 ? y_convolution_8_avx2 : y_convolution_16_avx2;
-        s->x_convolution = x_convolution_16_avx2;
-        s->sad = sad_avx2;
+    if (vmaf_get_cpu_flags() & VMAF_X86_CPU_FLAG_AVX2) {
+        if (bpc == 8)
+            s->pipeline = motion_score_pipeline_8_avx2;
+        else
+            s->pipeline = motion_score_pipeline_16_avx2;
     }
 #if HAVE_AVX512
-    if (flags & VMAF_X86_CPU_FLAG_AVX512) {
-        s->y_convolution = bpc == 8 ? y_convolution_8_avx512 : y_convolution_16_avx512;
-        s->x_convolution = x_convolution_16_avx512;
-        s->sad = sad_avx512;
+    if (vmaf_get_cpu_flags() & VMAF_X86_CPU_FLAG_AVX512) {
+        if (bpc == 8)
+            s->pipeline = motion_score_pipeline_8_avx512;
+        else
+            s->pipeline = motion_score_pipeline_16_avx512;
     }
 #endif
 #endif
-
-    s->score = 0.;
-    s->previous_score = 0.;
 
     return 0;
-
-fail:
-    err |= vmaf_picture_unref(&s->blur[0]);
-    err |= vmaf_picture_unref(&s->blur[1]);
-    err |= vmaf_picture_unref(&s->blur[2]);
-    err |= vmaf_picture_unref(&s->blur[3]);
-    err |= vmaf_picture_unref(&s->blur[4]);
-    err |= vmaf_picture_unref(&s->tmp);
-    err |= vmaf_dictionary_free(&s->feature_name_dict);
-    return err;
-}
-
-static int flush(VmafFeatureExtractor *fex,
-                 VmafFeatureCollector *feature_collector)
-{
-    MotionState *s = fex->priv;
-    int ret = 0;
-
-    unsigned minimum_past_frames_needed = s->motion_five_frame_window ? 2 : 1;
-    if (s->index >= minimum_past_frames_needed) {
-        ret = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                            "VMAF_integer_feature_motion2_score",
-                                            MIN(s->score * s->motion_fps_weight, s->motion_max_val), s->index);
-        double processed_score = MIN(motion_blend(s->score * s->motion_fps_weight, s->motion_blend_factor,
-                                    s->motion_blend_offset), s->motion_max_val);
-        if (s->motion_moving_average) {
-            processed_score = (processed_score + s->previous_score) / 2.0;
-        }
-        ret |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                             "VMAF_integer_feature_motion3_score",
-                                             processed_score, s->index);
-    } else {
-        if (s->motion_five_frame_window) {
-            ret |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                 "VMAF_integer_feature_motion3_score", 0, s->index);
-            if (s->index >= 1) {
-                ret |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                     "VMAF_integer_feature_motion3_score", 0, s->index - 1);
-            }
-        } else {
-            ret |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                 "VMAF_integer_feature_motion3_score", 0, s->index);
-        }
-    }
-
-    return (ret < 0) ? ret : !ret;
-}
-
-static inline double normalize_and_scale_sad(uint64_t sad,
-                                             unsigned w, unsigned h)
-{
-    return (float) (sad / 256.) / (w * h);
 }
 
 static int extract(VmafFeatureExtractor *fex,
@@ -469,144 +298,160 @@ static int extract(VmafFeatureExtractor *fex,
                    unsigned index, VmafFeatureCollector *feature_collector)
 {
     MotionState *s = fex->priv;
-    int err = 0;
 
     (void) dist_pic;
     (void) ref_pic_90;
     (void) dist_pic_90;
 
-    s->index = index;
-    // calculate circular buffer indices based on whether we are using a three-frame or a five-frame window
-    unsigned buffer_size = s->motion_five_frame_window ? 5 : 3;
-    const unsigned blur_idx_0 = (index + 0) % buffer_size;  // i (current frame)
-    const unsigned blur_idx_1 = (index + 1) % buffer_size;  // i - 2 (three-frame window) or i - 4 (five-frame window)
-    const unsigned blur_idx_2 = (index + 2) % buffer_size;  // i - 1 (three-frame window) or i - 3 (five-frame window)
+    double score = 0.;
+    int err = 0;
 
-    // these are only used with five-frame window
-    const unsigned blur_idx_3 = s->motion_five_frame_window ? (index + 3) % buffer_size : 0;  // i - 2 (five-frame window)
-    const unsigned blur_idx_4 = s->motion_five_frame_window ? (index + 4) % buffer_size : 0;  // i - 1 (five-frame window)
-    (void) blur_idx_4;
+    if (s->motion_force_zero) goto write_score;
 
-    const ptrdiff_t y_src_stride =
-        ref_pic->bpc == 8 ? ref_pic->stride[0] : ref_pic->stride[0] / 2;
-
-    s->y_convolution(ref_pic->data[0], s->tmp.data[0], ref_pic->w[0],
-                     ref_pic->h[0], y_src_stride, s->tmp.stride[0] / 2,
-                     ref_pic->bpc);
-
-    s->x_convolution(s->tmp.data[0], s->blur[blur_idx_0].data[0],
-                     s->tmp.w[0], s->tmp.h[0], s->tmp.stride[0] / 2,
-                     s->blur[blur_idx_0].stride[0] / 2);
-
-    unsigned minimum_past_frames_needed = s->motion_five_frame_window ? 2 : 1;
-    if (index < minimum_past_frames_needed) {
-        err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                            "VMAF_integer_feature_motion2_score",
-                                            0., index);
-        if (s->debug) {
-            err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                 "VMAF_integer_feature_motion_score",
-                                                 0., index);
-        }
-        return err;
+    const unsigned min_idx = s->motion_five_frame_window ? 2 : 1;
+    if (index >= min_idx) {
+        const VmafPicture *prev = s->motion_five_frame_window
+    	    ? &fex->prev_prev_ref
+    	    : &fex->prev_ref;
+        if (!prev->ref)
+    	return -EINVAL;
+    
+        const unsigned w = s->w;
+        const unsigned h = s->h;
+        const uint8_t *prev_data = (const uint8_t *)prev->data[0];
+        const uint8_t *cur_data = (const uint8_t *)ref_pic->data[0];
+    
+        uint64_t sad = s->pipeline(prev_data, prev->stride[0],
+    			       cur_data, ref_pic->stride[0],
+    			       s->y_row, w, h, s->bpc);
+    
+        score = MIN((double)sad / 256. / (w * h) * s->motion_fps_weight,
+    		s->motion_max_val);
     }
 
-    uint64_t sad;
-    // compare frame i - 1 (blur_idx_2) with i (blur_idx_0) or frame i - 2 (blur_idx_3) with i (blur_idx_0)
-    if (s->motion_five_frame_window) {
-        s->sad(&s->blur[blur_idx_3], &s->blur[blur_idx_0], &sad);
-    } else {
-        s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_0], &sad);
-    }
-    double score = s->score =
-        normalize_and_scale_sad(sad, ref_pic->w[0], ref_pic->h[0]);
-
-    if (s->debug) {
-        err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                             "VMAF_integer_feature_motion_score",
-                                             MIN(score * s->motion_fps_weight, s->motion_max_val), index);
-    }
+write_score:
+    err = vmaf_feature_collector_append(feature_collector,
+            "VMAF_integer_feature_motion_sad_score", score, index);
     if (err) return err;
 
-    if (index == minimum_past_frames_needed) {
-        double processed_score_for_previous = MIN(motion_blend(score * s->motion_fps_weight, s->motion_blend_factor,
-                                                 s->motion_blend_offset), s->motion_max_val);
-        double processed_score = processed_score_for_previous;
-        if (s->motion_moving_average && index > minimum_past_frames_needed) {
-            processed_score = (processed_score + s->previous_score) / 2.0;
-        }
-        if (s->motion_five_frame_window) {
-            err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                 "VMAF_integer_feature_motion3_score",
-                                                 processed_score, minimum_past_frames_needed - 1);
-            err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                 "VMAF_integer_feature_motion3_score",
-                                                 processed_score, minimum_past_frames_needed - 2);
-        } else {
-            err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                 "VMAF_integer_feature_motion3_score",
-                                                 processed_score, minimum_past_frames_needed - 1);
-        }
-        s->previous_score = processed_score_for_previous;
-        return err;
+    if (s->debug) {
+        return vmaf_feature_collector_append_with_dict(feature_collector,
+                s->feature_name_dict,
+                "VMAF_integer_feature_motion_score", score, index);
     }
 
-    uint64_t sad2;
-    // compare frame i - 1 (blur_idx_2) with i - 2 (blur_idx_1) or frame i - 2 (blur_idx_3) with i - 4 (blur_idx_1)
-    if (s->motion_five_frame_window) {
-        s->sad(&s->blur[blur_idx_3], &s->blur[blur_idx_1], &sad2);
-    } else {
-        s->sad(&s->blur[blur_idx_2], &s->blur[blur_idx_1], &sad2);
-    }
-    double score2 = normalize_and_scale_sad(sad2, ref_pic->w[0], ref_pic->h[0]);
-
-    score2 = score2 < score ? score2 : score;
-
-    double processed_score2_for_previous = MIN(motion_blend(score2 * s->motion_fps_weight, s->motion_blend_factor,
-                                              s->motion_blend_offset), s->motion_max_val);
-    double processed_score2 = processed_score2_for_previous;
-    if (s->motion_moving_average) {
-        processed_score2 = (processed_score2 + s->previous_score) / 2.0;
-    }
-
-    err = vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                        "VMAF_integer_feature_motion2_score",
-                                        MIN(score2 * s->motion_fps_weight, s->motion_max_val), index - 1);
-    err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                         "VMAF_integer_feature_motion3_score",
-                                         processed_score2, index - 1);
-    s->previous_score = processed_score2_for_previous;
-    return err;
+    return 0;
 }
 
-static int close(VmafFeatureExtractor *fex)
+static int close_fex(VmafFeatureExtractor *fex)
+{
+    MotionState *s = fex->priv;
+    free(s->y_row);
+    return vmaf_dictionary_free(&s->feature_name_dict);
+}
+
+static int flush(VmafFeatureExtractor *fex,
+                 VmafFeatureCollector *feature_collector)
 {
     MotionState *s = fex->priv;
 
-    int err = 0;
-    err |= vmaf_picture_unref(&s->blur[0]);
-    err |= vmaf_picture_unref(&s->blur[1]);
-    err |= vmaf_picture_unref(&s->blur[2]);
-    err |= vmaf_picture_unref(&s->blur[3]);
-    err |= vmaf_picture_unref(&s->blur[4]);
-    err |= vmaf_picture_unref(&s->tmp);
-    err |= vmaf_dictionary_free(&s->feature_name_dict);
-    return err;
+    if (!s->feature_name_dict) {
+        s->feature_name_dict = vmaf_feature_name_dict_from_provided_features(
+                fex->provided_features, fex->options, s);
+        if (!s->feature_name_dict) return -ENOMEM;
+    }
+
+    const char *sad_name = "VMAF_integer_feature_motion_sad_score";
+
+    unsigned n = 0;
+    double score;
+    while (!vmaf_feature_collector_get_score(feature_collector, sad_name, &score, n))
+        n++;
+    const unsigned stride = s->motion_five_frame_window ? 2 : 1;
+    const unsigned min_idx = s->motion_five_frame_window ? 2 : 1;
+    if (!n) return 1;
+
+    double stamp_value = 0.;
+    if (n > min_idx) {
+        double sad_at_min_idx;
+        if (!vmaf_feature_collector_get_score(feature_collector, sad_name,
+                                              &sad_at_min_idx, min_idx)) {
+            stamp_value = MIN(motion_blend(sad_at_min_idx,
+                                           s->motion_blend_factor,
+                                           s->motion_blend_offset),
+                              s->motion_max_val);
+        }
+    }
+
+    double prev_processed = 0.;
+    for (unsigned i = 0; i < n; i++) {
+        double sad_i;
+        vmaf_feature_collector_get_score(feature_collector, sad_name, &sad_i, i);
+
+        double motion2;
+
+        if (i < min_idx) {
+            motion2 = 0.;
+        } else {
+            const int lo_idx = (int)i - (int)(stride - 1);
+            const int hi_idx = (int)i + 1;
+            double hi;
+            const bool has_hi = !vmaf_feature_collector_get_score(
+                    feature_collector, sad_name, &hi, hi_idx);
+            if (!has_hi) {
+                motion2 = sad_i;
+            } else if (lo_idx >= (int)min_idx) {
+                double lo;
+                vmaf_feature_collector_get_score(
+                        feature_collector, sad_name, &lo, lo_idx);
+                motion2 = lo < hi ? lo : hi;
+            } else {
+                motion2 = hi;
+            }
+        }
+
+        vmaf_feature_collector_append_with_dict(feature_collector,
+            s->feature_name_dict,
+            "VMAF_integer_feature_motion2_score", motion2, i);
+
+        double motion3;
+        if (i < min_idx) {
+            motion3 = stamp_value;
+            prev_processed = stamp_value;
+        } else {
+            double processed = MIN(motion_blend(motion2,
+                                                s->motion_blend_factor,
+                                                s->motion_blend_offset),
+                                   s->motion_max_val);
+            motion3 = s->motion_moving_average
+                    ? (processed + prev_processed) / 2.0
+                    : processed;
+            prev_processed = processed;
+        }
+
+        vmaf_feature_collector_append_with_dict(feature_collector,
+            s->feature_name_dict,
+            "VMAF_integer_feature_motion3_score", motion3, i);
+    }
+
+    return 1;
 }
 
 static const char *provided_features[] = {
-    "VMAF_integer_feature_motion_score", "VMAF_integer_feature_motion2_score", "VMAF_integer_feature_motion3_score",
+    "VMAF_integer_feature_motion_score",
+    "VMAF_integer_feature_motion2_score",
+    "VMAF_integer_feature_motion3_score",
     NULL
 };
 
 VmafFeatureExtractor vmaf_fex_integer_motion = {
     .name = "motion",
+    .options = options,
     .init = init,
     .extract = extract,
     .flush = flush,
-    .close = close,
-    .options = options,
+    .close = close_fex,
     .priv_size = sizeof(MotionState),
     .provided_features = provided_features,
-    .flags = VMAF_FEATURE_EXTRACTOR_TEMPORAL,
+    .flags = VMAF_FEATURE_EXTRACTOR_PREV_REF,
 };

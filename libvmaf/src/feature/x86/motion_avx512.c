@@ -1,6 +1,6 @@
 /**
  *
- *  Copyright 2016-2020 Netflix, Inc.
+ *  Copyright 2016-2026 Netflix, Inc.
  *
  *     Licensed under the BSD+Patent License (the "License");
  *     you may not use this file except in compliance with the License.
@@ -16,442 +16,299 @@
  *
  */
 
-#include <errno.h>
-#include <math.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <string.h>
 #include <immintrin.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #include "feature/integer_motion.h"
-#include "feature/common/alignment.h"
-#include "picture.h"
 
-void x_convolution_16_avx512(const uint16_t *src, uint16_t *dst, unsigned width,
-                             unsigned height, ptrdiff_t src_stride,
-                             ptrdiff_t dst_stride)
+static inline int mirror(int idx, int size)
 {
-    const unsigned radius = filter_width / 2;
-    const unsigned left_edge = vmaf_ceiln(radius, 1);
-    const unsigned right_edge = vmaf_floorn(width - (filter_width - radius), 1);
-    const unsigned shift_add_round = 32768;
-    const unsigned vector_loop = width < 32 ? 0 : (width>>5) -1;
-    uint16_t *src_p = (uint16_t*) src + (left_edge - radius);
-    unsigned nr = left_edge + 32 *vector_loop;
-    uint16_t *src_pt = (uint16_t*) src + nr -radius;
-    for (unsigned i = 0; i < height; ++i) {
-        for (unsigned j = 0; j < left_edge; j++) {
-            dst[i * dst_stride + j] =
-                (edge_16(true, src, width, height, src_stride, i, j) +
-                 shift_add_round) >> 16;
-        }
-
-    }
-
-    for (unsigned i = 0; i < height; ++i) {
-        uint16_t *src_p1 = src_p;
-        for (unsigned j = 0; j <vector_loop; j=j+1) {
-            __m512i src1            = _mm512_loadu_si512 ((__m512i *)src_p1);
-            __m512i kernel1         = _mm512_set1_epi16( 3571);
-            __m512i kernel2         = _mm512_set1_epi16( 16004);
-            __m512i kernel3         = _mm512_set1_epi16( 26386) ;
-            __m512i result          = _mm512_mulhi_epu16(src1,kernel1);
-            __m512i resultlo        = _mm512_mullo_epi16(src1,kernel1);
-
-            // src1= src1>>16; //shift by a  pixel
-            __m512i src2            = _mm512_loadu_si512 ((__m512i *)(src_p1+1));
-            __m512i result2         = _mm512_mulhi_epu16(src2,kernel2);
-            __m512i result2lo       = _mm512_mullo_epi16(src2,kernel2);
-            __m512i accum1_lo       = _mm512_unpacklo_epi16(resultlo, result);
-            __m512i accum1_hi       = _mm512_unpackhi_epi16(resultlo, result);
-            __m512i accum2_lo       = _mm512_unpacklo_epi16(result2lo, result2);
-            __m512i accum2_hi       = _mm512_unpackhi_epi16(result2lo, result2);
-
-            // Filter[3] value
-            // src1= src1>>32;
-            __m512i src3            = _mm512_loadu_si512 ((__m512i *)(src_p1+2));
-            __m512i result3         = _mm512_mulhi_epu16(src3,kernel3);
-            __m512i result3lo       = _mm512_mullo_epi16(src3,kernel3);
-            __m512i accum3_lo       = _mm512_unpacklo_epi16 (result3lo, result3);
-            __m512i accum3_hi       = _mm512_unpackhi_epi16 (result3lo, result3);
-            //filter 4
-            src1      = _mm512_loadu_si512 ((__m512i *)(src_p1+3));
-            result    = _mm512_mulhi_epu16(src1,kernel2);
-            resultlo  = _mm512_mullo_epi16(src1,kernel2);
-
-            //Filter 5
-            src2      = _mm512_loadu_si512((__m512i *)(src_p1+4));
-            result2   = _mm512_mulhi_epu16(src2,kernel1);
-            result2lo = _mm512_mullo_epi16(src2,kernel1);
-
-            __m512i accum4_lo =_mm512_unpacklo_epi16(resultlo, result);
-            __m512i accum4_hi =_mm512_unpackhi_epi16(resultlo, result);
-            __m512i accum5_lo =_mm512_unpacklo_epi16(result2lo, result2);
-            __m512i accum5_hi =_mm512_unpackhi_epi16(result2lo, result2);
-
-            __m512i addnum    = _mm512_set1_epi32(32768);
-            __m512i accum_lo  = _mm512_add_epi32(accum1_lo,accum2_lo);
-            __m512i accumi_lo = _mm512_add_epi32(accum3_lo,accum4_lo);
-                    accum5_lo = _mm512_add_epi32(accum5_lo,addnum);
-                    accum_lo  = _mm512_add_epi32(accum5_lo,accum_lo);
-                    accum_lo  = _mm512_add_epi32(accumi_lo,accum_lo);
-            __m512i accum_hi  = _mm512_add_epi32(accum1_hi,accum2_hi);
-            __m512i accumi_hi = _mm512_add_epi32(accum3_hi,accum4_hi);
-                    accum_hi  = _mm512_add_epi32(accum5_hi,accum_hi);
-                    accumi_hi = _mm512_add_epi32(accumi_hi,addnum);
-                    accum_hi  = _mm512_add_epi32(accumi_hi,accum_hi);
-                    accum_lo  = _mm512_srli_epi32(accum_lo, 0x10);
-                    accum_hi  = _mm512_srli_epi32(accum_hi, 0x10);
-
-            result = _mm512_packus_epi32(accum_lo,accum_hi);
-            _mm512_storeu_si512((__m512i *) (dst+ i * dst_stride + j*32+ left_edge),result);
-            src_p1+=32;
-        }
-
-        src_p += src_stride;
-    }
-
-   for (unsigned i = 0; i < height; ++i) {
-        uint16_t *src_p1 = src_pt;
-        for (unsigned j = nr; j < right_edge; j++) {
-            uint32_t accum = 0;
-            uint16_t *src_p2 = src_p1;
-            for (int k = 0; k < filter_width; ++k) {
-                accum += filter[k] * (*src_p2);
-                src_p2++;
-            }
-            src_p1++;
-            dst[i * dst_stride + j] = (accum + shift_add_round) >> 16;
-        }
-        src_pt += src_stride;
-    }
-
-    for (unsigned i = 0; i < height; ++i) {
-        for (unsigned j = right_edge; j < width; j++) {
-            dst[i * dst_stride + j] =
-                (edge_16(true, src, width, height, src_stride, i, j) +
-                 shift_add_round) >> 16;
-        }
-    }
+    if (idx < 0) return -idx;
+    if (idx >= size) return 2 * size - idx - 2;
+    return idx;
 }
 
+// SIMD phase 2: x_conv + abs + SAD for one row of int32 y_row.
+// Processes 16 int32 columns at a time via mullo_epi32 + int64 accumulation.
 static inline uint32_t
-edge_8(const uint8_t *src, int height, int stride, int i, int j)
+x_conv_row_sad_avx512(const int32_t *y_row, unsigned w)
 {
-    int radius = filter_width / 2;
-    uint32_t accum = 0;
+    const __m512i g0 = _mm512_set1_epi32(3571);
+    const __m512i g1 = _mm512_set1_epi32(16004);
+    const __m512i g2 = _mm512_set1_epi32(26386);
+    const __m512i round64 = _mm512_set1_epi64(1 << 15);
 
-    // MIRROR | ЯOЯЯIM
-    for (unsigned k = 0; k < (unsigned) filter_width; ++k) {
-        int i_tap = i - radius + k;
-        int j_tap = j;
+    uint32_t row_sad = 0;
 
-        if (i_tap < 0)
-            i_tap = -i_tap;
-        else if (i_tap >= height)
-            i_tap = height - (i_tap - height + 2);
-
-        accum += filter[k] * src[i_tap * stride + j_tap];
+    // Scalar left edge (columns 0, 1) — mirror boundary
+    unsigned j;
+    for (j = 0; j < 2 && j < w; j++) {
+        int64_t accum = 0;
+        for (int k = 0; k < 5; k++) {
+            int col = mirror((int)j - 2 + k, (int)w);
+            accum += (int64_t)filter[k] * y_row[col];
+        }
+        int32_t val = (int32_t)((accum + (1 << 15)) >> 16);
+        row_sad += abs(val);
     }
-    return accum;
+
+    // SIMD middle: need y_row[j-2]..y_row[j+17], so j+18 <= w
+    __m512i sad_acc = _mm512_setzero_si512();
+    for (; j + 18 <= w; j += 16) {
+        __m512i y0 = _mm512_loadu_si512((__m512i*)(y_row + j - 2));
+        __m512i y1 = _mm512_loadu_si512((__m512i*)(y_row + j - 1));
+        __m512i y2 = _mm512_loadu_si512((__m512i*)(y_row + j));
+        __m512i y3 = _mm512_loadu_si512((__m512i*)(y_row + j + 1));
+        __m512i y4 = _mm512_loadu_si512((__m512i*)(y_row + j + 2));
+
+        // Each product fits in int32
+        __m512i p0 = _mm512_mullo_epi32(y0, g0);
+        __m512i p1 = _mm512_mullo_epi32(y1, g1);
+        __m512i p2 = _mm512_mullo_epi32(y2, g2);
+        __m512i p3 = _mm512_mullo_epi32(y3, g1);
+        __m512i p4 = _mm512_mullo_epi32(y4, g0);
+
+        // Safe pairs that fit in int32
+        __m512i s04 = _mm512_add_epi32(p0, p4);
+        __m512i s13 = _mm512_add_epi32(p1, p3);
+
+        // Widen to int64 and accumulate (lo 8 elements)
+        __m512i acc_lo = _mm512_cvtepi32_epi64(_mm512_castsi512_si256(s04));
+        acc_lo = _mm512_add_epi64(acc_lo, _mm512_cvtepi32_epi64(_mm512_castsi512_si256(s13)));
+        acc_lo = _mm512_add_epi64(acc_lo, _mm512_cvtepi32_epi64(_mm512_castsi512_si256(p2)));
+
+        // hi 8 elements
+        __m512i acc_hi = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(s04, 1));
+        acc_hi = _mm512_add_epi64(acc_hi, _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(s13, 1)));
+        acc_hi = _mm512_add_epi64(acc_hi, _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(p2, 1)));
+
+        // Round and arithmetic right shift >>16 (native in AVX-512)
+        acc_lo = _mm512_srai_epi64(_mm512_add_epi64(acc_lo, round64), 16);
+        acc_hi = _mm512_srai_epi64(_mm512_add_epi64(acc_hi, round64), 16);
+
+        // Narrow int64 -> int32 (signed saturation)
+        __m256i res_lo = _mm512_cvtsepi64_epi32(acc_lo);
+        __m256i res_hi = _mm512_cvtsepi64_epi32(acc_hi);
+
+        // Combine into 16 x int32, abs, accumulate
+        __m512i result = _mm512_inserti64x4(_mm512_castsi256_si512(res_lo), res_hi, 1);
+        __m512i abs_result = _mm512_abs_epi32(result);
+
+        sad_acc = _mm512_add_epi32(sad_acc, abs_result);
+    }
+
+    row_sad += (uint32_t)_mm512_reduce_add_epi32(sad_acc);
+
+    // Scalar right edge + tail
+    for (; j < w; j++) {
+        int64_t accum = 0;
+        for (int k = 0; k < 5; k++) {
+            int col = mirror((int)j - 2 + k, (int)w);
+            accum += (int64_t)filter[k] * y_row[col];
+        }
+        int32_t val = (int32_t)((accum + (1 << 15)) >> 16);
+        row_sad += abs(val);
+    }
+
+    return row_sad;
 }
 
-
-
-void y_convolution_8_avx512(void *src, uint16_t *dst, unsigned width,
-                unsigned height, ptrdiff_t src_stride, ptrdiff_t dst_stride,
-                unsigned inp_size_bits)
+uint64_t motion_score_pipeline_16_avx512(const uint8_t *prev_u8, ptrdiff_t prev_stride,
+                                         const uint8_t *cur_u8, ptrdiff_t cur_stride,
+                                         int32_t *y_row, unsigned w, unsigned h,
+                                         unsigned bpc)
 {
-    (void) inp_size_bits;
-    const unsigned radius = filter_width / 2;
-    const unsigned top_edge = vmaf_ceiln(radius, 1);
-    const unsigned bottom_edge = vmaf_floorn(height - (filter_width - radius), 1);
-    const unsigned shift_var = 8;
-    const unsigned add_before_shift = (int) pow(2, (shift_var - 1));
+    const uint16_t *prev = (const uint16_t *)prev_u8;
+    const uint16_t *cur = (const uint16_t *)cur_u8;
+    const ptrdiff_t p_stride = prev_stride / 2;
+    const ptrdiff_t c_stride = cur_stride / 2;
 
-    for (unsigned i = 0; i < top_edge; i++) {
-        for (unsigned j = 0; j < width; ++j) {
-            dst[i * dst_stride + j] =
-                (edge_8(src, height, src_stride, i, j) +
-                 add_before_shift) >> shift_var;
-        }
-    }
+    const __m512i g0 = _mm512_set1_epi32(3571);
+    const __m512i g1 = _mm512_set1_epi32(16004);
+    const __m512i g2 = _mm512_set1_epi32(26386);
+    const __m512i round64 = _mm512_set1_epi64(1 << (bpc - 1));
+    const __m512i bpc_vec = _mm512_set1_epi64(bpc);
 
-    __m512i f0 = _mm512_set1_epi32(filter[0]);
-    __m512i f12 = _mm512_set1_epi32(filter[1] + (filter[2] << 16));
-    __m512i f34 = _mm512_set1_epi32(filter[3] + (filter[4] << 16));
+    uint64_t sad = 0;
 
-    __m512i add_before_shift_512 = _mm512_set1_epi32(add_before_shift);
-
-    unsigned width_mod_64 = width - (width % 64);
-
-    uint8_t *src_p = (uint8_t*) src + (top_edge - radius) * src_stride;
-
-    for (unsigned i = top_edge; i < bottom_edge; i++) {
-        uint8_t *src_p1 = src_p;
-        for (unsigned j = 0; j < width_mod_64; j+=64) {
-            uint8_t *src_p2 = src_p1;
-
-            __m512i d0 = _mm512_loadu_si512((__m512i*)(src_p2));
-            __m512i d1 = _mm512_loadu_si512((__m512i*)(src_p2 + src_stride));
-            __m512i d2 = _mm512_loadu_si512((__m512i*)(src_p2 + (src_stride * 2)));
-            __m512i d3 = _mm512_loadu_si512((__m512i*)(src_p2 + (src_stride * 3)));
-            __m512i d4 = _mm512_loadu_si512((__m512i*)(src_p2 + (src_stride * 4)));
-
-            __m512i d0_lo = _mm512_unpacklo_epi8(d0, _mm512_setzero_si512());
-            __m512i d0_hi = _mm512_unpackhi_epi8(d0, _mm512_setzero_si512());
-            __m512i d1_lo = _mm512_unpacklo_epi8(d1, _mm512_setzero_si512());
-            __m512i d1_hi = _mm512_unpackhi_epi8(d1, _mm512_setzero_si512());
-            __m512i d2_lo = _mm512_unpacklo_epi8(d2, _mm512_setzero_si512());
-            __m512i d2_hi = _mm512_unpackhi_epi8(d2, _mm512_setzero_si512());
-            __m512i d3_lo = _mm512_unpacklo_epi8(d3, _mm512_setzero_si512());
-            __m512i d3_hi = _mm512_unpackhi_epi8(d3, _mm512_setzero_si512());
-            __m512i d4_lo = _mm512_unpacklo_epi8(d4, _mm512_setzero_si512());
-            __m512i d4_hi = _mm512_unpackhi_epi8(d4, _mm512_setzero_si512());
-
-            __m512i d0_lolo = _mm512_unpacklo_epi16(d0_lo, _mm512_setzero_si512());
-            __m512i d0_hilo = _mm512_unpackhi_epi16(d0_lo, _mm512_setzero_si512());
-            __m512i d0_lohi = _mm512_unpacklo_epi16(d0_hi, _mm512_setzero_si512());
-            __m512i d0_hihi = _mm512_unpackhi_epi16(d0_hi, _mm512_setzero_si512());
-
-            __m512i d12_lolo = _mm512_unpacklo_epi16(d1_lo, d2_lo);
-            __m512i d12_hilo = _mm512_unpackhi_epi16(d1_lo, d2_lo);
-            __m512i d12_lohi = _mm512_unpacklo_epi16(d1_hi, d2_hi);
-            __m512i d12_hihi = _mm512_unpackhi_epi16(d1_hi, d2_hi);
-
-            __m512i d34_lolo = _mm512_unpacklo_epi16(d3_lo, d4_lo);
-            __m512i d34_hilo = _mm512_unpackhi_epi16(d3_lo, d4_lo);
-            __m512i d34_lohi = _mm512_unpacklo_epi16(d3_hi, d4_hi);
-            __m512i d34_hihi = _mm512_unpackhi_epi16(d3_hi, d4_hi);
-
-            __m512i accum0_lolo = _mm512_mullo_epi32(d0_lolo, f0);
-            __m512i accum0_hilo = _mm512_mullo_epi32(d0_hilo, f0);
-            __m512i accum0_lohi = _mm512_mullo_epi32(d0_lohi, f0);
-            __m512i accum0_hihi = _mm512_mullo_epi32(d0_hihi, f0);
-
-            accum0_lolo = _mm512_add_epi32(accum0_lolo, _mm512_madd_epi16(d12_lolo, f12));
-            accum0_lolo = _mm512_add_epi32(accum0_lolo, _mm512_madd_epi16(d34_lolo, f34));
-            accum0_hilo = _mm512_add_epi32(accum0_hilo, _mm512_madd_epi16(d12_hilo, f12));
-            accum0_hilo = _mm512_add_epi32(accum0_hilo, _mm512_madd_epi16(d34_hilo, f34));
-
-            accum0_lohi = _mm512_add_epi32(accum0_lohi, _mm512_madd_epi16(d12_lohi, f12));
-            accum0_lohi = _mm512_add_epi32(accum0_lohi, _mm512_madd_epi16(d34_lohi, f34));
-            accum0_hihi = _mm512_add_epi32(accum0_hihi, _mm512_madd_epi16(d12_hihi, f12));
-            accum0_hihi = _mm512_add_epi32(accum0_hihi, _mm512_madd_epi16(d34_hihi, f34));
-            
-            accum0_lolo = _mm512_add_epi32(add_before_shift_512, accum0_lolo);
-            accum0_hilo = _mm512_add_epi32(add_before_shift_512, accum0_hilo);
-            accum0_lohi = _mm512_add_epi32(add_before_shift_512, accum0_lohi);
-            accum0_hihi = _mm512_add_epi32(add_before_shift_512, accum0_hihi);
-
-            accum0_lolo = _mm512_srli_epi32(accum0_lolo, shift_var);
-            accum0_hilo = _mm512_srli_epi32(accum0_hilo, shift_var);
-            accum0_lohi = _mm512_srli_epi32(accum0_lohi, shift_var);
-            accum0_hihi = _mm512_srli_epi32(accum0_hihi, shift_var);
-
-            __m512i res0 = _mm512_packus_epi32(accum0_lolo, accum0_hilo);
-            __m512i res8 = _mm512_packus_epi32(accum0_lohi, accum0_hihi);
-            __m512i tmp = res0;
-
-            res0 = _mm512_permutex2var_epi64(res0, _mm512_set_epi64(11, 10, 3, 2, 9, 8, 1, 0), res8);
-            res8 = _mm512_permutex2var_epi64(tmp, _mm512_set_epi64(15, 14, 7, 6, 13, 12, 5, 4), res8);
-
-            _mm512_storeu_si512((__m512i*)(dst + i * dst_stride + j), res0);
-            _mm512_storeu_si512((__m512i*)(dst + i * dst_stride + j + 32), res8);
-
-            src_p1 += 64;
+    for (unsigned i = 0; i < h; i++) {
+        const uint16_t *pp[5], *cp[5];
+        for (int k = 0; k < 5; k++) {
+            int r = mirror((int)i - 2 + k, (int)h);
+            pp[k] = prev + r * p_stride;
+            cp[k] = cur + r * c_stride;
         }
 
-        for (unsigned j = width_mod_64; j < width; ++j) {
-            uint8_t *src_p2 = src_p1;
-            uint32_t accum = 0;
-            for (unsigned k = 0; k < (unsigned) filter_width; ++k) {
-                accum += filter[k] * (*src_p2);
-                src_p2 += src_stride;
+        unsigned j;
+        __m512i nz_acc = _mm512_setzero_si512();
+        for (j = 0; j + 16 <= w; j += 16) {
+            __m512i d0 = _mm512_sub_epi32(
+                _mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i*)(pp[0] + j))),
+                _mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i*)(cp[0] + j))));
+            __m512i d1 = _mm512_sub_epi32(
+                _mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i*)(pp[1] + j))),
+                _mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i*)(cp[1] + j))));
+            __m512i d2 = _mm512_sub_epi32(
+                _mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i*)(pp[2] + j))),
+                _mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i*)(cp[2] + j))));
+            __m512i d3 = _mm512_sub_epi32(
+                _mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i*)(pp[3] + j))),
+                _mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i*)(cp[3] + j))));
+            __m512i d4 = _mm512_sub_epi32(
+                _mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i*)(pp[4] + j))),
+                _mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i*)(cp[4] + j))));
+
+            __m512i prod0 = _mm512_mullo_epi32(d0, g0);
+            __m512i prod1 = _mm512_mullo_epi32(d1, g1);
+            __m512i prod2 = _mm512_mullo_epi32(d2, g2);
+            __m512i prod3 = _mm512_mullo_epi32(d3, g1);
+            __m512i prod4 = _mm512_mullo_epi32(d4, g0);
+
+            __m512i acc_lo = _mm512_cvtepi32_epi64(_mm512_castsi512_si256(prod0));
+            acc_lo = _mm512_add_epi64(acc_lo, _mm512_cvtepi32_epi64(_mm512_castsi512_si256(prod1)));
+            acc_lo = _mm512_add_epi64(acc_lo, _mm512_cvtepi32_epi64(_mm512_castsi512_si256(prod2)));
+            acc_lo = _mm512_add_epi64(acc_lo, _mm512_cvtepi32_epi64(_mm512_castsi512_si256(prod3)));
+            acc_lo = _mm512_add_epi64(acc_lo, _mm512_cvtepi32_epi64(_mm512_castsi512_si256(prod4)));
+
+            __m512i acc_hi = _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(prod0, 1));
+            acc_hi = _mm512_add_epi64(acc_hi, _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(prod1, 1)));
+            acc_hi = _mm512_add_epi64(acc_hi, _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(prod2, 1)));
+            acc_hi = _mm512_add_epi64(acc_hi, _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(prod3, 1)));
+            acc_hi = _mm512_add_epi64(acc_hi, _mm512_cvtepi32_epi64(_mm512_extracti64x4_epi64(prod4, 1)));
+
+            acc_lo = _mm512_srav_epi64(_mm512_add_epi64(acc_lo, round64), bpc_vec);
+            acc_hi = _mm512_srav_epi64(_mm512_add_epi64(acc_hi, round64), bpc_vec);
+
+            __m256i res_lo = _mm512_cvtsepi64_epi32(acc_lo);
+            __m256i res_hi = _mm512_cvtsepi64_epi32(acc_hi);
+
+            __m512i result = _mm512_inserti64x4(_mm512_castsi256_si512(res_lo), res_hi, 1);
+            _mm512_storeu_si512((__m512i*)(y_row + j), result);
+            nz_acc = _mm512_or_si512(nz_acc, result);
+        }
+
+        int32_t nz_tail = 0;
+        for (; j < w; j++) {
+            int64_t accum = 0;
+            for (int k = 0; k < 5; k++) {
+                int32_t diff = pp[k][j] - cp[k][j];
+                accum += (int64_t)filter[k] * diff;
             }
-            dst[i * dst_stride + j] = (accum + add_before_shift) >> shift_var;
-            src_p1++;
+            y_row[j] = (int32_t)((accum + (1 << (bpc - 1))) >> bpc);
+            nz_tail |= y_row[j];
         }
-        src_p += src_stride;
+
+        if (_mm512_test_epi32_mask(nz_acc, nz_acc) == 0 && !nz_tail) continue;
+
+        sad += x_conv_row_sad_avx512(y_row, w);
     }
 
-    for (unsigned i = bottom_edge; i < height; i++) {
-        for (unsigned j = 0; j < width; ++j) {
-            dst[i * dst_stride + j] =
-                (edge_8(src, height, src_stride, i, j) +
-                 add_before_shift) >> shift_var;
-        }
-    }
+    return sad;
 }
 
-
-void y_convolution_16_avx512(void *src, uint16_t *dst, unsigned width,
-                 unsigned height, ptrdiff_t src_stride,
-                 ptrdiff_t dst_stride, unsigned inp_size_bits)
+uint64_t motion_score_pipeline_8_avx512(const uint8_t *prev, ptrdiff_t prev_stride,
+                                        const uint8_t *cur, ptrdiff_t cur_stride,
+                                        int32_t *y_row, unsigned w, unsigned h,
+                                        unsigned bpc)
 {
-    const unsigned radius = filter_width / 2;
-    const unsigned top_edge = vmaf_ceiln(radius, 1);
-    const unsigned bottom_edge = vmaf_floorn(height - (filter_width - radius), 1);
-    const unsigned add_before_shift = (int) pow(2, (inp_size_bits - 1));
-    const unsigned shift_var = inp_size_bits;
+    (void)bpc;
+    const __m512i f0 = _mm512_set1_epi16(3571);
+    const __m512i f1 = _mm512_set1_epi16(16004);
+    const __m512i f2 = _mm512_set1_epi16(26386);
+    const __m512i round8 = _mm512_set1_epi32(1 << 7);
 
-    unsigned width_mod_32 = width - (width % 32);
+    uint64_t sad = 0;
 
-    __m512i f0 = _mm512_set1_epi16(filter[0]);
-    __m512i f1 = _mm512_set1_epi16(filter[1]);
-    __m512i f2 = _mm512_set1_epi16(filter[2]);
-    __m512i f3 = _mm512_set1_epi16(filter[3]);
-    __m512i f4 = _mm512_set1_epi16(filter[4]);
-
-    __m512i add_before_shift_512 = _mm512_set1_epi32(add_before_shift);
-
-    uint16_t *src_p = (uint16_t*) src + (top_edge - radius) * src_stride;
-    for (unsigned i = 0; i < top_edge; i++) {
-        for (unsigned j = 0; j < width; ++j) {
-            dst[i * dst_stride + j] =
-                (edge_16(false, src, width, height, src_stride, i, j) +
-                 add_before_shift) >> shift_var;
-        }
-    }
-
-    for (unsigned i = top_edge; i < bottom_edge; i++) {
-        uint16_t *src_p1 = src_p;
-        for (unsigned j = 0; j < width_mod_32; j+=32) {
-            uint16_t *src_p2 = src_p1;
-
-            __m512i d0 = _mm512_loadu_si512((__m512i*)(src_p2));
-            __m512i d1 = _mm512_loadu_si512((__m512i*)(src_p2 + src_stride));
-            __m512i d2 = _mm512_loadu_si512((__m512i*)(src_p2 + (src_stride * 2)));
-            __m512i d3 = _mm512_loadu_si512((__m512i*)(src_p2 + (src_stride * 3)));
-            __m512i d4 = _mm512_loadu_si512((__m512i*)(src_p2 + (src_stride * 4)));
-
-            __m512i result0         = _mm512_mulhi_epu16(d0,f0);
-            __m512i result0lo       = _mm512_mullo_epi16(d0,f0);
-            __m512i accum0_lo       = _mm512_unpacklo_epi16(result0lo, result0);
-            __m512i accum0_hi       = _mm512_unpackhi_epi16(result0lo, result0);
-
-            __m512i result1         = _mm512_mulhi_epu16(d1,f1);
-            __m512i result1lo       = _mm512_mullo_epi16(d1,f1);
-            __m512i accum1_lo       = _mm512_unpacklo_epi16(result1lo, result1);
-            __m512i accum1_hi       = _mm512_unpackhi_epi16(result1lo, result1);
-
-            __m512i result2         = _mm512_mulhi_epu16(d2,f2);
-            __m512i result2lo       = _mm512_mullo_epi16(d2,f2);
-            __m512i accum2_lo       = _mm512_unpacklo_epi16(result2lo, result2);
-            __m512i accum2_hi       = _mm512_unpackhi_epi16(result2lo, result2);
-
-            __m512i result3         = _mm512_mulhi_epu16(d3,f3);
-            __m512i result3lo       = _mm512_mullo_epi16(d3,f3);
-            __m512i accum3_lo       = _mm512_unpacklo_epi16(result3lo, result3);
-            __m512i accum3_hi       = _mm512_unpackhi_epi16(result3lo, result3);
-
-            __m512i result4         = _mm512_mulhi_epu16(d4,f4);
-            __m512i result4lo       = _mm512_mullo_epi16(d4,f4);
-            __m512i accum4_lo       = _mm512_unpacklo_epi16(result4lo, result4);
-            __m512i accum4_hi       = _mm512_unpackhi_epi16(result4lo, result4);
-
-            accum0_lo = _mm512_add_epi32(accum0_lo,accum1_lo);
-            accum2_lo = _mm512_add_epi32(accum2_lo,accum3_lo);
-            accum0_lo = _mm512_add_epi32(accum0_lo,accum4_lo);
-            accum0_lo = _mm512_add_epi32(accum0_lo,accum2_lo);
-
-            accum0_hi = _mm512_add_epi32(accum0_hi,accum1_hi);
-            accum2_hi = _mm512_add_epi32(accum2_hi,accum3_hi);
-            accum0_hi = _mm512_add_epi32(accum0_hi,accum4_hi);
-            accum0_hi = _mm512_add_epi32(accum0_hi,accum2_hi);
-
-            accum0_lo = _mm512_add_epi32(add_before_shift_512, accum0_lo);
-            accum0_hi = _mm512_add_epi32(add_before_shift_512, accum0_hi);
-            accum0_lo = _mm512_srli_epi32(accum0_lo, shift_var);
-            accum0_hi = _mm512_srli_epi32(accum0_hi, shift_var);
-            __m512i accum0 = _mm512_packus_epi32(accum0_lo, accum0_hi);
-            _mm512_storeu_si512((__m512i*)(dst + i * dst_stride + j), accum0);
-            src_p1 += 32;
+    for (unsigned i = 0; i < h; i++) {
+        const uint8_t *p[5], *c[5];
+        for (int k = 0; k < 5; k++) {
+            int r = mirror((int)i - 2 + k, (int)h);
+            p[k] = prev + r * prev_stride;
+            c[k] = cur + r * cur_stride;
         }
 
-        for (unsigned j = width_mod_32; j < width; ++j) {
-            uint16_t *src_p2 = src_p1;
-            uint32_t accum = 0;
-            for (unsigned k = 0; k < (unsigned) filter_width; ++k) {
-                accum += filter[k] * (*src_p2);
-                src_p2 += src_stride;
+        unsigned j;
+        __m512i nz_acc = _mm512_setzero_si512();
+        for (j = 0; j + 32 <= w; j += 32) {
+            __m512i d0 = _mm512_sub_epi16(
+                _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(p[0] + j))),
+                _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(c[0] + j))));
+            __m512i d1 = _mm512_sub_epi16(
+                _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(p[1] + j))),
+                _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(c[1] + j))));
+            __m512i d2 = _mm512_sub_epi16(
+                _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(p[2] + j))),
+                _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(c[2] + j))));
+            __m512i d3 = _mm512_sub_epi16(
+                _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(p[3] + j))),
+                _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(c[3] + j))));
+            __m512i d4 = _mm512_sub_epi16(
+                _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(p[4] + j))),
+                _mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)(c[4] + j))));
+
+            __m512i lo = _mm512_mullo_epi16(d0, f0);
+            __m512i hi = _mm512_mulhi_epi16(d0, f0);
+            __m512i acc_lo = _mm512_unpacklo_epi16(lo, hi);
+            __m512i acc_hi = _mm512_unpackhi_epi16(lo, hi);
+
+            lo = _mm512_mullo_epi16(d1, f1); hi = _mm512_mulhi_epi16(d1, f1);
+            acc_lo = _mm512_add_epi32(acc_lo, _mm512_unpacklo_epi16(lo, hi));
+            acc_hi = _mm512_add_epi32(acc_hi, _mm512_unpackhi_epi16(lo, hi));
+
+            lo = _mm512_mullo_epi16(d2, f2); hi = _mm512_mulhi_epi16(d2, f2);
+            acc_lo = _mm512_add_epi32(acc_lo, _mm512_unpacklo_epi16(lo, hi));
+            acc_hi = _mm512_add_epi32(acc_hi, _mm512_unpackhi_epi16(lo, hi));
+
+            lo = _mm512_mullo_epi16(d3, f1); hi = _mm512_mulhi_epi16(d3, f1);
+            acc_lo = _mm512_add_epi32(acc_lo, _mm512_unpacklo_epi16(lo, hi));
+            acc_hi = _mm512_add_epi32(acc_hi, _mm512_unpackhi_epi16(lo, hi));
+
+            lo = _mm512_mullo_epi16(d4, f0); hi = _mm512_mulhi_epi16(d4, f0);
+            acc_lo = _mm512_add_epi32(acc_lo, _mm512_unpacklo_epi16(lo, hi));
+            acc_hi = _mm512_add_epi32(acc_hi, _mm512_unpackhi_epi16(lo, hi));
+
+            acc_lo = _mm512_srai_epi32(_mm512_add_epi32(acc_lo, round8), 8);
+            acc_hi = _mm512_srai_epi32(_mm512_add_epi32(acc_hi, round8), 8);
+
+            __m256i lo_lo = _mm512_castsi512_si256(acc_lo);
+            __m256i lo_hi = _mm512_extracti64x4_epi64(acc_lo, 1);
+            __m256i hi_lo = _mm512_castsi512_si256(acc_hi);
+            __m256i hi_hi = _mm512_extracti64x4_epi64(acc_hi, 1);
+
+            __m256i cols_0_7   = _mm256_permute2x128_si256(lo_lo, hi_lo, 0x20);
+            __m256i cols_8_15  = _mm256_permute2x128_si256(lo_lo, hi_lo, 0x31);
+            __m256i cols_16_23 = _mm256_permute2x128_si256(lo_hi, hi_hi, 0x20);
+            __m256i cols_24_31 = _mm256_permute2x128_si256(lo_hi, hi_hi, 0x31);
+
+            _mm256_storeu_si256((__m256i*)(y_row + j),      cols_0_7);
+            _mm256_storeu_si256((__m256i*)(y_row + j + 8),  cols_8_15);
+            _mm256_storeu_si256((__m256i*)(y_row + j + 16), cols_16_23);
+            _mm256_storeu_si256((__m256i*)(y_row + j + 24), cols_24_31);
+
+            __m512i stored = _mm512_inserti64x4(
+                _mm512_castsi256_si512(
+                    _mm256_or_si256(cols_0_7, cols_8_15)),
+                _mm256_or_si256(cols_16_23, cols_24_31), 1);
+            nz_acc = _mm512_or_si512(nz_acc, stored);
+        }
+
+        int32_t nz_tail = 0;
+        for (; j < w; j++) {
+            int32_t accum = 0;
+            for (int k = 0; k < 5; k++) {
+                int32_t diff = p[k][j] - c[k][j];
+                accum += (int32_t)filter[k] * diff;
             }
-            dst[i * dst_stride + j] = (accum + add_before_shift) >> shift_var;
-            src_p1++;
+            y_row[j] = (accum + (1 << 7)) >> 8;
+            nz_tail |= y_row[j];
         }
 
-        src_p += src_stride;
+        if (_mm512_test_epi32_mask(nz_acc, nz_acc) == 0 && !nz_tail) continue;
+
+        sad += x_conv_row_sad_avx512(y_row, w);
     }
 
-    for (unsigned i = bottom_edge; i < height; i++) {
-        for (unsigned j = 0; j < width; ++j) {
-            dst[i * dst_stride + j] =
-                (edge_16(false, src, width, height, src_stride, i, j) +
-                 add_before_shift) >> shift_var;
-        }
-    }
-}
-
-void sad_avx512(VmafPicture *pic_a, VmafPicture *pic_b, uint64_t *sad)
-{
-    *sad = 0;
-
-    uint16_t *a = pic_a->data[0];
-    uint16_t *b = pic_b->data[0];
-    
-    uint32_t height = pic_a->h[0];
-    uint32_t width = pic_a->w[0];
-
-    unsigned width_mod_64 = width - (width % 64);
-
-    __m512i final_accum = _mm512_setzero_si512();
-
-    for (unsigned i = 0; i < height; i++) {
-        uint32_t inner_sad = 0;
-        __m512i inter_accum_lo = _mm512_setzero_si512();
-        __m512i inter_accum_hi = _mm512_setzero_si512();
-
-        for (unsigned j = 0; j < width_mod_64; j+=64) {
-            __m512i da = _mm512_loadu_si512((__m512i*)(a + j));
-            __m512i db = _mm512_loadu_si512((__m512i*)(b + j));
-            __m512i da_32 = _mm512_loadu_si512((__m512i*)(a + j + 32));
-            __m512i db_32 = _mm512_loadu_si512((__m512i*)(b + j + 32));
-            __m512i da_lo = _mm512_unpacklo_epi16(da, _mm512_setzero_si512());
-            __m512i da_hi = _mm512_unpackhi_epi16(da, _mm512_setzero_si512());
-            __m512i db_lo = _mm512_unpacklo_epi16(db, _mm512_setzero_si512());
-            __m512i db_hi = _mm512_unpackhi_epi16(db, _mm512_setzero_si512());
-            __m512i da_32_lo = _mm512_unpacklo_epi16(da_32, _mm512_setzero_si512());
-            __m512i da_32_hi = _mm512_unpackhi_epi16(da_32, _mm512_setzero_si512());
-            __m512i db_32_lo = _mm512_unpacklo_epi16(db_32, _mm512_setzero_si512());
-            __m512i db_32_hi = _mm512_unpackhi_epi16(db_32, _mm512_setzero_si512());
-
-            __m512i abs_da_m_db_lo = _mm512_abs_epi32(_mm512_sub_epi32(da_lo, db_lo));
-            __m512i abs_da_m_db_hi = _mm512_abs_epi32(_mm512_sub_epi32(da_hi, db_hi));
-            __m512i abs_da_m_db_32_lo = _mm512_abs_epi32(_mm512_sub_epi32(da_32_lo, db_32_lo));
-            __m512i abs_da_m_db_32_hi = _mm512_abs_epi32(_mm512_sub_epi32(da_32_hi, db_32_hi));
-            inter_accum_lo = _mm512_add_epi32(inter_accum_lo, abs_da_m_db_lo);
-            inter_accum_hi = _mm512_add_epi32(inter_accum_hi, abs_da_m_db_hi);
-            inter_accum_lo = _mm512_add_epi32(inter_accum_lo, abs_da_m_db_32_lo);
-            inter_accum_hi = _mm512_add_epi32(inter_accum_hi, abs_da_m_db_32_hi);
-        }
-
-        for (unsigned j = width_mod_64; j < pic_a->w[0]; j++) {
-            inner_sad += abs(a[j] - b[j]);
-        }
-        *sad += inner_sad;
-
-        final_accum = _mm512_add_epi64(final_accum, _mm512_cvtepi32_epi64(_mm256_add_epi32(
-            _mm512_castsi512_si256(inter_accum_lo), _mm512_extracti64x4_epi64(inter_accum_lo, 1))));
-        final_accum = _mm512_add_epi64(final_accum, _mm512_cvtepi32_epi64(_mm256_add_epi32(
-            _mm512_castsi512_si256(inter_accum_hi), _mm512_extracti64x4_epi64(inter_accum_hi, 1))));
-
-        a += (pic_a->stride[0] / 2);
-        b += (pic_b->stride[0] / 2);
-    }
-    __m256i r4 = _mm256_add_epi64(_mm512_castsi512_si256(final_accum), _mm512_extracti64x4_epi64(final_accum, 1));
-    __m128i r2 = _mm_add_epi64(_mm256_castsi256_si128(r4), _mm256_extracti64x2_epi64(r4, 1));
-    uint64_t r1 = r2[0] + r2[1];
-    
-    *sad += r1;
-
+    return sad;
 }
