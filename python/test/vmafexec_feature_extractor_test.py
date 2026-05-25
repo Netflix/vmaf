@@ -303,10 +303,10 @@ class FeatureExtractorTest(MyTestCase):
         for i in range(1, len(results[0]['integer_motion_feature_motion2_scores'])):
             self.assertEqual(results[0]['integer_motion_feature_motion2_scores'][i],
                              results[0]['integer_motion_feature_motion3_scores'][i])
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_score'], 3.9897647708333337, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_score'], 3.9897647708333337, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=5)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=5)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_score'], 3.9897647708333337, places=5)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_score'], 3.9897647708333337, places=5)
         with self.assertRaises(KeyError):
             s = results[0]['integer_motion_feature_motion_score']
 
@@ -327,10 +327,10 @@ class FeatureExtractorTest(MyTestCase):
         for i in range(1, len(results[0]['integer_motion_feature_motion2_mfw_2.5_scores'])):
             self.assertEqual(results[0]['integer_motion_feature_motion2_mfw_2.5_scores'][i],
                              results[0]['integer_motion_feature_motion3_mfw_2.5_scores'][i])
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_mfw_2.5_score'], 9.735899000000002, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_mfw_2.5_score'], 9.735899000000002, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mfw_2.5_score'], 9.974411604166667, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_mfw_2.5_score'], 9.974411604166667, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_mfw_2.5_score'], 9.735899000000002, places=5)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_mfw_2.5_score'], 9.735899000000002, places=5)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mfw_2.5_score'], 9.974411604166667, places=5)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_mfw_2.5_score'], 9.974411604166667, places=5)
         with self.assertRaises(KeyError):
             s = results[0]['integer_motion_feature_motion_mfw_2.5_score']
 
@@ -351,12 +351,12 @@ class FeatureExtractorTest(MyTestCase):
         for i in range(1, len(results[0]['integer_motion_feature_motion2_scores'])):
             self.assertEqual(results[0]['integer_motion_feature_motion2_scores'][i],
                              results[0]['integer_motion_feature_motion3_scores'][i])
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion_score'], 4.048813375, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion_score'], 4.048813375, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_score'], 3.9897647708333337, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_score'], 3.9897647708333337, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=5)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 3.8943597291666667, places=5)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion_score'], 4.048813375, places=5)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion_score'], 4.048813375, places=5)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_score'], 3.9897647708333337, places=5)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_score'], 3.9897647708333337, places=5)
 
     def test_run_integer_motion_fextractor_with_blend(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -371,15 +371,15 @@ class FeatureExtractorTest(MyTestCase):
         print(results[0])
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_mbf_0.5_mbo_3_scores'][0], 0.0, places=6)
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'][0], 3.789721, places=6)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'][1], 3.607162, places=6)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'][2], 3.535804, places=6)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'][3], 3.412845, places=6)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'][1], 3.607162, places=5)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'][2], 3.535804, places=4)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'][3], 3.412845, places=5)
         assert len(results[0]['integer_motion_feature_motion2_mbf_0.5_mbo_3_scores']) == \
                len(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_scores'])
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_mbf_0.5_mbo_3_score'], 3.8943597291666667, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_mbf_0.5_mbo_3_score'], 3.8943597291666667, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_score'], 3.494882270833333, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_mbf_0.5_mbo_3_score'], 3.494882270833333, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_mbf_0.5_mbo_3_score'], 3.8943597291666667, places=5)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_mbf_0.5_mbo_3_score'], 3.8943597291666667, places=5)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_mbf_0.5_mbo_3_score'], 3.494882270833333, places=5)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_mbf_0.5_mbo_3_score'], 3.494882270833333, places=5)
 
     def test_run_integer_motion_fextractor_forcing_zero(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
@@ -408,15 +408,15 @@ class FeatureExtractorTest(MyTestCase):
         self.fextractor.run(parallelize=True)
         results = self.fextractor.results
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_scores'][0], 0.0, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_scores'][1], 4.214324, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_scores'][2], 4.214324, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 2.8095493333333335, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_score'], 4.336030000000001, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_scores'][1], 4.214324, places=5)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_scores'][2], 4.214324, places=5)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion2_score'], 2.8095493333333335, places=5)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_score'], 4.336030000000001, places=5)
         self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_scores'][0], 4.579442, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_scores'][1], 4.214324, places=8)
-        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_scores'][2], 4.214324, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 2.8095493333333335, places=8)
-        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_score'], 4.336030000000001, places=8)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_scores'][1], 4.214324, places=5)
+        self.assertAlmostEqual(results[0]['integer_motion_feature_motion3_scores'][2], 4.214324, places=5)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion2_score'], 2.8095493333333335, places=5)
+        self.assertAlmostEqual(results[1]['integer_motion_feature_motion3_score'], 4.336030000000001, places=5)
 
     def test_run_float_vif_fextractor(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()

@@ -507,8 +507,12 @@ static void threaded_extract_batch_func(void *e, void **thread_data)
         if (fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL)
             continue;
 
-        if ((f->n_subsample > 1) && (f->index % f->n_subsample))
-            continue;
+        const uint64_t no_subsample_flags =
+            VMAF_FEATURE_EXTRACTOR_TEMPORAL | VMAF_FEATURE_EXTRACTOR_PREV_REF;
+        if (!(fex->flags & no_subsample_flags)) {
+            if ((f->n_subsample > 1) && (f->index % f->n_subsample))
+                continue;
+        }
 
         if (!td->fex_ctx[i]) {
             VmafDictionary *opts_dict = f->registered_fex->fex_ctx[i]->opts_dict;
@@ -854,7 +858,9 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
         VmafFeatureExtractorContext *fex_ctx =
             vmaf->registered_feature_extractors.fex_ctx[i];
 
-        if (!(fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL)) {
+        const uint64_t no_subsample_flags =
+            VMAF_FEATURE_EXTRACTOR_TEMPORAL | VMAF_FEATURE_EXTRACTOR_PREV_REF;
+        if (!(fex_ctx->fex->flags & no_subsample_flags)) {
             if ((vmaf->cfg.n_subsample > 1) && (index % vmaf->cfg.n_subsample))
                 continue;
         }
