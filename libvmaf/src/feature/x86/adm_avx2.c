@@ -633,9 +633,9 @@
 #define ADM_CM_ACCUM_ROUND(x, thr, shift_xsub, x_sq, add_shift_xsq, shift_xsq, val, \
                            add_shift_xcub, shift_xcub, accum_inner) \
 { \
-    x = abs(x) - ((int32_t)(thr) << shift_xsub); \
+    x = ((x) < 0 ? -(x) : (x)) - ((int64_t)(thr) << shift_xsub); \
     x = x < 0 ? 0 : x; \
-    x_sq = (int32_t)((((int64_t)x * x) + add_shift_xsq) >> shift_xsq); \
+    x_sq = (int32_t)(((x * x) + add_shift_xsq) >> shift_xsq); \
     val = (((int64_t)x_sq * x) + add_shift_xcub) >> shift_xcub; \
     accum_inner += val; \
 }
@@ -1934,11 +1934,15 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
 }
 
 float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
-                    double adm_norm_view_dist, int adm_ref_display_height,
-                    int adm_csf_mode, double adm_csf_scale,
-                    double adm_csf_diag_scale, double adm_noise_weight,
-                    bool measure_aim)
+                    const AdmCsfParams *p,
+                    double adm_noise_weight, bool measure_aim)
 {
+    const double adm_norm_view_dist = p->adm_norm_view_dist;
+    const int adm_ref_display_height = p->adm_ref_display_height;
+    const int adm_csf_mode = p->adm_csf_mode;
+    const double adm_csf_scale = p->adm_csf_scale;
+    const double adm_csf_diag_scale = p->adm_csf_diag_scale;
+
     adm_dwt_band_t *src;
     adm_dwt_band_t *csf_f;
     adm_dwt_band_t *csf_a;
@@ -1970,17 +1974,20 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
         factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 1, adm_norm_view_dist, adm_ref_display_height);
         factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 2, adm_norm_view_dist, adm_ref_display_height);
     }
+    if (p->adm_f1s0 >= 0) factor1 = p->adm_f1s0;
+    if (p->adm_f2s0 >= 0) factor2 = p->adm_f2s0;
     const float rfactor1[3] = { factor1, factor1, factor2 };
 
     /**
      * rfactor is converted to fixed-point for scale0 and stored in i_rfactor
      * multiplied by 2^21 for rfactor[0,1] and by 2^23 for rfactor[2].
-     * For adm_norm_view_dist 3.0 and adm_ref_display_height 1080,
-     * i_rfactor is around { 36453,36453,49417 } for ADM_CSF_MODE_WATSON97
+     * Storage is uint32_t so smaller display heights (480/720) do not
+     * overflow the diagonal factor at 2^23.
      */
-    uint16_t i_rfactor[3];
+    uint32_t i_rfactor[3];
     if (fabs(adm_norm_view_dist * adm_ref_display_height - DEFAULT_ADM_NORM_VIEW_DIST * DEFAULT_ADM_REF_DISPLAY_HEIGHT) < 1.0e-8 &&
-            adm_csf_mode == ADM_CSF_MODE_WATSON97) {
+            adm_csf_mode == ADM_CSF_MODE_WATSON97 &&
+            p->adm_f1s0 < 0 && p->adm_f2s0 < 0) {
         i_rfactor[0] = 36453;
         i_rfactor[1] = 36453;
         i_rfactor[2] = 49417;
@@ -1988,9 +1995,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
     else {
         const double pow2_21 = pow(2, 21);
         const double pow2_23 = pow(2, 23);
-        i_rfactor[0] = (uint16_t) (rfactor1[0] * pow2_21);
-        i_rfactor[1] = (uint16_t) (rfactor1[1] * pow2_21);
-        i_rfactor[2] = (uint16_t) (rfactor1[2] * pow2_23);
+        i_rfactor[0] = (uint32_t) (rfactor1[0] * pow2_21);
+        i_rfactor[1] = (uint32_t) (rfactor1[1] * pow2_21);
+        i_rfactor[2] = (uint32_t) (rfactor1[2] * pow2_23);
     }
 
     const int32_t shift_xhsq = 29;
@@ -2036,7 +2043,8 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
 
     int i, j;
     int64_t val;
-    int32_t xh, xv, xd, thr;
+    int64_t xh, xv, xd;
+    int32_t thr;
     int32_t xh_sq, xv_sq, xd_sq;
     int64_t accum_h = 0, accum_v = 0, accum_d = 0;
     int64_t accum_inner_h = 0, accum_inner_v = 0, accum_inner_d = 0;
@@ -2046,12 +2054,19 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
     __m256i accum_inner_h_lo_256, accum_inner_h_hi_256, accum_inner_v_lo_256, \
     accum_inner_v_hi_256, accum_inner_d_lo_256, accum_inner_d_hi_256;
 
+    /* The mullo_epi32 SIMD path requires factor*src to fit in int32.
+     * factor <= uint16_max guarantees |factor*int16| <= int32_max. If any
+     * factor exceeds that (e.g., 480/720 diagonal), force the scalar
+     * interior path which uses int64 math. */
+    const bool fast_path = i_rfactor[0] <= 65535u && i_rfactor[1] <= 65535u &&
+                           i_rfactor[2] <= 65535u;
+
     /* i=0,j=0 */
     if ((top <= 0) && (left <= 0))
     {
-        xh = (int32_t)src->band_h[0] * i_rfactor[0];
-        xv = (int32_t)src->band_v[0] * i_rfactor[1];
-        xd = (int32_t)src->band_d[0] * i_rfactor[2];
+        xh = (int64_t)src->band_h[0] * i_rfactor[0];
+        xv = (int64_t)src->band_v[0] * i_rfactor[1];
+        xd = (int64_t)src->band_d[0] * i_rfactor[2];
         ADM_CM_THRESH_S_0_0(angles, flt_angles, csf_a_stride, &thr, w, h, 0, 0);
 
         //thr is shifted to make it's Q format equivalent to xh,xv,xd
@@ -2078,9 +2093,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
     /* i=0, j */
     if (top <= 0) {
         for (j = start_col; j < end_col; ++j) {
-            xh = src->band_h[j] * i_rfactor[0];
-            xv = src->band_v[j] * i_rfactor[1];
-            xd = src->band_d[j] * i_rfactor[2];
+            xh = (int64_t)src->band_h[j] * i_rfactor[0];
+            xv = (int64_t)src->band_v[j] * i_rfactor[1];
+            xd = (int64_t)src->band_d[j] * i_rfactor[2];
             ADM_CM_THRESH_S_0_J(angles, flt_angles, csf_a_stride, &thr, w, h, 0, j);
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2095,9 +2110,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
     /* i=0,j=w-1 */
     if ((top <= 0) && (right > (w - 1)))
     {
-        xh = src->band_h[w - 1] * i_rfactor[0];
-        xv = src->band_v[w - 1] * i_rfactor[1];
-        xd = src->band_d[w - 1] * i_rfactor[2];
+        xh = (int64_t)src->band_h[w - 1] * i_rfactor[0];
+        xv = (int64_t)src->band_v[w - 1] * i_rfactor[1];
+        xd = (int64_t)src->band_d[w - 1] * i_rfactor[2];
         ADM_CM_THRESH_S_0_W_M_1(angles, flt_angles, csf_a_stride, &thr, w, h, 0, (w - 1));
 
         ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2112,7 +2127,7 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
     accum_v += (accum_inner_v + add_shift_inner_accum) >> shift_inner_accum;
     accum_d += (accum_inner_d + add_shift_inner_accum) >> shift_inner_accum;
 
-    if ((left > 0) && (right <= (w - 1))) /* Completely within frame */
+    if ((left > 0) && (right <= (w - 1)) && fast_path) /* Completely within frame, SIMD-safe factors */
     {
         __m256i i_rfactor0 = _mm256_and_si256(_mm256_set1_epi32(i_rfactor[0]), _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF));
         __m256i i_rfactor1 = _mm256_and_si256(_mm256_set1_epi32(i_rfactor[1]), _mm256_set_epi64x(0x0, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF));
@@ -2157,9 +2172,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
             int64_t res_d = r2_d[0] + r2_d[1];
 
             for (j = end_col_mod6; j < end_col; ++j) {
-                xh = src->band_h[i * src_stride + j] * i_rfactor[0];
-                xv = src->band_v[i * src_stride + j] * i_rfactor[1];
-                xd = src->band_d[i * src_stride + j] * i_rfactor[2];
+                xh = (int64_t)src->band_h[i * src_stride + j] * i_rfactor[0];
+                xv = (int64_t)src->band_v[i * src_stride + j] * i_rfactor[1];
+                xd = (int64_t)src->band_d[i * src_stride + j] * i_rfactor[2];
 
                 ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_a_stride, &thr, w, h, i, j);
                 ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2177,6 +2192,29 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
             accum_d += (accum_inner_d + res_d + add_shift_inner_accum) >> shift_inner_accum;
         }
     }
+    else if ((left > 0) && (right <= (w - 1))) /* Completely within frame, wide factor — scalar interior */
+    {
+        for (i = start_row; i < end_row; ++i) {
+            accum_inner_h = 0;
+            accum_inner_v = 0;
+            accum_inner_d = 0;
+            for (j = start_col; j < end_col; ++j) {
+                xh = (int64_t)src->band_h[i * src_stride + j] * i_rfactor[0];
+                xv = (int64_t)src->band_v[i * src_stride + j] * i_rfactor[1];
+                xd = (int64_t)src->band_d[i * src_stride + j] * i_rfactor[2];
+                ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_a_stride, &thr, w, h, i, j);
+                ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
+                                   add_shift_xhcub, shift_xhcub, accum_inner_h);
+                ADM_CM_ACCUM_ROUND(xv, thr, shift_xvsub, xv_sq, add_shift_xvsq, shift_xvsq, val,
+                                   add_shift_xvcub, shift_xvcub, accum_inner_v);
+                ADM_CM_ACCUM_ROUND(xd, thr, shift_xdsub, xd_sq, add_shift_xdsq, shift_xdsq, val,
+                                   add_shift_xdcub, shift_xdcub, accum_inner_d);
+            }
+            accum_h += (accum_inner_h + add_shift_inner_accum) >> shift_inner_accum;
+            accum_v += (accum_inner_v + add_shift_inner_accum) >> shift_inner_accum;
+            accum_d += (accum_inner_d + add_shift_inner_accum) >> shift_inner_accum;
+        }
+    }
     else if ((left <= 0) && (right <= (w - 1))) /* Right border within frame, left outside */
     {
         for (i = start_row; i < end_row; ++i) {
@@ -2185,9 +2223,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
             accum_inner_d = 0;
 
             /* j = 0 */
-            xh = src->band_h[i * src_stride] * i_rfactor[0];
-            xv = src->band_v[i * src_stride] * i_rfactor[1];
-            xd = src->band_d[i * src_stride] * i_rfactor[2];
+            xh = (int64_t)src->band_h[i * src_stride] * i_rfactor[0];
+            xv = (int64_t)src->band_v[i * src_stride] * i_rfactor[1];
+            xd = (int64_t)src->band_d[i * src_stride] * i_rfactor[2];
             ADM_CM_THRESH_S_I_0(angles, flt_angles, csf_a_stride, &thr, w, h, i, 0);
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2199,9 +2237,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
 
             /* j within frame */
             for (j = start_col; j < end_col; ++j) {
-                xh = src->band_h[i * src_stride + j] * i_rfactor[0];
-                xv = src->band_v[i * src_stride + j] * i_rfactor[1];
-                xd = src->band_d[i * src_stride + j] * i_rfactor[2];
+                xh = (int64_t)src->band_h[i * src_stride + j] * i_rfactor[0];
+                xv = (int64_t)src->band_v[i * src_stride + j] * i_rfactor[1];
+                xd = (int64_t)src->band_d[i * src_stride + j] * i_rfactor[2];
                 ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_a_stride, &thr, w, h, i, j);
 
                 ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2224,9 +2262,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
             accum_inner_d = 0;
             /* j within frame */
             for (j = start_col; j < end_col; ++j) {
-                xh = src->band_h[i * src_stride + j] * i_rfactor[0];
-                xv = src->band_v[i * src_stride + j] * i_rfactor[1];
-                xd = src->band_d[i * src_stride + j] * i_rfactor[2];
+                xh = (int64_t)src->band_h[i * src_stride + j] * i_rfactor[0];
+                xv = (int64_t)src->band_v[i * src_stride + j] * i_rfactor[1];
+                xd = (int64_t)src->band_d[i * src_stride + j] * i_rfactor[2];
                 ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_a_stride, &thr, w, h, i, j);
 
                 ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2237,9 +2275,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
                                    add_shift_xdcub, shift_xdcub, accum_inner_d);
             }
             /* j = w-1 */
-            xh = src->band_h[i * src_stride + w - 1] * i_rfactor[0];
-            xv = src->band_v[i * src_stride + w - 1] * i_rfactor[1];
-            xd = src->band_d[i * src_stride + w - 1] * i_rfactor[2];
+            xh = (int64_t)src->band_h[i * src_stride + w - 1] * i_rfactor[0];
+            xv = (int64_t)src->band_v[i * src_stride + w - 1] * i_rfactor[1];
+            xd = (int64_t)src->band_d[i * src_stride + w - 1] * i_rfactor[2];
             ADM_CM_THRESH_S_I_W_M_1(angles, flt_angles, csf_a_stride, &thr, w, h, i, (w - 1));
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2263,9 +2301,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
             accum_inner_d = 0;
 
             /* j = 0 */
-            xh = src->band_h[i * src_stride] * i_rfactor[0];
-            xv = src->band_v[i * src_stride] * i_rfactor[1];
-            xd = src->band_d[i * src_stride] * i_rfactor[2];
+            xh = (int64_t)src->band_h[i * src_stride] * i_rfactor[0];
+            xv = (int64_t)src->band_v[i * src_stride] * i_rfactor[1];
+            xd = (int64_t)src->band_d[i * src_stride] * i_rfactor[2];
             ADM_CM_THRESH_S_I_0(angles, flt_angles, csf_a_stride, &thr, w, h, i, 0);
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2277,9 +2315,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
 
             /* j within frame */
             for (j = start_col; j < end_col; ++j) {
-                xh = src->band_h[i * src_stride + j] * i_rfactor[0];
-                xv = src->band_v[i * src_stride + j] * i_rfactor[1];
-                xd = src->band_d[i * src_stride + j] * i_rfactor[2];
+                xh = (int64_t)src->band_h[i * src_stride + j] * i_rfactor[0];
+                xv = (int64_t)src->band_v[i * src_stride + j] * i_rfactor[1];
+                xd = (int64_t)src->band_d[i * src_stride + j] * i_rfactor[2];
                 ADM_CM_THRESH_S_I_J(angles, flt_angles, csf_a_stride, &thr, w, h, i, j);
 
                 ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2290,9 +2328,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
                                    add_shift_xdcub, shift_xdcub, accum_inner_d);
             }
             /* j = w-1 */
-            xh = src->band_h[i * src_stride + w - 1] * i_rfactor[0];
-            xv = src->band_v[i * src_stride + w - 1] * i_rfactor[1];
-            xd = src->band_d[i * src_stride + w - 1] * i_rfactor[2];
+            xh = (int64_t)src->band_h[i * src_stride + w - 1] * i_rfactor[0];
+            xv = (int64_t)src->band_v[i * src_stride + w - 1] * i_rfactor[1];
+            xd = (int64_t)src->band_d[i * src_stride + w - 1] * i_rfactor[2];
             ADM_CM_THRESH_S_I_W_M_1(angles, flt_angles, csf_a_stride, &thr, w, h, i, (w - 1));
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2314,9 +2352,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
     /* i=h-1,j=0 */
     if ((bottom > (h - 1)) && (left <= 0))
     {
-        xh = src->band_h[(h - 1) * src_stride] * i_rfactor[0];
-        xv = src->band_v[(h - 1) * src_stride] * i_rfactor[1];
-        xd = src->band_d[(h - 1) * src_stride] * i_rfactor[2];
+        xh = (int64_t)src->band_h[(h - 1) * src_stride] * i_rfactor[0];
+        xv = (int64_t)src->band_v[(h - 1) * src_stride] * i_rfactor[1];
+        xd = (int64_t)src->band_d[(h - 1) * src_stride] * i_rfactor[2];
         ADM_CM_THRESH_S_H_M_1_0(angles, flt_angles, csf_a_stride, &thr, w, h, (h - 1), 0);
 
         ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2330,9 +2368,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
     /* i=h-1,j */
     if (bottom > (h - 1)) {
         for (j = start_col; j < end_col; ++j) {
-            xh = src->band_h[(h - 1) * src_stride + j] * i_rfactor[0];
-            xv = src->band_v[(h - 1) * src_stride + j] * i_rfactor[1];
-            xd = src->band_d[(h - 1) * src_stride + j] * i_rfactor[2];
+            xh = (int64_t)src->band_h[(h - 1) * src_stride + j] * i_rfactor[0];
+            xv = (int64_t)src->band_v[(h - 1) * src_stride + j] * i_rfactor[1];
+            xd = (int64_t)src->band_d[(h - 1) * src_stride + j] * i_rfactor[2];
             ADM_CM_THRESH_S_H_M_1_J(angles, flt_angles, csf_a_stride, &thr, w, h, (h - 1), j);
 
             ADM_CM_ACCUM_ROUND(xh, thr, shift_xhsub, xh_sq, add_shift_xhsq, shift_xhsq, val,
@@ -2347,9 +2385,9 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
     /* i-h-1,j=w-1 */
     if ((bottom > (h - 1)) && (right > (w - 1)))
     {
-        xh = src->band_h[(h - 1) * src_stride + w - 1] * i_rfactor[0];
-        xv = src->band_v[(h - 1) * src_stride + w - 1] * i_rfactor[1];
-        xd = src->band_d[(h - 1) * src_stride + w - 1] * i_rfactor[2];
+        xh = (int64_t)src->band_h[(h - 1) * src_stride + w - 1] * i_rfactor[0];
+        xv = (int64_t)src->band_v[(h - 1) * src_stride + w - 1] * i_rfactor[1];
+        xd = (int64_t)src->band_d[(h - 1) * src_stride + w - 1] * i_rfactor[2];
         ADM_CM_THRESH_S_H_M_1_W_M_1(angles, flt_angles, csf_a_stride, &thr, w, h,
             (h - 1), (w - 1));
 
@@ -2389,11 +2427,15 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
 }
 
 float i4_adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride, int scale,
-                       double adm_norm_view_dist, int adm_ref_display_height,
-                       int adm_csf_mode, double adm_csf_scale,
-                       double adm_csf_diag_scale, double adm_noise_weight,
-                       bool measure_aim)
+                       const AdmCsfParams *p,
+                       double adm_noise_weight, bool measure_aim)
 {
+    const double adm_norm_view_dist = p->adm_norm_view_dist;
+    const int adm_ref_display_height = p->adm_ref_display_height;
+    const int adm_csf_mode = p->adm_csf_mode;
+    const double adm_csf_scale = p->adm_csf_scale;
+    const double adm_csf_diag_scale = p->adm_csf_diag_scale;
+
     i4_adm_dwt_band_t *src;
     i4_adm_dwt_band_t *csf_f;
     i4_adm_dwt_band_t *csf_a;
@@ -2423,6 +2465,16 @@ float i4_adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_str
     } else {
         factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
         factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
+    }
+    if (scale == 1) {
+        if (p->adm_f1s1 >= 0) factor1 = p->adm_f1s1;
+        if (p->adm_f2s1 >= 0) factor2 = p->adm_f2s1;
+    } else if (scale == 2) {
+        if (p->adm_f1s2 >= 0) factor1 = p->adm_f1s2;
+        if (p->adm_f2s2 >= 0) factor2 = p->adm_f2s2;
+    } else {
+        if (p->adm_f1s3 >= 0) factor1 = p->adm_f1s3;
+        if (p->adm_f2s3 >= 0) factor2 = p->adm_f2s3;
     }
     float rfactor1[3] = { factor1, factor1, factor2 };
 
@@ -3602,10 +3654,15 @@ void adm_dwt2_s123_combined_avx2(const int32_t *i4_ref_scale, const int32_t *i4_
 
 float adm_csf_den_scale_avx2(const adm_dwt_band_t *src, int w, int h,
                                int src_stride,
-                               double adm_norm_view_dist, int adm_ref_display_height,
-                               int adm_csf_mode, double adm_csf_scale,
-                               double adm_csf_diag_scale, double adm_noise_weight)
+                               const AdmCsfParams *p,
+                               double adm_noise_weight)
 {
+    const double adm_norm_view_dist = p->adm_norm_view_dist;
+    const int adm_ref_display_height = p->adm_ref_display_height;
+    const int adm_csf_mode = p->adm_csf_mode;
+    const double adm_csf_scale = p->adm_csf_scale;
+    const double adm_csf_diag_scale = p->adm_csf_diag_scale;
+
     // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
     // 1 to 4 (from finest scale to coarsest scale).
     float factor1, factor2;
@@ -3622,6 +3679,8 @@ float adm_csf_den_scale_avx2(const adm_dwt_band_t *src, int w, int h,
         factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 1, adm_norm_view_dist, adm_ref_display_height);
         factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 2, adm_norm_view_dist, adm_ref_display_height);
     }
+    if (p->adm_f1s0 >= 0) factor1 = p->adm_f1s0;
+    if (p->adm_f2s0 >= 0) factor2 = p->adm_f2s0;
     const float rfactor[3] = { factor1, factor1, factor2 };
 
     uint64_t accum_h = 0, accum_v = 0, accum_d = 0;
@@ -3742,10 +3801,14 @@ float adm_csf_den_scale_avx2(const adm_dwt_band_t *src, int w, int h,
 }
 
 void adm_csf_avx2(AdmBuffer *buf, int w, int h, int stride,
-                    double adm_norm_view_dist, int adm_ref_display_height,
-                    int adm_csf_mode, double adm_csf_scale,
-                    double adm_csf_diag_scale, bool measure_aim)
+                    const AdmCsfParams *p, bool measure_aim)
 {
+    const double adm_norm_view_dist = p->adm_norm_view_dist;
+    const int adm_ref_display_height = p->adm_ref_display_height;
+    const int adm_csf_mode = p->adm_csf_mode;
+    const double adm_csf_scale = p->adm_csf_scale;
+    const double adm_csf_diag_scale = p->adm_csf_diag_scale;
+
     adm_dwt_band_t *src;
     adm_dwt_band_t *dst;
     adm_dwt_band_t *flt;
@@ -3781,17 +3844,20 @@ void adm_csf_avx2(AdmBuffer *buf, int w, int h, int stride,
         factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 1, adm_norm_view_dist, adm_ref_display_height);
         factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 2, adm_norm_view_dist, adm_ref_display_height);
     }
+    if (p->adm_f1s0 >= 0) factor1 = p->adm_f1s0;
+    if (p->adm_f2s0 >= 0) factor2 = p->adm_f2s0;
     const float rfactor1[3] = { factor1, factor1, factor2 };
 
     /**
      * rfactor is converted to fixed-point for scale0 and stored in i_rfactor
      * multiplied by 2^21 for rfactor[0,1] and by 2^23 for rfactor[2].
-     * For adm_norm_view_dist 3.0 and adm_ref_display_height 1080,
-     * i_rfactor is around { 36453,36453,49417 } for ADM_CSF_MODE_WATSON97
+     * Storage is uint32_t so smaller display heights (480/720) do not
+     * overflow the diagonal factor at 2^23.
      */
-    uint16_t i_rfactor[3];
+    uint32_t i_rfactor[3];
     if (fabs(adm_norm_view_dist * adm_ref_display_height - DEFAULT_ADM_NORM_VIEW_DIST * DEFAULT_ADM_REF_DISPLAY_HEIGHT) < 1.0e-8 &&
-            adm_csf_mode == ADM_CSF_MODE_WATSON97) {
+            adm_csf_mode == ADM_CSF_MODE_WATSON97 &&
+            p->adm_f1s0 < 0 && p->adm_f2s0 < 0) {
         i_rfactor[0] = 36453;
         i_rfactor[1] = 36453;
         i_rfactor[2] = 49417;
@@ -3799,9 +3865,9 @@ void adm_csf_avx2(AdmBuffer *buf, int w, int h, int stride,
     else {
         const double pow2_21 = pow(2, 21);
         const double pow2_23 = pow(2, 23);
-        i_rfactor[0] = (uint16_t) (rfactor1[0] * pow2_21);
-        i_rfactor[1] = (uint16_t) (rfactor1[1] * pow2_21);
-        i_rfactor[2] = (uint16_t) (rfactor1[2] * pow2_23);
+        i_rfactor[0] = (uint32_t) (rfactor1[0] * pow2_21);
+        i_rfactor[1] = (uint32_t) (rfactor1[1] * pow2_21);
+        i_rfactor[2] = (uint32_t) (rfactor1[2] * pow2_23);
     }
 
     /**
@@ -3839,73 +3905,71 @@ void adm_csf_avx2(AdmBuffer *buf, int w, int h, int stride,
 
     int right_mod_8 = right - ((right - left ) % 8);
 
+    /* Index permutation: compact the low int32 halves of the four 64-bit
+     * lanes (src int32 positions 0,2,4,6) into contiguous int32 positions
+     * 0..3. Positions 4..7 land with the (now-unused) upper halves. */
+    const __m256i compact_idx = _mm256_setr_epi32(0, 2, 4, 6, 1, 3, 5, 7);
+
     for (int i = top; i < bottom; ++i) {
         int src_offset = i * stride;
         int dst_offset = i * stride;
 
         for (int j = left; j < right_mod_8; j+=8) {
-            __m256i src0 = _mm256_cvtepi16_epi32(_mm_loadu_si128((__m128i*)(src_angles[0] + src_offset + j)));
-            __m256i r_factor0 = _mm256_set1_epi32(i_rfactor[0]);
-            __m256i dst_val0 = _mm256_mullo_epi32(src0, r_factor0);
-            __m256i i16_dst_val0 = _mm256_srai_epi32(_mm256_add_epi32(dst_val0, _mm256_set1_epi32(i_shiftsadd[0])), i_shifts[0]);
-            _mm_storeu_si128((__m128i*)(dst_angles[0] + dst_offset + j),
-            _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packs_epi32(i16_dst_val0, _mm256_setzero_si256()), 0x8)));
-            __m256i flt0 = _mm256_mullo_epi32(_mm256_set1_epi32(FIX_ONE_BY_30), _mm256_abs_epi32(i16_dst_val0));
-            flt0 = _mm256_srai_epi32(_mm256_add_epi32(flt0, _mm256_set1_epi32(2048)), 12);
-            flt0 = _mm256_packs_epi32(flt0, _mm256_setzero_si256());
-            _mm_storeu_si128((__m128i*)(flt_angles[0] + dst_offset + j), _mm256_castsi256_si128(_mm256_permute4x64_epi64(flt0, 0x8)));
+            for (int theta = 0; theta < 3; ++theta) {
+                __m256i src_i32 = _mm256_cvtepi16_epi32(_mm_loadu_si128((__m128i*)(src_angles[theta] + src_offset + j)));
+                __m256i src_lo_i64 = _mm256_cvtepi32_epi64(_mm256_castsi256_si128(src_i32));
+                __m256i src_hi_i64 = _mm256_cvtepi32_epi64(_mm256_extracti128_si256(src_i32, 1));
 
-            __m256i src1 = _mm256_cvtepi16_epi32(_mm_loadu_si128((__m128i*)(src_angles[1] + src_offset + j)));
-            __m256i r_factor1 = _mm256_set1_epi32(i_rfactor[1]);
-            __m256i dst_val1 = _mm256_mullo_epi32(src1, r_factor1);
-            __m256i i16_dst_val1 = _mm256_srai_epi32(_mm256_add_epi32(dst_val1, _mm256_set1_epi32(i_shiftsadd[1])), i_shifts[1]);
-            _mm_storeu_si128((__m128i*)(dst_angles[1] + dst_offset + j),
-            _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packs_epi32(i16_dst_val1, _mm256_setzero_si256()), 0x8)));
-            __m256i flt1 = _mm256_mullo_epi32(_mm256_set1_epi32(FIX_ONE_BY_30), _mm256_abs_epi32(i16_dst_val1));
-            flt1 = _mm256_srai_epi32(_mm256_add_epi32(flt1, _mm256_set1_epi32(2048)), 12);
-            flt1 = _mm256_packs_epi32(flt1, _mm256_setzero_si256());
-            _mm_storeu_si128((__m128i*)(flt_angles[1] + dst_offset + j), _mm256_castsi256_si128(_mm256_permute4x64_epi64(flt1, 0x8)));
+                const __m256i rfact_i64 = _mm256_set1_epi64x((int64_t)i_rfactor[theta]);
+                const __m256i saddv_i64 = _mm256_set1_epi64x((int64_t)i_shiftsadd[theta]);
 
-            __m256i src2 = _mm256_cvtepi16_epi32(_mm_loadu_si128((__m128i*)(src_angles[2] + src_offset + j)));
-            __m256i r_factor2 = _mm256_set1_epi32(i_rfactor[2]);
-            __m256i dst_val2 = _mm256_mullo_epi32(src2, r_factor2);
-            __m256i i16_dst_val2 = _mm256_srai_epi32(_mm256_add_epi32(dst_val2, _mm256_set1_epi32(i_shiftsadd[2])), i_shifts[2]);
-            _mm_storeu_si128((__m128i*)(dst_angles[2] + dst_offset + j),
-            _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packs_epi32(i16_dst_val2, _mm256_setzero_si256()), 0x8)));
-            __m256i flt2 = _mm256_mullo_epi32(_mm256_set1_epi32(FIX_ONE_BY_30), _mm256_abs_epi32(i16_dst_val2));
-            flt2 = _mm256_srai_epi32(_mm256_add_epi32(flt2, _mm256_set1_epi32(2048)), 12);
-            flt2 = _mm256_packs_epi32(flt2, _mm256_setzero_si256());
-            _mm_storeu_si128((__m128i*)(flt_angles[2] + dst_offset + j), _mm256_castsi256_si128(_mm256_permute4x64_epi64(flt2, 0x8)));
+                __m256i prod_lo = _mm256_add_epi64(_mm256_mul_epi32(src_lo_i64, rfact_i64), saddv_i64);
+                __m256i prod_hi = _mm256_add_epi64(_mm256_mul_epi32(src_hi_i64, rfact_i64), saddv_i64);
+
+                /* Logical shift is safe: the result fits in int16, and the
+                 * low 32 bits of srli and srai agree for any shift < 32. */
+                prod_lo = _mm256_srli_epi64(prod_lo, i_shifts[theta]);
+                prod_hi = _mm256_srli_epi64(prod_hi, i_shifts[theta]);
+
+                /* Compact low-32 of each int64 lane into int32 positions 0..3. */
+                __m128i lo4 = _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(prod_lo, compact_idx));
+                __m128i hi4 = _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(prod_hi, compact_idx));
+                __m256i i16_dst_val = _mm256_inserti128_si256(_mm256_castsi128_si256(lo4), hi4, 1);
+
+                /* Store dst band as int16. */
+                __m128i packed16 = _mm_packs_epi32(lo4, hi4);
+                _mm_storeu_si128((__m128i*)(dst_angles[theta] + dst_offset + j), packed16);
+
+                /* Compute flt from the unpacked int32 lanes (values fit in int16). */
+                __m256i flt = _mm256_mullo_epi32(_mm256_set1_epi32(FIX_ONE_BY_30), _mm256_abs_epi32(i16_dst_val));
+                flt = _mm256_srai_epi32(_mm256_add_epi32(flt, _mm256_set1_epi32(2048)), 12);
+                flt = _mm256_packs_epi32(flt, _mm256_setzero_si256());
+                _mm_storeu_si128((__m128i*)(flt_angles[theta] + dst_offset + j),
+                                 _mm256_castsi256_si128(_mm256_permute4x64_epi64(flt, 0x8)));
+            }
         }
 
         for (int j = right_mod_8; j < right; ++j) {
-
-            int32_t dst_val0 = i_rfactor[0] * (int32_t)src_angles[0][src_offset + j];
-            int16_t i16_dst_val0 = ((int16_t)((dst_val0 + i_shiftsadd[0]) >> i_shifts[0]));
-            dst_angles[0][dst_offset + j] = i16_dst_val0;
-            flt_angles[0][dst_offset + j] = ((int16_t)(((FIX_ONE_BY_30 * abs((int32_t)i16_dst_val0))
-                + 2048) >> 12));
-
-            int32_t dst_val1 = i_rfactor[1] * (int32_t)src_angles[1][src_offset + j];
-            int16_t i16_dst_val1 = ((int16_t)((dst_val1 + i_shiftsadd[1]) >> i_shifts[1]));
-            dst_angles[1][dst_offset + j] = i16_dst_val1;
-            flt_angles[1][dst_offset + j] = ((int16_t)(((FIX_ONE_BY_30 * abs((int32_t)i16_dst_val1))
-                + 2048) >> 12));
-
-            int32_t dst_val2 = i_rfactor[2] * (int32_t)src_angles[2][src_offset + j];
-            int16_t i16_dst_val2 = ((int16_t)((dst_val2 + i_shiftsadd[2]) >> i_shifts[2]));
-            dst_angles[2][dst_offset + j] = i16_dst_val2;
-            flt_angles[2][dst_offset + j] = ((int16_t)(((FIX_ONE_BY_30 * abs((int32_t)i16_dst_val2))
-                + 2048) >> 12));
+            for (int theta = 0; theta < 3; ++theta) {
+                int64_t dst_val = (int64_t)i_rfactor[theta] * (int32_t)src_angles[theta][src_offset + j];
+                int16_t i16 = ((int16_t)((dst_val + i_shiftsadd[theta]) >> i_shifts[theta]));
+                dst_angles[theta][dst_offset + j] = i16;
+                flt_angles[theta][dst_offset + j] = ((int16_t)(((FIX_ONE_BY_30 * abs((int32_t)i16))
+                    + 2048) >> 12));
+            }
         }
     }
 }
 
 void i4_adm_csf_avx2(AdmBuffer *buf, int scale, int w, int h, int stride,
-                       double adm_norm_view_dist, int adm_ref_display_height,
-                       int adm_csf_mode, double adm_csf_scale,
-                       double adm_csf_diag_scale, bool measure_aim)
+                       const AdmCsfParams *p, bool measure_aim)
 {
+    const double adm_norm_view_dist = p->adm_norm_view_dist;
+    const int adm_ref_display_height = p->adm_ref_display_height;
+    const int adm_csf_mode = p->adm_csf_mode;
+    const double adm_csf_scale = p->adm_csf_scale;
+    const double adm_csf_diag_scale = p->adm_csf_diag_scale;
+
     i4_adm_dwt_band_t *src;
     i4_adm_dwt_band_t *dst;
     i4_adm_dwt_band_t *flt;
@@ -3939,6 +4003,16 @@ void i4_adm_csf_avx2(AdmBuffer *buf, int scale, int w, int h, int stride,
     } else {
         factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
         factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
+    }
+    if (scale == 1) {
+        if (p->adm_f1s1 >= 0) factor1 = p->adm_f1s1;
+        if (p->adm_f2s1 >= 0) factor2 = p->adm_f2s1;
+    } else if (scale == 2) {
+        if (p->adm_f1s2 >= 0) factor1 = p->adm_f1s2;
+        if (p->adm_f2s2 >= 0) factor2 = p->adm_f2s2;
+    } else {
+        if (p->adm_f1s3 >= 0) factor1 = p->adm_f1s3;
+        if (p->adm_f2s3 >= 0) factor2 = p->adm_f2s3;
     }
     const float rfactor1[3] = { factor1, factor1, factor2 };
 
@@ -4073,10 +4147,15 @@ void i4_adm_csf_avx2(AdmBuffer *buf, int scale, int w, int h, int stride,
 
 float adm_csf_den_s123_avx2(const i4_adm_dwt_band_t *src, int scale, int w, int h,
                               int src_stride,
-                              double adm_norm_view_dist, int adm_ref_display_height,
-                              int adm_csf_mode, double adm_csf_scale,
-                              double adm_csf_diag_scale, double adm_noise_weight)
+                              const AdmCsfParams *p,
+                              double adm_noise_weight)
 {
+    const double adm_norm_view_dist = p->adm_norm_view_dist;
+    const int adm_ref_display_height = p->adm_ref_display_height;
+    const int adm_csf_mode = p->adm_csf_mode;
+    const double adm_csf_scale = p->adm_csf_scale;
+    const double adm_csf_diag_scale = p->adm_csf_diag_scale;
+
     // for ADM: scales goes from 0 to 3 but in noise floor paper, it goes from
     // 1 to 4 (from finest scale to coarsest scale).
     float factor1, factor2;
@@ -4092,6 +4171,16 @@ float adm_csf_den_s123_avx2(const i4_adm_dwt_band_t *src, int scale, int w, int 
     } else {
         factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist, adm_ref_display_height);
         factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist, adm_ref_display_height);
+    }
+    if (scale == 1) {
+        if (p->adm_f1s1 >= 0) factor1 = p->adm_f1s1;
+        if (p->adm_f2s1 >= 0) factor2 = p->adm_f2s1;
+    } else if (scale == 2) {
+        if (p->adm_f1s2 >= 0) factor1 = p->adm_f1s2;
+        if (p->adm_f2s2 >= 0) factor2 = p->adm_f2s2;
+    } else {
+        if (p->adm_f1s3 >= 0) factor1 = p->adm_f1s3;
+        if (p->adm_f2s3 >= 0) factor2 = p->adm_f2s3;
     }
     const float rfactor[3] = { factor1, factor1, factor2 };
 
