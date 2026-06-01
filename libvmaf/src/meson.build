@@ -242,13 +242,14 @@ if is_asm_enabled
           feature_src_dir + 'x86/vif_avx2.c',
           feature_src_dir + 'x86/adm_avx2.c',
           feature_src_dir + 'x86/cambi_avx2.c',
+          feature_src_dir + 'x86/speed_avx2.c',
       ]
 
       x86_avx2_static_lib = static_library(
           'x86_avx2',
           x86_avx2_sources,
           include_directories : vmaf_base_include,
-          c_args : ['-mavx', '-mavx2'] + vmaf_cflags_common,
+          c_args : ['-mavx', '-mavx2', '-mfma'] + vmaf_cflags_common,
       )
 
       platform_specific_cpu_objects += x86_avx2_static_lib.extract_all_objects(recursive: true)
@@ -258,6 +259,7 @@ if is_asm_enabled
             feature_src_dir + 'x86/motion_avx512.c',
             feature_src_dir + 'x86/vif_avx512.c',
             feature_src_dir + 'x86/adm_avx512.c',
+            feature_src_dir + 'x86/speed_avx512.c',
         ]
 
         x86_avx512_static_lib = static_library(
