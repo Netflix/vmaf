@@ -224,6 +224,14 @@ test_pic_preallocation = executable('test_pic_preallocation',
 )
 test('test_pic_preallocation', test_pic_preallocation)
 
+test_picture_wrap_integration = executable('test_picture_wrap_integration',
+    ['test.c', 'test_picture_wrap_integration.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: cuda_dependency,
+)
+test('test_picture_wrap_integration', test_picture_wrap_integration)
+
 test('test_picture', test_picture)
 test('test_feature_collector', test_feature_collector)
 test('test_thread_pool', test_thread_pool)

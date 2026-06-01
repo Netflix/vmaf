@@ -47,6 +47,9 @@ typedef struct VmafPicturePrivate {
 
 int vmaf_picture_priv_init(VmafPicture *pic);
 
+int vmaf_picture_wrap(VmafPicture *pic,
+                      VmafPictureWrapped pic_wrapped);
+
 int vmaf_picture_ref(VmafPicture *dst, VmafPicture *src);
 
 int vmaf_picture_set_release_callback(VmafPicture *pic, void *cookie,
