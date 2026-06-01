@@ -40,6 +40,22 @@ extern const char src_vmaf_4k_v0_6_1_json[];
 extern const int src_vmaf_4k_v0_6_1_json_len;
 extern const char src_vmaf_4k_v0_6_1neg_json[];
 extern const int src_vmaf_4k_v0_6_1neg_json_len;
+extern const char src_vmaf_v1_0_16_3d0h_json[];
+extern const int src_vmaf_v1_0_16_3d0h_json_len;
+extern const char src_vmaf_v1_0_16_3d0h_2160_json[];
+extern const int src_vmaf_v1_0_16_3d0h_2160_json_len;
+extern const char src_vmaf_v1_0_16_5d0h_json[];
+extern const int src_vmaf_v1_0_16_5d0h_json_len;
+extern const char src_vmaf_v1_0_16_1d5h_2160_json[];
+extern const int src_vmaf_v1_0_16_1d5h_2160_json_len;
+extern const char src_vmaf_v1_0_16_hfr_3d0h_json[];
+extern const int src_vmaf_v1_0_16_hfr_3d0h_json_len;
+extern const char src_vmaf_v1_0_16_hfr_3d0h_2160_json[];
+extern const int src_vmaf_v1_0_16_hfr_3d0h_2160_json_len;
+extern const char src_vmaf_v1_0_16_hfr_5d0h_json[];
+extern const int src_vmaf_v1_0_16_hfr_5d0h_json_len;
+extern const char src_vmaf_v1_0_16_hfr_1d5h_2160_json[];
+extern const int src_vmaf_v1_0_16_hfr_1d5h_2160_json_len;
 #endif
 
 static const VmafBuiltInModel built_in_models[] = {
@@ -90,6 +106,46 @@ static const VmafBuiltInModel built_in_models[] = {
         .version = "vmaf_4k_v0.6.1neg",
         .data = src_vmaf_4k_v0_6_1neg_json,
         .data_len = &src_vmaf_4k_v0_6_1neg_json_len,
+    },
+    {
+        .version = "vmaf_v1.0.16_3d0h",
+        .data = src_vmaf_v1_0_16_3d0h_json,
+        .data_len = &src_vmaf_v1_0_16_3d0h_json_len,
+    },
+    {
+        .version = "vmaf_v1.0.16_3d0h_2160",
+        .data = src_vmaf_v1_0_16_3d0h_2160_json,
+        .data_len = &src_vmaf_v1_0_16_3d0h_2160_json_len,
+    },
+    {
+        .version = "vmaf_v1.0.16_5d0h",
+        .data = src_vmaf_v1_0_16_5d0h_json,
+        .data_len = &src_vmaf_v1_0_16_5d0h_json_len,
+    },
+    {
+        .version = "vmaf_v1.0.16_1d5h_2160",
+        .data = src_vmaf_v1_0_16_1d5h_2160_json,
+        .data_len = &src_vmaf_v1_0_16_1d5h_2160_json_len,
+    },
+    {
+        .version = "vmaf_v1.0.16_hfr_3d0h",
+        .data = src_vmaf_v1_0_16_hfr_3d0h_json,
+        .data_len = &src_vmaf_v1_0_16_hfr_3d0h_json_len,
+    },
+    {
+        .version = "vmaf_v1.0.16_hfr_3d0h_2160",
+        .data = src_vmaf_v1_0_16_hfr_3d0h_2160_json,
+        .data_len = &src_vmaf_v1_0_16_hfr_3d0h_2160_json_len,
+    },
+    {
+        .version = "vmaf_v1.0.16_hfr_5d0h",
+        .data = src_vmaf_v1_0_16_hfr_5d0h_json,
+        .data_len = &src_vmaf_v1_0_16_hfr_5d0h_json_len,
+    },
+    {
+        .version = "vmaf_v1.0.16_hfr_1d5h_2160",
+        .data = src_vmaf_v1_0_16_hfr_1d5h_2160_json,
+        .data_len = &src_vmaf_v1_0_16_hfr_1d5h_2160_json_len,
     },
 #endif
     { 0 }
