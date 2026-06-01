@@ -170,6 +170,56 @@ if built_in_models_enabled
             )
         endforeach
 
+        model_v1_0_16_dir = '../../model/vmaf_v1.0.16/'
+        model_v1_0_16_files = [
+            'vmaf_v1.0.16_3d0h.json',
+            'vmaf_v1.0.16_3d0h_2160.json',
+            'vmaf_v1.0.16_5d0h.json',
+            'vmaf_v1.0.16_1d5h_2160.json',
+        ]
+        foreach model_file : model_v1_0_16_files
+            if xdd_supports_n
+                command = [xxd, '-i', '-n', 'src_@PLAINNAME@', '@INPUT@', '@OUTPUT@']
+            else
+                command = [xxd, '-i', '@INPUT@', '@OUTPUT@']
+            endif
+            json_model_c_sources += custom_target(
+                  model_file,
+                  output : '@PLAINNAME@.c',
+                  input : configure_file(
+                    input : model_v1_0_16_dir + model_file,
+                    output : model_file,
+                    copy: true
+                  ),
+                  command : command,
+            )
+        endforeach
+
+        model_v1_0_16_hfr_dir = '../../model/vmaf_v1.0.16_hfr/'
+        model_v1_0_16_hfr_files = [
+            'vmaf_v1.0.16_hfr_3d0h.json',
+            'vmaf_v1.0.16_hfr_3d0h_2160.json',
+            'vmaf_v1.0.16_hfr_5d0h.json',
+            'vmaf_v1.0.16_hfr_1d5h_2160.json',
+        ]
+        foreach model_file : model_v1_0_16_hfr_files
+            if xdd_supports_n
+                command = [xxd, '-i', '-n', 'src_@PLAINNAME@', '@INPUT@', '@OUTPUT@']
+            else
+                command = [xxd, '-i', '@INPUT@', '@OUTPUT@']
+            endif
+            json_model_c_sources += custom_target(
+                  model_file,
+                  output : '@PLAINNAME@.c',
+                  input : configure_file(
+                    input : model_v1_0_16_hfr_dir + model_file,
+                    output : model_file,
+                    copy: true
+                  ),
+                  command : command,
+            )
+        endforeach
+
         cdata.set10('VMAF_BUILT_IN_MODELS', built_in_models_enabled)
     endif
 endif
@@ -458,6 +508,9 @@ libvmaf_feature_sources = [
     feature_src_dir + 'cambi.c',
     feature_src_dir + 'luminance_tools.c',
     feature_src_dir + 'null.c',
+    feature_src_dir + 'common/convolution.c',
+    feature_src_dir + 'vif_tools.c',
+    feature_src_dir + 'speed.c',
 ]
 
 if float_enabled
@@ -468,16 +521,13 @@ if float_enabled
         feature_src_dir + 'float_motion.c',
         feature_src_dir + 'float_vif.c',
         feature_src_dir + 'float_moment.c',
-        feature_src_dir + 'speed.c',
 
-        feature_src_dir + 'common/convolution.c',
         feature_src_dir + 'offset.c',
         feature_src_dir + 'adm.c',
         feature_src_dir + 'adm_tools.c',
         feature_src_dir + 'ansnr.c',
         feature_src_dir + 'ansnr_tools.c',
         feature_src_dir + 'vif.c',
-        feature_src_dir + 'vif_tools.c',
         feature_src_dir + 'motion.c',
         feature_src_dir + 'psnr.c',
         feature_src_dir + 'psnr_tools.c',
