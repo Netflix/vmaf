@@ -221,6 +221,9 @@ static FORCE_INLINE inline float barten_watson_blend_csf_mae(int scale, int thet
         return BLENDED_CSF_1080_3H_MAE[theta][scale];
     } else if (adm_ref_display_height == 1080 && adm_norm_view_dist == 5.0) {
         return BLENDED_CSF_1080_5H_MAE[theta][scale];
+    } else if (adm_ref_display_height == 2160 && adm_norm_view_dist == 1.5) {
+        // 2160@1.5H has the same PPD as 1080@3H (1.5*2160 == 3.0*1080 == 56.55 ppd)
+        return BLENDED_CSF_1080_3H_MAE[theta][scale];
     } else if (adm_ref_display_height == 2160 && adm_norm_view_dist == 3.0) {
         return BLENDED_CSF_2160_3H_MAE[theta][scale];
     } else if (adm_ref_display_height == 2160 && adm_norm_view_dist == 5.0) {
@@ -248,6 +251,9 @@ static FORCE_INLINE inline float barten_watson_blend_csf(int scale, int theta, d
         return BLENDED_CSF_1080_3H[theta][scale];
     } else if (adm_ref_display_height == 1080 && adm_norm_view_dist == 5.0) {
         return BLENDED_CSF_1080_5H[theta][scale];
+    } else if (adm_ref_display_height == 2160 && adm_norm_view_dist == 1.5) {
+        // 2160@1.5H has the same PPD as 1080@3H (1.5*2160 == 3.0*1080 == 56.55 ppd)
+        return BLENDED_CSF_1080_3H[theta][scale];
     } else if (adm_ref_display_height == 2160 && adm_norm_view_dist == 3.0) {
         return BLENDED_CSF_2160_3H[theta][scale];
     } else if (adm_ref_display_height == 2160 && adm_norm_view_dist == 5.0) {
