@@ -1507,7 +1507,11 @@ void adm_decouple_s123_avx2(AdmBuffer *buf, int w, int h, int stride,
             __m256i tmp_kh_msb_epi32 = _mm256_setr_epi32(tmp_kh_msb[0], tmp_kh_msb[1], tmp_kh_msb[2], tmp_kh_msb[3], tmp_kh_msb[4], tmp_kh_msb[5], tmp_kh_msb[6], tmp_kh_msb[7]);
 
             __m256i mask_kh_msb_epi32 = _mm256_cmpgt_epi32(const_32768_epi32, abs_oh_epi32);
-            __m256i kh_msb_epi32 = blend(const_32768_epi32, tmp_kh_msb_epi32, mask_kh_msb_epi32);
+            // Where abs_oh < 32768, scalar uses oh directly (signed); the AVX-512
+            // path here blends abs_oh_epi32. AVX2 previously blended const_32768,
+            // producing small float-feature drift visible on 10-bit content.
+            __m256i kh_msb_epi32 = blend(abs_oh_epi32, tmp_kh_msb_epi32, mask_kh_msb_epi32);
+            kh_shift_epi32 = blend(_mm256_setzero_si256(), kh_shift_epi32, mask_kh_msb_epi32);
 
             tmp_kv_msb[0] = get_best15_from32(_mm256_extract_epi32(abs_ov_epi32, 0), &tmp_kv_shift[0]);
             tmp_kv_msb[1] = get_best15_from32(_mm256_extract_epi32(abs_ov_epi32, 1), &tmp_kv_shift[1]);
@@ -1521,7 +1525,8 @@ void adm_decouple_s123_avx2(AdmBuffer *buf, int w, int h, int stride,
             __m256i kv_shift_epi32 = _mm256_setr_epi32(tmp_kv_shift[0], tmp_kv_shift[1], tmp_kv_shift[2], tmp_kv_shift[3], tmp_kv_shift[4], tmp_kv_shift[5], tmp_kv_shift[6], tmp_kv_shift[7]);
             __m256i tmp_kv_msb_epi32 = _mm256_setr_epi32(tmp_kv_msb[0], tmp_kv_msb[1], tmp_kv_msb[2], tmp_kv_msb[3], tmp_kv_msb[4], tmp_kv_msb[5], tmp_kv_msb[6], tmp_kv_msb[7]);
             __m256i mask_kv_msb_epi32 = _mm256_cmpgt_epi32(const_32768_epi32, abs_ov_epi32);
-            __m256i kv_msb_epi32 = blend(const_32768_epi32, tmp_kv_msb_epi32, mask_kv_msb_epi32);
+            __m256i kv_msb_epi32 = blend(abs_ov_epi32, tmp_kv_msb_epi32, mask_kv_msb_epi32);
+            kv_shift_epi32 = blend(_mm256_setzero_si256(), kv_shift_epi32, mask_kv_msb_epi32);
 
             tmp_kd_msb[0] = get_best15_from32(_mm256_extract_epi32(abs_od_epi32, 0), &tmp_kd_shift[0]);
             tmp_kd_msb[1] = get_best15_from32(_mm256_extract_epi32(abs_od_epi32, 1), &tmp_kd_shift[1]);
@@ -1535,7 +1540,8 @@ void adm_decouple_s123_avx2(AdmBuffer *buf, int w, int h, int stride,
             __m256i kd_shift_epi32 = _mm256_setr_epi32(tmp_kd_shift[0], tmp_kd_shift[1], tmp_kd_shift[2], tmp_kd_shift[3], tmp_kd_shift[4], tmp_kd_shift[5], tmp_kd_shift[6], tmp_kd_shift[7]);
             __m256i tmp_kd_msb_epi32 = _mm256_setr_epi32(tmp_kd_msb[0], tmp_kd_msb[1], tmp_kd_msb[2], tmp_kd_msb[3], tmp_kd_msb[4], tmp_kd_msb[5], tmp_kd_msb[6], tmp_kd_msb[7]);
             __m256i mask_kd_msb_epi32 = _mm256_cmpgt_epi32(const_32768_epi32, abs_od_epi32);
-            __m256i kd_msb_epi32 = blend(const_32768_epi32, tmp_kd_msb_epi32, mask_kd_msb_epi32);
+            __m256i kd_msb_epi32 = blend(abs_od_epi32, tmp_kd_msb_epi32, mask_kd_msb_epi32);
+            kd_shift_epi32 = blend(_mm256_setzero_si256(), kd_shift_epi32, mask_kd_msb_epi32);
 
              // tmp_kh as int64
              __m256i div_lookup_kh_epi32 = _mm256_i32gather_epi32(adm_div_lookup, _mm256_add_epi32(kh_msb_epi32, const_32768_epi32), 4);
