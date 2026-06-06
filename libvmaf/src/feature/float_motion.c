@@ -158,6 +158,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     MotionState *s = fex->priv;
 
+    if (s->motion_add_scale1) {
+        int scaled_width = (int)(w * 0.5 + 0.5);
+        if (scaled_width > VIF_BILINEAR_MAX_WIDTH) return -EINVAL;
+    }
+
     s->float_stride = ALIGN_CEIL(w * sizeof(float));
     s->ref = aligned_malloc(s->float_stride * h, 32);
     s->tmp = aligned_malloc(s->float_stride * h, 32);
