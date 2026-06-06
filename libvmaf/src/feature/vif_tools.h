@@ -75,7 +75,26 @@ void vif_filter1d_xy_s(const float *f, const float *src1, const float *src2, flo
 
 int vif_get_scaling_method(char *scaling_method_str, enum vif_scaling_method *scale_method);
 
+// Bilinear scaling (vif_scale_frame_s with vif_scale_bilinear, and
+// vif_scale_frame_bilinear_precompute_columns_s/_precomputed_s) builds its
+// column tables on the stack and does not support dst_w beyond this. Callers
+// with a fixed prescale factor must check their dst_w against this limit at
+// init time and fail rather than call into the scaler with a wider output.
+#define VIF_BILINEAR_MAX_WIDTH 7680 // covers up to 8K frame width
+
 void vif_scale_frame_s(enum vif_scaling_method scale_method, const float *src, float *dst, int src_w, int src_h, int src_stride, int dst_w, int dst_h, int dst_stride);
+
+// Precomputes the per-output-column source indices/weight used by bilinear
+// scaling. x1a, x2a and dxa must each have room for dst_w elements. The
+// table only depends on src_w/dst_w, so callers that scale many frames at a
+// fixed resolution (e.g. a feature extractor with a fixed prescale) can
+// compute it once and reuse it via vif_scale_frame_bilinear_precomputed_s.
+void vif_scale_frame_bilinear_precompute_columns_s(int src_w, int dst_w, int *x1a, int *x2a, float *dxa);
+
+// Same as vif_scale_frame_s(vif_scale_bilinear, ...), but using a column
+// table already filled in by vif_scale_frame_bilinear_precompute_columns_s
+// for this src_w/dst_w instead of recomputing it.
+void vif_scale_frame_bilinear_precomputed_s(const float *src, float *dst, int src_w, int src_h, int src_stride, int dst_w, int dst_h, int dst_stride, const int *x1a, const int *x2a, const float *dxa);
 
 int vif_get_filter_size(int scale, float kernelscale);
 
