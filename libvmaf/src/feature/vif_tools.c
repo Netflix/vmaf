@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <float.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -656,25 +657,60 @@ static void vif_scale_frame_lanczos4_s(const float *src, float *dst,
     }
 }
 
-static float bilinear_interpolation(const float *src, int width, int height, int src_stride, float x, float y) {
-    int x1 = mirror(floor(x), 0, width - 1);
-    int x2 = mirror(ceil(x), 0, width - 1);
-    int y1 = mirror(floor(y), 0, height - 1);
-    int y2 = mirror(ceil(y), 0, height - 1);
+// The source indices and fractional weight for bilinear sampling depend
+// only on the output column -- computing them once per column and reusing
+// them across all rows avoids redoing floor/ceil/mirror once per pixel.
+void vif_scale_frame_bilinear_precompute_columns_s(int src_w, int dst_w,
+                                                   int *x1a, int *x2a, float *dxa) {
+    float ratio_x = (float)src_w / dst_w;
+    for (int x = 0; x < dst_w; x++) {
+        float xx = (x + 0.5) * ratio_x - 0.5;
+        x1a[x] = mirror(floor(xx), 0, src_w - 1);
+        x2a[x] = mirror(ceil(xx), 0, src_w - 1);
+        dxa[x] = xx - x1a[x];
+    }
+}
 
-    float dx = x - x1;
-    float dy = y - y1;
+static void vif_scale_frame_bilinear_apply_s(const float *src, float *dst,
+                       int src_h, int src_stride,
+                       int dst_w, int dst_h, int dst_stride,
+                       const int *x1a, const int *x2a, const float *dxa) {
+    float ratio_y = (float)src_h / dst_h;
+    for (int y = 0; y < dst_h; y++) {
+        float yy = (y + 0.5) * ratio_y - 0.5;
+        int y1 = mirror(floor(yy), 0, src_h - 1);
+        int y2 = mirror(ceil(yy), 0, src_h - 1);
+        float dy = yy - y1;
+        const float *r1 = src + (size_t)y1 * src_stride;
+        const float *r2 = src + (size_t)y2 * src_stride;
+        float *drow = dst + (size_t)y * dst_stride;
+        for (int x = 0; x < dst_w; x++) {
+            int x1 = x1a[x], x2 = x2a[x];
+            float dx = dxa[x];
+            drow[x] = (1 - dy) * (1 - dx) * r1[x1] +
+                      (1 - dy) *      dx  * r1[x2] +
+                           dy  * (1 - dx) * r2[x1] +
+                           dy  *      dx  * r2[x2];
+        }
+    }
+}
 
-    return (
-        (1 - dy) * (1 - dx) * src[y1 * src_stride + x1] +
-        (1 - dy) *      dx  * src[y1 * src_stride + x2] +
-             dy  * (1 - dx) * src[y2 * src_stride + x1] +
-             dy  *      dx  * src[y2 * src_stride + x2]
-    );
+void vif_scale_frame_bilinear_precomputed_s(const float *src, float *dst,
+                       int src_w, int src_h, int src_stride,
+                       int dst_w, int dst_h, int dst_stride,
+                       const int *x1a, const int *x2a, const float *dxa) {
+    // if the input and output sizes are the same
+    if (src_w == dst_w && src_h == dst_h) {
+        memcpy(dst, src, dst_stride * dst_h * sizeof(float));
+        return;
+    }
+
+    vif_scale_frame_bilinear_apply_s(src, dst, src_h, src_stride,
+                                     dst_w, dst_h, dst_stride, x1a, x2a, dxa);
 }
 
 static void vif_scale_frame_bilinear_s(const float *src, float *dst,
-                       int src_w, int src_h, int src_stride, 
+                       int src_w, int src_h, int src_stride,
                        int dst_w, int dst_h, int dst_stride) {
     // if the input and output sizes are the same
     if (src_w == dst_w && src_h == dst_h) {
@@ -682,16 +718,18 @@ static void vif_scale_frame_bilinear_s(const float *src, float *dst,
         return;
     }
 
-    float ratio_x = (float)src_w / dst_w;
-    float ratio_y = (float)src_h / dst_h;
+    // Column tables live on the stack, so the common case has no allocation
+    // at all. VLAs aren't used here since MSVC has no C99 VLA support.
+    // Callers must ensure dst_w <= VIF_BILINEAR_MAX_WIDTH before reaching
+    // here (checked once at init time; see vif_tools.h).
+    assert(dst_w <= VIF_BILINEAR_MAX_WIDTH);
+    int x1a[VIF_BILINEAR_MAX_WIDTH];
+    int x2a[VIF_BILINEAR_MAX_WIDTH];
+    float dxa[VIF_BILINEAR_MAX_WIDTH];
 
-    for (int y = 0; y < dst_h; y++) {
-        float yy = (y + 0.5) * ratio_y - 0.5;
-        for (int x = 0; x < dst_w; x++) {
-            float xx = (x + 0.5) * ratio_x - 0.5;
-            dst[y * dst_stride + x] = bilinear_interpolation(src, src_w, src_h, src_stride, xx, yy);
-        }
-    }
+    vif_scale_frame_bilinear_precompute_columns_s(src_w, dst_w, x1a, x2a, dxa);
+    vif_scale_frame_bilinear_apply_s(src, dst, src_h, src_stride,
+                                     dst_w, dst_h, dst_stride, x1a, x2a, dxa);
 }
 
 static void vif_scale_frame_nearest_s(const float *src, float *dst,
