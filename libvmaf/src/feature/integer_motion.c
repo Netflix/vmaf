@@ -330,7 +330,8 @@ static int extract(VmafFeatureExtractor *fex,
     }
 
 write_score:
-    err = vmaf_feature_collector_append(feature_collector,
+    err = vmaf_feature_collector_append_with_dict(feature_collector,
+            s->feature_name_dict,
             "VMAF_integer_feature_motion_sad_score", score, index);
     if (err) return err;
 
@@ -361,7 +362,10 @@ static int flush(VmafFeatureExtractor *fex,
         if (!s->feature_name_dict) return -ENOMEM;
     }
 
-    const char *sad_name = "VMAF_integer_feature_motion_sad_score";
+    const VmafDictionaryEntry *sad_entry = vmaf_dictionary_get(
+            &s->feature_name_dict, "VMAF_integer_feature_motion_sad_score", 0);
+    if (!sad_entry) return -EINVAL;
+    const char *sad_name = sad_entry->val;
 
     unsigned n = 0;
     double score;
@@ -369,7 +373,10 @@ static int flush(VmafFeatureExtractor *fex,
         n++;
     const unsigned stride = s->motion_five_frame_window ? 2 : 1;
     const unsigned min_idx = s->motion_five_frame_window ? 2 : 1;
-    if (!n) return 1;
+    if (!n) {
+        vmaf_dictionary_free(&s->feature_name_dict);
+        return 1;
+    }
 
     double stamp_value = 0.;
     if (n > min_idx) {
@@ -434,10 +441,12 @@ static int flush(VmafFeatureExtractor *fex,
             "VMAF_integer_feature_motion3_score", motion3, i);
     }
 
+    vmaf_dictionary_free(&s->feature_name_dict);
     return 1;
 }
 
 static const char *provided_features[] = {
+    "VMAF_integer_feature_motion_sad_score",
     "VMAF_integer_feature_motion_score",
     "VMAF_integer_feature_motion2_score",
     "VMAF_integer_feature_motion3_score",
