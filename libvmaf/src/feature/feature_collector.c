@@ -245,14 +245,14 @@ int vmaf_feature_collector_mount_model(VmafFeatureCollector *feature_collector,
     m->model = model;
     m->next = NULL;
 
-    VmafPredictModel **head = &feature_collector->models;
-    while (*head && (*head)->next != NULL)
-        *head = (*head)->next;
+    VmafPredictModel **cur = &feature_collector->models;
+    while (*cur && (*cur)->next != NULL)
+        cur = &(*cur)->next;
 
-    if (!(*head))
-        *head = m;
+    if (!(*cur))
+        *cur = m;
     else
-        (*head)->next = m;
+        (*cur)->next = m;
 
     return 0;
 }
