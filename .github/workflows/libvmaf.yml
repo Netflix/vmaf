@@ -80,7 +80,7 @@ jobs:
           meson --version
           ccache --version
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Run meson
         run: |
           meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install -Denable_float=true ${CROSS:+--cross-file $CROSS}
