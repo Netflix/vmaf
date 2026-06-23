@@ -35,10 +35,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define KERNEL_WEIGHT (1<<KERNEL_SHIFT)
 #define KERNEL_ROUND ((1<<KERNEL_SHIFT)>>1)
 
-#ifndef M_PI
-#define M_PI 3.141592653589793238462643
-#endif
-
 static int gaussian_filter_init(unsigned **_kernel,double _sigma,int _max_len){
   unsigned *kernel;
   double    scale;
