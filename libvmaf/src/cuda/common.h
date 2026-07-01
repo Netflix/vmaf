@@ -20,7 +20,6 @@
 #ifndef __VMAF_SRC_CUDA_COMMON_H__
 #define __VMAF_SRC_CUDA_COMMON_H__
 
-#include <pthread.h>
 #include <stdbool.h>
 
 #include "config.h"

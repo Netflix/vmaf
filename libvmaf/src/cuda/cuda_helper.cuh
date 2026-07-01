@@ -29,7 +29,11 @@
 
 #include "assert.h"
 #include "stdio.h"
+#ifdef DEVICE_CODE
+#include <cuda.h>
+#else
 #include <ffnvcodec/dynlink_loader.h>
+#endif
 
 #define DIV_ROUND_UP(x, y) (((x) + (y)-1) / (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
