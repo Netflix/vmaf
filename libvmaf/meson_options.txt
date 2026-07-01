@@ -30,7 +30,7 @@ option('built_in_models',
 
 option('enable_float',
     type: 'boolean',
-    value: false,
+    value: true,
     description: 'Compile floating-point feature extractors into the library')
 
 option('enable_cuda',
