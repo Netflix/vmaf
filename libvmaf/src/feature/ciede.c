@@ -52,6 +52,10 @@ SOFTWARE.
 #include "mem.h"
 #include "opt.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 typedef struct CiedeState {
     VmafPicture ref;
     VmafPicture dist;
