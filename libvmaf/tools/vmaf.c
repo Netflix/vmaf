@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
     model_collection = malloc(model_sz);
     memset(model_collection, 0, model_collection_sz);
 
-    const char *model_collection_label[c.model_cnt];
+    const char **model_collection_label = malloc(c.model_cnt * sizeof(char *));
     unsigned model_collection_cnt = 0;
 
     for (unsigned i = 0; i < c.model_cnt; i++) {
@@ -448,6 +448,7 @@ int main(int argc, char *argv[])
     for (unsigned i = 0; i < model_collection_cnt; i++)
         vmaf_model_collection_destroy(model_collection[i]);
     free(model_collection);
+    free(model_collection_label);
 
     video_input_close(&vid_ref);
     video_input_close(&vid_dist);
