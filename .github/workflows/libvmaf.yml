@@ -12,27 +12,34 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - name: linux-x86_64-gcc
+            os: ubuntu-latest
             CC: ccache gcc
             CXX: ccache g++
-          - os: ubuntu-latest
+          - name: linux-x86_64-gcc-9
+            os: ubuntu-latest
             CC: ccache gcc-9
             CXX: ccache g++-9
-          - os: ubuntu-latest
+          - name: linux-x86_64-clang
+            os: ubuntu-latest
             CC: ccache clang
             CXX: ccache clang++
-          - os: macos-latest
+          - name: macos-clang
+            os: macos-latest
             CC: ccache clang
             CXX: ccache clang++
             experimental: true
-          - os: ubuntu-24.04-arm
+          - name: linux-arm64-clang
+            os: ubuntu-24.04-arm
             CC: ccache clang
             CXX: ccache clang++
-          - os: ubuntu-latest
+          - name: linux-i686-gcc
+            os: ubuntu-latest
             CC: ccache gcc
             CXX: ccache g++
             CROSS: ./libvmaf/test/meson-toolchains/i686-pc-linux-gnu-gcc-cross.ini
-          - os: ubuntu-latest
+          - name: linux-i686-clang
+            os: ubuntu-latest
             CC: ccache clang
             CXX: ccache clang++
             CROSS: ./libvmaf/test/meson-toolchains/i686-pc-linux-gnu-clang-cross.ini
@@ -113,11 +120,18 @@ jobs:
           echo "path=./install/bin/vmaf" >> $GITHUB_OUTPUT
           echo "upload_url=$(curl -L https://api.github.com/repos/${{ github.repository }}/releases/tags/$(cut -d/ -f3 <<< ${{ github.ref }}) | jq -r ."upload_url")" >> $GITHUB_OUTPUT
 
+      - name: Package vmaf
+        id: package
+        run: |
+          zip_path="vmaf-${{ matrix.name }}.zip"
+          zip -j "$zip_path" "${{ steps.get_info.outputs.path }}"
+          echo "zip_path=$zip_path" >> $GITHUB_OUTPUT
+
       - name: Upload vmaf
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.os }}-${{ matrix.CC }}-vmaf
-          path: ${{ steps.get_info.outputs.path }}
+          name: vmaf-${{ matrix.name }}
+          path: ${{ steps.package.outputs.zip_path }}
       - name: Upload vmaf
         if: steps.get_info.outputs.upload_url != 'null'
         uses: actions/upload-release-asset@v1
@@ -125,6 +139,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.get_info.outputs.upload_url }}
-          asset_path: ${{ steps.get_info.outputs.path }}
-          asset_name: vmaf
-          asset_content_type: application/octet-stream
+          asset_path: ${{ steps.package.outputs.zip_path }}
+          asset_name: ${{ steps.package.outputs.zip_path }}
+          asset_content_type: application/zip
