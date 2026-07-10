@@ -740,6 +740,21 @@ enum  {
     HW_FLAG_DEVICE = 1 << 1,
 };
 
+static uint8_t rfe_cuda_plane_mask(RegisteredFeatureExtractors *rfe)
+{
+    // existing CUDA feature extractors are luma-only, so only upload the
+    // chroma planes when a registered extractor declares it reads them
+    uint8_t mask = 0x1;
+    for (unsigned i = 0; i < rfe->cnt; i++) {
+        const uint64_t flags = rfe->fex_ctx[i]->fex->flags;
+        if ((flags & VMAF_FEATURE_EXTRACTOR_CUDA) &&
+            (flags & VMAF_FEATURE_EXTRACTOR_CUDA_CHROMA))
+            mask |= 0x6;
+    }
+
+    return mask;
+}
+
 static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
                                   VmafPicture *pic_device, unsigned hw_flags)
 {
@@ -754,7 +769,8 @@ static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
         if (!vmaf->cuda.state.ctx)
             return -EINVAL;
         err |= vmaf_ring_buffer_fetch_next_picture(vmaf->cuda.ring_buffer, pic_device);
-        err |= vmaf_cuda_picture_upload_async(pic_device, pic, 0x1);
+        err |= vmaf_cuda_picture_upload_async(pic_device, pic,
+                rfe_cuda_plane_mask(&vmaf->registered_feature_extractors));
         if (err) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                     "problem moving host pic into cuda device buffer\n");
