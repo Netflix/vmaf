@@ -649,6 +649,12 @@ static int flush_context_threaded(VmafContext *vmaf)
     for (unsigned i = 0; i < rfe.cnt; i++) {
         if (!(rfe.fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL))
             continue;
+        /* CUDA feature extractors are flushed by the HAVE_CUDA block in
+         * flush_context(); flushing them here as well double-appends their
+         * final scores. */
+        if (rfe.fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA)
+            continue;
+
         err |= vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
                                                     vmaf->feature_collector);
     }
