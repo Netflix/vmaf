@@ -47,6 +47,14 @@ static char *test_get_feature_extractor_by_name_and_feature_name()
             "VMAF_integer_feature_adm2_score", flags);
     mu_assert("problem during vmaf_get_feature_extractor_by_feature_name",
               fex && !strcmp(fex->name, "adm_cuda"));
+
+    fex = vmaf_get_feature_extractor_by_feature_name("psnr_y", flags);
+    mu_assert("problem during vmaf_get_feature_extractor_by_feature_name",
+              fex && !strcmp(fex->name, "psnr_cuda"));
+
+    fex = vmaf_get_feature_extractor_by_feature_name("float_ssim", flags);
+    mu_assert("problem during vmaf_get_feature_extractor_by_feature_name",
+              fex && !strcmp(fex->name, "ssim_cuda"));
 #endif
 
     return NULL;
