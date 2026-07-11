@@ -371,6 +371,20 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     return 0;
 }
 
+static int flush_fex_cuda(VmafFeatureExtractor *fex,
+                          VmafFeatureCollector *feature_collector)
+{
+    (void)feature_collector;
+    SsimStateCuda *s = fex->priv;
+    CudaFunctions *cu_f = fex->cu_state->f;
+
+    // drain the pending write_scores host callback so the final frame's
+    // score is in the collector before anything reads it
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
+    return 1;
+}
+
 static int free_buf(VmafFeatureExtractor *fex, VmafCudaBuffer *buf)
 {
     int ret = 0;
@@ -425,6 +439,7 @@ VmafFeatureExtractor vmaf_fex_float_ssim_cuda = {
     .options = options,
     .init = init_fex_cuda,
     .extract = extract_fex_cuda,
+    .flush = flush_fex_cuda,
     .close = close_fex_cuda,
     .priv_size = sizeof(SsimStateCuda),
     .provided_features = provided_features,
