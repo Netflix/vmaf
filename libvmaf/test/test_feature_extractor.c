@@ -55,6 +55,10 @@ static char *test_get_feature_extractor_by_name_and_feature_name()
     fex = vmaf_get_feature_extractor_by_feature_name("float_ssim", flags);
     mu_assert("problem during vmaf_get_feature_extractor_by_feature_name",
               fex && !strcmp(fex->name, "ssim_cuda"));
+
+    fex = vmaf_get_feature_extractor_by_feature_name("ciede2000", flags);
+    mu_assert("problem during vmaf_get_feature_extractor_by_feature_name",
+              fex && !strcmp(fex->name, "ciede_cuda"));
 #endif
 
     return NULL;
