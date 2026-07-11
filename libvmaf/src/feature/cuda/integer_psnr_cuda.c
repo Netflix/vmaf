@@ -111,7 +111,13 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CudaFunctions *cu_f = fex->cu_state->f;
 
     CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
-    CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->str, CU_STREAM_NON_BLOCKING, 0));
+    // the work stream is deliberately legacy-blocking: producers like the
+    // ffmpeg libvmaf_cuda filter fill device pictures with synchronous-API
+    // copies that are queued on the legacy NULL stream (device-to-device
+    // memcpy does not block the host), and only blocking-flavor streams are
+    // implicitly ordered after NULL-stream work. Other extractors' created
+    // streams are unaffected, so kernel overlap with them is preserved.
+    CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->str, CU_STREAM_DEFAULT, 0));
     CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
     CHECK_CUDA(cu_f, cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
     CHECK_CUDA(cu_f, cuEventCreate(&s->consumed, CU_EVENT_DEFAULT));
