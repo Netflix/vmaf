@@ -34,7 +34,8 @@
 #include "cuda_helper.cuh"
 
 typedef struct PsnrStateCuda {
-    CUevent event, finished;
+    CUevent finished, consumed;
+    CUevent slot_done[2];
     CUfunction funcbpc8, funcbpc16;
     CUstream str, host_stream;
     VmafCudaBuffer *sse;
@@ -98,6 +99,7 @@ static const VmafOption options[] = {
 typedef struct write_score_parameters_psnr {
     VmafFeatureCollector *feature_collector;
     PsnrStateCuda *s;
+    const uint64_t *sse;
     unsigned w[3], h[3];
     unsigned index;
 } write_score_parameters_psnr;
@@ -111,8 +113,10 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
     CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->str, CU_STREAM_NON_BLOCKING, 0));
     CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
-    CHECK_CUDA(cu_f, cuEventCreate(&s->event, CU_EVENT_DEFAULT));
     CHECK_CUDA(cu_f, cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
+    CHECK_CUDA(cu_f, cuEventCreate(&s->consumed, CU_EVENT_DEFAULT));
+    CHECK_CUDA(cu_f, cuEventCreate(&s->slot_done[0], CU_EVENT_DEFAULT));
+    CHECK_CUDA(cu_f, cuEventCreate(&s->slot_done[1], CU_EVENT_DEFAULT));
 
     CUmodule module;
     CHECK_CUDA(cu_f, cuModuleLoadData(&module, psnr_ptx));
@@ -141,14 +145,17 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     int ret = 0;
 
-    s->write_score_parameters = malloc(sizeof(write_score_parameters_psnr));
+    // two write_score slots + two pinned readback slots so frame i+1 never
+    // has to wait for frame i's host callback (see slot_done in extract)
+    s->write_score_parameters = malloc(sizeof(write_score_parameters_psnr) * 2);
     if (!s->write_score_parameters) goto free_buf;
-    ((write_score_parameters_psnr*)s->write_score_parameters)->s = s;
+    for (unsigned i = 0; i < 2; i++)
+        ((write_score_parameters_psnr*)s->write_score_parameters)[i].s = s;
 
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->sse, sizeof(uint64_t) * 3);
     if (ret) goto free_buf;
     ret |= vmaf_cuda_buffer_host_alloc(fex->cu_state, (void**)&s->sse_host,
-                                       sizeof(uint64_t) * 3);
+                                       sizeof(uint64_t) * 3 * 2);
     if (ret) goto free_buf;
 
     return 0;
@@ -179,7 +186,7 @@ static int write_scores(write_score_parameters_psnr *params)
 
     int err = 0;
     for (unsigned p = 0; p < n; p++) {
-        const uint64_t sse = s->sse_host[p];
+        const uint64_t sse = params->sse[p];
 
         if (s->enable_apsnr) {
             s->apsnr.sse[p] += sse;
@@ -213,20 +220,23 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     (void) ref_pic_90;
     (void) dist_pic_90;
 
-    // this is done to ensure that the CPU does not overwrite the buffer
-    // params for write_scores
-    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
+    // two slots: wait for frame index-2's host callback (effectively always
+    // complete) instead of stalling on the whole previous frame's work
+    const unsigned slot = index & 1;
+    CHECK_CUDA(cu_f, cuEventSynchronize(s->slot_done[slot]));
 
-    const CUstream pic_stream = vmaf_cuda_picture_get_stream(ref_pic);
     const unsigned n = s->enable_chroma ? 3 : 1;
 
-    // Reset device SSE on the picture stream so the reset is stream-ordered
-    // with the kernels below (unlike a reset on s->str, which would race)
-    CHECK_CUDA(cu_f, cuMemsetD8Async(s->sse->data, 0, sizeof(uint64_t) * 3,
-                pic_stream));
-    CHECK_CUDA(cu_f, cuStreamWaitEvent(pic_stream,
+    // kernels run on the extractor's own stream so they overlap with other
+    // extractors' work on the picture streams; wait for both uploads first
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(s->str,
+                vmaf_cuda_picture_get_ready_event(ref_pic),
+                CU_EVENT_WAIT_DEFAULT));
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(s->str,
                 vmaf_cuda_picture_get_ready_event(dist_pic),
                 CU_EVENT_WAIT_DEFAULT));
+    CHECK_CUDA(cu_f, cuMemsetD8Async(s->sse->data, 0, sizeof(uint64_t) * 3,
+                s->str));
 
     const CUfunction func = (ref_pic->bpc == 8) ? s->funcbpc8 : s->funcbpc16;
     const int block_dim_x = 16;
@@ -243,29 +253,38 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
                     DIV_ROUND_UP(width, block_dim_x),
                     DIV_ROUND_UP(height, block_dim_y), 1,
                     block_dim_x, block_dim_y, 1, 0,
-                    pic_stream, kernel_params, NULL));
+                    s->str, kernel_params, NULL));
     }
-    CHECK_CUDA(cu_f, cuEventRecord(s->event, pic_stream));
-    // This event ensures the input buffer is consumed
-    CHECK_CUDA(cu_f, cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
 
-    // Download sse
-    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
-    CHECK_CUDA(cu_f, cuMemcpyDtoHAsync(s->sse_host, s->sse->data,
+    // lifetime handshake: the pool recycles a picture once the `finished`
+    // event its own stream records (after the fex loop) has completed, so
+    // make both picture streams wait for our reads
+    CHECK_CUDA(cu_f, cuEventRecord(s->consumed, s->str));
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic),
+                s->consumed, CU_EVENT_WAIT_DEFAULT));
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(dist_pic),
+                s->consumed, CU_EVENT_WAIT_DEFAULT));
+
+    // Download sse into this slot's readback segment
+    uint64_t *sse_host = s->sse_host + slot * 3;
+    CHECK_CUDA(cu_f, cuMemcpyDtoHAsync(sse_host, s->sse->data,
                 sizeof(uint64_t) * 3, s->str));
     CHECK_CUDA(cu_f, cuEventRecord(s->finished, s->str));
     CHECK_CUDA(cu_f, cuStreamWaitEvent(s->host_stream, s->finished,
                 CU_EVENT_WAIT_DEFAULT));
 
-    write_score_parameters_psnr *params = s->write_score_parameters;
+    write_score_parameters_psnr *params =
+        &((write_score_parameters_psnr*)s->write_score_parameters)[slot];
     params->feature_collector = feature_collector;
+    params->sse = sse_host;
     for (unsigned p = 0; p < n; p++) {
         params->w[p] = ref_pic->w[p];
         params->h[p] = ref_pic->h[p];
     }
     params->index = index;
     CHECK_CUDA(cu_f, cuLaunchHostFunc(s->host_stream, (CUhostFn*)write_scores,
-                s->write_score_parameters));
+                params));
+    CHECK_CUDA(cu_f, cuEventRecord(s->slot_done[slot], s->host_stream));
 
     return 0;
 }
@@ -311,8 +330,10 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     CudaFunctions *cu_f = fex->cu_state->f;
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
-    CHECK_CUDA(cu_f, cuEventDestroy(s->event));
     CHECK_CUDA(cu_f, cuEventDestroy(s->finished));
+    CHECK_CUDA(cu_f, cuEventDestroy(s->consumed));
+    CHECK_CUDA(cu_f, cuEventDestroy(s->slot_done[0]));
+    CHECK_CUDA(cu_f, cuEventDestroy(s->slot_done[1]));
     CHECK_CUDA(cu_f, cuStreamDestroy(s->str));
     CHECK_CUDA(cu_f, cuStreamDestroy(s->host_stream));
 
