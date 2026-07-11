@@ -36,7 +36,8 @@
 #define REDUCE_BLOCK 256
 
 typedef struct SsimStateCuda {
-    CUevent event, finished;
+    CUevent finished, consumed;
+    CUevent slot_done[2];
     CUfunction f_norm8, f_norm16, f_decimate, f_products;
     CUfunction f_conv_h, f_conv_v, f_map_reduce;
     CUstream str, host_stream;
@@ -96,6 +97,7 @@ static const VmafOption options[] = {
 typedef struct write_score_parameters_ssim {
     VmafFeatureCollector *feature_collector;
     SsimStateCuda *s;
+    const double *partials;
     unsigned index;
 } write_score_parameters_ssim;
 
@@ -123,8 +125,10 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
     CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->str, CU_STREAM_NON_BLOCKING, 0));
     CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
-    CHECK_CUDA(cu_f, cuEventCreate(&s->event, CU_EVENT_DEFAULT));
     CHECK_CUDA(cu_f, cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
+    CHECK_CUDA(cu_f, cuEventCreate(&s->consumed, CU_EVENT_DEFAULT));
+    CHECK_CUDA(cu_f, cuEventCreate(&s->slot_done[0], CU_EVENT_DEFAULT));
+    CHECK_CUDA(cu_f, cuEventCreate(&s->slot_done[1], CU_EVENT_DEFAULT));
 
     CUmodule module;
     CHECK_CUDA(cu_f, cuModuleLoadData(&module, ssim_ptx));
@@ -172,9 +176,12 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     int ret = 0;
 
-    s->write_score_parameters = malloc(sizeof(write_score_parameters_ssim));
+    // two write_score slots + two pinned readback slots so frame i+1 never
+    // has to wait for frame i's host callback (see slot_done in extract)
+    s->write_score_parameters = malloc(sizeof(write_score_parameters_ssim) * 2);
     if (!s->write_score_parameters) return -ENOMEM;
-    ((write_score_parameters_ssim*)s->write_score_parameters)->s = s;
+    for (unsigned i = 0; i < 2; i++)
+        ((write_score_parameters_ssim*)s->write_score_parameters)[i].s = s;
 
     const size_t full = sizeof(float) * w * h;
     const size_t dec = sizeof(float) * s->sw * s->sh;
@@ -197,7 +204,7 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     ret |= alloc_buf(fex, &s->cboth, conv);
     ret |= alloc_buf(fex, &s->partials, sizeof(double) * 4 * s->n_blocks);
     ret |= vmaf_cuda_buffer_host_alloc(fex->cu_state, (void**)&s->partials_host,
-                                       sizeof(double) * 4 * s->n_blocks);
+                                       sizeof(double) * 4 * s->n_blocks * 2);
     if (ret) return -ENOMEM;
 
     return 0;
@@ -218,10 +225,10 @@ static int write_scores(write_score_parameters_ssim *params)
     // sequential sum over block partials keeps the result deterministic
     double ssim_sum = 0., l_sum = 0., c_sum = 0., s_sum = 0.;
     for (unsigned b = 0; b < s->n_blocks; b++) {
-        ssim_sum += s->partials_host[b * 4 + 0];
-        l_sum += s->partials_host[b * 4 + 1];
-        c_sum += s->partials_host[b * 4 + 2];
-        s_sum += s->partials_host[b * 4 + 3];
+        ssim_sum += params->partials[b * 4 + 0];
+        l_sum += params->partials[b * 4 + 1];
+        c_sum += params->partials[b * 4 + 2];
+        s_sum += params->partials[b * 4 + 3];
     }
 
     // _iqa_ssim returns float means; compute_ssim widens them to double
@@ -277,12 +284,17 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     (void) ref_pic_90;
     (void) dist_pic_90;
 
-    // this is done to ensure that the CPU does not overwrite the buffer
-    // params for write_scores
-    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
+    // two slots: wait for frame index-2's host callback (effectively always
+    // complete) instead of stalling on the whole previous frame's work
+    const unsigned slot = index & 1;
+    CHECK_CUDA(cu_f, cuEventSynchronize(s->slot_done[slot]));
 
-    const CUstream pic_stream = vmaf_cuda_picture_get_stream(ref_pic);
-    CHECK_CUDA(cu_f, cuStreamWaitEvent(pic_stream,
+    // kernels run on the extractor's own stream so they overlap with other
+    // extractors' work on the picture streams; wait for both uploads first
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(s->str,
+                vmaf_cuda_picture_get_ready_event(ref_pic),
+                CU_EVENT_WAIT_DEFAULT));
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(s->str,
                 vmaf_cuda_picture_get_ready_event(dist_pic),
                 CU_EVENT_WAIT_DEFAULT));
 
@@ -295,17 +307,28 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
         void *a1[] = { (void*)ref_pic, (void*)s->ref_f, &w, &h };
         void *a2[] = { (void*)dist_pic, (void*)s->cmp_f, &w, &h };
         CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm8, DIV_ROUND_UP(w, 16),
-                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, pic_stream, a1, NULL));
+                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a1, NULL));
         CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm8, DIV_ROUND_UP(w, 16),
-                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, pic_stream, a2, NULL));
+                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a2, NULL));
     } else {
         void *a1[] = { (void*)ref_pic, (void*)s->ref_f, &w, &h, &scaler };
         void *a2[] = { (void*)dist_pic, (void*)s->cmp_f, &w, &h, &scaler };
         CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm16, DIV_ROUND_UP(w, 16),
-                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, pic_stream, a1, NULL));
+                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a1, NULL));
         CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm16, DIV_ROUND_UP(w, 16),
-                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, pic_stream, a2, NULL));
+                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a2, NULL));
     }
+
+    // lifetime handshake right after the only kernels that read picture
+    // memory: the pool recycles a picture once the `finished` event its own
+    // stream records (after the fex loop) has completed, so make both
+    // picture streams wait for the normalize reads — everything below works
+    // on our own buffers and can outlive the pictures
+    CHECK_CUDA(cu_f, cuEventRecord(s->consumed, s->str));
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic),
+                s->consumed, CU_EVENT_WAIT_DEFAULT));
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(dist_pic),
+                s->consumed, CU_EVENT_WAIT_DEFAULT));
 
     VmafCudaBuffer *ref_in = s->ref_f;
     VmafCudaBuffer *cmp_in = s->cmp_f;
@@ -314,9 +337,9 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
         void *a1[] = { (void*)s->ref_f, (void*)s->refd, &iw, &ih, &sw, &sh, &factor };
         void *a2[] = { (void*)s->cmp_f, (void*)s->cmpd, &iw, &ih, &sw, &sh, &factor };
         CHECK_CUDA(cu_f, cuLaunchKernel(s->f_decimate, DIV_ROUND_UP(sw, 16),
-                    DIV_ROUND_UP(sh, 16), 1, 16, 16, 1, 0, pic_stream, a1, NULL));
+                    DIV_ROUND_UP(sh, 16), 1, 16, 16, 1, 0, s->str, a1, NULL));
         CHECK_CUDA(cu_f, cuLaunchKernel(s->f_decimate, DIV_ROUND_UP(sw, 16),
-                    DIV_ROUND_UP(sh, 16), 1, 16, 16, 1, 0, pic_stream, a2, NULL));
+                    DIV_ROUND_UP(sh, 16), 1, 16, 16, 1, 0, s->str, a2, NULL));
         ref_in = s->refd;
         cmp_in = s->cmpd;
     }
@@ -327,14 +350,14 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
                          (void*)s->cmp2, (void*)s->both, &n };
         CHECK_CUDA(cu_f, cuLaunchKernel(s->f_products,
                     DIV_ROUND_UP(n, REDUCE_BLOCK), 1, 1,
-                    REDUCE_BLOCK, 1, 1, 0, pic_stream, args, NULL));
+                    REDUCE_BLOCK, 1, 1, 0, s->str, args, NULL));
     }
 
-    launch_conv(s, cu_f, pic_stream, ref_in, s->mu1);
-    launch_conv(s, cu_f, pic_stream, cmp_in, s->mu2);
-    launch_conv(s, cu_f, pic_stream, s->ref2, s->cref2);
-    launch_conv(s, cu_f, pic_stream, s->cmp2, s->ccmp2);
-    launch_conv(s, cu_f, pic_stream, s->both, s->cboth);
+    launch_conv(s, cu_f, s->str, ref_in, s->mu1);
+    launch_conv(s, cu_f, s->str, cmp_in, s->mu2);
+    launch_conv(s, cu_f, s->str, s->ref2, s->cref2);
+    launch_conv(s, cu_f, s->str, s->cmp2, s->ccmp2);
+    launch_conv(s, cu_f, s->str, s->both, s->cboth);
 
     {
         // _iqa_ssim: C1 = (K1*L)^2, C2 = (K2*L)^2, C3 = C2/2, L = 255
@@ -347,26 +370,25 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
                          &n, &c1, &c2, &c3 };
         CHECK_CUDA(cu_f, cuLaunchKernel(s->f_map_reduce,
                     s->n_blocks, 1, 1, REDUCE_BLOCK, 1, 1, 0,
-                    pic_stream, args, NULL));
+                    s->str, args, NULL));
     }
 
-    CHECK_CUDA(cu_f, cuEventRecord(s->event, pic_stream));
-    // This event ensures the input buffer is consumed
-    CHECK_CUDA(cu_f, cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
-
-    // Download block partials
-    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
-    CHECK_CUDA(cu_f, cuMemcpyDtoHAsync(s->partials_host, s->partials->data,
+    // Download block partials into this slot's readback segment
+    double *partials_host = s->partials_host + slot * 4 * s->n_blocks;
+    CHECK_CUDA(cu_f, cuMemcpyDtoHAsync(partials_host, s->partials->data,
                 sizeof(double) * 4 * s->n_blocks, s->str));
     CHECK_CUDA(cu_f, cuEventRecord(s->finished, s->str));
     CHECK_CUDA(cu_f, cuStreamWaitEvent(s->host_stream, s->finished,
                 CU_EVENT_WAIT_DEFAULT));
 
-    write_score_parameters_ssim *params = s->write_score_parameters;
+    write_score_parameters_ssim *params =
+        &((write_score_parameters_ssim*)s->write_score_parameters)[slot];
     params->feature_collector = feature_collector;
+    params->partials = partials_host;
     params->index = index;
     CHECK_CUDA(cu_f, cuLaunchHostFunc(s->host_stream, (CUhostFn*)write_scores,
-                s->write_score_parameters));
+                params));
+    CHECK_CUDA(cu_f, cuEventRecord(s->slot_done[slot], s->host_stream));
 
     return 0;
 }
@@ -401,8 +423,10 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     CudaFunctions *cu_f = fex->cu_state->f;
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
-    CHECK_CUDA(cu_f, cuEventDestroy(s->event));
     CHECK_CUDA(cu_f, cuEventDestroy(s->finished));
+    CHECK_CUDA(cu_f, cuEventDestroy(s->consumed));
+    CHECK_CUDA(cu_f, cuEventDestroy(s->slot_done[0]));
+    CHECK_CUDA(cu_f, cuEventDestroy(s->slot_done[1]));
     CHECK_CUDA(cu_f, cuStreamDestroy(s->str));
     CHECK_CUDA(cu_f, cuStreamDestroy(s->host_stream));
 
