@@ -1,7 +1,6 @@
 /**
  *
- *  Copyright 2016-2023 Netflix, Inc.
- *  Copyright 2021 NVIDIA Corporation.
+ *  Copyright 2026 Bardie Høgh Joensen
  *
  *     Licensed under the BSD+Patent License (the "License");
  *     you may not use this file except in compliance with the License.
