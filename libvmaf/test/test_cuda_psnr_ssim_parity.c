@@ -1,7 +1,6 @@
 /**
  *
- *  Copyright 2016-2023 Netflix, Inc.
- *  Copyright 2021 NVIDIA Corporation.
+ *  Copyright 2026 Bardie Høgh Joensen
  *
  *     Licensed under the BSD+Patent License (the "License");
  *     you may not use this file except in compliance with the License.
@@ -23,8 +22,8 @@
  * extractors (psnr, float_ssim) and the CUDA extractors (psnr_cuda,
  * ssim_cuda) and asserts per-frame score equality within a small epsilon.
  *
- * Skips (passes with a notice) when no CUDA device is available so CI
- * without a GPU stays green.
+ * Exits with meson's SKIP code (77) when no CUDA device is available so CI
+ * without a GPU reports the test as skipped.
  */
 
 #include <math.h>
