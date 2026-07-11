@@ -800,7 +800,9 @@ static int translate_picture_device(VmafContext *vmaf, VmafPicture *pic,
         return err;
     }
 
-    err = vmaf_cuda_picture_download_async(pic, pic_host, 0x1);
+    // host pictures always carry every plane, so CPU feature extractors
+    // that read chroma (psnr, ciede, ...) expect all of them here
+    err = vmaf_cuda_picture_download_async(pic, pic_host, 0x7);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR,
                  "problem moving cuda pic into host buffer\n");

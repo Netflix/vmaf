@@ -29,6 +29,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "test.h"
@@ -178,8 +179,10 @@ static char *parity(unsigned bpc)
     if (fail) return fail;
 
     if (run_pass(1, bpc, gpu, &fail)) {
+        // meson exitcode protocol: 77 = SKIP, so CI without a GPU reports
+        // this as skipped rather than silently passing
         fprintf(stderr, "no CUDA device available, skipping\n");
-        return NULL;
+        exit(77);
     }
     if (fail) return fail;
 
