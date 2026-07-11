@@ -38,7 +38,7 @@
 typedef struct SsimStateCuda {
     CUevent finished, consumed;
     CUevent slot_done[2];
-    CUfunction f_norm8, f_norm16, f_decimate, f_products;
+    CUfunction f_norm8, f_norm16, f_dec8, f_dec16, f_products;
     CUfunction f_conv_h, f_conv_v, f_map_reduce;
     CUstream str, host_stream;
     VmafCudaBuffer *ref_f, *cmp_f;
@@ -134,7 +134,8 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cu_f, cuModuleLoadData(&module, ssim_ptx));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->f_norm8, module, "ssim_normalize_8bpc"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->f_norm16, module, "ssim_normalize_16bpc"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->f_decimate, module, "ssim_decimate"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->f_dec8, module, "ssim_decimate_8bpc"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->f_dec16, module, "ssim_decimate_16bpc"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->f_products, module, "ssim_products"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->f_conv_h, module, "ssim_conv_h"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->f_conv_v, module, "ssim_conv_v"));
@@ -187,11 +188,14 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     const size_t dec = sizeof(float) * s->sw * s->sh;
     const size_t conv = sizeof(float) * s->cw * s->ch;
 
-    ret |= alloc_buf(fex, &s->ref_f, full);
-    ret |= alloc_buf(fex, &s->cmp_f, full);
+    // factor>1 reads pictures directly in the fused decimate kernels, so
+    // the full-resolution float images are only needed at factor==1
     if (s->factor > 1) {
         ret |= alloc_buf(fex, &s->refd, dec);
         ret |= alloc_buf(fex, &s->cmpd, dec);
+    } else {
+        ret |= alloc_buf(fex, &s->ref_f, full);
+        ret |= alloc_buf(fex, &s->cmp_f, full);
     }
     ret |= alloc_buf(fex, &s->ref2, dec);
     ret |= alloc_buf(fex, &s->cmp2, dec);
@@ -303,46 +307,57 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     if (s->bpc == 12) scaler = 16.0f;
     if (s->bpc == 16) scaler = 256.0f;
 
-    if (s->bpc == 8) {
-        void *a1[] = { (void*)ref_pic, (void*)s->ref_f, &w, &h };
-        void *a2[] = { (void*)dist_pic, (void*)s->cmp_f, &w, &h };
-        CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm8, DIV_ROUND_UP(w, 16),
-                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a1, NULL));
-        CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm8, DIV_ROUND_UP(w, 16),
-                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a2, NULL));
+    VmafCudaBuffer *ref_in, *cmp_in;
+    if (s->factor > 1) {
+        // fused normalize+decimate reads the pictures directly
+        int iw = w, ih = h, sw = s->sw, sh = s->sh, factor = s->factor;
+        if (s->bpc == 8) {
+            void *a1[] = { (void*)ref_pic, (void*)s->refd, &iw, &ih, &sw, &sh, &factor };
+            void *a2[] = { (void*)dist_pic, (void*)s->cmpd, &iw, &ih, &sw, &sh, &factor };
+            CHECK_CUDA(cu_f, cuLaunchKernel(s->f_dec8, DIV_ROUND_UP(sw, 16),
+                        DIV_ROUND_UP(sh, 16), 1, 16, 16, 1, 0, s->str, a1, NULL));
+            CHECK_CUDA(cu_f, cuLaunchKernel(s->f_dec8, DIV_ROUND_UP(sw, 16),
+                        DIV_ROUND_UP(sh, 16), 1, 16, 16, 1, 0, s->str, a2, NULL));
+        } else {
+            void *a1[] = { (void*)ref_pic, (void*)s->refd, &iw, &ih, &sw, &sh, &factor, &scaler };
+            void *a2[] = { (void*)dist_pic, (void*)s->cmpd, &iw, &ih, &sw, &sh, &factor, &scaler };
+            CHECK_CUDA(cu_f, cuLaunchKernel(s->f_dec16, DIV_ROUND_UP(sw, 16),
+                        DIV_ROUND_UP(sh, 16), 1, 16, 16, 1, 0, s->str, a1, NULL));
+            CHECK_CUDA(cu_f, cuLaunchKernel(s->f_dec16, DIV_ROUND_UP(sw, 16),
+                        DIV_ROUND_UP(sh, 16), 1, 16, 16, 1, 0, s->str, a2, NULL));
+        }
+        ref_in = s->refd;
+        cmp_in = s->cmpd;
     } else {
-        void *a1[] = { (void*)ref_pic, (void*)s->ref_f, &w, &h, &scaler };
-        void *a2[] = { (void*)dist_pic, (void*)s->cmp_f, &w, &h, &scaler };
-        CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm16, DIV_ROUND_UP(w, 16),
-                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a1, NULL));
-        CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm16, DIV_ROUND_UP(w, 16),
-                    DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a2, NULL));
+        if (s->bpc == 8) {
+            void *a1[] = { (void*)ref_pic, (void*)s->ref_f, &w, &h };
+            void *a2[] = { (void*)dist_pic, (void*)s->cmp_f, &w, &h };
+            CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm8, DIV_ROUND_UP(w, 16),
+                        DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a1, NULL));
+            CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm8, DIV_ROUND_UP(w, 16),
+                        DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a2, NULL));
+        } else {
+            void *a1[] = { (void*)ref_pic, (void*)s->ref_f, &w, &h, &scaler };
+            void *a2[] = { (void*)dist_pic, (void*)s->cmp_f, &w, &h, &scaler };
+            CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm16, DIV_ROUND_UP(w, 16),
+                        DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a1, NULL));
+            CHECK_CUDA(cu_f, cuLaunchKernel(s->f_norm16, DIV_ROUND_UP(w, 16),
+                        DIV_ROUND_UP(h, 16), 1, 16, 16, 1, 0, s->str, a2, NULL));
+        }
+        ref_in = s->ref_f;
+        cmp_in = s->cmp_f;
     }
 
     // lifetime handshake right after the only kernels that read picture
     // memory: the pool recycles a picture once the `finished` event its own
     // stream records (after the fex loop) has completed, so make both
-    // picture streams wait for the normalize reads — everything below works
-    // on our own buffers and can outlive the pictures
+    // picture streams wait for those reads — everything below works on our
+    // own buffers and can outlive the pictures
     CHECK_CUDA(cu_f, cuEventRecord(s->consumed, s->str));
     CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic),
                 s->consumed, CU_EVENT_WAIT_DEFAULT));
     CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(dist_pic),
                 s->consumed, CU_EVENT_WAIT_DEFAULT));
-
-    VmafCudaBuffer *ref_in = s->ref_f;
-    VmafCudaBuffer *cmp_in = s->cmp_f;
-    if (s->factor > 1) {
-        int iw = w, ih = h, sw = s->sw, sh = s->sh, factor = s->factor;
-        void *a1[] = { (void*)s->ref_f, (void*)s->refd, &iw, &ih, &sw, &sh, &factor };
-        void *a2[] = { (void*)s->cmp_f, (void*)s->cmpd, &iw, &ih, &sw, &sh, &factor };
-        CHECK_CUDA(cu_f, cuLaunchKernel(s->f_decimate, DIV_ROUND_UP(sw, 16),
-                    DIV_ROUND_UP(sh, 16), 1, 16, 16, 1, 0, s->str, a1, NULL));
-        CHECK_CUDA(cu_f, cuLaunchKernel(s->f_decimate, DIV_ROUND_UP(sw, 16),
-                    DIV_ROUND_UP(sh, 16), 1, 16, 16, 1, 0, s->str, a2, NULL));
-        ref_in = s->refd;
-        cmp_in = s->cmpd;
-    }
 
     {
         int n = s->sw * s->sh;

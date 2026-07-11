@@ -80,15 +80,18 @@ __global__ void ssim_normalize_16bpc(const VmafPicture pic, VmafCudaBuffer out,
         __fdiv_rn(static_cast<float>(v), scaler);
 }
 
-// iqa/decimate.c: out[y*sw+x] = box(in, x*factor, y*factor), symmetric bounds
-__global__ void ssim_decimate(const VmafCudaBuffer in, VmafCudaBuffer out,
+// iqa/decimate.c: out[y*sw+x] = box(in, x*factor, y*factor), symmetric
+// bounds — fused with the float conversion of picture_copy so the full-res
+// float image is never materialized. The conversion is exact per sample
+// (power-of-two divide), so the box filter sees bit-identical floats.
+__global__ void ssim_decimate_8bpc(const VmafPicture pic, VmafCudaBuffer out,
         int w, int h, int sw, int sh, int factor)
 {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
     if (x >= sw || y >= sh) return;
 
-    const float *img = reinterpret_cast<const float*>(in.data);
+    const uint8_t *base = reinterpret_cast<const uint8_t*>(pic.data[0]);
     const int cx = x * factor;
     const int cy = y * factor;
     const int uc = factor / 2;
@@ -98,18 +101,62 @@ __global__ void ssim_decimate(const VmafCudaBuffer in, VmafCudaBuffer out,
     double sum = 0.0;
     if (cx >= uc && cy >= uc && cx < w - uc && cy < h - uc) {
         for (int v = -uc; v <= uc - k_even; v++) {
-            const float *row = img + (cy + v) * w + cx;
-            for (int u = -uc; u <= uc - k_even; u++)
-                sum += row[u] * k_val;
+            const uint8_t *row = base + (cy + v) * pic.stride[0] + cx;
+            for (int u = -uc; u <= uc - k_even; u++) {
+                const float px = static_cast<float>(row[u]);
+                sum += px * k_val;
+            }
         }
     } else {
         for (int v = -uc; v <= uc - k_even; v++) {
             const int yy = mirror_sym(cy + v, h);
-            for (int u = -uc; u <= uc - k_even; u++)
-                sum += img[yy * w + mirror_sym(cx + u, w)] * k_val;
+            const uint8_t *row = base + yy * pic.stride[0];
+            for (int u = -uc; u <= uc - k_even; u++) {
+                const float px = static_cast<float>(row[mirror_sym(cx + u, w)]);
+                sum += px * k_val;
+            }
         }
     }
     // _iqa_filter_pixel returns (float)(sum * kscale) with kscale == 1.0
+    reinterpret_cast<float*>(out.data)[y * sw + x] = static_cast<float>(sum);
+}
+
+__global__ void ssim_decimate_16bpc(const VmafPicture pic, VmafCudaBuffer out,
+        int w, int h, int sw, int sh, int factor, float scaler)
+{
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int y = blockIdx.y * blockDim.y + threadIdx.y;
+    if (x >= sw || y >= sh) return;
+
+    const uint8_t *base = reinterpret_cast<const uint8_t*>(pic.data[0]);
+    const int cx = x * factor;
+    const int cy = y * factor;
+    const int uc = factor / 2;
+    const int k_even = (factor & 1) ? 0 : 1;
+    const float k_val = 1.0f / (factor * factor);
+
+    double sum = 0.0;
+    if (cx >= uc && cy >= uc && cx < w - uc && cy < h - uc) {
+        for (int v = -uc; v <= uc - k_even; v++) {
+            const uint16_t *row = reinterpret_cast<const uint16_t*>(
+                    base + (cy + v) * pic.stride[0]) + cx;
+            for (int u = -uc; u <= uc - k_even; u++) {
+                const float px = __fdiv_rn(static_cast<float>(row[u]), scaler);
+                sum += px * k_val;
+            }
+        }
+    } else {
+        for (int v = -uc; v <= uc - k_even; v++) {
+            const int yy = mirror_sym(cy + v, h);
+            const uint16_t *row = reinterpret_cast<const uint16_t*>(
+                    base + yy * pic.stride[0]);
+            for (int u = -uc; u <= uc - k_even; u++) {
+                const float px = __fdiv_rn(static_cast<float>(
+                            row[mirror_sym(cx + u, w)]), scaler);
+                sum += px * k_val;
+            }
+        }
+    }
     reinterpret_cast<float*>(out.data)[y * sw + x] = static_cast<float>(sum);
 }
 
