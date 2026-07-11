@@ -239,20 +239,22 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
                 s->str));
 
     const CUfunction func = (ref_pic->bpc == 8) ? s->funcbpc8 : s->funcbpc16;
-    const int block_dim_x = 16;
-    const int block_dim_y = 16;
+    const unsigned vec = (ref_pic->bpc == 8) ? 4 : 2;
     for (unsigned p = 0; p < n; p++) {
         unsigned plane = p;
         unsigned width = ref_pic->w[p];
         unsigned height = ref_pic->h[p];
+        // 1-D grid-stride kernel over vectorized loads; cap the grid so
+        // tail-of-wave blocks stay busy
+        unsigned n_blocks = DIV_ROUND_UP(width / vec * height, 256);
+        if (n_blocks > 2048) n_blocks = 2048;
+        if (!n_blocks) n_blocks = 1;
         void *kernel_params[] = {
             (void*) ref_pic, (void*) dist_pic, (void*) s->sse,
             &plane, &width, &height,
         };
         CHECK_CUDA(cu_f, cuLaunchKernel(func,
-                    DIV_ROUND_UP(width, block_dim_x),
-                    DIV_ROUND_UP(height, block_dim_y), 1,
-                    block_dim_x, block_dim_y, 1, 0,
+                    n_blocks, 1, 1, 256, 1, 1, 0,
                     s->str, kernel_params, NULL));
     }
 
