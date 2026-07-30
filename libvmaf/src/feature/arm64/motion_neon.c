@@ -105,16 +105,16 @@ uint64_t motion_score_pipeline_8_neon(const uint8_t *prev, ptrdiff_t prev_stride
             uint8x16_t p3 = vld1q_u8(p[3] + j), c3 = vld1q_u8(c[3] + j);
             uint8x16_t p4 = vld1q_u8(p[4] + j), c4 = vld1q_u8(c[4] + j);
 
-            int16x8_t d0_lo = vsubl_u8(vget_low_u8(p0), vget_low_u8(c0));
-            int16x8_t d0_hi = vsubl_u8(vget_high_u8(p0), vget_high_u8(c0));
-            int16x8_t d1_lo = vsubl_u8(vget_low_u8(p1), vget_low_u8(c1));
-            int16x8_t d1_hi = vsubl_u8(vget_high_u8(p1), vget_high_u8(c1));
-            int16x8_t d2_lo = vsubl_u8(vget_low_u8(p2), vget_low_u8(c2));
-            int16x8_t d2_hi = vsubl_u8(vget_high_u8(p2), vget_high_u8(c2));
-            int16x8_t d3_lo = vsubl_u8(vget_low_u8(p3), vget_low_u8(c3));
-            int16x8_t d3_hi = vsubl_u8(vget_high_u8(p3), vget_high_u8(c3));
-            int16x8_t d4_lo = vsubl_u8(vget_low_u8(p4), vget_low_u8(c4));
-            int16x8_t d4_hi = vsubl_u8(vget_high_u8(p4), vget_high_u8(c4));
+            int16x8_t d0_lo = vreinterpretq_s16_u16(vsubl_u8(vget_low_u8(p0), vget_low_u8(c0)));
+            int16x8_t d0_hi = vreinterpretq_s16_u16(vsubl_u8(vget_high_u8(p0), vget_high_u8(c0)));
+            int16x8_t d1_lo = vreinterpretq_s16_u16(vsubl_u8(vget_low_u8(p1), vget_low_u8(c1)));
+            int16x8_t d1_hi = vreinterpretq_s16_u16(vsubl_u8(vget_high_u8(p1), vget_high_u8(c1)));
+            int16x8_t d2_lo = vreinterpretq_s16_u16(vsubl_u8(vget_low_u8(p2), vget_low_u8(c2)));
+            int16x8_t d2_hi = vreinterpretq_s16_u16(vsubl_u8(vget_high_u8(p2), vget_high_u8(c2)));
+            int16x8_t d3_lo = vreinterpretq_s16_u16(vsubl_u8(vget_low_u8(p3), vget_low_u8(c3)));
+            int16x8_t d3_hi = vreinterpretq_s16_u16(vsubl_u8(vget_high_u8(p3), vget_high_u8(c3)));
+            int16x8_t d4_lo = vreinterpretq_s16_u16(vsubl_u8(vget_low_u8(p4), vget_low_u8(c4)));
+            int16x8_t d4_hi = vreinterpretq_s16_u16(vsubl_u8(vget_high_u8(p4), vget_high_u8(c4)));
 
             int32x4_t acc0 = vdupq_n_s32(0); // columns j+0..j+3
             int32x4_t acc1 = vdupq_n_s32(0); // columns j+4..j+7
