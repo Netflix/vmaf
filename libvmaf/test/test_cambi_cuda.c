@@ -52,6 +52,12 @@ static void ref_derivative_row(const uint16_t *image_data,
 /* ------------------------------------------------------------------ */
 /* Test image generators. Each targets a different failure mode.       */
 /* ------------------------------------------------------------------ */
+/* LESSON (from deliberately breaking the derivative kernel's last-column
+ * case): structured inputs beat random ones for boundary bugs. Flat and
+ * gradient caught every affected pixel; random caught 1 of 2073600, because
+ * random data usually differs from the out-of-bounds read anyway and lands
+ * on the correct answer by accident. Weight toward flat plateaus and smooth
+ * gradients -- which is also what real banding content looks like. */
 enum pattern {
     PAT_FLAT,      /* all equal: every derivative should be 1          */
     PAT_GRADIENT,  /* smooth ramp: banding-like, mixed                 */
@@ -191,8 +197,133 @@ static char *test_cambi_derivative_cuda(void)
     return NULL;
 }
 
+/* ------------------------------------------------------------------ */
+/* CPU reference: decimate() from src/feature/cambi.c, unrolled to a   */
+/* separate destination (the CPU version is in-place; see the kernel   */
+/* comment for why that is not safe on GPU).                           */
+/* ------------------------------------------------------------------ */
+static void ref_decimate(const uint16_t *src, uint16_t *dst,
+                         int width, int height,
+                         ptrdiff_t src_stride, ptrdiff_t dst_stride)
+{
+    for (int i = 0; i < height; i++)
+        for (int j = 0; j < width; j++)
+            dst[i * dst_stride + j] = src[(i << 1) * src_stride + (j << 1)];
+}
+
+static char *test_cambi_decimate_cuda(void)
+{
+    /* SOURCE dimensions. Odd ones matter: the multiscale loop derives the
+     * decimated size as (w + 1) >> 1, so a 33-wide source yields 17 columns
+     * and output col 16 must read source col 32 -- the last valid one. */
+    const int dims[][2] = {
+        { 128, 128 }, { 1920, 1080 }, { 1919, 1079 }, { 33, 17 },
+        { 2, 32 }, { 32, 2 }, { 1, 1 }, { 7, 5 },
+    };
+    const int n_dims = (int)(sizeof(dims) / sizeof(dims[0]));
+
+    CU_CHECK(cuInit(0));
+    CUdevice dev;
+    CU_CHECK(cuDeviceGet(&dev, 0));
+    CUcontext ctx;
+    CU_CHECK(cuDevicePrimaryCtxRetain(&ctx, dev));
+    CU_CHECK(cuCtxSetCurrent(ctx));
+
+    CUmodule module;
+    CU_CHECK(cuModuleLoadData(&module, cambi_decimate_ptx));
+    CUfunction kernel;
+    CU_CHECK(cuModuleGetFunction(&kernel, module, "cambi_decimate_kernel"));
+
+    unsigned long total_mismatch = 0;
+
+    for (int d = 0; d < n_dims; d++) {
+        const int src_w = dims[d][0], src_h = dims[d][1];
+        const int width = (src_w + 1) >> 1;
+        const int height = (src_h + 1) >> 1;
+        /* Distinct padding on each side: equal strides would hide a bug. */
+        const ptrdiff_t src_stride = src_w + 7;
+        const ptrdiff_t dst_stride = width + 3;
+
+        for (enum pattern p = 0; p < PAT_COUNT; p++) {
+            const size_t src_elems = (size_t)src_stride * src_h;
+            const size_t dst_elems = (size_t)dst_stride * height;
+
+            uint16_t *h_src = malloc(src_elems * sizeof(uint16_t));
+            uint16_t *h_ref = malloc(dst_elems * sizeof(uint16_t));
+            uint16_t *h_gpu = malloc(dst_elems * sizeof(uint16_t));
+            if (!h_src || !h_ref || !h_gpu) {
+                free(h_src); free(h_ref); free(h_gpu);
+                return "allocation failed";
+            }
+            memset(h_src, 0, src_elems * sizeof(uint16_t));
+            memset(h_ref, 0xAB, dst_elems * sizeof(uint16_t));
+
+            fill_pattern(h_src, src_w, src_h, src_stride, p,
+                         777u + d * 31u + p);
+
+            ref_decimate(h_src, h_ref, width, height, src_stride, dst_stride);
+
+            CUdeviceptr d_src, d_dst;
+            CU_CHECK(cuMemAlloc(&d_src, src_elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemAlloc(&d_dst, dst_elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemcpyHtoD(d_src, h_src, src_elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemsetD8(d_dst, 0xAB, dst_elems * sizeof(uint16_t)));
+
+            int w = width, h = height;
+            ptrdiff_t ss = src_stride, ds = dst_stride;
+            void *args[] = { &d_src, &d_dst, &w, &h, &ss, &ds };
+
+            const unsigned bx = 32, by = 8;
+            CU_CHECK(cuLaunchKernel(kernel,
+                                    (width + bx - 1) / bx,
+                                    (height + by - 1) / by, 1,
+                                    bx, by, 1, 0, NULL, args, NULL));
+            CU_CHECK(cuCtxSynchronize());
+            CU_CHECK(cuMemcpyDtoH(h_gpu, d_dst, dst_elems * sizeof(uint16_t)));
+
+            unsigned long mismatch = 0;
+            size_t first_r = 0, first_c = 0;
+            bool have_first = false;
+            for (int i = 0; i < height; i++) {
+                for (int j = 0; j < width; j++) {
+                    size_t k = (size_t)i * dst_stride + j;
+                    if (h_gpu[k] != h_ref[k]) {
+                        if (!have_first) {
+                            first_r = i; first_c = j; have_first = true;
+                        }
+                        mismatch++;
+                    }
+                }
+            }
+            if (mismatch) {
+                size_t fk = first_r * dst_stride + first_c;
+                fprintf(stderr,
+                        "\n  src %dx%d -> %dx%d ss=%td ds=%td pattern=%d: "
+                        "%lu / %d mismatch, first at (row %zu, col %zu): "
+                        "cpu=%u gpu=%u\n",
+                        src_w, src_h, width, height, src_stride, dst_stride, p,
+                        mismatch, width * height, first_r, first_c,
+                        h_ref[fk], h_gpu[fk]);
+            }
+            total_mismatch += mismatch;
+
+            cuMemFree(d_src);
+            cuMemFree(d_dst);
+            free(h_src); free(h_ref); free(h_gpu);
+        }
+    }
+
+    cuModuleUnload(module);
+    cuDevicePrimaryCtxRelease(dev);
+
+    mu_assert("cambi decimate: CUDA diverges from CPU reference",
+              total_mismatch == 0);
+    return NULL;
+}
+
 char *run_tests(void)
 {
     mu_run_test(test_cambi_derivative_cuda);
+    mu_run_test(test_cambi_decimate_cuda);
     return NULL;
 }

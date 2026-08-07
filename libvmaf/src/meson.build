@@ -355,6 +355,7 @@ if is_cuda_enabled
         'filter1d' : [feature_src_dir + 'cuda/integer_vif/filter1d.cu'],
         'motion_score' : [feature_src_dir + 'cuda/integer_motion/motion_score.cu'],
         'cambi_derivative' : [feature_src_dir + 'cuda/cambi/cambi_derivative.cu'],
+        'cambi_decimate' : [feature_src_dir + 'cuda/cambi/cambi_decimate.cu'],
     }
     message(cuda_cu_sources)
     cuda_sources = [
