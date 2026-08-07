@@ -357,6 +357,7 @@ if is_cuda_enabled
         'cambi_derivative' : [feature_src_dir + 'cuda/cambi/cambi_derivative.cu'],
         'cambi_decimate' : [feature_src_dir + 'cuda/cambi/cambi_decimate.cu'],
         'cambi_filter_mode' : [feature_src_dir + 'cuda/cambi/cambi_filter_mode.cu'],
+        'cambi_spatial_mask' : [feature_src_dir + 'cuda/cambi/cambi_spatial_mask.cu'],
     }
     message(cuda_cu_sources)
     cuda_sources = [

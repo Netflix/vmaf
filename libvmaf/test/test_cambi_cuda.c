@@ -481,10 +481,245 @@ static char *test_cambi_filter_mode_cuda(void)
     return NULL;
 }
 
+/* ------------------------------------------------------------------ */
+/* CPU reference: get_spatial_mask_for_index() and its helpers from    */
+/* src/feature/cambi.c, verbatim apart from taking raw pointers        */
+/* instead of VmafPicture. The cyclic DP structure is preserved on     */
+/* purpose -- the GPU replaces it with a direct box sum, and proving   */
+/* those agree is the point of this test.                              */
+/* ------------------------------------------------------------------ */
+#define REF_MASK_FILTER_SIZE 7
+
+static void ref_derivative_row_for_mask(const uint16_t *image_data,
+                                        uint16_t *derivative_buffer,
+                                        int width, int height, int row,
+                                        int stride)
+{
+    for (int col = 0; col < width; col++) {
+        bool h = (col == width - 1 ||
+                  image_data[row * stride + col] == image_data[row * stride + col + 1]);
+        bool v = (row == height - 1 ||
+                  image_data[row * stride + col] == image_data[(row + 1) * stride + col]);
+        derivative_buffer[col] = h && v;
+    }
+}
+
+static uint16_t ref_ceil_log2(uint32_t num) {
+    if (num == 0) return 0;
+    uint32_t tmp = num - 1;
+    uint16_t shift = 0;
+    while (tmp > 0) { tmp >>= 1; shift += 1; }
+    return shift;
+}
+
+static uint16_t ref_get_mask_index(unsigned input_width, unsigned input_height,
+                                   uint16_t filter_size)
+{
+    uint32_t shifted_wh = (input_width >> 6) * (input_height >> 6);
+    return (filter_size * filter_size + 3 * (ref_ceil_log2(shifted_wh) - 11) - 1) >> 1;
+}
+
+static void ref_compute_dp_row(uint32_t *dp_curr, const uint32_t *dp_prev,
+                               const uint16_t *deriv, int width, int pad_size,
+                               bool deriv_valid)
+{
+    uint32_t prefix = 0;
+    int dp_offset = pad_size + 1;
+    int actual_width = deriv_valid ? width : 0;
+    int j;
+    for (j = 0; j < actual_width; j++) {
+        prefix += deriv[j];
+        dp_curr[dp_offset + j] = dp_prev[dp_offset + j] + prefix;
+    }
+    int n = width + pad_size;
+    for (; j < n; j++)
+        dp_curr[dp_offset + j] = dp_prev[dp_offset + j] + prefix;
+}
+
+static void ref_compute_mask_row(uint16_t *mask_row, const uint32_t *dp_bottom,
+                                 const uint32_t *dp_top, int width,
+                                 int pad_size, uint32_t mask_index)
+{
+    const int delta = 2 * pad_size + 1;
+    for (int j = 0; j < width; j++) {
+        uint32_t result = dp_bottom[j + delta] + dp_top[j]
+                        - dp_bottom[j] - dp_top[j + delta];
+        mask_row[j] = (uint16_t)(result > mask_index);
+    }
+}
+
+static void ref_spatial_mask(const uint16_t *image_data, uint16_t *mask_data,
+                             uint32_t *dp, uint16_t *derivative_buffer,
+                             uint16_t mask_index, uint16_t filter_size,
+                             int width, int height, ptrdiff_t stride)
+{
+    uint16_t pad_size = filter_size >> 1;
+    int dp_width = width + 2 * pad_size + 1;
+    int dp_height = 2 * pad_size + 2;
+    memset(dp, 0, (size_t)dp_width * dp_height * sizeof(uint32_t));
+
+    for (int i = 0; i < pad_size; i++) {
+        bool deriv_valid = (i < height);
+        if (deriv_valid)
+            ref_derivative_row_for_mask(image_data, derivative_buffer,
+                                        width, height, i, (int)stride);
+        int curr_row = i + pad_size + 1;
+        ref_compute_dp_row(&dp[curr_row * dp_width],
+                           &dp[(curr_row - 1) * dp_width],
+                           derivative_buffer, width, pad_size, deriv_valid);
+    }
+
+    int prev_row = dp_height - 2;
+    int curr_row = dp_height - 1;
+    int curr_compute = pad_size + 1;
+    int bottom = (curr_compute + pad_size) % dp_height;
+    int top = (curr_compute + dp_height - pad_size - 1) % dp_height;
+    for (int i = pad_size; i < height + pad_size; i++) {
+        bool deriv_valid = (i < height);
+        if (deriv_valid)
+            ref_derivative_row_for_mask(image_data, derivative_buffer,
+                                        width, height, i, (int)stride);
+        ref_compute_dp_row(&dp[curr_row * dp_width], &dp[prev_row * dp_width],
+                           derivative_buffer, width, pad_size, deriv_valid);
+        prev_row = curr_row;
+        curr_row = (curr_row + 1 == dp_height ? 0 : curr_row + 1);
+
+        ref_compute_mask_row(&mask_data[(i - pad_size) * stride],
+                             &dp[bottom * dp_width], &dp[top * dp_width],
+                             width, pad_size, mask_index);
+        curr_compute = (curr_compute + 1 == dp_height ? 0 : curr_compute + 1);
+        bottom = (bottom + 1 == dp_height ? 0 : bottom + 1);
+        top = (top + 1 == dp_height ? 0 : top + 1);
+    }
+}
+
+static char *test_cambi_spatial_mask_cuda(void)
+{
+    const int dims[][2] = {
+        { 64, 64 }, { 1920, 1080 }, { 1919, 1079 }, { 33, 17 },
+        { 128, 128 }, { 8, 8 }, { 4, 4 }, { 1, 1 },
+    };
+    const int n_dims = (int)(sizeof(dims) / sizeof(dims[0]));
+    const int pad_size = REF_MASK_FILTER_SIZE >> 1;
+
+    CU_CHECK(cuInit(0));
+    CUdevice dev;
+    CU_CHECK(cuDeviceGet(&dev, 0));
+    CUcontext ctx;
+    CU_CHECK(cuDevicePrimaryCtxRetain(&ctx, dev));
+    CU_CHECK(cuCtxSetCurrent(ctx));
+
+    CUmodule mod_deriv, mod_mask;
+    CU_CHECK(cuModuleLoadData(&mod_deriv, cambi_derivative_ptx));
+    CU_CHECK(cuModuleLoadData(&mod_mask, cambi_spatial_mask_ptx));
+    CUfunction k_deriv, k_mask;
+    CU_CHECK(cuModuleGetFunction(&k_deriv, mod_deriv, "cambi_derivative_kernel"));
+    CU_CHECK(cuModuleGetFunction(&k_mask, mod_mask, "cambi_spatial_mask_kernel"));
+
+    unsigned long total_mismatch = 0;
+
+    for (int d = 0; d < n_dims; d++) {
+        const int width = dims[d][0], height = dims[d][1];
+        const ptrdiff_t stride = width + 7;
+        const ptrdiff_t deriv_stride = width + 5;
+        const uint16_t mask_index =
+            ref_get_mask_index(width, height, REF_MASK_FILTER_SIZE);
+
+        for (enum pattern p = 0; p < PAT_COUNT; p++) {
+            const size_t elems = (size_t)stride * height;
+            const size_t deriv_elems = (size_t)deriv_stride * height;
+            const int dp_width = width + 2 * pad_size + 1;
+            const int dp_height = 2 * pad_size + 2;
+
+            uint16_t *h_img = malloc(elems * sizeof(uint16_t));
+            uint16_t *h_ref = malloc(elems * sizeof(uint16_t));
+            uint16_t *h_gpu = malloc(elems * sizeof(uint16_t));
+            uint32_t *dp = malloc((size_t)dp_width * dp_height * sizeof(uint32_t));
+            uint16_t *dbuf = malloc((size_t)width * sizeof(uint16_t));
+            if (!h_img || !h_ref || !h_gpu || !dp || !dbuf) {
+                free(h_img); free(h_ref); free(h_gpu); free(dp); free(dbuf);
+                return "allocation failed";
+            }
+            memset(h_img, 0, elems * sizeof(uint16_t));
+            memset(h_ref, 0xAB, elems * sizeof(uint16_t));
+            memset(dbuf, 0, (size_t)width * sizeof(uint16_t));
+
+            fill_pattern(h_img, width, height, stride, p, 909u + d * 23u + p);
+            ref_spatial_mask(h_img, h_ref, dp, dbuf, mask_index,
+                             REF_MASK_FILTER_SIZE, width, height, stride);
+
+            CUdeviceptr d_img, d_deriv, d_mask;
+            CU_CHECK(cuMemAlloc(&d_img, elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemAlloc(&d_deriv, deriv_elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemAlloc(&d_mask, elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemcpyHtoD(d_img, h_img, elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemsetD8(d_deriv, 0xAB, deriv_elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemsetD8(d_mask, 0xAB, elems * sizeof(uint16_t)));
+
+            int w = width, h = height, pad = pad_size;
+            unsigned int mi = mask_index;
+            ptrdiff_t ss = stride, ds = deriv_stride, ms = stride;
+
+            const unsigned bx = 32, by = 8;
+            const unsigned gx = (width + bx - 1) / bx;
+            const unsigned gy = (height + by - 1) / by;
+
+            void *args_d[] = { &d_img, &d_deriv, &w, &h, &ss, &ds };
+            CU_CHECK(cuLaunchKernel(k_deriv, gx, gy, 1, bx, by, 1,
+                                    0, NULL, args_d, NULL));
+
+            void *args_m[] = { &d_deriv, &d_mask, &w, &h, &pad, &mi, &ds, &ms };
+            CU_CHECK(cuLaunchKernel(k_mask, gx, gy, 1, bx, by, 1,
+                                    0, NULL, args_m, NULL));
+
+            CU_CHECK(cuCtxSynchronize());
+            CU_CHECK(cuMemcpyDtoH(h_gpu, d_mask, elems * sizeof(uint16_t)));
+
+            unsigned long mismatch = 0;
+            int first_r = 0, first_c = 0;
+            bool have_first = false;
+            for (int i = 0; i < height; i++) {
+                for (int j = 0; j < width; j++) {
+                    size_t k = (size_t)i * stride + j;
+                    if (h_gpu[k] != h_ref[k]) {
+                        if (!have_first) {
+                            first_r = i; first_c = j; have_first = true;
+                        }
+                        mismatch++;
+                    }
+                }
+            }
+            if (mismatch) {
+                size_t fk = (size_t)first_r * stride + first_c;
+                fprintf(stderr,
+                        "\n  %dx%d stride=%td mask_index=%u pattern=%d: "
+                        "%lu / %d mismatch, first at (row %d, col %d): "
+                        "cpu=%u gpu=%u\n",
+                        width, height, stride, mask_index, p, mismatch,
+                        width * height, first_r, first_c,
+                        h_ref[fk], h_gpu[fk]);
+            }
+            total_mismatch += mismatch;
+
+            cuMemFree(d_img); cuMemFree(d_deriv); cuMemFree(d_mask);
+            free(h_img); free(h_ref); free(h_gpu); free(dp); free(dbuf);
+        }
+    }
+
+    cuModuleUnload(mod_deriv);
+    cuModuleUnload(mod_mask);
+    cuDevicePrimaryCtxRelease(dev);
+
+    mu_assert("cambi spatial_mask: CUDA diverges from CPU reference",
+              total_mismatch == 0);
+    return NULL;
+}
+
 char *run_tests(void)
 {
     mu_run_test(test_cambi_derivative_cuda);
     mu_run_test(test_cambi_decimate_cuda);
     mu_run_test(test_cambi_filter_mode_cuda);
+    mu_run_test(test_cambi_spatial_mask_cuda);
     return NULL;
 }
