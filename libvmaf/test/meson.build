@@ -226,3 +226,17 @@ test('test_propagate_metadata', test_propagate_metadata)
 test('test_adm_csf', test_adm_csf)
 test('test_barten_csf', test_barten_csf)
 test('test_motion_blend', test_motion_blend)
+
+if is_cuda_enabled
+    test_cambi_cuda = executable('test_cambi_cuda',
+        ['test.c', 'test_cambi_cuda.c'] + ptx_arrays,
+        include_directories : [libvmaf_inc, test_inc,
+                               include_directories('../src'),
+                               include_directories('../src/feature'),
+                               include_directories('../src/cuda'),
+                               include_directories('/usr/local/cuda/include')],
+        dependencies : [cuda_dependency],
+        link_args : ['-L/usr/local/cuda/lib64/stubs', '-lcuda'],
+    )
+    test('cambi_cuda', test_cambi_cuda)
+endif
