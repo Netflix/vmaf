@@ -28,5 +28,6 @@ extern const unsigned char cambi_derivative_ptx[];
 extern const unsigned char cambi_decimate_ptx[];
 extern const unsigned char cambi_filter_mode_ptx[];
 extern const unsigned char cambi_spatial_mask_ptx[];
+extern const unsigned char cambi_c_values_ptx[];
 
 #endif /* __VMAF_SRC_FEATURE_CUDA_CAMBI_CUDA_H__ */

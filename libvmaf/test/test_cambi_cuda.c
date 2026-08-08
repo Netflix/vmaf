@@ -715,11 +715,320 @@ static char *test_cambi_spatial_mask_cuda(void)
     return NULL;
 }
 
+/* ------------------------------------------------------------------ */
+/* CPU reference: calculate_c_values() from src/feature/cambi.c, with  */
+/* its full four-phase incremental histogram. Copied rather than       */
+/* simplified -- the GPU replaces the whole structure with a per-pixel */
+/* box scan, and proving those agree is the entire point.              */
+/*                                                                     */
+/* increment_range/decrement_range and the update_histogram_* helpers  */
+/* come from cambi.h (included below); c_value_pixel and              */
+/* calculate_c_values_row are static in cambi.c so they are copied.    */
+/* ------------------------------------------------------------------ */
+#include "feature/cambi.h"
+
+#ifndef MAX
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
+
+static void ref_increment_range(uint16_t *arr, int left, int right) {
+    for (int i = left; i < right; i++) arr[i]++;
+}
+static void ref_decrement_range(uint16_t *arr, int left, int right) {
+    for (int i = left; i < right; i++) arr[i]--;
+}
+
+static float ref_c_value_pixel(const uint16_t *histograms, uint16_t value,
+                               const int *diff_weights, const int *diffs,
+                               uint16_t num_diffs, const uint16_t *tvi_thresholds,
+                               uint16_t vlt_luma, uint16_t v_band_offset_val,
+                               uint16_t v_band_size, int histogram_col,
+                               int histogram_width)
+{
+    int compact_v_signed = (int)value - (int)v_band_offset_val;
+    if ((unsigned)compact_v_signed >= v_band_size) return 0.0f;
+    uint16_t compact_v = (uint16_t)compact_v_signed;
+    uint16_t p_0 = histograms[compact_v * histogram_width + histogram_col];
+    float val, c_value = 0.0;
+    for (uint16_t d = 0; d < num_diffs; d++) {
+        if ((value <= tvi_thresholds[d]) && ((value + diffs[num_diffs + d + 1]) > vlt_luma)) {
+            int idx1 = compact_v_signed + diffs[num_diffs + d + 1];
+            int idx2 = compact_v_signed + diffs[num_diffs - d - 1];
+            uint16_t p_1 = histograms[idx1 * histogram_width + histogram_col];
+            uint16_t p_2 = (idx2 >= 0) ? histograms[idx2 * histogram_width + histogram_col] : 0;
+            if (p_1 > p_2) val = (float)(diff_weights[d] * p_0 * p_1) * reciprocal_lut[p_1 + p_0];
+            else           val = (float)(diff_weights[d] * p_0 * p_2) * reciprocal_lut[p_2 + p_0];
+            if (val > c_value) c_value = val;
+        }
+    }
+    return c_value;
+}
+
+static void ref_c_values_row(float *c_values, const uint16_t *histograms,
+                             const uint16_t *image, const uint16_t *mask, int row,
+                             int width, ptrdiff_t stride, const uint16_t num_diffs,
+                             const uint16_t *tvi_for_diff, uint16_t vlt_luma,
+                             const int *diff_weights, const int *all_diffs)
+{
+    int v_lo_signed = (int)vlt_luma - 3 * (int)num_diffs + 1;
+    uint16_t v_band_base = v_lo_signed > 0 ? (uint16_t)v_lo_signed : 0;
+    uint16_t v_band_size = tvi_for_diff[num_diffs - 1] + 1 - v_band_base;
+    uint16_t v_band_offset_val = v_band_base + num_diffs;
+    for (int col = 0; col < width; col++) {
+        if (mask[row * stride + col]) {
+            c_values[row * width + col] = ref_c_value_pixel(
+                histograms, image[row * stride + col] + num_diffs, diff_weights,
+                all_diffs, num_diffs, tvi_for_diff, vlt_luma,
+                v_band_offset_val, v_band_size, col, width);
+        }
+    }
+}
+
+static void ref_calculate_c_values(uint16_t *image, uint16_t *mask, ptrdiff_t stride,
+                                   float *c_values, uint16_t *histograms,
+                                   uint16_t window_size, const uint16_t num_diffs,
+                                   const uint16_t *tvi_for_diff, uint16_t vlt_luma,
+                                   const int *diff_weights, const int *all_diffs,
+                                   int width, int height)
+{
+    uint16_t pad_size = window_size >> 1;
+    int v_lo_signed = (int)vlt_luma - 3 * (int)num_diffs + 1;
+    uint16_t v_band_base = v_lo_signed > 0 ? (uint16_t)v_lo_signed : 0;
+    uint16_t v_band_size = tvi_for_diff[num_diffs - 1] + 1 - v_band_base;
+
+    memset(c_values, 0, sizeof(float) * width * height);
+    memset(histograms, 0, (size_t)width * v_band_size * sizeof(uint16_t));
+
+    for (int i = 0; i < pad_size; i++) {
+        for (int j = 0; j < pad_size; j++)
+            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, ref_increment_range);
+        for (int j = pad_size; j < width - pad_size - 1; j++)
+            update_histogram_add_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, ref_increment_range);
+        for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++)
+            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, ref_increment_range);
+    }
+
+    for (int i = 0; i < pad_size + 1; i++) {
+        if (i + pad_size < height) {
+            for (int j = 0; j < pad_size; j++)
+                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, ref_increment_range);
+            for (int j = pad_size; j < width - pad_size - 1; j++)
+                update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, ref_increment_range);
+            for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++)
+                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, ref_increment_range);
+        }
+        ref_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs);
+    }
+    for (int i = pad_size + 1; i < height - pad_size; i++) {
+        for (int j = 0; j < pad_size; j++)
+            uh_slide_edge(histograms, image, mask, i, j, width, stride, pad_size, v_band_base, v_band_size, ref_increment_range, ref_decrement_range);
+        for (int j = pad_size; j < width - pad_size - 1; j++)
+            uh_slide(histograms, image, mask, i, j, width, stride, pad_size, v_band_base, v_band_size, ref_increment_range, ref_decrement_range);
+        for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++)
+            uh_slide_edge(histograms, image, mask, i, j, width, stride, pad_size, v_band_base, v_band_size, ref_increment_range, ref_decrement_range);
+        ref_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs);
+    }
+    for (int i = height - pad_size; i < height; i++) {
+        if (i - pad_size - 1 >= 0) {
+            for (int j = 0; j < pad_size; j++)
+                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, ref_decrement_range);
+            for (int j = pad_size; j < width - pad_size - 1; j++)
+                update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, ref_decrement_range);
+            for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++)
+                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, ref_decrement_range);
+        }
+        ref_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs);
+    }
+}
+
+/* Values are remapped into the useful band so most pixels exercise the real
+ * arithmetic instead of short-circuiting on the out-of-band test. */
+static void fill_banded(uint16_t *buf, int width, int height, ptrdiff_t stride,
+                        enum pattern p, unsigned seed,
+                        uint16_t v_band_base, uint16_t v_band_size)
+{
+    fill_pattern(buf, width, height, stride, p, seed);
+    for (int i = 0; i < height; i++)
+        for (int j = 0; j < width; j++)
+            buf[i * stride + j] =
+                (uint16_t)(v_band_base + (buf[i * stride + j] % v_band_size));
+}
+
+static void fill_mask(uint16_t *m, int width, int height, ptrdiff_t stride,
+                      int mode, unsigned seed)
+{
+    unsigned s = seed ? seed : 1;
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            uint16_t v;
+            switch (mode) {
+            case 0: v = 1; break;                       /* fully masked in */
+            case 1: v = ((i + j) & 1); break;           /* checker */
+            case 2: v = (j < width / 2); break;         /* half plane */
+            default:
+                s = s * 1103515245u + 12345u;
+                v = ((s >> 20) & 3) != 0;               /* ~75% set */
+                break;
+            }
+            m[i * stride + j] = v;
+        }
+    }
+}
+
+static char *test_cambi_c_values_cuda(void)
+{
+    /* window_size must stay well below the dimensions: the CPU's first pass
+     * reads rows 0..pad_size-1 unconditionally, so height <= pad_size would
+     * read out of bounds in the reference itself. */
+    const struct { int w, h, win; } cases[] = {
+        {  64,  64,  9 }, {  64,  64, 21 }, { 128,  96, 33 },
+        {  97,  71, 15 }, { 256, 128, 65 }, {  40,  40,  5 },
+    };
+    const int n_cases = (int)(sizeof(cases) / sizeof(cases[0]));
+
+    const uint16_t num_diffs = 4;
+    const uint16_t vlt_luma = 100;
+    const uint16_t tvi_for_diff[4] = { 200, 300, 400, 500 };
+    const int diff_weights[4] = { 1, 2, 4, 8 };
+    int all_diffs[2 * 4 + 1];
+    for (int d = -(int)num_diffs; d <= (int)num_diffs; d++)
+        all_diffs[d + num_diffs] = d;
+
+    const int v_lo_signed = (int)vlt_luma - 3 * (int)num_diffs + 1;
+    const uint16_t v_band_base = v_lo_signed > 0 ? (uint16_t)v_lo_signed : 0;
+    const uint16_t v_band_size = tvi_for_diff[num_diffs - 1] + 1 - v_band_base;
+
+    CU_CHECK(cuInit(0));
+    CUdevice dev;
+    CU_CHECK(cuDeviceGet(&dev, 0));
+    CUcontext ctx;
+    CU_CHECK(cuDevicePrimaryCtxRetain(&ctx, dev));
+    CU_CHECK(cuCtxSetCurrent(ctx));
+
+    CUmodule module;
+    CU_CHECK(cuModuleLoadData(&module, cambi_c_values_ptx));
+    CUfunction kernel;
+    CU_CHECK(cuModuleGetFunction(&kernel, module, "cambi_c_values_kernel"));
+
+    /* Constant tables live on the device for the whole test. */
+    CUdeviceptr d_tvi, d_dw, d_ad, d_lut;
+    CU_CHECK(cuMemAlloc(&d_tvi, sizeof(tvi_for_diff)));
+    CU_CHECK(cuMemAlloc(&d_dw, sizeof(diff_weights)));
+    CU_CHECK(cuMemAlloc(&d_ad, sizeof(all_diffs)));
+    CU_CHECK(cuMemAlloc(&d_lut, sizeof(float) * CAMBI_RECIPROCAL_LUT_SIZE));
+    CU_CHECK(cuMemcpyHtoD(d_tvi, tvi_for_diff, sizeof(tvi_for_diff)));
+    CU_CHECK(cuMemcpyHtoD(d_dw, diff_weights, sizeof(diff_weights)));
+    CU_CHECK(cuMemcpyHtoD(d_ad, all_diffs, sizeof(all_diffs)));
+    CU_CHECK(cuMemcpyHtoD(d_lut, reciprocal_lut,
+                          sizeof(float) * CAMBI_RECIPROCAL_LUT_SIZE));
+
+    unsigned long total_mismatch = 0;
+
+    for (int ci = 0; ci < n_cases; ci++) {
+        const int width = cases[ci].w, height = cases[ci].h;
+        const int win = cases[ci].win;
+        const int pad = win >> 1;
+        const ptrdiff_t stride = width + 7;
+
+        for (enum pattern p = 0; p < PAT_COUNT; p++) {
+            for (int mmode = 0; mmode < 4; mmode++) {
+                const size_t elems = (size_t)stride * height;
+                const size_t cv_elems = (size_t)width * height;
+
+                uint16_t *h_img = malloc(elems * sizeof(uint16_t));
+                uint16_t *h_msk = malloc(elems * sizeof(uint16_t));
+                float *h_ref = malloc(cv_elems * sizeof(float));
+                float *h_gpu = malloc(cv_elems * sizeof(float));
+                uint16_t *hist = calloc((size_t)width * v_band_size, sizeof(uint16_t));
+                if (!h_img || !h_msk || !h_ref || !h_gpu || !hist) {
+                    free(h_img); free(h_msk); free(h_ref); free(h_gpu); free(hist);
+                    return "allocation failed";
+                }
+                memset(h_img, 0, elems * sizeof(uint16_t));
+                memset(h_msk, 0, elems * sizeof(uint16_t));
+
+                fill_banded(h_img, width, height, stride, p,
+                            555u + ci * 37u + p, v_band_base, v_band_size);
+                fill_mask(h_msk, width, height, stride, mmode,
+                          888u + ci * 41u + mmode);
+
+                ref_calculate_c_values(h_img, h_msk, stride, h_ref, hist,
+                                       (uint16_t)win, num_diffs, tvi_for_diff,
+                                       vlt_luma, diff_weights, all_diffs,
+                                       width, height);
+
+                CUdeviceptr d_img, d_msk, d_cv;
+                CU_CHECK(cuMemAlloc(&d_img, elems * sizeof(uint16_t)));
+                CU_CHECK(cuMemAlloc(&d_msk, elems * sizeof(uint16_t)));
+                CU_CHECK(cuMemAlloc(&d_cv, cv_elems * sizeof(float)));
+                CU_CHECK(cuMemcpyHtoD(d_img, h_img, elems * sizeof(uint16_t)));
+                CU_CHECK(cuMemcpyHtoD(d_msk, h_msk, elems * sizeof(uint16_t)));
+                CU_CHECK(cuMemsetD8(d_cv, 0xAB, cv_elems * sizeof(float)));
+
+                int w = width, h = height, padk = pad, nd = num_diffs;
+                unsigned int vbb = v_band_base, vbs = v_band_size;
+                int vlt = vlt_luma;
+                ptrdiff_t ss = stride;
+                void *args[] = { &d_img, &d_msk, &d_cv, &w, &h, &ss, &padk,
+                                 &nd, &vbb, &vbs, &vlt,
+                                 &d_tvi, &d_dw, &d_ad, &d_lut };
+
+                const unsigned bx = 32, by = 8;
+                CU_CHECK(cuLaunchKernel(kernel,
+                                        (width + bx - 1) / bx,
+                                        (height + by - 1) / by, 1,
+                                        bx, by, 1, 0, NULL, args, NULL));
+                CU_CHECK(cuCtxSynchronize());
+                CU_CHECK(cuMemcpyDtoH(h_gpu, d_cv, cv_elems * sizeof(float)));
+
+                unsigned long mismatch = 0;
+                int first_r = 0, first_c = 0;
+                bool have_first = false;
+                for (int i = 0; i < height; i++) {
+                    for (int j = 0; j < width; j++) {
+                        size_t k = (size_t)i * width + j;
+                        /* Bit-exact: same integer product, same single
+                         * multiply, same LUT entry. Compare the bits. */
+                        if (memcmp(&h_gpu[k], &h_ref[k], sizeof(float)) != 0) {
+                            if (!have_first) {
+                                first_r = i; first_c = j; have_first = true;
+                            }
+                            mismatch++;
+                        }
+                    }
+                }
+                if (mismatch) {
+                    size_t fk = (size_t)first_r * width + first_c;
+                    fprintf(stderr,
+                            "\n  %dx%d win=%d pattern=%d mask=%d: %lu / %zu "
+                            "mismatch, first at (row %d, col %d): "
+                            "cpu=%.9g gpu=%.9g\n",
+                            width, height, win, p, mmode, mismatch, cv_elems,
+                            first_r, first_c, h_ref[fk], h_gpu[fk]);
+                }
+                total_mismatch += mismatch;
+
+                cuMemFree(d_img); cuMemFree(d_msk); cuMemFree(d_cv);
+                free(h_img); free(h_msk); free(h_ref); free(h_gpu); free(hist);
+            }
+        }
+    }
+
+    cuMemFree(d_tvi); cuMemFree(d_dw); cuMemFree(d_ad); cuMemFree(d_lut);
+    cuModuleUnload(module);
+    cuDevicePrimaryCtxRelease(dev);
+
+    mu_assert("cambi c_values: CUDA diverges from CPU reference",
+              total_mismatch == 0);
+    return NULL;
+}
+
 char *run_tests(void)
 {
     mu_run_test(test_cambi_derivative_cuda);
     mu_run_test(test_cambi_decimate_cuda);
     mu_run_test(test_cambi_filter_mode_cuda);
     mu_run_test(test_cambi_spatial_mask_cuda);
+    mu_run_test(test_cambi_c_values_cuda);
     return NULL;
 }
