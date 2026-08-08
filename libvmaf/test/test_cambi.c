@@ -307,26 +307,26 @@ static char *test_filter_mode()
 
 static char *test_get_mask_index()
 {
-    uint16_t index = get_mask_index(3840, 2160, 7);
-    mu_assert("get_mask_index wrong index for (3840, 2160)", index==24);
-    index = get_mask_index(2560, 1440, 7);
-    mu_assert("get_mask_index wrong index for (2560, 1440)", index==22);
-    index = get_mask_index(1980, 1080, 7);
-    mu_assert("get_mask_index wrong index for (1980, 1080)", index==21);
-    index = get_mask_index(1280, 720, 7);
-    mu_assert("get_mask_index wrong index for (1280, 720)", index==19);
-    index = get_mask_index(960, 540, 7);
-    mu_assert("get_mask_index wrong index for (960, 540)", index==18);
-    index = get_mask_index(640, 360, 7);
-    mu_assert("get_mask_index wrong index for (640, 360)", index==16);
-    index = get_mask_index(480, 270, 7);
-    mu_assert("get_mask_index wrong index for (480, 270)", index==15);
-    index = get_mask_index(320, 180, 7);
-    mu_assert("get_mask_index wrong index for (320, 180)", index==13);
-    index = get_mask_index(6000, 4000, 7);
-    mu_assert("get_mask_index wrong index for (6000, 4000)", index==27);
-    index = get_mask_index(960, 540, 5);
-    mu_assert("get_mask_index wrong index for (960, 540)", index==6);
+    uint16_t index = cambi_get_mask_index(3840, 2160, 7);
+    mu_assert("cambi_get_mask_index wrong index for (3840, 2160)", index==24);
+    index = cambi_get_mask_index(2560, 1440, 7);
+    mu_assert("cambi_get_mask_index wrong index for (2560, 1440)", index==22);
+    index = cambi_get_mask_index(1980, 1080, 7);
+    mu_assert("cambi_get_mask_index wrong index for (1980, 1080)", index==21);
+    index = cambi_get_mask_index(1280, 720, 7);
+    mu_assert("cambi_get_mask_index wrong index for (1280, 720)", index==19);
+    index = cambi_get_mask_index(960, 540, 7);
+    mu_assert("cambi_get_mask_index wrong index for (960, 540)", index==18);
+    index = cambi_get_mask_index(640, 360, 7);
+    mu_assert("cambi_get_mask_index wrong index for (640, 360)", index==16);
+    index = cambi_get_mask_index(480, 270, 7);
+    mu_assert("cambi_get_mask_index wrong index for (480, 270)", index==15);
+    index = cambi_get_mask_index(320, 180, 7);
+    mu_assert("cambi_get_mask_index wrong index for (320, 180)", index==13);
+    index = cambi_get_mask_index(6000, 4000, 7);
+    mu_assert("cambi_get_mask_index wrong index for (6000, 4000)", index==27);
+    index = cambi_get_mask_index(960, 540, 5);
+    mu_assert("cambi_get_mask_index wrong index for (960, 540)", index==6);
     return NULL;
 }
 
@@ -390,7 +390,7 @@ static char *test_calculate_c_values()
     int *all_diffs = NULL;
     int err = 0;
 
-    set_contrast_arrays(num_diffs, &diffs_to_consider, &diff_weights, &all_diffs);
+    cambi_set_contrast_arrays(num_diffs, &diffs_to_consider, &diff_weights, &all_diffs);
     err |= get_sample_image(&input, 0);
     mu_assert("test_calculate_c_values alloc #1 error", !err);
     err |= get_sample_image(&mask, 8);
@@ -485,17 +485,17 @@ static char *test_spatial_pooling()
 {
     float arr[12] = {0, 1, 2, 3, 4, 5, 10, 7, 8, 9, 6, 11};
 
-    double average = spatial_pooling(arr, 0, 4, 3);
-    mu_assert("spatial_pooling for topk=0", average==11);
+    double average = cambi_spatial_pooling(arr, 0, 4, 3);
+    mu_assert("cambi_spatial_pooling for topk=0", average==11);
 
-    average = spatial_pooling(arr, 0.1, 4, 3);
-    mu_assert("spatial_pooling for topk=0.1", average==11);
+    average = cambi_spatial_pooling(arr, 0.1, 4, 3);
+    mu_assert("cambi_spatial_pooling for topk=0.1", average==11);
 
-    average = spatial_pooling(arr, 0.2, 4, 3);
-    mu_assert("spatial_pooling for topk=0.2", average==10.5);
+    average = cambi_spatial_pooling(arr, 0.2, 4, 3);
+    mu_assert("cambi_spatial_pooling for topk=0.2", average==10.5);
 
-    average = spatial_pooling(arr, 1.0, 4, 3);
-    mu_assert("spatial_pooling for topk=1.0", average==5.5);
+    average = cambi_spatial_pooling(arr, 1.0, 4, 3);
+    mu_assert("cambi_spatial_pooling for topk=1.0", average==5.5);
 
     return NULL;
 }
@@ -538,11 +538,11 @@ static char *test_average_topk_elements()
 static char *test_get_pixels_in_window()
 {
     uint16_t pixels_in_window;
-    pixels_in_window = get_pixels_in_window(62);
+    pixels_in_window = cambi_get_pixels_in_window(62);
     mu_assert("pixels_in_window for length 62", pixels_in_window==3969);
-    pixels_in_window = get_pixels_in_window(63);
+    pixels_in_window = cambi_get_pixels_in_window(63);
     mu_assert("pixels_in_window for length 63", pixels_in_window==3969);
-    pixels_in_window = get_pixels_in_window(65);
+    pixels_in_window = cambi_get_pixels_in_window(65);
     mu_assert("pixels_in_window for length 65", pixels_in_window==4225);
     return NULL;
 }
@@ -550,8 +550,8 @@ static char *test_get_pixels_in_window()
 static char *test_weight_scores_per_scale()
 {
     double scores_per_scale[NUM_SCALES] = {10000, 1000, 100, 10, 1};
-    double score = weight_scores_per_scale(scores_per_scale, (uint16_t) 10);
-    mu_assert("weight_scores_per_scale cambi score", almost_equal(score, 16842.1));
+    double score = cambi_weight_scores_per_scale(scores_per_scale, (uint16_t) 10);
+    mu_assert("cambi_weight_scores_per_scale cambi score", almost_equal(score, 16842.1));
     return NULL;
 }
 
@@ -559,60 +559,60 @@ static char *test_adjust_window_size()
 {
     bool cambi_high_res_speedup = false;
     uint16_t window_size = 63;
-    adjust_window_size(&window_size, 3840, 2160, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 3840, 2160, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(3840, 2160), ws=63", window_size==63);
 
     window_size = 63;
-    adjust_window_size(&window_size, 2560, 1440, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 2560, 1440, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(2560, 1440), ws=63", window_size==43);
 
     window_size = 63;
-    adjust_window_size(&window_size, 1920, 1080, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 1920, 1080, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(1920, 1080), ws=63", window_size==31);
 
     window_size = 63;
-    adjust_window_size(&window_size, 1280, 720, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 1280, 720, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(1280, 720), ws=63", window_size==21);
 
     window_size = 63;
-    adjust_window_size(&window_size, 960, 540, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 960, 540, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(960, 540), ws=63", window_size==15);
 
     window_size = 63;
-    adjust_window_size(&window_size, 640, 360, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 640, 360, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(640, 360), ws=63", window_size==11);
 
     window_size = 63;
-    adjust_window_size(&window_size, 480, 270, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 480, 270, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(480, 270), ws=63", window_size==7);
 
     window_size = 63;
-    adjust_window_size(&window_size, 320, 180, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 320, 180, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(320, 180), ws=63", window_size==5);
 
     window_size = 63;
-    adjust_window_size(&window_size, 6000, 4000, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 6000, 4000, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(6000, 4000), ws=63", window_size==105);
 
     window_size = 60;
-    adjust_window_size(&window_size, 1920, 1080, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 1920, 1080, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(1920, 1080), ws=60", window_size==31);
 
     window_size = 31;
-    adjust_window_size(&window_size, 1280, 720, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 1280, 720, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(1280, 720), ws=31", window_size==11);
 
     cambi_high_res_speedup = true;
     window_size = 63;
-    adjust_window_size(&window_size, 3840, 2160, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 3840, 2160, cambi_high_res_speedup);
     mu_assert("adjusted window size for (3840, 2160), ws=63, cambi_high_res_speedup", window_size==33);
 
     window_size = 63;
-    adjust_window_size(&window_size, 2560, 1440, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 2560, 1440, cambi_high_res_speedup);
     mu_assert("adjusted window size for (2560, 1440), ws=63, cambi_high_res_speedup", window_size==21);
 
     window_size = 63;
-    adjust_window_size(&window_size, 6000, 4000, cambi_high_res_speedup);
+    cambi_adjust_window_size(&window_size, 6000, 4000, cambi_high_res_speedup);
     mu_assert("adjusted window size for (6000, 4000), ws=63, cambi_high_res_speedup", window_size==53);
 
     return NULL;
@@ -625,13 +625,13 @@ static char *test_get_tvi_for_diff()
     VmafLumaRange range_10b_limited;
     vmaf_luminance_init_luma_range(&range_10b_limited, 10, VMAF_PIXEL_RANGE_LIMITED);
 
-    int tvi = get_tvi_for_diff(1, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
+    int tvi = cambi_get_tvi_for_diff(1, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_for_diff 1 and bd=10", tvi==178);
-    tvi = get_tvi_for_diff(2, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
+    tvi = cambi_get_tvi_for_diff(2, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_for_diff 2 and bd=10", tvi==305);
-    tvi = get_tvi_for_diff(3, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
+    tvi = cambi_get_tvi_for_diff(3, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_for_diff 3 and bd=10", tvi==432);
-    tvi = get_tvi_for_diff(4, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
+    tvi = cambi_get_tvi_for_diff(4, 0.019, 10, range_10b_limited, vmaf_luminance_bt1886_eotf);
     mu_assert("tvi_for_diff 4 and bd=10", tvi==559);
 
     return NULL;
@@ -669,17 +669,17 @@ static char *test_set_contrast_arrays()
     int expected_all_diffs_4[9] = {-4, -3, -2, -1, 0, 1, 2, 3, 4};
 
     int num_diffs = (1<<max_log_diff);
-    set_contrast_arrays(num_diffs, &diffs_to_consider, &diffs_weights, &all_diffs);
+    cambi_set_contrast_arrays(num_diffs, &diffs_to_consider, &diffs_weights, &all_diffs);
 
     for (int i=0; i < num_diffs; i++) {
-        mu_assert("set_contrast_arrays max_log_diff 2, error at diffs_to_consider",
+        mu_assert("cambi_set_contrast_arrays max_log_diff 2, error at diffs_to_consider",
                    expected_diffs_to_consider_4[i] == diffs_to_consider[i]);
-        mu_assert("set_contrast_arrays max_log_diff 2, error at diffs_weights",
+        mu_assert("cambi_set_contrast_arrays max_log_diff 2, error at diffs_weights",
                    expected_diffs_weights_4[i] == diffs_weights[i]);
     }
 
     for (int i=0; i < 2*num_diffs + 1; i++) {
-        mu_assert("set_contrast_arrays max_log_diff 2, error at all_diffs",
+        mu_assert("cambi_set_contrast_arrays max_log_diff 2, error at all_diffs",
                    expected_all_diffs_4[i] == all_diffs[i]);
     }
 
@@ -693,17 +693,17 @@ static char *test_set_contrast_arrays()
     int expected_all_diffs_8[17] = {-8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8};
 
     num_diffs = (1<<max_log_diff);
-    set_contrast_arrays(num_diffs, &diffs_to_consider, &diffs_weights, &all_diffs);
+    cambi_set_contrast_arrays(num_diffs, &diffs_to_consider, &diffs_weights, &all_diffs);
 
     for (int i=0; i < num_diffs; i++) {
-        mu_assert("set_contrast_arrays max_log_diff 3, error at diffs_to_consider",
+        mu_assert("cambi_set_contrast_arrays max_log_diff 3, error at diffs_to_consider",
                    expected_diffs_to_consider_8[i] == diffs_to_consider[i]);
-        mu_assert("set_contrast_arrays max_log_diff 3, error at diffs_weights",
+        mu_assert("cambi_set_contrast_arrays max_log_diff 3, error at diffs_weights",
                    expected_diffs_weights_8[i] == diffs_weights[i]);
     }
 
     for (int i=0; i < 2*num_diffs + 1; i++) {
-        mu_assert("set_contrast_arrays max_log_diff 3, error at all_diffs",
+        mu_assert("cambi_set_contrast_arrays max_log_diff 3, error at all_diffs",
                    expected_all_diffs_8[i] == all_diffs[i]);
     }
 
@@ -739,8 +739,8 @@ static char *test_get_vlt_luma()
     VmafEOTF eotf_bt1886;
     vmaf_luminance_init_eotf(&eotf_bt1886, "bt1886");
 
-    mu_assert("vlt_luma for visibility_luminance_threshold 0", get_vlt_luma(0.0, range_10b_limited, eotf_bt1886) == 0);
-    mu_assert("vlt_luma for visibility_luminance_threshold 0.06", get_vlt_luma(0.06, range_10b_limited, eotf_bt1886) == 78);
+    mu_assert("vlt_luma for visibility_luminance_threshold 0", cambi_get_vlt_luma(0.0, range_10b_limited, eotf_bt1886) == 0);
+    mu_assert("vlt_luma for visibility_luminance_threshold 0.06", cambi_get_vlt_luma(0.06, range_10b_limited, eotf_bt1886) == 78);
     return NULL;
 }
 
