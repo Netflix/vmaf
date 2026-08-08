@@ -23,7 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <cuda.h>
+#include <ffnvcodec/dynlink_cuda.h>
+#include <ffnvcodec/dynlink_loader.h>
 
 #include "test.h"
 #include "feature/cuda/cambi_cuda.h"
@@ -87,12 +88,25 @@ static void fill_pattern(uint16_t *buf, int width, int height,
     }
 }
 
+/* libvmaf reaches the driver API through the ffnvcodec dynlink loader rather
+ * than linking the CUDA toolkit, so a build machine needs only
+ * nv-codec-headers and not a full toolkit install. The test follows the same
+ * rule: CU_CHECK takes a bare driver call and dispatches it through the
+ * loaded function table, mirroring CHECK_CUDA in src/cuda/cuda_helper.cuh. */
+static CudaFunctions *g_cu_f = NULL;
+
+static int cambi_test_cuda_load(void)
+{
+    if (g_cu_f) return 0;
+    return cuda_load_functions(&g_cu_f, NULL /* log_ctx */);
+}
+
 #define CU_CHECK(call)                                                    \
     do {                                                                  \
-        CUresult _e = (call);                                             \
+        CUresult _e = g_cu_f->call;                                       \
         if (_e != CUDA_SUCCESS) {                                         \
             const char *_n = NULL;                                        \
-            cuGetErrorName(_e, &_n);                                      \
+            g_cu_f->cuGetErrorName(_e, &_n);                              \
             fprintf(stderr, "\n  %s failed: %s\n", #call, _n ? _n : "?"); \
             return "cuda driver call failed";                             \
         }                                                                 \
@@ -109,12 +123,15 @@ static char *test_cambi_derivative_cuda(void)
     };
     const int n_dims = (int)(sizeof(dims) / sizeof(dims[0]));
 
+    if (cambi_test_cuda_load() < 0)
+        return "could not load the CUDA driver API "
+               "(is a driver installed?)";
     CU_CHECK(cuInit(0));
     CUdevice dev;
     CU_CHECK(cuDeviceGet(&dev, 0));
     CUcontext ctx;
     CU_CHECK(cuDevicePrimaryCtxRetain(&ctx, dev));
-    CU_CHECK(cuCtxSetCurrent(ctx));
+    CU_CHECK(cuCtxPushCurrent(ctx));
 
     CUmodule module;
     CU_CHECK(cuModuleLoadData(&module, cambi_derivative_ptx));
@@ -151,8 +168,8 @@ static char *test_cambi_derivative_cuda(void)
             CUdeviceptr d_img, d_out;
             CU_CHECK(cuMemAlloc(&d_img, img_elems * sizeof(uint16_t)));
             CU_CHECK(cuMemAlloc(&d_out, out_elems * sizeof(uint16_t)));
-            CU_CHECK(cuMemcpyHtoD(d_img, h_img, img_elems * sizeof(uint16_t)));
-            CU_CHECK(cuMemsetD8(d_out, 0xAB, out_elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemcpyHtoDAsync(d_img, h_img, img_elems * sizeof(uint16_t), 0));
+            CU_CHECK(cuMemsetD8Async(d_out, 0xAB, out_elems * sizeof(uint16_t), 0));
 
             int w = width, h = height;
             ptrdiff_t src_stride = stride, dst_stride = width;
@@ -163,7 +180,8 @@ static char *test_cambi_derivative_cuda(void)
                                     (width + bx - 1) / bx, (height + by - 1) / by, 1,
                                     bx, by, 1, 0, NULL, args, NULL));
             CU_CHECK(cuCtxSynchronize());
-            CU_CHECK(cuMemcpyDtoH(h_gpu, d_out, out_elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemcpyDtoHAsync(h_gpu, d_out, out_elems * sizeof(uint16_t), 0));
+            CU_CHECK(cuCtxSynchronize());
 
             unsigned long mismatch = 0;
             size_t first = (size_t)-1;
@@ -183,14 +201,14 @@ static char *test_cambi_derivative_cuda(void)
             }
             total_mismatch += mismatch;
 
-            cuMemFree(d_img);
-            cuMemFree(d_out);
+            g_cu_f->cuMemFree(d_img);
+            g_cu_f->cuMemFree(d_out);
             free(h_img); free(h_ref); free(h_gpu);
         }
     }
 
-    cuModuleUnload(module);
-    cuDevicePrimaryCtxRelease(dev);
+    g_cu_f->cuCtxPopCurrent(NULL);
+    g_cu_f->cuDevicePrimaryCtxRelease(dev);
 
     mu_assert("cambi derivative: CUDA diverges from CPU reference",
               total_mismatch == 0);
@@ -222,12 +240,15 @@ static char *test_cambi_decimate_cuda(void)
     };
     const int n_dims = (int)(sizeof(dims) / sizeof(dims[0]));
 
+    if (cambi_test_cuda_load() < 0)
+        return "could not load the CUDA driver API "
+               "(is a driver installed?)";
     CU_CHECK(cuInit(0));
     CUdevice dev;
     CU_CHECK(cuDeviceGet(&dev, 0));
     CUcontext ctx;
     CU_CHECK(cuDevicePrimaryCtxRetain(&ctx, dev));
-    CU_CHECK(cuCtxSetCurrent(ctx));
+    CU_CHECK(cuCtxPushCurrent(ctx));
 
     CUmodule module;
     CU_CHECK(cuModuleLoadData(&module, cambi_decimate_ptx));
@@ -266,8 +287,8 @@ static char *test_cambi_decimate_cuda(void)
             CUdeviceptr d_src, d_dst;
             CU_CHECK(cuMemAlloc(&d_src, src_elems * sizeof(uint16_t)));
             CU_CHECK(cuMemAlloc(&d_dst, dst_elems * sizeof(uint16_t)));
-            CU_CHECK(cuMemcpyHtoD(d_src, h_src, src_elems * sizeof(uint16_t)));
-            CU_CHECK(cuMemsetD8(d_dst, 0xAB, dst_elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemcpyHtoDAsync(d_src, h_src, src_elems * sizeof(uint16_t), 0));
+            CU_CHECK(cuMemsetD8Async(d_dst, 0xAB, dst_elems * sizeof(uint16_t), 0));
 
             int w = width, h = height;
             ptrdiff_t ss = src_stride, ds = dst_stride;
@@ -279,7 +300,8 @@ static char *test_cambi_decimate_cuda(void)
                                     (height + by - 1) / by, 1,
                                     bx, by, 1, 0, NULL, args, NULL));
             CU_CHECK(cuCtxSynchronize());
-            CU_CHECK(cuMemcpyDtoH(h_gpu, d_dst, dst_elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemcpyDtoHAsync(h_gpu, d_dst, dst_elems * sizeof(uint16_t), 0));
+            CU_CHECK(cuCtxSynchronize());
 
             unsigned long mismatch = 0;
             size_t first_r = 0, first_c = 0;
@@ -307,14 +329,14 @@ static char *test_cambi_decimate_cuda(void)
             }
             total_mismatch += mismatch;
 
-            cuMemFree(d_src);
-            cuMemFree(d_dst);
+            g_cu_f->cuMemFree(d_src);
+            g_cu_f->cuMemFree(d_dst);
             free(h_src); free(h_ref); free(h_gpu);
         }
     }
 
-    cuModuleUnload(module);
-    cuDevicePrimaryCtxRelease(dev);
+    g_cu_f->cuCtxPopCurrent(NULL);
+    g_cu_f->cuDevicePrimaryCtxRelease(dev);
 
     mu_assert("cambi decimate: CUDA diverges from CPU reference",
               total_mismatch == 0);
@@ -375,12 +397,15 @@ static char *test_cambi_filter_mode_cuda(void)
     };
     const int n_dims = (int)(sizeof(dims) / sizeof(dims[0]));
 
+    if (cambi_test_cuda_load() < 0)
+        return "could not load the CUDA driver API "
+               "(is a driver installed?)";
     CU_CHECK(cuInit(0));
     CUdevice dev;
     CU_CHECK(cuDeviceGet(&dev, 0));
     CUcontext ctx;
     CU_CHECK(cuDevicePrimaryCtxRetain(&ctx, dev));
-    CU_CHECK(cuCtxSetCurrent(ctx));
+    CU_CHECK(cuCtxPushCurrent(ctx));
 
     CUmodule module;
     CU_CHECK(cuModuleLoadData(&module, cambi_filter_mode_ptx));
@@ -420,9 +445,9 @@ static char *test_cambi_filter_mode_cuda(void)
             CU_CHECK(cuMemAlloc(&d_src, elems * sizeof(uint16_t)));
             CU_CHECK(cuMemAlloc(&d_tmp, tmp_elems * sizeof(uint16_t)));
             CU_CHECK(cuMemAlloc(&d_dst, elems * sizeof(uint16_t)));
-            CU_CHECK(cuMemcpyHtoD(d_src, h_src, elems * sizeof(uint16_t)));
-            CU_CHECK(cuMemsetD8(d_tmp, 0xAB, tmp_elems * sizeof(uint16_t)));
-            CU_CHECK(cuMemsetD8(d_dst, 0xAB, elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemcpyHtoDAsync(d_src, h_src, elems * sizeof(uint16_t), 0));
+            CU_CHECK(cuMemsetD8Async(d_tmp, 0xAB, tmp_elems * sizeof(uint16_t), 0));
+            CU_CHECK(cuMemsetD8Async(d_dst, 0xAB, elems * sizeof(uint16_t), 0));
 
             int w = width, h = height;
             ptrdiff_t ss = stride, ts = tmp_stride, ds = stride;
@@ -440,7 +465,8 @@ static char *test_cambi_filter_mode_cuda(void)
                                     0, NULL, args_v, NULL));
 
             CU_CHECK(cuCtxSynchronize());
-            CU_CHECK(cuMemcpyDtoH(h_gpu, d_dst, elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemcpyDtoHAsync(h_gpu, d_dst, elems * sizeof(uint16_t), 0));
+            CU_CHECK(cuCtxSynchronize());
 
             unsigned long mismatch = 0;
             int first_r = 0, first_c = 0;
@@ -466,15 +492,15 @@ static char *test_cambi_filter_mode_cuda(void)
             }
             total_mismatch += mismatch;
 
-            cuMemFree(d_src);
-            cuMemFree(d_tmp);
-            cuMemFree(d_dst);
+            g_cu_f->cuMemFree(d_src);
+            g_cu_f->cuMemFree(d_tmp);
+            g_cu_f->cuMemFree(d_dst);
             free(h_src); free(h_ref); free(h_gpu); free(scratch);
         }
     }
 
-    cuModuleUnload(module);
-    cuDevicePrimaryCtxRelease(dev);
+    g_cu_f->cuCtxPopCurrent(NULL);
+    g_cu_f->cuDevicePrimaryCtxRelease(dev);
 
     mu_assert("cambi filter_mode: CUDA diverges from CPU reference",
               total_mismatch == 0);
@@ -602,12 +628,15 @@ static char *test_cambi_spatial_mask_cuda(void)
     const int n_dims = (int)(sizeof(dims) / sizeof(dims[0]));
     const int pad_size = REF_MASK_FILTER_SIZE >> 1;
 
+    if (cambi_test_cuda_load() < 0)
+        return "could not load the CUDA driver API "
+               "(is a driver installed?)";
     CU_CHECK(cuInit(0));
     CUdevice dev;
     CU_CHECK(cuDeviceGet(&dev, 0));
     CUcontext ctx;
     CU_CHECK(cuDevicePrimaryCtxRetain(&ctx, dev));
-    CU_CHECK(cuCtxSetCurrent(ctx));
+    CU_CHECK(cuCtxPushCurrent(ctx));
 
     CUmodule mod_deriv, mod_mask;
     CU_CHECK(cuModuleLoadData(&mod_deriv, cambi_derivative_ptx));
@@ -652,9 +681,9 @@ static char *test_cambi_spatial_mask_cuda(void)
             CU_CHECK(cuMemAlloc(&d_img, elems * sizeof(uint16_t)));
             CU_CHECK(cuMemAlloc(&d_deriv, deriv_elems * sizeof(uint16_t)));
             CU_CHECK(cuMemAlloc(&d_mask, elems * sizeof(uint16_t)));
-            CU_CHECK(cuMemcpyHtoD(d_img, h_img, elems * sizeof(uint16_t)));
-            CU_CHECK(cuMemsetD8(d_deriv, 0xAB, deriv_elems * sizeof(uint16_t)));
-            CU_CHECK(cuMemsetD8(d_mask, 0xAB, elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemcpyHtoDAsync(d_img, h_img, elems * sizeof(uint16_t), 0));
+            CU_CHECK(cuMemsetD8Async(d_deriv, 0xAB, deriv_elems * sizeof(uint16_t), 0));
+            CU_CHECK(cuMemsetD8Async(d_mask, 0xAB, elems * sizeof(uint16_t), 0));
 
             int w = width, h = height, pad = pad_size;
             unsigned int mi = mask_index;
@@ -673,7 +702,8 @@ static char *test_cambi_spatial_mask_cuda(void)
                                     0, NULL, args_m, NULL));
 
             CU_CHECK(cuCtxSynchronize());
-            CU_CHECK(cuMemcpyDtoH(h_gpu, d_mask, elems * sizeof(uint16_t)));
+            CU_CHECK(cuMemcpyDtoHAsync(h_gpu, d_mask, elems * sizeof(uint16_t), 0));
+            CU_CHECK(cuCtxSynchronize());
 
             unsigned long mismatch = 0;
             int first_r = 0, first_c = 0;
@@ -701,14 +731,13 @@ static char *test_cambi_spatial_mask_cuda(void)
             }
             total_mismatch += mismatch;
 
-            cuMemFree(d_img); cuMemFree(d_deriv); cuMemFree(d_mask);
+            g_cu_f->cuMemFree(d_img); g_cu_f->cuMemFree(d_deriv); g_cu_f->cuMemFree(d_mask);
             free(h_img); free(h_ref); free(h_gpu); free(dp); free(dbuf);
         }
     }
 
-    cuModuleUnload(mod_deriv);
-    cuModuleUnload(mod_mask);
-    cuDevicePrimaryCtxRelease(dev);
+    g_cu_f->cuCtxPopCurrent(NULL);
+    g_cu_f->cuDevicePrimaryCtxRelease(dev);
 
     mu_assert("cambi spatial_mask: CUDA diverges from CPU reference",
               total_mismatch == 0);
@@ -898,12 +927,15 @@ static char *test_cambi_c_values_cuda(void)
     const uint16_t v_band_base = v_lo_signed > 0 ? (uint16_t)v_lo_signed : 0;
     const uint16_t v_band_size = tvi_for_diff[num_diffs - 1] + 1 - v_band_base;
 
+    if (cambi_test_cuda_load() < 0)
+        return "could not load the CUDA driver API "
+               "(is a driver installed?)";
     CU_CHECK(cuInit(0));
     CUdevice dev;
     CU_CHECK(cuDeviceGet(&dev, 0));
     CUcontext ctx;
     CU_CHECK(cuDevicePrimaryCtxRetain(&ctx, dev));
-    CU_CHECK(cuCtxSetCurrent(ctx));
+    CU_CHECK(cuCtxPushCurrent(ctx));
 
     CUmodule module;
     CU_CHECK(cuModuleLoadData(&module, cambi_c_values_ptx));
@@ -916,11 +948,11 @@ static char *test_cambi_c_values_cuda(void)
     CU_CHECK(cuMemAlloc(&d_dw, sizeof(diff_weights)));
     CU_CHECK(cuMemAlloc(&d_ad, sizeof(all_diffs)));
     CU_CHECK(cuMemAlloc(&d_lut, sizeof(float) * CAMBI_RECIPROCAL_LUT_SIZE));
-    CU_CHECK(cuMemcpyHtoD(d_tvi, tvi_for_diff, sizeof(tvi_for_diff)));
-    CU_CHECK(cuMemcpyHtoD(d_dw, diff_weights, sizeof(diff_weights)));
-    CU_CHECK(cuMemcpyHtoD(d_ad, all_diffs, sizeof(all_diffs)));
-    CU_CHECK(cuMemcpyHtoD(d_lut, reciprocal_lut,
-                          sizeof(float) * CAMBI_RECIPROCAL_LUT_SIZE));
+    CU_CHECK(cuMemcpyHtoDAsync(d_tvi, tvi_for_diff, sizeof(tvi_for_diff), 0));
+    CU_CHECK(cuMemcpyHtoDAsync(d_dw, diff_weights, sizeof(diff_weights), 0));
+    CU_CHECK(cuMemcpyHtoDAsync(d_ad, all_diffs, sizeof(all_diffs), 0));
+    CU_CHECK(cuMemcpyHtoDAsync(d_lut, reciprocal_lut,
+                          sizeof(float) * CAMBI_RECIPROCAL_LUT_SIZE, 0));
 
     unsigned long total_mismatch = 0;
 
@@ -961,9 +993,9 @@ static char *test_cambi_c_values_cuda(void)
                 CU_CHECK(cuMemAlloc(&d_img, elems * sizeof(uint16_t)));
                 CU_CHECK(cuMemAlloc(&d_msk, elems * sizeof(uint16_t)));
                 CU_CHECK(cuMemAlloc(&d_cv, cv_elems * sizeof(float)));
-                CU_CHECK(cuMemcpyHtoD(d_img, h_img, elems * sizeof(uint16_t)));
-                CU_CHECK(cuMemcpyHtoD(d_msk, h_msk, elems * sizeof(uint16_t)));
-                CU_CHECK(cuMemsetD8(d_cv, 0xAB, cv_elems * sizeof(float)));
+                CU_CHECK(cuMemcpyHtoDAsync(d_img, h_img, elems * sizeof(uint16_t), 0));
+                CU_CHECK(cuMemcpyHtoDAsync(d_msk, h_msk, elems * sizeof(uint16_t), 0));
+                CU_CHECK(cuMemsetD8Async(d_cv, 0xAB, cv_elems * sizeof(float), 0));
 
                 int w = width, h = height, padk = pad, nd = num_diffs;
                 unsigned int vbb = v_band_base, vbs = v_band_size;
@@ -979,7 +1011,8 @@ static char *test_cambi_c_values_cuda(void)
                                         (height + by - 1) / by, 1,
                                         bx, by, 1, 0, NULL, args, NULL));
                 CU_CHECK(cuCtxSynchronize());
-                CU_CHECK(cuMemcpyDtoH(h_gpu, d_cv, cv_elems * sizeof(float)));
+                CU_CHECK(cuMemcpyDtoHAsync(h_gpu, d_cv, cv_elems * sizeof(float), 0));
+                CU_CHECK(cuCtxSynchronize());
 
                 unsigned long mismatch = 0;
                 int first_r = 0, first_c = 0;
@@ -1008,15 +1041,15 @@ static char *test_cambi_c_values_cuda(void)
                 }
                 total_mismatch += mismatch;
 
-                cuMemFree(d_img); cuMemFree(d_msk); cuMemFree(d_cv);
+                g_cu_f->cuMemFree(d_img); g_cu_f->cuMemFree(d_msk); g_cu_f->cuMemFree(d_cv);
                 free(h_img); free(h_msk); free(h_ref); free(h_gpu); free(hist);
             }
         }
     }
 
-    cuMemFree(d_tvi); cuMemFree(d_dw); cuMemFree(d_ad); cuMemFree(d_lut);
-    cuModuleUnload(module);
-    cuDevicePrimaryCtxRelease(dev);
+    g_cu_f->cuMemFree(d_tvi); g_cu_f->cuMemFree(d_dw); g_cu_f->cuMemFree(d_ad); g_cu_f->cuMemFree(d_lut);
+    g_cu_f->cuCtxPopCurrent(NULL);
+    g_cu_f->cuDevicePrimaryCtxRelease(dev);
 
     mu_assert("cambi c_values: CUDA diverges from CPU reference",
               total_mismatch == 0);

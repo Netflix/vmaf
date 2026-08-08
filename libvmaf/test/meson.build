@@ -234,9 +234,9 @@ if is_cuda_enabled
                                include_directories('../src'),
                                include_directories('../src/feature'),
                                include_directories('../src/cuda'),
-                               include_directories('/usr/local/cuda/include')],
+                               ],
         dependencies : [cuda_dependency],
-        link_args : ['-L/usr/local/cuda/lib64/stubs', '-lcuda'],
+        link_args : ['-ldl'],
     )
     test('cambi_cuda', test_cambi_cuda)
 endif

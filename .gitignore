@@ -14,7 +14,3 @@ build/
 dist/
 vmaf_output.xml
 compile_commands.json
-
-# local test media (regenerate with ffmpeg)
-*.y4m
-*.mp4
