@@ -25,6 +25,10 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef _MSC_VER
+// MSVC needs this to get M_PI defined in math.h
+#define _USE_MATH_DEFINES
+#endif
 #include <math.h>
 #include <string.h>
 
@@ -34,10 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define KERNEL_SHIFT (8)
 #define KERNEL_WEIGHT (1<<KERNEL_SHIFT)
 #define KERNEL_ROUND ((1<<KERNEL_SHIFT)>>1)
-
-#ifndef M_PI
-#define M_PI 3.141592653589793238462643
-#endif
 
 static int gaussian_filter_init(unsigned **_kernel,double _sigma,int _max_len){
   unsigned *kernel;

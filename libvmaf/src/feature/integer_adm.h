@@ -4,6 +4,10 @@
 #include "mem.h"
 #include "stdio.h"
 #include <errno.h>
+#ifdef _MSC_VER
+// MSVC needs this to get M_PI defined in math.h
+#define _USE_MATH_DEFINES
+#endif
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
@@ -63,10 +67,6 @@ typedef struct AdmBuffer {
 #ifndef NUM_BUFS_ADM
 #define NUM_BUFS_ADM 30
 #endif
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338327
-#endif // M_PI
 
 /* Enhancement gain imposed on adm, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #ifndef DEFAULT_ADM_ENHN_GAIN_LIMIT
