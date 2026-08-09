@@ -47,23 +47,41 @@
  * compact_v + all_diffs[...], i.e. at most 2*num_diffs+1 bins out of
  * v_band_size -- typically 9 out of several hundred.
  *
- * So each thread scans its own window once and accumulates only those few
- * bins, as deltas relative to its own compact value. Nothing global is
- * materialised, there is no scatter, no atomics, and no row-to-row serial
- * dependency. The cost is that window pixels are re-read per output pixel;
- * with a 65x65 window that is heavy, and shared-memory tiling of the window
- * is the obvious follow-up optimisation. Correctness first.
+ * So each thread accumulates only those few bins, as deltas relative to its
+ * own compact value. Nothing global is materialised, there is no scatter, no
+ * atomics, and no row-to-row serial dependency.
+ *
+ * SHARED-MEMORY TILING
+ * --------------------
+ * Neighbouring output pixels overlap almost entirely, so the block
+ * cooperatively stages its window footprint -- blockDim plus a pad_size halo
+ * on every side -- into shared memory first. At 65x65 that turns ~4225 global
+ * loads per output pixel into ~27.
+ *
+ * The staged value is the pixel's COMPACT value, or SENTINEL when the pixel
+ * is masked out, out of band, or outside the image. Folding all three
+ * exclusions into one sentinel means the inner loop is a single compare, and
+ * one uint16 array covers what would otherwise be separate image and mask
+ * tiles. A real compact value is always < v_band_size (order 1e3), so 0xFFFF
+ * can never collide with one.
+ *
+ * Tiling cannot change the result: the accumulation is integer counting, so
+ * it is independent of traversal order.
  *
  * BIT-EXACTNESS
  * -------------
- * Counts are integers, so the box sum is exact regardless of traversal
- * order. The only float work is
+ * Counts are integers, so the box sum is exact regardless of order. The only
+ * float work is
  *     (float)(diff_weights[d] * p_0 * p_x) * reciprocal_lut[p_x + p_0]
  * which is one integer product, one conversion, one multiply -- no add, so
  * no FMA contraction is possible and the result is bit-identical to the CPU.
  *
  * Strides for image/mask are in uint16_t ELEMENTS. c_values is width-packed
  * (c_values[row * width + col]), matching the CPU.
+ *
+ * The caller must supply
+ *     (blockDim.x + 2*pad_size) * (blockDim.y + 2*pad_size) * sizeof(uint16_t)
+ * bytes of dynamic shared memory.
  */
 
 /* num_diffs is 1 << max_log_contrast. The default max_log_contrast is 2
@@ -71,6 +89,8 @@
  * MAX_NUM_DIFFS and should fall back to the CPU path instead. */
 #define CAMBI_CUDA_MAX_NUM_DIFFS 16
 #define CAMBI_CUDA_MAX_BINS (2 * CAMBI_CUDA_MAX_NUM_DIFFS + 1)
+
+#define CAMBI_CUDA_SENTINEL ((uint16_t) 0xFFFF)
 
 extern "C" {
 
@@ -87,16 +107,47 @@ __global__ void cambi_c_values_kernel(const uint16_t *image, const uint16_t *mas
                                       const int *all_diffs,
                                       const float *recip_lut)
 {
+    extern __shared__ uint16_t s_cv[];
+
+    const int tile_w = blockDim.x + 2 * pad_size;
+    const int tile_h = blockDim.y + 2 * pad_size;
+    const int origin_x = blockIdx.x * blockDim.x - pad_size;
+    const int origin_y = blockIdx.y * blockDim.y - pad_size;
+
+    /* Stage the block's footprint. Masked-out, out-of-band and out-of-image
+     * pixels all become SENTINEL so the inner loop tests once. */
+    const int nthreads = blockDim.x * blockDim.y;
+    const int tid = threadIdx.y * blockDim.x + threadIdx.x;
+    for (int idx = tid; idx < tile_w * tile_h; idx += nthreads) {
+        const int ty = idx / tile_w;
+        const int tx = idx - ty * tile_w;
+        const int gy = origin_y + ty;
+        const int gx = origin_x + tx;
+
+        uint16_t v = CAMBI_CUDA_SENTINEL;
+        if (gy >= 0 && gy < height && gx >= 0 && gx < width) {
+            const ptrdiff_t off = (ptrdiff_t) gy * stride_elems + gx;
+            if (mask[off]) {
+                const unsigned int cv =
+                    (unsigned int)(uint16_t)(image[off] - (uint16_t) v_band_base);
+                if (cv < v_band_size)
+                    v = (uint16_t) cv;
+            }
+        }
+        s_cv[idx] = v;
+    }
+    __syncthreads();
+
     const int col = blockIdx.x * blockDim.x + threadIdx.x;
     const int row = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (col >= width || row >= height)
         return;
 
-    float *out = &c_values[(ptrdiff_t)row * width + col];
+    float *out = &c_values[(ptrdiff_t) row * width + col];
 
     /* CPU memsets c_values to 0 and only assigns where the mask is set. */
-    if (!mask[(ptrdiff_t)row * stride_elems + col]) {
+    if (!mask[(ptrdiff_t) row * stride_elems + col]) {
         *out = 0.0f;
         return;
     }
@@ -105,11 +156,11 @@ __global__ void cambi_c_values_kernel(const uint16_t *image, const uint16_t *mas
      * and v_band_offset_val = v_band_base + num_diffs, so compact_v is
      * raw - v_band_base either way. Kept in adjusted space to match the
      * tvi / vlt_luma comparisons exactly. */
-    const int value_adj = (int)image[(ptrdiff_t)row * stride_elems + col] + num_diffs;
-    const int v_band_offset_val = (int)v_band_base + num_diffs;
+    const int value_adj = (int) image[(ptrdiff_t) row * stride_elems + col] + num_diffs;
+    const int v_band_offset_val = (int) v_band_base + num_diffs;
     const int compact_v_signed = value_adj - v_band_offset_val;
 
-    if ((unsigned int)compact_v_signed >= v_band_size) {
+    if ((unsigned int) compact_v_signed >= v_band_size) {
         *out = 0.0f;
         return;
     }
@@ -120,23 +171,18 @@ __global__ void cambi_c_values_kernel(const uint16_t *image, const uint16_t *mas
     for (int k = 0; k < 2 * num_diffs + 1; k++)
         cnt[k] = 0;
 
-    const int r0 = max(row - pad_size, 0);
-    const int r1 = min(row + pad_size, height - 1);
-    const int c0 = max(col - pad_size, 0);
-    const int c1 = min(col + pad_size, width - 1);
-
-    for (int r = r0; r <= r1; r++) {
-        const uint16_t *img_r = image + (ptrdiff_t)r * stride_elems;
-        const uint16_t *msk_r = mask  + (ptrdiff_t)r * stride_elems;
-        for (int c = c0; c <= c1; c++) {
-            if (!msk_r[c])
+    /* This thread's window occupies tile rows [threadIdx.y, threadIdx.y+2*pad]
+     * and tile cols [threadIdx.x, threadIdx.x+2*pad] by construction of the
+     * halo, so no clamping is needed here -- the sentinel already covers
+     * everything outside the image. */
+    const int win = 2 * pad_size + 1;
+    for (int dy = 0; dy < win; dy++) {
+        const uint16_t *trow = &s_cv[(threadIdx.y + dy) * tile_w + threadIdx.x];
+        for (int dx = 0; dx < win; dx++) {
+            const uint16_t cv = trow[dx];
+            if (cv == CAMBI_CUDA_SENTINEL)
                 continue;
-            /* Same in-band test the CPU applies before touching the
-             * histogram: out-of-band pixels are never counted. */
-            const unsigned int cv = (unsigned int)(uint16_t)(img_r[c] - (uint16_t)v_band_base);
-            if (cv >= v_band_size)
-                continue;
-            const int delta = (int)cv - compact_v_signed;
+            const int delta = (int) cv - compact_v_signed;
             if (delta >= -num_diffs && delta <= num_diffs)
                 cnt[delta + num_diffs]++;
         }
@@ -149,7 +195,7 @@ __global__ void cambi_c_values_kernel(const uint16_t *image, const uint16_t *mas
         const int off1 = all_diffs[num_diffs + d + 1];
         const int off2 = all_diffs[num_diffs - d - 1];
 
-        if ((value_adj <= (int)tvi_for_diff[d]) && ((value_adj + off1) > vlt_luma)) {
+        if ((value_adj <= (int) tvi_for_diff[d]) && ((value_adj + off1) > vlt_luma)) {
             const int idx2 = compact_v_signed + off2;
 
             /* A bin outside [-num_diffs, num_diffs] cannot have been
@@ -165,9 +211,9 @@ __global__ void cambi_c_values_kernel(const uint16_t *image, const uint16_t *mas
 
             float val;
             if (p_1 > p_2)
-                val = (float)(diff_weights[d] * (int)p_0 * (int)p_1) * recip_lut[p_1 + p_0];
+                val = (float)(diff_weights[d] * (int) p_0 * (int) p_1) * recip_lut[p_1 + p_0];
             else
-                val = (float)(diff_weights[d] * (int)p_0 * (int)p_2) * recip_lut[p_2 + p_0];
+                val = (float)(diff_weights[d] * (int) p_0 * (int) p_2) * recip_lut[p_2 + p_0];
 
             if (val > c_value)
                 c_value = val;

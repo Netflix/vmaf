@@ -1009,7 +1009,7 @@ static char *test_cambi_c_values_cuda(void)
                 CU_CHECK(cuLaunchKernel(kernel,
                                         (width + bx - 1) / bx,
                                         (height + by - 1) / by, 1,
-                                        bx, by, 1, 0, NULL, args, NULL));
+                                        bx, by, 1, (unsigned)((32 + 2 * pad) * (8 + 2 * pad) * sizeof(uint16_t)), NULL, args, NULL));
                 CU_CHECK(cuCtxSynchronize());
                 CU_CHECK(cuMemcpyDtoHAsync(h_gpu, d_cv, cv_elems * sizeof(float), 0));
                 CU_CHECK(cuCtxSynchronize());
@@ -1056,6 +1056,138 @@ static char *test_cambi_c_values_cuda(void)
     return NULL;
 }
 
+/* Replays the exact scale-0 frame captured from a live run, with the real
+ * production parameters, through both implementations. The synthetic test
+ * above supplies its own tvi/band values and so cannot reach this regime. */
+static char *test_cambi_c_values_real(void)
+{
+    /* Frame generated here rather than loaded, so this runs on any machine.
+     * Values sit in a narrow 10-bit band with block-structured steps, which
+     * is what a compressed gradient looks like and what puts the +-3/+-4
+     * offsets (the only ones the real tvi thresholds leave enabled) in
+     * range. */
+    const int width = 1920, height = 1080;
+
+    /* The real production parameters, which the synthetic sweep never uses.
+     * Note these tvi values gate d=0 and d=1 off entirely for this value
+     * range, so only the +-3 / +-4 offsets contribute -- which is exactly
+     * the regime a bug in the caller's parameters would hide in. */
+    const uint16_t window_size = 33;
+    const uint16_t num_diffs = 4;
+    const uint16_t vlt_luma = 0;
+    const uint16_t tvi_for_diff[4] = { 182, 309, 436, 563 };
+    const int diff_weights[4] = { 1, 2, 4, 8 };
+    int all_diffs[9];
+    for (int d = -4; d <= 4; d++) all_diffs[d + 4] = d;
+
+    const int v_lo_signed = (int) vlt_luma - 3 * (int) num_diffs + 1;
+    const uint16_t v_band_base = v_lo_signed > 0 ? (uint16_t) v_lo_signed : 0;
+    const uint16_t v_band_size = tvi_for_diff[num_diffs - 1] + 1 - v_band_base;
+
+    const size_t n = (size_t) width * height;
+    uint16_t *img = malloc(n * sizeof(uint16_t));
+    uint16_t *msk = malloc(n * sizeof(uint16_t));
+    float *ref = malloc(n * sizeof(float));
+    float *gpu = malloc(n * sizeof(float));
+    uint16_t *hist = calloc((size_t) width * v_band_size,
+                            sizeof(uint16_t));
+    if (!img || !msk || !ref || !gpu || !hist) {
+        free(img); free(msk); free(ref); free(gpu); free(hist);
+        return "allocation failed";
+    }
+    {
+        unsigned st = 20250808u;
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                st = st * 1103515245u + 12345u;
+                /* smooth ramp 416..448, plus an 8x8 block offset and a small
+                 * dither -- produces both +-1 neighbours and occasional
+                 * +-3/+-4 jumps at block edges */
+                int base = 416 + (j * 32) / width;
+                int blk = (int)(((i >> 3) * 31u + (j >> 3) * 17u) % 5u) - 2;
+                int dit = (int)((st >> 22) & 1u);
+                int v = base + blk + dit;
+                if (v < 416) v = 416;
+                if (v > 448) v = 448;
+                img[(size_t) i * width + j] = (uint16_t) v;
+                msk[(size_t) i * width + j] = ((st >> 18) & 31u) != 0;  /* ~97% */
+            }
+        }
+    }
+
+    ref_calculate_c_values(img, msk, width, ref, hist, window_size, num_diffs,
+                           tvi_for_diff, vlt_luma, diff_weights, all_diffs,
+                           width, height);
+
+    if (cambi_test_cuda_load() < 0)
+        return "could not load the CUDA driver API";
+    CU_CHECK(cuInit(0));
+    CUdevice dev;
+    CU_CHECK(cuDeviceGet(&dev, 0));
+    CUcontext ctx;
+    CU_CHECK(cuDevicePrimaryCtxRetain(&ctx, dev));
+    CU_CHECK(cuCtxPushCurrent(ctx));
+
+    CUmodule module;
+    CU_CHECK(cuModuleLoadData(&module, cambi_c_values_ptx));
+    CUfunction kernel;
+    CU_CHECK(cuModuleGetFunction(&kernel, module, "cambi_c_values_kernel"));
+
+    CUdeviceptr d_img, d_msk, d_cv, d_tvi, d_dw, d_ad, d_lut;
+    CU_CHECK(cuMemAlloc(&d_img, n * sizeof(uint16_t)));
+    CU_CHECK(cuMemAlloc(&d_msk, n * sizeof(uint16_t)));
+    CU_CHECK(cuMemAlloc(&d_cv, n * sizeof(float)));
+    CU_CHECK(cuMemAlloc(&d_tvi, sizeof(tvi_for_diff)));
+    CU_CHECK(cuMemAlloc(&d_dw, sizeof(diff_weights)));
+    CU_CHECK(cuMemAlloc(&d_ad, sizeof(all_diffs)));
+    CU_CHECK(cuMemAlloc(&d_lut, sizeof(float) * CAMBI_RECIPROCAL_LUT_SIZE));
+    CU_CHECK(cuMemcpyHtoDAsync(d_img, img, n * sizeof(uint16_t), 0));
+    CU_CHECK(cuMemcpyHtoDAsync(d_msk, msk, n * sizeof(uint16_t), 0));
+    CU_CHECK(cuMemcpyHtoDAsync(d_tvi, tvi_for_diff, sizeof(tvi_for_diff), 0));
+    CU_CHECK(cuMemcpyHtoDAsync(d_dw, diff_weights, sizeof(diff_weights), 0));
+    CU_CHECK(cuMemcpyHtoDAsync(d_ad, all_diffs, sizeof(all_diffs), 0));
+    CU_CHECK(cuMemcpyHtoDAsync(d_lut, reciprocal_lut,
+                               sizeof(float) * CAMBI_RECIPROCAL_LUT_SIZE, 0));
+    CU_CHECK(cuMemsetD8Async(d_cv, 0xAB, n * sizeof(float), 0));
+
+    int w = width, h = height, pad = window_size >> 1, nd = num_diffs;
+    unsigned vbb = v_band_base, vbs = v_band_size;
+    int vlt = vlt_luma;
+    ptrdiff_t st = width;
+    void *args[] = { &d_img, &d_msk, &d_cv, &w, &h, &st, &pad, &nd,
+                     &vbb, &vbs, &vlt, &d_tvi, &d_dw, &d_ad, &d_lut };
+    CU_CHECK(cuLaunchKernel(kernel, (width + 31) / 32, (height + 7) / 8, 1,
+                            32, 8, 1,
+                            (unsigned)((32 + 2 * pad) * (8 + 2 * pad) * sizeof(uint16_t)), 0, args, NULL));
+    CU_CHECK(cuCtxSynchronize());
+    CU_CHECK(cuMemcpyDtoHAsync(gpu, d_cv, n * sizeof(float), 0));
+    CU_CHECK(cuCtxSynchronize());
+
+    unsigned long mismatch = 0, ref_nz = 0, gpu_nz = 0;
+    size_t first = (size_t) -1;
+    for (size_t k = 0; k < n; k++) {
+        if (ref[k] != 0.0f) ref_nz++;
+        if (gpu[k] != 0.0f) gpu_nz++;
+        if (memcmp(&ref[k], &gpu[k], sizeof(float)) != 0) {
+            if (first == (size_t) -1) first = k;
+            mismatch++;
+        }
+    }
+    fprintf(stderr, "\n  real frame: cpu_nonzero=%lu gpu_nonzero=%lu mismatch=%lu/%zu\n",
+            ref_nz, gpu_nz, mismatch, n);
+    if (mismatch) {
+        size_t k = first;
+        fprintf(stderr, "  first at (row %zu, col %zu): cpu=%.9g gpu=%.9g "
+                        "img=%u mask=%u\n",
+                k / width, k % width, ref[k], gpu[k], img[k], msk[k]);
+    }
+
+    free(img); free(msk); free(ref); free(gpu); free(hist);
+    mu_assert("cambi c_values (real frame): CUDA diverges from CPU",
+              mismatch == 0);
+    return NULL;
+}
+
 char *run_tests(void)
 {
     mu_run_test(test_cambi_derivative_cuda);
@@ -1063,5 +1195,6 @@ char *run_tests(void)
     mu_run_test(test_cambi_filter_mode_cuda);
     mu_run_test(test_cambi_spatial_mask_cuda);
     mu_run_test(test_cambi_c_values_cuda);
+    mu_run_test(test_cambi_c_values_real);
     return NULL;
 }

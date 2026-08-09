@@ -48,6 +48,12 @@ typedef void (*VmafRangeUpdater)(uint16_t *arr, int left, int right);
 
 #define MASK_FILTER_SIZE 7
 
+#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_1080p (1920 * 1080)
+#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_1440p (2560 * 1440)
+#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_2160p (3840 * 2160)
+#define DEFAULT_CAMBI_TOPK_POOLING (0.6)
+#define DEFAULT_CAMBI_EOTF ("bt1886")
+
 typedef void (*VmafDerivativeCalculator)(const uint16_t *image_data, uint16_t *derivative_buffer, int width, int height, int row, int stride);
 typedef void (*VmafFilterMode)(const VmafPicture *image, int width, int height, uint16_t *buffer);
 typedef void (*VmafDecimate)(VmafPicture *image, unsigned width, unsigned height);

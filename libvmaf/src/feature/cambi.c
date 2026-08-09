@@ -37,7 +37,6 @@
 #endif
 
 /* Ratio of pixels for computation, must be 0 < topk <= 1.0 */
-#define DEFAULT_CAMBI_TOPK_POOLING (0.6)
 
 /* Window size to compute CAMBI: 65 corresponds to approximately 1 degree at 4k scale */
 #define DEFAULT_CAMBI_WINDOW_SIZE (65)
@@ -55,13 +54,9 @@
 #define DEFAULT_CAMBI_FULL_REF_FLAG (false)
 
 /* EOTF to use for the visibility threshold calculations. One of ['bt1886', 'pq']. Default: 'bt1886'. */
-#define DEFAULT_CAMBI_EOTF ("bt1886")
 
 /* CAMBI speed-up for resolutions >=1080p by down-scaling right after the sptial mask */
 #define DEFAULT_CAMBI_HIGH_RES_SPEEDUP (0)
-#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_1080p (1920 * 1080)
-#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_1440p (2560 * 1440)
-#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_2160p (3840 * 2160)
 
 #define CAMBI_4K_WIDTH (3840)
 #define CAMBI_4K_HEIGHT (2160)
