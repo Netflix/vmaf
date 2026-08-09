@@ -16,14 +16,14 @@
  *
  */
 
+#ifdef _MSC_VER
+// MSVC needs this to get M_PI defined in math.h
+#define _USE_MATH_DEFINES
+#endif
 #include <math.h>
 #include "common/macros.h"
 #include "barten_csf_tools.h"
 #include "adm_csf_tools.h"
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338327
-#endif
 
 #pragma once
 
