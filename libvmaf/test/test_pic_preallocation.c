@@ -23,7 +23,11 @@
 
 #include <pthread.h>
 #include <stdlib.h>
+#ifdef _MSC_VER
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 static char *test_picture_pool_basic()
 {
@@ -334,7 +338,11 @@ static void *thread_fetch_worker(void *arg)
         data->data_ptrs[i] = pic.data[0];
 
         // Simulate some work
+#ifdef _MSC_VER
+        Sleep(1);  // milliseconds; Windows has no sub-millisecond sleep
+#else
         usleep(100);  // 0.1ms
+#endif
 
         err = vmaf_picture_unref(&pic);
         if (err) {
@@ -373,8 +381,7 @@ static char *test_picture_pool_multithreaded()
     err = vmaf_preallocate_pictures(vmaf, pic_cfg);
     mu_assert("problem during vmaf_preallocate_pictures", !err);
 
-    const int num_threads = 4;
-    const int fetches_per_thread = 20;
+    enum { num_threads = 4, fetches_per_thread = 20 };
     pthread_t threads[num_threads];
     thread_test_data thread_data[num_threads];
 
@@ -414,7 +421,11 @@ static void *thread_delayed_unref(void *arg)
     VmafPicture *pic = (VmafPicture *)arg;
 
     // Hold picture for a while
+#ifdef _MSC_VER
+    Sleep(1000);
+#else
     sleep(1);
+#endif
 
     // Then return it
     vmaf_picture_unref(pic);
@@ -496,8 +507,7 @@ static char *test_picture_pool_stress()
     err = vmaf_preallocate_pictures(vmaf, pic_cfg);
     mu_assert("problem during vmaf_preallocate_pictures", !err);
 
-    const int num_threads = 16;
-    const int fetches_per_thread = 50;
+    enum { num_threads = 16, fetches_per_thread = 50 };
     pthread_t threads[num_threads];
     thread_test_data thread_data[num_threads];
 

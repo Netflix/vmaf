@@ -207,7 +207,7 @@ endif
 
 test_pic_preallocation = executable('test_pic_preallocation',
     ['test.c', 'test_pic_preallocation.c'],
-    include_directories : [libvmaf_inc, test_inc],
+    include_directories : [libvmaf_inc, test_inc, pthreadwin32_inc],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
 )
 test('test_pic_preallocation', test_pic_preallocation)
