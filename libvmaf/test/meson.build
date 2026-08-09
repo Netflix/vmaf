@@ -161,6 +161,7 @@ test_motion_blend = executable('test_motion_blend',
     ['test.c', 'test_motion_blend.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+	dependencies : [stdatomic_dependency]
 )
 
 test_speed_filter = executable('test_speed_filter',
