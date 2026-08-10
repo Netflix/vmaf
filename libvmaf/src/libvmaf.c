@@ -748,7 +748,20 @@ static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
         if (!vmaf->cuda.state.ctx)
             return -EINVAL;
         err |= vmaf_ring_buffer_fetch_next_picture(vmaf->cuda.ring_buffer, pic_device);
-        err |= vmaf_cuda_picture_upload_async(pic_device, pic, 0x1);
+        /* Upload only the planes some registered extractor actually
+         * reads. Luma has always been needed; chroma is opt-in so that
+         * luma-only pipelines do not pay for the transfer. */
+        uint8_t upload_mask = 0x1;
+        for (unsigned i = 0; i < vmaf->registered_feature_extractors.cnt; i++) {
+            VmafFeatureExtractorContext *fex_ctx =
+                vmaf->registered_feature_extractors.fex_ctx[i];
+            if (fex_ctx && fex_ctx->fex &&
+                (fex_ctx->fex->flags & VMAF_FEATURE_EXTRACTOR_CHROMA)) {
+                upload_mask |= 0x6;
+                break;
+            }
+        }
+        err |= vmaf_cuda_picture_upload_async(pic_device, pic, upload_mask);
         if (err) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                     "problem moving host pic into cuda device buffer\n");

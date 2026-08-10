@@ -416,5 +416,5 @@ VmafFeatureExtractor vmaf_fex_speed_chroma_cuda = {
     .options = speed_chroma_options,
     .priv_size = sizeof(SpeedChromaStateCuda),
     .provided_features = provided_features,
-    .flags = VMAF_FEATURE_EXTRACTOR_CUDA,
+    .flags = VMAF_FEATURE_EXTRACTOR_CUDA | VMAF_FEATURE_EXTRACTOR_CHROMA,
 };
