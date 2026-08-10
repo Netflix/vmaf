@@ -104,7 +104,7 @@ int vmaf_cuda_picture_alloc_pinned(VmafPicture *pic, enum VmafPixelFormat pix_fm
 {
     if (!pic) return -EINVAL;
     if (!pix_fmt) return -EINVAL;
-    if (bpc < 8 || bpc > 16) return -EINVAL;    
+    if (bpc < 8 || bpc > 16) return -EINVAL;
 
     int err = 0;
 
@@ -145,6 +145,7 @@ int vmaf_cuda_picture_alloc_pinned(VmafPicture *pic, enum VmafPixelFormat pix_fm
     err |= vmaf_picture_priv_init(pic);
     VmafPicturePrivate* priv = pic->priv;
     priv->cuda.ctx = cuda_state->ctx;
+    priv->cuda.state = cuda_state;
     err |= vmaf_picture_set_release_callback(pic, NULL, default_release_pinned_picture);
     if (err) goto free_data;
     priv->buf_type = VMAF_PICTURE_BUFFER_TYPE_CUDA_HOST_PINNED;
