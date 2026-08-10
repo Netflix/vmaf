@@ -31,6 +31,8 @@ typedef double (*compute_cov_kernel_fn)(const float *data_x, const float *data_y
                                         size_t width, double mean_x,
                                         double mean_y);
 
+#define NUM_SPEED_SCALES (4)
+
 /* ------------------------------------------------------------------ */
 /* Shared between the CPU extractors (speed.c) and the CUDA one        */
 /* (cuda/speed_cuda.c).                                                */
