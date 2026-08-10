@@ -443,7 +443,12 @@ if is_cuda_enabled
                 '-I', '../src/feature',
                 '-I', '../src/' + cuda_dir,
                 '-DDEVICE_CODE',
-            ] + cuda_flags
+                '-D_USE_MATH_DEFINES',
+            ] + cuda_flags + (
+                cc.get_id() == 'msvc' and get_option('bundled_winpthreads')
+                ? ['-I', meson.project_source_root() / 'subprojects' / 'pthread-win32']
+                : []
+            )
         )
         ptx_files += {name : [t]}
     endforeach
@@ -478,6 +483,7 @@ if is_cuda_enabled
             include_directories('../src/cuda/'),
             cuda_inc,
         ],
+        dependencies : [thread_lib, stdatomic_dependency],
         c_args : vmaf_cflags_common,
         cuda_args: cuda_flags # + ['-gencode', 'arch=compute_86,code=sm_86' ] #, '--use_fast_math']
     )
