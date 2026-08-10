@@ -32,6 +32,7 @@
 #include "opt.h"
 #include "picture.h"
 #include "picture_copy.h"
+#include "speed.h"
 #include "vif_tools.h"
 
 #include "cpu.h"
@@ -43,72 +44,15 @@
 #endif
 #endif
 
-typedef double (*compute_cov_kernel_fn)(const float *data_x, const float *data_y,
-                                        size_t stride_px, size_t height,
-                                        size_t width, double mean_x,
-                                        double mean_y);
 
-typedef struct SpeedDimensions {
-    size_t original_height;
-    size_t original_width;
-    size_t scaled_height;
-    size_t scaled_width;
-    size_t alloc_height;
-    size_t alloc_width;
-    size_t operating_height;
-    size_t operating_width;
-    size_t block_size;
-    size_t truncated_width;
-    size_t truncated_height;
-    size_t num_blocks_horizontal;
-    size_t num_blocks_vertical;
-    size_t num_blocks;
-    size_t elements_in_block;
-    size_t submatrix_width;
-    size_t submatrix_height;
-} SpeedDimensions;
 
-typedef struct SpeedResultBuffers {
-    float *entropies;
-    float *variances;
-} SpeedResultBuffers;
 
-typedef struct SpeedBuffers {
-    float *independent_term;
-    float *linear_system_sol;
-    float *cov_mat;
-    float *eigenvalues;
-    float *tmp_buffer;
-    // Bilinear column table for the (fixed, resolution-derived) prescale of
-    // this feature extractor instance. Populated once in speed_init() and
-    // reused for every frame instead of being recomputed per call. NULL
-    // when the configured scaling method isn't bilinear.
-    int *bilinear_x1a;
-    int *bilinear_x2a;
-    float *bilinear_dxa;
-} SpeedBuffers;
 
 // Everything that is passed in as a feature option and is needed for
 // SpEED computation
-typedef struct SpeedOptions {
-    double speed_kernelscale;
-    double speed_prescale;
-    char *speed_prescale_method;
-    double speed_sigma_nn;
-    double speed_nn_floor;
-    int speed_weight_var_mode;
-} SpeedOptions;
 
 // Everything that is needed to compute SpEED given a pair of float buffers
 // (ref, dis), except for what is provided in SpeedOptions
-typedef struct SpeedState {
-    SpeedDimensions dimensions;
-    SpeedResultBuffers ref_results;
-    SpeedResultBuffers dis_results;
-    SpeedBuffers buffers;
-    size_t float_stride;
-    compute_cov_kernel_fn compute_cov_kernel;
-} SpeedState;
 
 #define DEFAULT_BLOCK_SIZE (5)
 #define NUM_SQUARE_BUFFERS (5)
@@ -811,7 +755,7 @@ static bool is_matrix_regular(SpeedDimensions dim, const float *eigenvalues)
     return true;
 }
 
-static int est_params(SpeedState *s, const float *data, float sigma_nn,
+int est_params(SpeedState *s, const float *data, float sigma_nn,
                       SpeedResultBuffers *output)
 {
     SpeedDimensions dim = s->dimensions;
@@ -885,7 +829,7 @@ static int est_params(SpeedState *s, const float *data, float sigma_nn,
     return cannot_invert ? -EINVAL : 0;
 }
 
-static float get_speed_score(SpeedDimensions dim, SpeedResultBuffers ref_results,
+float get_speed_score(SpeedDimensions dim, SpeedResultBuffers ref_results,
                              SpeedResultBuffers dis_results, float sigma_nn,
                              float nn_floor, int speed_weight_var_mode)
 {
@@ -1194,22 +1138,8 @@ int speed_close(SpeedState *s) {
 #define DEFAULT_SPEED_PRESCALE_METHOD ("nearest")
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-typedef struct SpeedChromaState {
-    SpeedState speed_state;
-    SpeedOptions speed_options;
-    float *frame_buffer_ref;
-    float *frame_buffer_dis;
-    VmafDictionary *feature_name_dict;
-    double speed_chroma_kernelscale;
-    double speed_chroma_prescale;
-    char *speed_chroma_prescale_method;
-    double speed_chroma_sigma_nn;
-    double speed_chroma_nn_floor;
-    double speed_chroma_max_val;
-    int speed_weight_var_mode;
-} SpeedChromaState;
 
-static const VmafOption options_chroma[] = {
+const VmafOption speed_chroma_options[] = {
     {
         .name = "speed_kernelscale",
         .help = "scaling factor for the gaussian kernel (2.0 means "
@@ -1429,7 +1359,7 @@ VmafFeatureExtractor vmaf_fex_speed_chroma = {
     .init = init_chroma,
     .extract = extract_chroma,
     .close = close_chroma,
-    .options = options_chroma,
+    .options = speed_chroma_options,
     .priv_size = sizeof(SpeedChromaState),
     .provided_features = provided_features_chroma,
 };
