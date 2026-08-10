@@ -542,6 +542,7 @@ if is_cuda_enabled
         feature_src_dir + 'cuda/integer_adm_cuda.c',
         feature_src_dir + 'cuda/integer_vif_cuda.c',
         feature_src_dir + 'cuda/integer_motion_cuda.c',
+        feature_src_dir + 'cuda/speed_cuda.c',
     ]
 endif
 
