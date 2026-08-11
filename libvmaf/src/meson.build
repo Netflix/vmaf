@@ -608,6 +608,7 @@ libvmaf = library(
       math_lib,
       stdatomic_dependency,
       cuda_dependency,
+	  rev_dep
     ],
     objects : [
         platform_specific_cpu_objects,

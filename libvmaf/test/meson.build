@@ -26,7 +26,7 @@ test_feature_collector = executable('test_feature_collector',
     ['test.c', 'test_feature_collector.c', '../src/log.c', '../src/predict.c', '../src/metadata_handler.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/feature/'), include_directories('../src')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies: cuda_dependency,
+    dependencies: [ cuda_dependency, rev_dep ],
     objects : libsvm_static_lib.extract_all_objects(recursive: true),
 )
 

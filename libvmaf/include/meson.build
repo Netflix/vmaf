@@ -8,5 +8,9 @@ rev_target = vcs_tag(command: [
     input: 'vcs_version.h.in',
     output: 'vcs_version.h'
 )
+rev_dep = declare_dependency(
+  sources: rev_target,
+  include_directories: include_directories('.'),
+)
 
 subdir('libvmaf')
