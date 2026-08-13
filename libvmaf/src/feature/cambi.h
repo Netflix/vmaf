@@ -23,7 +23,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <stdio.h>
+
 #include "common/macros.h"
+#include "dict.h"
+#include "opt.h"
+#include "luminance_tools.h"
+#include "picture.h"
 
 #ifndef MAX
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
@@ -33,6 +39,107 @@
 #endif
 
 typedef void (*VmafRangeUpdater)(uint16_t *arr, int left, int right);
+
+#define CAMBI_MIN_WIDTH_HEIGHT (216)
+
+#define NUM_SCALES 5
+
+#define PICS_BUFFER_SIZE 2
+
+#define MASK_FILTER_SIZE 7
+
+#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_1080p (1920 * 1080)
+#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_1440p (2560 * 1440)
+#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_2160p (3840 * 2160)
+#define DEFAULT_CAMBI_TOPK_POOLING (0.6)
+#define DEFAULT_CAMBI_EOTF ("bt1886")
+
+typedef void (*VmafDerivativeCalculator)(const uint16_t *image_data, uint16_t *derivative_buffer, int width, int height, int row, int stride);
+typedef void (*VmafFilterMode)(const VmafPicture *image, int width, int height, uint16_t *buffer);
+typedef void (*VmafDecimate)(VmafPicture *image, unsigned width, unsigned height);
+typedef void (*VmafCalcCValues)(VmafPicture *pic, const VmafPicture *mask_pic,
+                                float *c_values, uint16_t *histograms, uint16_t window_size,
+                                const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
+                                const int *diff_weights, const int *all_diffs, int width, int height);
+
+typedef struct CambiBuffers {
+    float *c_values;
+    uint32_t *mask_dp;
+    uint16_t *c_values_histograms;
+    uint16_t *filter_mode_buffer;
+    uint16_t *diffs_to_consider;
+    uint16_t *tvi_for_diff;
+    uint16_t *derivative_buffer;
+    int *diff_weights;
+    int *all_diffs;
+    uint16_t v_band_base;
+    uint16_t v_band_size;
+} CambiBuffers;
+
+typedef struct CambiState {
+    VmafPicture pics[PICS_BUFFER_SIZE];
+    unsigned enc_width;
+    unsigned enc_height;
+    unsigned enc_bitdepth;
+    unsigned src_width;
+    unsigned src_height;
+    uint16_t window_size;
+    uint16_t src_window_size;
+    double topk;
+    double cambi_topk;
+    double tvi_threshold;
+    double cambi_max_val;
+    double cambi_vis_lum_threshold;
+    uint16_t vlt_luma;
+    uint16_t max_log_contrast;
+    char *heatmaps_path;
+    char *eotf;
+    char *cambi_eotf;
+    bool full_ref;
+    int cambi_high_res_speedup;
+
+    FILE *heatmaps_files[NUM_SCALES];
+    VmafDerivativeCalculator derivative_callback;
+    VmafCalcCValues calc_c_values_callback;
+    VmafFilterMode filter_mode_callback;
+    VmafDecimate decimate_callback;
+    CambiBuffers buffers;
+    VmafDictionary *feature_name_dict;
+} CambiState;
+
+/* ------------------------------------------------------------------ */
+/* Shared between the CPU extractor (cambi.c) and the CUDA extractor   */
+/* (cuda/cambi_cuda.c). Names carry a cambi_ prefix because they are   */
+/* external symbols now.                                               */
+/* ------------------------------------------------------------------ */
+
+extern const VmafOption cambi_options[];
+
+void cambi_adjust_window_size(uint16_t *window_size,
+                              unsigned input_width,
+                              unsigned input_height,
+                              bool cambi_high_res_speedup);
+int cambi_set_contrast_arrays(const uint16_t num_diffs,
+                              uint16_t **diffs_to_consider,
+                              int **diffs_weights, int **all_diffs);
+int cambi_get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth,
+                           VmafLumaRange luma_range, VmafEOTF eotf);
+int cambi_get_vlt_luma(double visibility_luminance_threshold,
+                       VmafLumaRange luma_range, VmafEOTF eotf);
+int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocessed,
+                        int width, int height, int enc_bitdepth);
+uint16_t cambi_get_mask_index(unsigned input_width, unsigned input_height,
+                              uint16_t filter_size);
+uint16_t cambi_get_pixels_in_window(uint16_t window_length);
+double cambi_spatial_pooling(float *c_values, double topk, unsigned width,
+                             unsigned height);
+double cambi_weight_scores_per_scale(double *scores_per_scale,
+                                     uint16_t normalization);
+double cambi_combine_dist_src_scores(double dist_score, double src_score);
+int cambi_dump_c_values(FILE *heatmaps_files[], const float *c_values,
+                        int width, int height, int scale, int window_size,
+                        const uint16_t num_diffs, const int *diff_weights,
+                        int frame);
 
 // Auto-generated reciprocal LUT for cambi c_value_pixel
 // reciprocal_lut[i] = 1.0f / (float)i, with [0] = 0.0f
