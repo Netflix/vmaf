@@ -422,15 +422,16 @@ if is_cuda_enabled
             build_by_default: true,
             output : ['@0@.fatbin'.format(name)],
             input : _cu,
-            command : [nvcc_exe,
+            command : [
+                nvcc_exe,
                 gencode,
                 '@INPUT@',
-                '-o', '@OUTPUT@' ,
-                '-I', './src',
-                '-I', '../src',
-                '-I', '../include',
-                '-I', '../src/feature',
-                '-I', '../src/' + cuda_dir,
+                '-o', '@OUTPUT@',
+                '-I', meson.current_source_dir(),
+                '-I', meson.current_source_dir() / 'feature',
+                '-I', meson.current_source_dir() / 'cuda',
+                '-I', meson.current_source_dir() / '../include',
+                '-I', meson.current_build_dir(),
                 '-DDEVICE_CODE',
             ] + cuda_flags
         )
