@@ -16,7 +16,9 @@
  *     limitations under the License.
  *
  */
+#ifndef DEVICE_CODE
 #include "feature_collector.h"
+#endif
 #include "cuda/integer_adm_cuda.h"
 #include "common.h"
 #include "cuda_helper.cuh"
