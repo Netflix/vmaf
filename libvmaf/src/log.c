@@ -19,7 +19,13 @@
 #include "libvmaf/libvmaf.h"
 
 #include <stdarg.h>
+#ifdef _MSC_VER
+#include <io.h>
+#define isatty  _isatty
+#define fileno  _fileno
+#else
 #include <unistd.h>
+#endif
 
 static enum VmafLogLevel vmaf_log_level = VMAF_LOG_LEVEL_INFO;
 static int istty = 0;

@@ -37,10 +37,6 @@
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-#ifndef M_PI
-    #define M_PI 3.14159265358979323846
-#endif
-
 #ifdef VIF_OPT_FAST_LOG2 // option to replace log2 calculation with faster speed
 
 static const float log2_poly_s[9] = { -0.012671635276421, 0.064841182402670, -0.157048836463065, 0.257167726303123, -0.353800560300520, 0.480131410397451, -0.721314327952201, 1.442694803896991, 0 };
