@@ -158,6 +158,15 @@ static const struct { unsigned w, h; } tiny_sizes[] = {
 };
 static const unsigned n_tiny_sizes = sizeof(tiny_sizes) / sizeof(tiny_sizes[0]);
 
+/* Both dispatch choices have to be exercised explicitly. A mask of 0 forces
+ * the scalar kernels on every host; ~0u picks the best available, which is a
+ * different kernel on an x86 CI runner than on arm64. Testing only the latter
+ * would silently leave the scalar path uncovered wherever SIMD is present --
+ * convolution_f32_c_s() in particular returns early into the AVX kernel as
+ * soon as AVX2 is available, so its C fallback would never run there. */
+static const unsigned cpu_masks[] = { 0, ~0u };
+static const unsigned n_cpu_masks = sizeof(cpu_masks) / sizeof(cpu_masks[0]);
+
 static void fill_random_picture(VmafPicture *pic, unsigned seed)
 {
     srand(seed);
@@ -229,9 +238,9 @@ static int run_motion_fex(VmafFeatureExtractor *fex, const char *feature_name,
     return 0;
 }
 
-/* T5: the integer `motion` extractor must run to completion at frame sizes
- * smaller than the filter radius, touching only valid memory (the real teeth
- * of this test come from running it under ASan) and producing a well-defined,
+/* The integer `motion` extractor must run to completion at frame sizes smaller
+ * than the filter radius, touching only valid memory (the real teeth of this
+ * test come from running it under ASan) and producing a well-defined,
  * repeatable score. There is no meaningful golden value at 1x1, so what is
  * asserted is: the call succeeds, the score is finite, and two identical runs
  * agree bit-for-bit. Both the 8 bpc and the 16 bpc pipeline are covered, and
@@ -240,8 +249,6 @@ static char *test_integer_motion_pipeline_tiny_sizes()
 {
     static const unsigned bpcs[] = { 8, 10, 12, 16 };
     const unsigned n_bpcs = sizeof(bpcs) / sizeof(bpcs[0]);
-    static const unsigned cpu_masks[] = { 0, ~0u };
-    const unsigned n_cpu_masks = sizeof(cpu_masks) / sizeof(cpu_masks[0]);
 
     vmaf_init_cpu();
 
@@ -279,10 +286,16 @@ static char *test_integer_motion_pipeline_tiny_sizes()
     return NULL;
 }
 
-/* T6: the same pipeline-safety and determinism check for the float `motion`
- * path, which reflects through convolution_mirror() instead. Skipped when the
+/* The same pipeline-safety and determinism check for the float `motion` path,
+ * which reflects through convolution_mirror() instead. Skipped when the
  * library was configured with -Denable_float=false, in which case the
- * extractor simply is not registered. */
+ * extractor simply is not registered.
+ *
+ * Both CPU masks matter here: convolution_f32_c_s() hands off to
+ * convolution_f32_avx_s() whenever AVX2 is available and returns, so on an x86
+ * runner the ~0u pass covers only the AVX kernel and the scalar
+ * convolution_y_c_s()/convolution_x_c_s() pair -- the other half of the
+ * boundary fix -- would go untouched without the cpu_mask == 0 pass. */
 static char *test_float_motion_pipeline_tiny_sizes()
 {
     vmaf_init_cpu();
@@ -296,23 +309,26 @@ static char *test_float_motion_pipeline_tiny_sizes()
 
     for (unsigned s = 0; s < n_tiny_sizes; s++) {
         for (unsigned b = 0; b < n_bpcs; b++) {
-            double score_a = -1., score_b = -1.;
-            int err;
+            for (unsigned c = 0; c < n_cpu_masks; c++) {
+                double score_a = -1., score_b = -1.;
+                int err;
 
-            err = run_motion_fex(fex, "VMAF_feature_motion_score",
-                                 tiny_sizes[s].w, tiny_sizes[s].h, bpcs[b],
-                                 ~0u, &score_a);
-            mu_assert("float motion extraction must succeed at tiny sizes",
-                      !err);
-            mu_assert("float motion score must be finite at tiny sizes",
-                      isfinite(score_a));
+                err = run_motion_fex(fex, "VMAF_feature_motion_score",
+                                     tiny_sizes[s].w, tiny_sizes[s].h, bpcs[b],
+                                     cpu_masks[c], &score_a);
+                mu_assert("float motion extraction must succeed at tiny sizes",
+                          !err);
+                mu_assert("float motion score must be finite at tiny sizes",
+                          isfinite(score_a));
 
-            err = run_motion_fex(fex, "VMAF_feature_motion_score",
-                                 tiny_sizes[s].w, tiny_sizes[s].h, bpcs[b],
-                                 ~0u, &score_b);
-            mu_assert("float motion re-run must succeed at tiny sizes", !err);
-            mu_assert("float motion score must be deterministic",
-                      score_a == score_b);
+                err = run_motion_fex(fex, "VMAF_feature_motion_score",
+                                     tiny_sizes[s].w, tiny_sizes[s].h, bpcs[b],
+                                     cpu_masks[c], &score_b);
+                mu_assert("float motion re-run must succeed at tiny sizes",
+                          !err);
+                mu_assert("float motion score must be deterministic",
+                          score_a == score_b);
+            }
         }
     }
 
