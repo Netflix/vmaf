@@ -16,6 +16,8 @@
  *
  */
 
+#include <stdlib.h>
+
 #include "test.h"
 #include "feature/integer_motion.h"
 
@@ -66,9 +68,49 @@ static char *test_motion_mirror_sub3_sizes()
     return NULL;
 }
 
+// Host-side transcription of the CUDA mirror() formula (motion_score.cu), both
+// pre- and post-fix, for comparison purposes only -- this is not compiled CUDA code
+// (no local CUDA toolchain), just the identical arithmetic expression in C.
+static int cuda_mirror_pre_fix(int idx, int sup)
+{
+    int out = abs(idx);
+    return (out < sup) ? out : (sup - (out - sup + 1));
+}
+
+static int cuda_mirror_post_fix(int idx, int sup)
+{
+    if (sup == 1) return 0;
+    int out = abs(idx);
+    return (out < sup) ? out : (sup - (out - sup + 1));
+}
+
+// T3: host-side comparison of the CUDA mirror() formula, pre- and post-fix.
+// For sup >= 2 the fix must be a no-op; for sup == 1 the post-fix version
+// must degenerate safely to 0 (the pre-fix version is not asserted at
+// sup == 1 since it is genuinely out of range there and is simply no longer
+// called with sup == 1).
+static char *test_cuda_mirror_formula_matches_pre_fix_for_sup_ge_2()
+{
+    for (int sup = 2; sup <= 8192; sup++) {
+        for (int idx = -2; idx <= sup + 1; idx++) {
+            int got = cuda_mirror_post_fix(idx, sup);
+            int want = cuda_mirror_pre_fix(idx, sup);
+            mu_assert("cuda mirror post-fix must match pre-fix formula for sup >= 2",
+                      got == want);
+        }
+    }
+
+    for (int idx = -2; idx <= 3; idx++)
+        mu_assert("cuda mirror post-fix must map every idx to 0 for sup == 1",
+                  cuda_mirror_post_fix(idx, 1) == 0);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_motion_mirror_matches_pre_fix_for_normal_sizes);
     mu_run_test(test_motion_mirror_sub3_sizes);
+    mu_run_test(test_cuda_mirror_formula_matches_pre_fix_for_sup_ge_2);
     return NULL;
 }
