@@ -20,6 +20,7 @@
 
 #include "test.h"
 #include "feature/integer_motion.h"
+#include "feature/common/convolution_internal.h"
 
 /* The historical single-bounce formula, embedded verbatim for regression
  * comparison. This is deliberately duplicated: it is the pre-fix behavior,
@@ -107,10 +108,47 @@ static char *test_cuda_mirror_formula_matches_pre_fix_for_sup_ge_2()
     return NULL;
 }
 
+/* The historical single-bounce reflection from convolution_internal.h's
+ * convolution_edge_*_s() functions, transcribed verbatim (the original code no
+ * longer exists after the fix). Both branches -- horizontal on `width` and
+ * vertical on `height` -- used this exact same arithmetic, so a single
+ * reference is enough. */
+static int convolution_mirror_reference_pre_fix(int tap, int size)
+{
+    if (tap < 0) return -tap;
+    if (tap >= size) return size - (tap - size + 2);
+    return tap;
+}
+
+/* T4: convolution_mirror() must be bit-identical to the pre-fix inline
+ * reflection over the whole in-contract range, proving the float convolution
+ * path's output is unchanged for width/height >= 3.
+ *
+ * The range covered here is the 5-tap / radius-2 contract this fix is
+ * responsible for. convolution_internal.h is also instantiated with other
+ * filter widths by other float features; those get the same guarantee
+ * structurally, without a separate exhaustive loop: for any radius r and any
+ * size >= r + 1, an in-contract tap lies in [-r, size - 1 + r], for which the
+ * new loop takes at most one reflection and therefore evaluates the exact same
+ * expression as the old single-bounce code. */
+static char *test_convolution_mirror_matches_pre_fix_for_normal_sizes()
+{
+    for (int size = 3; size <= 8192; size++) {
+        for (int tap = -2; tap <= size + 1; tap++) {
+            int got = convolution_mirror(tap, size);
+            int want = convolution_mirror_reference_pre_fix(tap, size);
+            mu_assert("convolution_mirror must match pre-fix formula for size >= 3",
+                      got == want);
+        }
+    }
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_motion_mirror_matches_pre_fix_for_normal_sizes);
     mu_run_test(test_motion_mirror_sub3_sizes);
     mu_run_test(test_cuda_mirror_formula_matches_pre_fix_for_sup_ge_2);
+    mu_run_test(test_convolution_mirror_matches_pre_fix_for_normal_sizes);
     return NULL;
 }
