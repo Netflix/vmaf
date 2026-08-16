@@ -146,13 +146,6 @@ static const VmafOption options[] = {
     { 0 }
 };
 
-static inline int mirror(int idx, int size)
-{
-    if (idx < 0) return -idx;
-    if (idx >= size) return 2 * size - idx - 2;
-    return idx;
-}
-
 static uint64_t
 motion_score_pipeline_8(const uint8_t *prev, ptrdiff_t prev_stride,
                         const uint8_t *cur, ptrdiff_t cur_stride,
@@ -172,7 +165,7 @@ motion_score_pipeline_8(const uint8_t *prev, ptrdiff_t prev_stride,
         for (unsigned j = 0; j < w; j++) {
             int32_t accum = 0;
             for (int k = 0; k < filter_width; k++) {
-                const int row = mirror((int)i - radius + k, (int)h);
+                const int row = motion_mirror((int)i - radius + k, (int)h);
                 int32_t diff = prev[row * prev_stride + j]
                              - cur[row * cur_stride + j];
                 accum += (int32_t)filter[k] * diff;
@@ -188,7 +181,7 @@ motion_score_pipeline_8(const uint8_t *prev, ptrdiff_t prev_stride,
         for (unsigned j = 0; j < w; j++) {
             int64_t accum = 0;
             for (int k = 0; k < filter_width; k++) {
-                const int col = mirror((int)j - radius + k, (int)w);
+                const int col = motion_mirror((int)j - radius + k, (int)w);
                 accum += (int64_t)filter[k] * y_row[col];
             }
             int32_t val = (int32_t)((accum + x_round) >> 16);
@@ -223,7 +216,7 @@ motion_score_pipeline_16(const uint8_t *prev_u8, ptrdiff_t prev_stride,
         for (unsigned j = 0; j < w; j++) {
             int64_t accum = 0;
             for (int k = 0; k < filter_width; k++) {
-                const int row = mirror((int)i - radius + k, (int)h);
+                const int row = motion_mirror((int)i - radius + k, (int)h);
                 int32_t diff = prev[row * p_stride + j]
                              - cur[row * c_stride + j];
                 accum += (int64_t)filter[k] * diff;
@@ -239,7 +232,7 @@ motion_score_pipeline_16(const uint8_t *prev_u8, ptrdiff_t prev_stride,
         for (unsigned j = 0; j < w; j++) {
             int64_t accum = 0;
             for (int k = 0; k < filter_width; k++) {
-                const int col = mirror((int)j - radius + k, (int)w);
+                const int col = motion_mirror((int)j - radius + k, (int)w);
                 accum += (int64_t)filter[k] * y_row[col];
             }
             int32_t val = (int32_t)((accum + x_round) >> 16);
