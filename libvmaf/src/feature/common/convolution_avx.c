@@ -135,8 +135,10 @@ void convolution_f32_avx_s(const float * RESTRICT filter, int filter_width, cons
     int j_vec_end = vmaf_floorn(width - radius, AVX_STEP);
 
     // Clamp edge-loop bounds so tiny width/height (< radius) cannot write outside
-    // the tmp/dst buffers. i_vec_end is safe to raise in place because its only
-    // other use is the vertical trailing loop's start. j_vec_end must NOT be raised
+    // the tmp/dst buffers. i_vec_end is safe to raise in place: its two uses are the
+    // vector loop's end bound and the trailing loop's start, and the raise only fires
+    // when the raised value is <= radius, which leaves the vector loop
+    // [radius, i_vec_end) empty. j_vec_end must NOT be raised
     // in place: it is also passed unmodified to convolution_f32_avx_s_1d_h_scanline,
     // whose j_end argument must stay <= vmaf_floorn(width - radius, AVX_STEP) or the
     // scanline itself writes out of bounds (it stores dst[j + radius .. j + radius +
@@ -189,8 +191,10 @@ void convolution_f32_avx_sq_s(const float * RESTRICT filter, int filter_width, c
     int j_vec_end = vmaf_floorn(width - radius, AVX_STEP);
 
     // Clamp edge-loop bounds so tiny width/height (< radius) cannot write outside
-    // the tmp/dst buffers. i_vec_end is safe to raise in place because its only
-    // other use is the vertical trailing loop's start. j_vec_end must NOT be raised
+    // the tmp/dst buffers. i_vec_end is safe to raise in place: its two uses are the
+    // vector loop's end bound and the trailing loop's start, and the raise only fires
+    // when the raised value is <= radius, which leaves the vector loop
+    // [radius, i_vec_end) empty. j_vec_end must NOT be raised
     // in place: it is also passed unmodified to convolution_f32_avx_s_1d_h_scanline,
     // whose j_end argument must stay <= vmaf_floorn(width - radius, AVX_STEP) or the
     // scanline itself writes out of bounds (it stores dst[j + radius .. j + radius +
@@ -244,8 +248,10 @@ void convolution_f32_avx_xy_s(const float * RESTRICT filter, int filter_width, c
     int j_vec_end = vmaf_floorn(width - radius, AVX_STEP);
 
     // Clamp edge-loop bounds so tiny width/height (< radius) cannot write outside
-    // the tmp/dst buffers. i_vec_end is safe to raise in place because its only
-    // other use is the vertical trailing loop's start. j_vec_end must NOT be raised
+    // the tmp/dst buffers. i_vec_end is safe to raise in place: its two uses are the
+    // vector loop's end bound and the trailing loop's start, and the raise only fires
+    // when the raised value is <= radius, which leaves the vector loop
+    // [radius, i_vec_end) empty. j_vec_end must NOT be raised
     // in place: it is also passed unmodified to convolution_f32_avx_s_1d_h_scanline,
     // whose j_end argument must stay <= vmaf_floorn(width - radius, AVX_STEP) or the
     // scanline itself writes out of bounds (it stores dst[j + radius .. j + radius +
