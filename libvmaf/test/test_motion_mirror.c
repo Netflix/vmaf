@@ -20,12 +20,15 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "cpu.h"
 #include "test.h"
 #include "libvmaf/picture.h"
 #include "feature/feature_collector.h"
 #include "feature/feature_extractor.h"
 #include "feature/integer_motion.h"
+#include "feature/motion_tools.h"
+#include "feature/common/convolution.h"
 #include "feature/common/convolution_internal.h"
 
 /* The historical single-bounce formula, embedded verbatim for regression
@@ -381,6 +384,212 @@ static char *test_float_motion_pipeline_tiny_sizes()
     return NULL;
 }
 
+/* ------------------------------------------------------------------------ *
+ * Canary-buffer write-bounds tests.
+ *
+ * The boundary fix in convolution.c / convolution_avx.c is a fix for an
+ * out-of-bounds WRITE, not merely an out-of-bounds read: at width or height
+ * below the filter width the old borders_left/borders_right (and the AVX
+ * i_vec_end/j_vec_end) computations went negative, so the trailing edge loop
+ * started at a negative index and stored outside dst. A sanitizer catches
+ * that, but upstream CI runs no sanitizer job. These tests catch it on any
+ * host, with no tooling, by surrounding every destination buffer with guard
+ * elements holding a sentinel and asserting the sentinel survives.
+ * ------------------------------------------------------------------------ */
+
+/* A value the convolutions below cannot produce from the test inputs. Written
+ * element by element rather than memset so the exact bit pattern is known and
+ * can be compared with ==. */
+#define CANARY_VALUE (-123456.789f)
+
+/* Guard elements placed before and after every real destination region. The
+ * pre-fix code overran by at most a couple of elements in either direction, so
+ * this is comfortably wide. */
+#define CANARY_GUARD (8)
+
+static void canary_fill(float *buf, int n)
+{
+    for (int i = 0; i < n; i++)
+        buf[i] = CANARY_VALUE;
+}
+
+static int canary_intact(const float *buf, int n)
+{
+    for (int i = 0; i < n; i++) {
+        if (buf[i] != CANARY_VALUE)
+            return 0;
+    }
+    return 1;
+}
+
+/* Source pixels, big enough for every case below. Values are arbitrary; only
+ * the destination bounds are under test. */
+static const float canary_src[8] = { 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f };
+
+extern void convolution_x_c_s(const float *filter, int filter_width,
+                              const float *src, float *dst, int width,
+                              int height, int src_stride, int dst_stride,
+                              int step);
+extern void convolution_y_c_s(const float *filter, int filter_width,
+                              const float *src, float *dst, int width,
+                              int height, int src_stride, int dst_stride,
+                              int step);
+
+/* T7: the scalar convolution kernels must not write outside dst at the tiny
+ * dimensions the fix targets. Runs everywhere, on every host and every CI job.
+ *
+ * The swept dimension goes 1..4, i.e. everything strictly below the 5-tap
+ * filter width, which is exactly the range where the unclamped
+ * borders_left/borders_right went negative. The other dimension is held small
+ * and fixed so that the real dst region is exactly packed and any overrun
+ * necessarily lands in a guard rather than in unused stride padding. */
+static char *test_convolution_scalar_write_bounds()
+{
+    /* Horizontal pass: height == 1, so dst is exactly `width` floats. */
+    for (int width = 1; width <= 4; width++) {
+        float buf[CANARY_GUARD + 4 + CANARY_GUARD];
+        const int n = (int)(sizeof(buf) / sizeof(buf[0]));
+
+        canary_fill(buf, n);
+        convolution_x_c_s(FILTER_5_s, 5, canary_src, buf + CANARY_GUARD,
+                          width, 1, width, width, 1);
+
+        mu_assert("convolution_x_c_s wrote before dst",
+                  canary_intact(buf, CANARY_GUARD));
+        mu_assert("convolution_x_c_s wrote past dst",
+                  canary_intact(buf + CANARY_GUARD + width,
+                                n - CANARY_GUARD - width));
+    }
+
+    /* Vertical pass: width == 2, so dst is exactly height*2 floats. */
+    for (int height = 1; height <= 4; height++) {
+        const int width = 2;
+        float buf[CANARY_GUARD + 4 * 2 + CANARY_GUARD];
+        const int n = (int)(sizeof(buf) / sizeof(buf[0]));
+        const int real = width * height;
+
+        canary_fill(buf, n);
+        convolution_y_c_s(FILTER_5_s, 5, canary_src, buf + CANARY_GUARD,
+                          width, height, width, width, 1);
+
+        mu_assert("convolution_y_c_s wrote before dst",
+                  canary_intact(buf, CANARY_GUARD));
+        mu_assert("convolution_y_c_s wrote past dst",
+                  canary_intact(buf + CANARY_GUARD + real,
+                                n - CANARY_GUARD - real));
+    }
+
+    return NULL;
+}
+
+#if ARCH_X86
+/* AVX_STEP is file-local to convolution_avx.c and the header exposes no
+ * accessor, so its value is duplicated here. The AVX kernels size their
+ * caller-supplied tmp scratch as vmaf_ceiln(width, AVX_STEP) floats per row. */
+#define TEST_AVX_STEP (8)
+
+static int canary_ceiln(int n, int m)
+{
+    return n % m ? n + (m - n % m) : n;
+}
+
+/* convolution.h requires every array argument to be 32-byte aligned. */
+static float *canary_align32(float *p)
+{
+    uintptr_t a = (uintptr_t)p;
+    a = (a + 31u) & ~(uintptr_t)31u;
+    return (float *)a;
+}
+
+/* Runs all three AVX convolution kernels for one (width, height) with both the
+ * tmp scratch and dst guarded, and verifies every guard survives.
+ *
+ * width and height stay <= 4 here, which keeps every vectorised loop empty:
+ * vmaf_floorn(width - 2, 8) and vmaf_floorn(width, 8) are both 0, and the
+ * vertical vector loop runs over [radius, max(height - radius, ...)) which is
+ * empty for height <= 4. So only the edge loops -- the ones the clamps fix --
+ * execute, and the aligned loads/stores in the scanline helpers are never
+ * reached (which is why the packed, stride == width source layout below is
+ * safe even though it does not 32-byte align individual rows). */
+static char *avx_write_bounds_case(int width, int height)
+{
+    static float raw_src1[128], raw_src2[128], raw_tmp[128], raw_dst[128];
+
+    const int tmp_stride = canary_ceiln(width, TEST_AVX_STEP);
+    const int tmp_real = height * tmp_stride;
+    const int tmp_len = CANARY_GUARD + tmp_real + CANARY_GUARD;
+    const int dst_stride = width;
+    const int dst_real = height * dst_stride;
+    const int dst_len = CANARY_GUARD + dst_real + CANARY_GUARD;
+
+    float *src1 = canary_align32(raw_src1);
+    float *src2 = canary_align32(raw_src2);
+    float *tmp_base = canary_align32(raw_tmp);
+    float *dst_base = canary_align32(raw_dst);
+    float *tmp = tmp_base + CANARY_GUARD;
+    float *dst = dst_base + CANARY_GUARD;
+
+    for (int i = 0; i < width * height; i++) {
+        src1[i] = (float)(i + 1);
+        src2[i] = (float)(width * height - i);
+    }
+
+#define AVX_CANARY_CHECK(name)                                                \
+    do {                                                                      \
+        mu_assert(name " wrote before tmp",                                   \
+                  canary_intact(tmp_base, CANARY_GUARD));                     \
+        mu_assert(name " wrote past tmp",                                     \
+                  canary_intact(tmp_base + CANARY_GUARD + tmp_real,           \
+                                CANARY_GUARD));                               \
+        mu_assert(name " wrote before dst",                                   \
+                  canary_intact(dst_base, CANARY_GUARD));                     \
+        mu_assert(name " wrote past dst",                                     \
+                  canary_intact(dst_base + CANARY_GUARD + dst_real,           \
+                                CANARY_GUARD));                               \
+    } while (0)
+
+    canary_fill(tmp_base, tmp_len);
+    canary_fill(dst_base, dst_len);
+    convolution_f32_avx_s(FILTER_5_s, 5, src1, dst, tmp, width, height,
+                          width, dst_stride);
+    AVX_CANARY_CHECK("convolution_f32_avx_s");
+
+    canary_fill(tmp_base, tmp_len);
+    canary_fill(dst_base, dst_len);
+    convolution_f32_avx_sq_s(FILTER_5_s, 5, src1, dst, tmp, width, height,
+                             width, dst_stride);
+    AVX_CANARY_CHECK("convolution_f32_avx_sq_s");
+
+    canary_fill(tmp_base, tmp_len);
+    canary_fill(dst_base, dst_len);
+    convolution_f32_avx_xy_s(FILTER_5_s, 5, src1, src2, dst, tmp, width,
+                             height, width, width, dst_stride);
+    AVX_CANARY_CHECK("convolution_f32_avx_xy_s");
+
+#undef AVX_CANARY_CHECK
+
+    return NULL;
+}
+#endif /* ARCH_X86 */
+
+/* T8: the AVX convolution kernels must not write outside tmp or dst at tiny
+ * dimensions. x86-only: convolution_avx.c is compiled (and ARCH_X86 defined)
+ * only for x86 with asm enabled, so this is inert on every other target. */
+static char *test_convolution_avx_write_bounds()
+{
+#if ARCH_X86
+    for (int width = 1; width <= 4; width++) {
+        char *msg = avx_write_bounds_case(width, 1);
+        if (msg) return msg;
+    }
+    for (int height = 1; height <= 4; height++) {
+        char *msg = avx_write_bounds_case(2, height);
+        if (msg) return msg;
+    }
+#endif
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_motion_mirror_matches_pre_fix_for_normal_sizes);
@@ -389,5 +598,7 @@ char *run_tests()
     mu_run_test(test_convolution_mirror_matches_pre_fix_for_normal_sizes);
     mu_run_test(test_integer_motion_pipeline_tiny_sizes);
     mu_run_test(test_float_motion_pipeline_tiny_sizes);
+    mu_run_test(test_convolution_scalar_write_bounds);
+    mu_run_test(test_convolution_avx_write_bounds);
     return NULL;
 }
