@@ -159,6 +159,13 @@ test_motion_blend = executable('test_motion_blend',
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
 )
 
+test_motion_mirror = executable('test_motion_mirror',
+    ['test.c', 'test_motion_mirror.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies : math_lib,
+)
+
 if float_enabled
     test_vif_tools = executable('test_vif_tools',
         ['test.c', 'test_vif_tools.c'],
@@ -226,6 +233,7 @@ test('test_propagate_metadata', test_propagate_metadata)
 test('test_adm_csf', test_adm_csf)
 test('test_barten_csf', test_barten_csf)
 test('test_motion_blend', test_motion_blend)
+test('test_motion_mirror', test_motion_mirror)
 
 if is_asm_enabled and (host_machine.cpu_family().startswith('arm64') or host_machine.cpu_family().startswith('aarch64'))
     test_motion_neon = executable('test_motion_neon',
