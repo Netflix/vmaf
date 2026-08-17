@@ -28,11 +28,13 @@
  * motion_mirror() in feature/integer_motion.h. Reflects repeatedly so any size >= 1
  * is safe; for in-contract offsets (|tap - i or j| within the filter's radius) at
  * most one reflection is taken, so behavior is bit-identical to the historical
- * single-bounce version for size >= radius+1. size == 1 is special-cased: the
- * reflection period 2*(size-1) is 0 and the loop would not terminate. */
+ * single-bounce version for size >= radius+1. size <= 1 is special-cased: the
+ * reflection period 2*(size-1) is 0 (or negative) and the loop would not
+ * terminate. size is always >= 1 in the real call graph, so covering size <= 0
+ * as well only makes the function total; it changes no reachable result. */
 FORCE_INLINE int convolution_mirror(int tap, int size)
 {
-	if (size == 1) return 0;
+	if (size <= 1) return 0;
 	while (tap < 0 || tap >= size) {
 		if (tap < 0) tap = -tap;
 		else tap = 2 * size - tap - 2;

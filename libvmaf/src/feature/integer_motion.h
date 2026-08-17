@@ -29,11 +29,13 @@ static const int filter_width = sizeof(filter) / sizeof(filter[0]);
  * Reflects repeatedly so that any size >= 1 is safe; for size >= 3 and
  * |overshoot| <= 2 (the 5-tap/radius-2 call contract) at most one
  * reflection is taken, so behavior is bit-identical to the historical
- * single-bounce version. size == 1 must be special-cased: the reflection
- * period 2*(size-1) is 0 and the loop would not terminate. */
+ * single-bounce version. size <= 1 must be special-cased: the reflection
+ * period 2*(size-1) is 0 (or negative) and the loop would not terminate.
+ * size is always >= 1 in the real call graph, so covering size <= 0 as well
+ * only makes the function total; it changes no reachable result. */
 static inline int motion_mirror(int idx, int size)
 {
-    if (size == 1) return 0;
+    if (size <= 1) return 0;
     while (idx < 0 || idx >= size) {
         if (idx < 0) idx = -idx;
         else idx = 2 * size - idx - 2;
