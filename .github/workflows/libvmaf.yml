@@ -43,6 +43,18 @@ jobs:
             CC: ccache clang
             CXX: ccache clang++
             CROSS: ./libvmaf/test/meson-toolchains/i686-pc-linux-gnu-clang-cross.ini
+          - name: linux-x86_64-gcc-cuda
+            os: ubuntu-latest
+            CC: ccache gcc
+            CXX: ccache g++
+            enable_cuda: true
+            enable_nvcc: true
+          - name: linux-x86_64-clang-cuda
+            os: ubuntu-latest
+            CC: ccache clang-20
+            CXX: ccache clang++-20
+            enable_cuda: true
+            enable_nvcc: false
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC }}
@@ -59,15 +71,25 @@ jobs:
           pip install meson
 
       - name: Install dependencies (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
         run: |
           sudo apt-get update
-          sudo -E apt-get -yq install ccache ninja-build libomp-dev
+          sudo -E apt-get -yq install ccache ninja-build libomp-dev xxd
           case "$CC" in
           *gcc) sudo -E apt-get -yq install gcc g++ nasm ;;
           *gcc-9)
             sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
             sudo -E apt-get -yq install gcc-9 g++-9 nasm
+            ;;
+          *clang-20)
+            # >=clang-20 is needed to support CUDA without nvcc
+            sudo -E apt-get -yq install clang-20 llvm-20 nasm
+            sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 200
+            sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 200
+            sudo update-alternatives --set clang /usr/bin/clang-20
+            sudo update-alternatives --set clang++ /usr/bin/clang++-20
+            which clang
+            clang --version
             ;;
           *clang) sudo -E apt-get -yq install clang llvm nasm ;;
           esac
@@ -87,22 +109,52 @@ jobs:
           meson --version
           ccache --version
 
+      - name: Install CUDA toolkit
+        if: matrix.enable_cuda
+        uses: Jimver/cuda-toolkit@v0.2.36
+        with:
+          # 12.8.2 is the latest version that clang20 supports without nvcc
+          cuda: '12.8.2'
+          method: network
+          use-github-cache: false
+          use-local-cache: false
+          sub-packages: '["nvcc", "cudart", "cudart-dev"]'
+          non-cuda-sub-packages: '["libcurand-dev"]'
+
+      - name: Install nv-codec-headers
+        if: matrix.enable_cuda
+        run: |
+          git clone --depth 1 https://github.com/FFmpeg/nv-codec-headers.git
+          sudo make -C nv-codec-headers install PREFIX=/usr/local
+
       - uses: actions/checkout@v7
       - name: Run meson
         run: |
-          meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install -Denable_float=true ${CROSS:+--cross-file $CROSS}
+          MESON_OPTS="--buildtype release --prefix $PWD/install -Denable_float=true"
+          if [ "${{ matrix.enable_cuda }}" = "true" ]; then
+            MESON_OPTS="$MESON_OPTS -Denable_cuda=true -Denable_nvcc=${{ matrix.enable_nvcc }}"
+            BUILD_DIR="$RUNNER_TEMP/libvmaf_build"
+          else
+            BUILD_DIR="libvmaf/build"
+          fi
+          echo "BUILD_DIR=$BUILD_DIR" >> "$GITHUB_ENV"
+          meson setup libvmaf "$BUILD_DIR" $MESON_OPTS ${CROSS:+--cross-file $CROSS}
+
       - name: Run ninja
         run: |
-          sudo ninja -vC libvmaf/build install
+          sudo ninja -vC "$BUILD_DIR" install
+
       - name: Run tests
+        if: matrix.enable_cuda != true
         run: |
-          sudo ninja -vC libvmaf/build test
+          sudo ninja -vC "$BUILD_DIR" test
       - name: Set up tox
+        if: matrix.enable_cuda != true
         run: |
           mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache
           pip install tox
       - name: Run tox tests (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' && matrix.enable_cuda != true
         run: |
           tox -c python
       - name: Run tox tests (mac)
