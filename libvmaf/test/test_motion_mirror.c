@@ -244,7 +244,14 @@ static int run_motion_fex(VmafFeatureExtractor *fex, const char *feature_name,
  * repeatable score. There is no meaningful golden value at 1x1, so what is
  * asserted is: the call succeeds, the score is finite, and two identical runs
  * agree bit-for-bit. Both the 8 bpc and the 16 bpc pipeline are covered, and
- * both the scalar and the best-available SIMD dispatch. */
+ * both the scalar and the best-available SIMD dispatch.
+ *
+ * On top of the per-mask determinism check, every mask's score is compared
+ * against the cpu_masks[0] (== 0, forced scalar) score for the same
+ * (size, bpc). That cross-mask equality is what gives the x86 AVX2/AVX-512
+ * motion kernels their only runtime coverage for this fix: upstream CI runs
+ * `meson test` on an x86_64 runner, where the ~0u pass dispatches to those
+ * kernels and must land on exactly the same SAD as the C reference. */
 static char *test_integer_motion_pipeline_tiny_sizes()
 {
     static const unsigned bpcs[] = { 8, 10, 12, 16 };
@@ -257,6 +264,8 @@ static char *test_integer_motion_pipeline_tiny_sizes()
 
     for (unsigned s = 0; s < n_tiny_sizes; s++) {
         for (unsigned b = 0; b < n_bpcs; b++) {
+            double scalar_score = -1.;
+
             for (unsigned c = 0; c < n_cpu_masks; c++) {
                 double score_a = -1., score_b = -1.;
                 int err;
@@ -278,12 +287,29 @@ static char *test_integer_motion_pipeline_tiny_sizes()
                           !err);
                 mu_assert("integer motion score must be deterministic",
                           score_a == score_b);
+
+                /* cpu_masks[0] is 0, i.e. the forced-scalar reference. */
+                if (c == 0)
+                    scalar_score = score_a;
+                else
+                    mu_assert("integer motion score must not depend on CPU dispatch",
+                              score_a == scalar_score);
             }
         }
     }
 
     vmaf_set_cpu_flags_mask(~0u);
     return NULL;
+}
+
+/* Relative equality with a small floor, for the float path's cross-dispatch
+ * comparison. See the comment on test_float_motion_pipeline_tiny_sizes() for
+ * why that one comparison cannot be exact. */
+static int motion_scores_close(double a, double b)
+{
+    const double diff = fabs(a - b);
+    const double scale = fabs(a) > fabs(b) ? fabs(a) : fabs(b);
+    return diff <= 1e-6 * scale + 1e-9;
 }
 
 /* The same pipeline-safety and determinism check for the float `motion` path,
@@ -295,7 +321,17 @@ static char *test_integer_motion_pipeline_tiny_sizes()
  * convolution_f32_avx_s() whenever AVX2 is available and returns, so on an x86
  * runner the ~0u pass covers only the AVX kernel and the scalar
  * convolution_y_c_s()/convolution_x_c_s() pair -- the other half of the
- * boundary fix -- would go untouched without the cpu_mask == 0 pass. */
+ * boundary fix -- would go untouched without the cpu_mask == 0 pass.
+ *
+ * Every mask's score is also cross-checked against the cpu_masks[0] (forced
+ * scalar) score for the same (size, bpc), so that a dispatch-dependent
+ * boundary regression cannot hide on an x86 runner. Unlike the integer path,
+ * this comparison is a tolerance and not `==`: convolution_avx.c is built with
+ * -mfma while convolution.c is not, so the compiler contracts the shared
+ * convolution_edge_s() accumulation into fused multiply-adds in the AVX
+ * translation unit only. The two float results are therefore legitimately
+ * allowed to differ in the last bits. A reflection bug changes the score by
+ * O(1), which motion_scores_close() still catches by a wide margin. */
 static char *test_float_motion_pipeline_tiny_sizes()
 {
     vmaf_init_cpu();
@@ -309,6 +345,8 @@ static char *test_float_motion_pipeline_tiny_sizes()
 
     for (unsigned s = 0; s < n_tiny_sizes; s++) {
         for (unsigned b = 0; b < n_bpcs; b++) {
+            double scalar_score = -1.;
+
             for (unsigned c = 0; c < n_cpu_masks; c++) {
                 double score_a = -1., score_b = -1.;
                 int err;
@@ -328,6 +366,13 @@ static char *test_float_motion_pipeline_tiny_sizes()
                           !err);
                 mu_assert("float motion score must be deterministic",
                           score_a == score_b);
+
+                /* cpu_masks[0] is 0, i.e. the forced-scalar reference. */
+                if (c == 0)
+                    scalar_score = score_a;
+                else
+                    mu_assert("float motion score must not depend on CPU dispatch",
+                              motion_scores_close(score_a, scalar_score));
             }
         }
     }
