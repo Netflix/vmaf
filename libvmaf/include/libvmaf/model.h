@@ -87,6 +87,12 @@ int vmaf_model_collection_feature_overload(VmafModel *model,
 
 void vmaf_model_collection_destroy(VmafModelCollection *model_collection);
 
+/// @brief Iterate through all built in vmaf model versions
+/// @param prev previous model. NULL to get the first model
+/// @param name OUT var - name of next model. If last model, this function does not modify name
+/// @return next model or NULL after the last model
+const void* vmaf_model_version_next(const void* prev, const char** version);
+
 #ifdef __cplusplus
 }
 #endif
