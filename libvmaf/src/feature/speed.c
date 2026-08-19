@@ -43,6 +43,14 @@
 #endif
 #endif
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#ifndef M_E
+#define M_E 2.71828182845904523536
+#endif
+
 typedef double (*compute_cov_kernel_fn)(const float *data_x, const float *data_y,
                                         size_t stride_px, size_t height,
                                         size_t width, double mean_x,

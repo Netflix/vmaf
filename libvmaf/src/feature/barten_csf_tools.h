@@ -20,6 +20,10 @@
 #include "common/macros.h"
 #include <errno.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #pragma once
 
 #ifndef BARTEN_CSF_TOOLS_H_
