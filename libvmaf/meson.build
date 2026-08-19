@@ -19,14 +19,8 @@ cc = meson.get_compiler('c')
 libvmaf_inc = include_directories(['include'])
 
 # Arguments in test_args will be used even on feature tests
-test_args = []
-if host_machine.system() == 'linux' or host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
-    test_args += '-D_GNU_SOURCE'
-    add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
-elif host_machine.system() == 'darwin'
-    test_args += '-D_DARWIN_C_SOURCE'
-    add_project_arguments('-D_DARWIN_C_SOURCE', language: ['c', 'cpp'])
-endif
+test_args = ['-D_GNU_SOURCE', '-D_USE_MATH_DEFINES']
+add_project_arguments(test_args, language: ['c', 'cpp'])
 
 # Header checks
 stdatomic_dependency = []
