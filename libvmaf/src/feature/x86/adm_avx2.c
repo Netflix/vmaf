@@ -734,8 +734,8 @@ void adm_decouple_avx2(AdmBuffer *buf, int w, int h, int stride,
             // <->  ot_dp * ot_dp >= cos(1deg) * (o_mag_sq * t_mag_sq)
 #define CALC_ANGLE_256(ot_dp, o_mag_sq, t_mag_sq) \
                 (__m256i)_mm256_cmp_pd(_mm256_mul_pd(ot_dp, ot_dp), \
-                _mm256_mul_pd(_mm256_set1_pd(cos_1deg_sq), \
-                _mm256_mul_pd(o_mag_sq, t_mag_sq)), 5)
+                _mm256_mul_pd(_mm256_mul_pd(_mm256_set1_pd(cos_1deg_sq), \
+                   o_mag_sq), t_mag_sq), 5)
 
             // Get lo/hi floats as doubles
 #define SPLIT_TO_DOUBLES(v) \
@@ -1427,6 +1427,27 @@ static inline int64_t extract_epi64(__m256i a, const int index)
 }
 #endif
 
+// [ 0LL, 1LL, 2LL, 3LL ], [ 4LL, 5LL, 6LL, 7LL ]
+// ->
+// [ 0, 1, 2, 3, 4, 5, 6, 7 ]
+static inline __m256i merge_64_to_32(__m256i low, __m256i high) {
+	const __m256i Even = _mm256_setr_epi32(0, 2, 4, 6, 0, 2, 4, 6);
+
+	low = _mm256_permutevar8x32_epi32(low, Even);
+	high = _mm256_permutevar8x32_epi32(high, Even);
+
+	return _mm256_blend_epi32(low, high, 0xF0);
+}
+
+// Assumptions: v is in the valid int64 range
+// Credit: https://stackoverflow.com/a/41223013
+static inline __m256i double_to_64(__m256d v) {
+    const __m256d magic = _mm256_set1_pd(6755399441055744.0); // 2^52 + 2^51
+    v = _mm256_round_pd(v, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+    return _mm256_sub_epi64(_mm256_castpd_si256(_mm256_add_pd(v, magic)),
+        _mm256_castpd_si256(magic));
+}
+
 // No lzcnt in avx2
 void adm_decouple_s123_avx2(AdmBuffer *buf, int w, int h, int stride,
                               double adm_enhn_gain_limit, int32_t* adm_div_lookup)
@@ -1632,69 +1653,46 @@ void adm_decouple_s123_avx2(AdmBuffer *buf, int w, int h, int stride,
              __m256i kd_hi_epi64 = blend(const_32768_epi64, tmp_kd_hi_epi64, _mm256_cmpgt_epi64( tmp_kd_hi_epi64, const_32768_epi64));
              kd_hi_epi64 = blend(const_0_epi64, kd_hi_epi64, _mm256_cmpgt_epi64( const_0_epi64, tmp_kd_hi_epi64));
 
-             // rst convert 64 -> 32 is done in scalar
              // rst_h (int32_t)
              __m256i rst_h_lo_epi64 = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(kh_lo_epi64, oh_lo_epi64), const_16384_epi64), 15);
              __m256i rst_h_hi_epi64 = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(kh_hi_epi64, oh_hi_epi64), const_16384_epi64), 15);
-             int64_t tmp_rst_h_c[8];
-             _mm256_storeu_si256((__m256i*)(&(tmp_rst_h_c[0])),rst_h_lo_epi64);
-             _mm256_storeu_si256((__m256i*)(&(tmp_rst_h_c[4])),rst_h_hi_epi64);
-             __m256i rst_h_epi32 = _mm256_setr_epi32((int) tmp_rst_h_c[0], (int) tmp_rst_h_c[1], (int) tmp_rst_h_c[2], (int) tmp_rst_h_c[3],
-                                                     (int) tmp_rst_h_c[4], (int) tmp_rst_h_c[5], (int) tmp_rst_h_c[6], (int) tmp_rst_h_c[7]);
+
+             __m256i rst_h_epi32 = merge_64_to_32(rst_h_lo_epi64, rst_h_hi_epi64);
+
              // rst_v (int32_t)
              __m256i rst_v_lo_epi64 = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(kv_lo_epi64, ov_lo_epi64), const_16384_epi64), 15);
              __m256i rst_v_hi_epi64 = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(kv_hi_epi64, ov_hi_epi64), const_16384_epi64), 15);
-             int64_t tmp_rst_v_c[8];
-             _mm256_storeu_si256((__m256i*)(&(tmp_rst_v_c[0])),rst_v_lo_epi64);
-             _mm256_storeu_si256((__m256i*)(&(tmp_rst_v_c[4])),rst_v_hi_epi64);
-             __m256i rst_v_epi32 = _mm256_setr_epi32((int) tmp_rst_v_c[0], (int) tmp_rst_v_c[1], (int) tmp_rst_v_c[2], (int) tmp_rst_v_c[3],
-                                                     (int) tmp_rst_v_c[4], (int) tmp_rst_v_c[5], (int) tmp_rst_v_c[6], (int) tmp_rst_v_c[7]);
+
+             __m256i rst_v_epi32 = merge_64_to_32(rst_v_lo_epi64, rst_v_hi_epi64);
+
              // rst_d (int32_t)
              __m256i rst_d_lo_epi64 = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(kd_lo_epi64, od_lo_epi64), const_16384_epi64), 15);
              __m256i rst_d_hi_epi64 = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(kd_hi_epi64, od_hi_epi64), const_16384_epi64), 15);
-             int64_t tmp_rst_d_c[8];
-             _mm256_storeu_si256((__m256i*)(&(tmp_rst_d_c[0])),rst_d_lo_epi64);
-             _mm256_storeu_si256((__m256i*)(&(tmp_rst_d_c[4])),rst_d_hi_epi64);
-             __m256i rst_d_epi32 = _mm256_setr_epi32((int) tmp_rst_d_c[0], (int) tmp_rst_d_c[1], (int) tmp_rst_d_c[2], (int) tmp_rst_d_c[3],
-                                                     (int) tmp_rst_d_c[4], (int) tmp_rst_d_c[5], (int) tmp_rst_d_c[6], (int) tmp_rst_d_c[7]);
+
+             __m256i rst_d_epi32 = merge_64_to_32(rst_d_lo_epi64, rst_d_hi_epi64);
 
             __m256 inv_32768_f = _mm256_set1_ps((double)1/32768);
             __m256 inv_64_f = _mm256_set1_ps((double)1/64);
 
-            // kh convert 64 -> float needs to be done in scalar :(
             // rst_h_f
-            int64_t tmp_kh_c[8];
-            _mm256_storeu_si256((__m256i*)(&(tmp_kh_c[0])),kh_lo_epi64);
-            _mm256_storeu_si256((__m256i*)(&(tmp_kh_c[4])),kh_hi_epi64);
-            __m256 kh_f = _mm256_cvtepi32_ps( _mm256_setr_epi32((int) tmp_kh_c[0], (int) tmp_kh_c[1], (int) tmp_kh_c[2], (int) tmp_kh_c[3],
-                                                                (int) tmp_kh_c[4], (int) tmp_kh_c[5], (int) tmp_kh_c[6], (int) tmp_kh_c[7]));
+            __m256 kh_f = _mm256_cvtepi32_ps(merge_64_to_32(kh_lo_epi64, kh_hi_epi64));
             __m256 rst_h_f = _mm256_mul_ps(_mm256_mul_ps(kh_f, inv_32768_f), _mm256_mul_ps(_mm256_cvtepi32_ps(oh_epi32), inv_64_f));
             // rst_v_f
-            int64_t tmp_kv_c[8];
-            _mm256_storeu_si256((__m256i*)(&(tmp_kv_c[0])),kv_lo_epi64);
-            _mm256_storeu_si256((__m256i*)(&(tmp_kv_c[4])),kv_hi_epi64);
-            __m256 kv_f = _mm256_cvtepi32_ps( _mm256_setr_epi32((int) tmp_kv_c[0], (int) tmp_kv_c[1], (int) tmp_kv_c[2], (int) tmp_kv_c[3],
-                                                                (int) tmp_kv_c[4], (int) tmp_kv_c[5], (int) tmp_kv_c[6], (int) tmp_kv_c[7]));
+            __m256 kv_f = _mm256_cvtepi32_ps(merge_64_to_32(kv_lo_epi64, kv_hi_epi64));
             __m256 rst_v_f = _mm256_mul_ps(_mm256_mul_ps(kv_f, inv_32768_f), _mm256_mul_ps(_mm256_cvtepi32_ps(ov_epi32), inv_64_f));
             // rst_d_f
-            int64_t tmp_kd_c[8];
-            _mm256_storeu_si256((__m256i*)(&(tmp_kd_c[0])),kd_lo_epi64);
-            _mm256_storeu_si256((__m256i*)(&(tmp_kd_c[4])),kd_hi_epi64);
-            __m256 kd_f = _mm256_cvtepi32_ps( _mm256_setr_epi32((int) tmp_kd_c[0], (int) tmp_kd_c[1], (int) tmp_kd_c[2], (int) tmp_kd_c[3],
-                                                                (int) tmp_kd_c[4], (int) tmp_kd_c[5], (int) tmp_kd_c[6], (int) tmp_kd_c[7]));
+             __m256 kd_f = _mm256_cvtepi32_ps(merge_64_to_32(kd_lo_epi64, kd_hi_epi64));
             __m256 rst_d_f = _mm256_mul_ps(_mm256_mul_ps(kd_f, inv_32768_f), _mm256_mul_ps(_mm256_cvtepi32_ps(od_epi32), inv_64_f));
 
-           __m256d adm_gain_d = _mm256_set1_pd(adm_enhn_gain_limit);
+            __m256d adm_gain_d = _mm256_set1_pd(adm_enhn_gain_limit);
 
             // rst_h min/max as int64
             __m256d rst_h_lo_gain_pd = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extracti128_si256(rst_h_epi32,0)), adm_gain_d);
             __m256d rst_h_hi_gain_pd = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extracti128_si256(rst_h_epi32,1)), adm_gain_d);
-            // convert double -> 64 done in scalar
-            double tmp_rst_h_gain_c[8];
-            _mm256_storeu_pd((double*)(&(tmp_rst_h_gain_c[0])),rst_h_lo_gain_pd);
-            _mm256_storeu_pd((double*)(&(tmp_rst_h_gain_c[4])),rst_h_hi_gain_pd);
-            __m256i rst_h_lo_gain_epi64 = _mm256_setr_epi64x((int64_t) tmp_rst_h_gain_c[0], (int64_t) tmp_rst_h_gain_c[1], (int64_t) tmp_rst_h_gain_c[2], (int64_t) tmp_rst_h_gain_c[3]);
-            __m256i rst_h_hi_gain_epi64 = _mm256_setr_epi64x((int64_t) tmp_rst_h_gain_c[4], (int64_t) tmp_rst_h_gain_c[5], (int64_t) tmp_rst_h_gain_c[6], (int64_t) tmp_rst_h_gain_c[7]);
+
+            __m256i rst_h_lo_gain_epi64 = double_to_64(rst_h_lo_gain_pd);
+            __m256i rst_h_hi_gain_epi64 = double_to_64(rst_h_hi_gain_pd);
+
             __m256i rst_h_min_lo_epi64 = blend( rst_h_lo_gain_epi64, th_lo_epi64, _mm256_cmpgt_epi64(th_lo_epi64, rst_h_lo_gain_epi64));
             __m256i rst_h_min_hi_epi64 = blend( rst_h_hi_gain_epi64, th_hi_epi64, _mm256_cmpgt_epi64(th_hi_epi64, rst_h_hi_gain_epi64));
             __m256i rst_h_max_lo_epi64 = blend( rst_h_lo_gain_epi64, th_lo_epi64, _mm256_cmpgt_epi64(rst_h_lo_gain_epi64, th_lo_epi64));
@@ -1715,22 +1713,16 @@ void adm_decouple_s123_avx2(AdmBuffer *buf, int w, int h, int stride,
             rst_h_hi_epi64 = blend(rst_h_min_hi_epi64, rst_h_hi_epi64, mask_gt_h_hi_epi64);
             rst_h_lo_epi64 = blend(rst_h_max_lo_epi64, rst_h_lo_epi64, mask_lt_h_lo_epi64);
             rst_h_hi_epi64 = blend(rst_h_max_hi_epi64, rst_h_hi_epi64, mask_lt_h_hi_epi64);
-            // convert 64 -> 32 is done in scalar
-            int64_t tmp_rst_h_c2[8];
-            _mm256_storeu_si256((__m256i*)(&(tmp_rst_h_c2[0])),rst_h_lo_epi64);
-            _mm256_storeu_si256((__m256i*)(&(tmp_rst_h_c2[4])),rst_h_hi_epi64);
-            rst_h_epi32 = _mm256_setr_epi32((int) tmp_rst_h_c2[0], (int) tmp_rst_h_c2[1], (int) tmp_rst_h_c2[2], (int) tmp_rst_h_c2[3],
-                                            (int) tmp_rst_h_c2[4], (int) tmp_rst_h_c2[5], (int) tmp_rst_h_c2[6], (int) tmp_rst_h_c2[7]);
+
+            rst_h_epi32 = merge_64_to_32(rst_h_lo_epi64, rst_h_hi_epi64);
 
             // rst_v min/max as int64
             __m256d rst_v_lo_gain_pd = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extracti128_si256(rst_v_epi32,0)), adm_gain_d);
             __m256d rst_v_hi_gain_pd = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extracti128_si256(rst_v_epi32,1)), adm_gain_d);
-            // convert double -> 64 done in scalar
-            double tmp_rst_v_gain_c[8];
-            _mm256_storeu_pd((double*)(&(tmp_rst_v_gain_c[0])),rst_v_lo_gain_pd);
-            _mm256_storeu_pd((double*)(&(tmp_rst_v_gain_c[4])),rst_v_hi_gain_pd);
-            __m256i rst_v_lo_gain_epi64 = _mm256_setr_epi64x((int64_t) tmp_rst_v_gain_c[0], (int64_t) tmp_rst_v_gain_c[1], (int64_t) tmp_rst_v_gain_c[2], (int64_t) tmp_rst_v_gain_c[3]);
-            __m256i rst_v_hi_gain_epi64 = _mm256_setr_epi64x((int64_t) tmp_rst_v_gain_c[4], (int64_t) tmp_rst_v_gain_c[5], (int64_t) tmp_rst_v_gain_c[6], (int64_t) tmp_rst_v_gain_c[7]);
+
+            __m256i rst_v_lo_gain_epi64 = double_to_64(rst_v_lo_gain_pd);
+            __m256i rst_v_hi_gain_epi64 = double_to_64(rst_v_hi_gain_pd);
+
             __m256i rst_v_min_lo_epi64 = blend( rst_v_lo_gain_epi64, tv_lo_epi64, _mm256_cmpgt_epi64(tv_lo_epi64, rst_v_lo_gain_epi64));
             __m256i rst_v_min_hi_epi64 = blend( rst_v_hi_gain_epi64, tv_hi_epi64, _mm256_cmpgt_epi64(tv_hi_epi64, rst_v_hi_gain_epi64));
             __m256i rst_v_max_lo_epi64 = blend( rst_v_lo_gain_epi64, tv_lo_epi64, _mm256_cmpgt_epi64(rst_v_lo_gain_epi64, tv_lo_epi64));
@@ -1752,22 +1744,16 @@ void adm_decouple_s123_avx2(AdmBuffer *buf, int w, int h, int stride,
             rst_v_hi_epi64 = blend(rst_v_min_hi_epi64, rst_v_hi_epi64, mask_gt_v_hi_epi64);
             rst_v_lo_epi64 = blend(rst_v_max_lo_epi64, rst_v_lo_epi64, mask_lt_v_lo_epi64);
             rst_v_hi_epi64 = blend(rst_v_max_hi_epi64, rst_v_hi_epi64, mask_lt_v_hi_epi64);
-            // convert 64 -> 32 needs done in scalar
-            int64_t tmp_rst_v_c2[8];
-            _mm256_storeu_si256((__m256i*)(&(tmp_rst_v_c2[0])),rst_v_lo_epi64);
-            _mm256_storeu_si256((__m256i*)(&(tmp_rst_v_c2[4])),rst_v_hi_epi64);
-            rst_v_epi32 = _mm256_setr_epi32((int) tmp_rst_v_c2[0], (int) tmp_rst_v_c2[1], (int) tmp_rst_v_c2[2], (int) tmp_rst_v_c2[3],
-                                            (int) tmp_rst_v_c2[4], (int) tmp_rst_v_c2[5], (int) tmp_rst_v_c2[6], (int) tmp_rst_v_c2[7]);
+
+            rst_v_epi32 = merge_64_to_32(rst_v_lo_epi64, rst_v_hi_epi64);
 
             // rst_d min/max as int64
             __m256d rst_d_lo_gain_pd = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extracti128_si256(rst_d_epi32,0)), adm_gain_d);
             __m256d rst_d_hi_gain_pd = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extracti128_si256(rst_d_epi32,1)), adm_gain_d);
-            // convert double -> 64 done in scalar
-            double tmp_rst_d_gain_c[8];
-            _mm256_storeu_pd((double*)(&(tmp_rst_d_gain_c[0])),rst_d_lo_gain_pd);
-            _mm256_storeu_pd((double*)(&(tmp_rst_d_gain_c[4])),rst_d_hi_gain_pd);
-            __m256i rst_d_lo_gain_epi64 = _mm256_setr_epi64x((int64_t) tmp_rst_d_gain_c[0], (int64_t) tmp_rst_d_gain_c[1], (int64_t) tmp_rst_d_gain_c[2], (int64_t) tmp_rst_d_gain_c[3]);
-            __m256i rst_d_hi_gain_epi64 = _mm256_setr_epi64x((int64_t) tmp_rst_d_gain_c[4], (int64_t) tmp_rst_d_gain_c[5], (int64_t) tmp_rst_d_gain_c[6], (int64_t) tmp_rst_d_gain_c[7]);
+
+            __m256i rst_d_lo_gain_epi64 = double_to_64(rst_d_lo_gain_pd);
+            __m256i rst_d_hi_gain_epi64 = double_to_64(rst_d_hi_gain_pd);
+
             __m256i rst_d_min_lo_epi64 = blend( rst_d_lo_gain_epi64, td_lo_epi64, _mm256_cmpgt_epi64(td_lo_epi64, rst_d_lo_gain_epi64));
             __m256i rst_d_min_hi_epi64 = blend( rst_d_hi_gain_epi64, td_hi_epi64, _mm256_cmpgt_epi64(td_hi_epi64, rst_d_hi_gain_epi64));
             __m256i rst_d_max_lo_epi64 = blend( rst_d_lo_gain_epi64, td_lo_epi64, _mm256_cmpgt_epi64(rst_d_lo_gain_epi64, td_lo_epi64));
@@ -1789,12 +1775,8 @@ void adm_decouple_s123_avx2(AdmBuffer *buf, int w, int h, int stride,
             rst_d_hi_epi64 = blend(rst_d_min_hi_epi64, rst_d_hi_epi64, mask_gt_d_hi_epi64);
             rst_d_lo_epi64 = blend(rst_d_max_lo_epi64, rst_d_lo_epi64, mask_lt_d_lo_epi64);
             rst_d_hi_epi64 = blend(rst_d_max_hi_epi64, rst_d_hi_epi64, mask_lt_d_hi_epi64);
-            // convert 64 -> 32 done in scalar
-            int64_t tmp_rst_d_c2[8];
-            _mm256_storeu_si256((__m256i*)(&(tmp_rst_d_c2[0])),rst_d_lo_epi64);
-            _mm256_storeu_si256((__m256i*)(&(tmp_rst_d_c2[4])),rst_d_hi_epi64);
-            rst_d_epi32 = _mm256_setr_epi32((int) tmp_rst_d_c2[0], (int) tmp_rst_d_c2[1], (int) tmp_rst_d_c2[2], (int) tmp_rst_d_c2[3],
-                                            (int) tmp_rst_d_c2[4], (int) tmp_rst_d_c2[5], (int) tmp_rst_d_c2[6], (int) tmp_rst_d_c2[7]);
+
+            rst_d_epi32 = merge_64_to_32(rst_d_lo_epi64, rst_d_hi_epi64);
 
             __m256i th_sub_rst_h_epi32 = _mm256_sub_epi32(th_epi32, rst_h_epi32);
             __m256i tv_sub_rst_v_epi32 = _mm256_sub_epi32(tv_epi32, rst_v_epi32);
