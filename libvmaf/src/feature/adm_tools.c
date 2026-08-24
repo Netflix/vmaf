@@ -28,10 +28,6 @@
 #include "adm_options.h"
 #include "adm_tools.h"
 
-#ifndef M_PI
-#define M_PI 3.1415926535897932384626433832795028841971693993751
-#endif
-
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
