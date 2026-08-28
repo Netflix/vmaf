@@ -292,6 +292,24 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     return 0;
 }
 
+/* Frames are extracted concurrently and out of order, so a score this frame
+ * depends on may not have been written yet. Every score waited on here belongs
+ * to an *earlier* frame, whose job was dequeued from the FIFO thread pool
+ * before this one and is therefore already in flight, so the wait always makes
+ * progress. Waiting on a later frame would deadlock at --threads 1 and is left
+ * to the caller to defer instead. */
+static int motion_await(VmafFeatureCollector *feature_collector,
+                        const char *feature_name, double *score,
+                        unsigned index, bool wait)
+{
+    int err;
+    while ((err = vmaf_feature_collector_get_score(feature_collector,
+                                                   feature_name, score, index))
+           && wait)
+        ;
+    return err;
+}
+
 /* A frame is attempted again once its deferred scores become computable, and
  * the feature collector refuses to overwrite an index. */
 static int motion_append(VmafFeatureCollector *feature_collector,
@@ -334,8 +352,8 @@ static int calculate_integer_motionx_features(VmafFeatureExtractor *fex,
 
     double stamp_value = 0.;
     double sad_at_min_idx;
-    if (!vmaf_feature_collector_get_score(feature_collector, sad_name,
-                                          &sad_at_min_idx, min_idx)) {
+    if (!motion_await(feature_collector, sad_name, &sad_at_min_idx, min_idx,
+                      !eos && i >= min_idx)) {
         stamp_value = MIN(motion_blend(sad_at_min_idx,
                                        s->motion_blend_factor,
                                        s->motion_blend_offset),
@@ -345,7 +363,7 @@ static int calculate_integer_motionx_features(VmafFeatureExtractor *fex,
     }
 
     double sad_i;
-    if (vmaf_feature_collector_get_score(feature_collector, sad_name, &sad_i, i))
+    if (motion_await(feature_collector, sad_name, &sad_i, i, !eos))
         return -EAGAIN;
 
     double motion2;
@@ -363,8 +381,7 @@ static int calculate_integer_motionx_features(VmafFeatureExtractor *fex,
             motion2 = sad_i;
         } else if (lo_idx >= (int)min_idx) {
             double lo;
-            if (vmaf_feature_collector_get_score(
-                    feature_collector, sad_name, &lo, lo_idx))
+            if (motion_await(feature_collector, sad_name, &lo, lo_idx, !eos))
                 return -EAGAIN;
             motion2 = lo < hi ? lo : hi;
         } else {
@@ -378,8 +395,8 @@ static int calculate_integer_motionx_features(VmafFeatureExtractor *fex,
     double prev_processed = stamp_value;
     if (s->motion_moving_average && i > min_idx) {
         double motion2_prev;
-        if (vmaf_feature_collector_get_score(feature_collector, motion2_name,
-                                             &motion2_prev, i - 1))
+        if (motion_await(feature_collector, motion2_name, &motion2_prev, i - 1,
+                         !eos))
             return -EAGAIN;
         prev_processed = MIN(motion_blend(motion2_prev,
                                           s->motion_blend_factor,
