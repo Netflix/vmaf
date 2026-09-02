@@ -47,7 +47,8 @@ float _ssim_reduce(int w, int h, void *ctx)
 
 int compute_ssim(const float *ref, const float *cmp, int w, int h,
         int ref_stride, int cmp_stride, double *score,
-        double *l_score, double *c_score, double *s_score)
+        double *l_score, double *c_score, double *s_score,
+        int scale_override)
 {
 
     int ret = 1;
@@ -77,7 +78,11 @@ int compute_ssim(const float *ref, const float *cmp, int w, int h,
     int gaussian = 1; /* 0 for 8x8 square window, 1 for 11x11 circular-symmetric Gaussian window (default) */
 
     /* initialize algorithm parameters */
-    scale = _max( 1, _round( (float)_min(w,h) / 256.0f ) );
+    if (scale_override > 0) {
+        scale = scale_override;
+    } else {
+        scale = _max( 1, _round( (float)_min(w,h) / 256.0f ) );
+    }
     if (args) {
         if(args->f) {
             scale = args->f;

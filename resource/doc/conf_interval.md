@@ -33,7 +33,7 @@ yields:
         "BOOTSTRAP_VMAF_score": 75.44304785910772,
         "BOOTSTRAP_VMAF_stddev_score": 1.31289244504376,
         "VMAF_feature_adm2_score": 0.9345878041226809,
-        "VMAF_feature_motion2_score": 3.8953518541666665,
+        "VMAF_feature_motion2_score": 3.8943597291666667,
         "VMAF_feature_vif_scale0_score": 0.36342081156994926,
         "VMAF_feature_vif_scale1_score": 0.7666473878461729,
         "VMAF_feature_vif_scale2_score": 0.8628533892781629,

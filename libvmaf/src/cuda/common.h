@@ -27,8 +27,6 @@
 #include "picture.h"
 
 #if HAVE_CUDA
-
-#include <cuda.h>
 #include <libvmaf/libvmaf_cuda.h>
 #include "cuda_helper.cuh"
 
@@ -37,10 +35,13 @@ typedef struct VmafCudaBuffer {
     CUdeviceptr data;
 } VmafCudaBuffer;
 
+typedef struct CudaFunctions CudaFunctions;
+
 typedef struct VmafCudaState {
     CUcontext ctx;
     CUstream str;
     CUdevice dev;
+    CudaFunctions *f;
     int release_ctx;
 } VmafCudaState;
 

@@ -108,7 +108,7 @@ class RegressorMixin(object):
                 respow = ResolvingPowerPerfMetric(ys_label_raw_list, ys_label_pred) \
                     .evaluate(enable_mapping=False)['score']
                 stats['ResPow'] = respow
-            except (TypeError, AssertionError):
+            except:
                 stats['ResPow'] = float('nan')
 
             try:
@@ -116,7 +116,7 @@ class RegressorMixin(object):
                 respow_norm = ResolvingPowerPerfMetric(ys_label_raw_list, ys_label_pred) \
                     .evaluate(enable_mapping=True)['score']
                 stats['ResPowNormalized'] = respow_norm
-            except (TypeError, AssertionError):
+            except:
                 stats['ResPowNormalized'] = float('nan')
 
         if 'ys_label_stddev' in kwargs and 'ys_label_stddev' and kwargs['ys_label_stddev'] is not None:
@@ -635,6 +635,16 @@ class TrainTestModel(TypeVersionEnabled):
     def model(self, value):
         self.model_dict['model'] = value
 
+    @property
+    def chroma_correction_parameter(self):
+        return self.model_dict['chroma_correction_parameter']
+
+    @chroma_correction_parameter.setter
+    def chroma_correction_parameter(self, value):
+        assert isinstance(value, float) and 0.0 < value < 200.0, \
+            "chroma_correction_parameter needs to be a float between 0 and 200"
+        self.model_dict['chroma_correction_parameter'] = value
+
     def to_file(self, filename, **more):
         self._assert_trained()
         param_dict = self.param_dict
@@ -857,10 +867,51 @@ class TrainTestModel(TypeVersionEnabled):
         feature_names = self.feature_names
         for name in feature_names:
             assert name in xs
+        ccp = self.model_dict.get('chroma_correction_parameter')
+        if ccp is not None:
+            xs = self.postprocess_feature_from_another(xs, feature_names, ccp, 0.0,
+                                                       'adm3', 'speed_chroma')
         xs_2d = self._to_tabular_xs(feature_names, xs)
         # normalize xs
         xs_2d = self.normalize_xs(xs_2d)
         return xs_2d
+
+    @staticmethod
+    def postprocess_feature_from_another(xs, feature_names, guiding_parameter, corrected_value,
+                                         guiding_feature, guided_feature):
+        """
+        Post-process the scores from the guided feature using the guiding feature. When guided feature scores are
+        equal to the corrected value, exchange them for the guiding feature scores modified by the guiding parameter.
+        >>> xs = {'guiding': [0.5, 0.5], 'guided': [0.0, 0.1]}
+        >>> feature_names = ['guiding', 'guided']
+        >>> TrainTestModel.postprocess_feature_from_another(xs, feature_names, 120.0, 0.0, 'guiding', 'guided')
+        {'guiding': [0.5, 0.5], 'guided': [60.0, 0.1]}
+        >>> TrainTestModel.postprocess_feature_from_another(xs, feature_names, 120.0, 0.0, 'guid', 'guided')
+        Traceback (most recent call last):
+        ...
+        AssertionError: substring 'guid' corresponds to more than one feature
+        """
+        guided_feature_name = ''
+        guiding_scores = []
+        guided_scores = []
+        for name in feature_names:
+            if guiding_feature in name:
+                assert len(guiding_scores) == 0, f"substring '{guiding_feature}' corresponds to more than one feature"
+                guiding_scores = np.array(xs[name])
+            elif guided_feature in name:
+                assert len(guided_scores) == 0, f"substring '{guided_feature}' corresponds to more than one feature"
+                guided_feature_name = name
+                guided_scores = np.array(xs[name])
+            else:
+                continue
+
+        if len(guiding_scores) > 0 and guided_feature_name != '':
+
+            guided_scores[guided_scores == corrected_value] = \
+                (-guiding_parameter * guiding_scores[guided_scores == corrected_value]) + guiding_parameter
+            xs[guided_feature_name] = list(guided_scores)
+
+        return xs
 
     def predict(self, xs):
         xs_2d = self._preproc_predict(xs)
@@ -1319,7 +1370,7 @@ class Logistic5PLRegressionTrainTestModel(TrainTestModel, RegressorMixin):
         
         Q(x) = B1 + (1/2 - 1/(1 + exp(B2 * (x - B3)))) + B4 * x + B5
         
-        H. R. Sheikh, M. F. Sabir, and A. C. Bovik, 
+        H. R. Sheikh, M. F. Sabir, and A. C. Bovik,
         "A statistical evaluation of recent full reference image quality assessment algorithms"
         IEEE Trans. Image Process., vol. 15, no. 11, pp. 3440–3451, Nov. 2006.
 

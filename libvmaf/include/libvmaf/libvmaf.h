@@ -254,51 +254,6 @@ int vmaf_feature_score_at_index(VmafContext *vmaf, const char *feature_name,
                                 double *score, unsigned index);
 
 /**
- * Metadata structure.
- *
- * @param feature_name   Name of the feature to fetch.
- *
- * @param picture_index  Picture index.
- *
- * @param score          Score.
- *
- * @note This structure is used to pass metadata to a callback function.
- */
-typedef struct VmafMetadata {
-    char *feature_name;
-    unsigned picture_index;
-    double score;
-} VmafMetadata;
-
-/**
- * Metadata configuration.
- *
- * @param feature_name Name of the feature to fetch.
- *
- * @param callback     Callback to receive metadata.
- *
- * @param data         User data to pass to the callback.
- */
-typedef struct VmafMetadataConfiguration {
-    char *feature_name;
-    void (*callback)(void *data, VmafMetadata *metadata);
-    void *data;
-} VmafMetadataConfiguration;
-
-/**
- * Register a callback to receive VMAF metadata.
- *
- * @param vmaf The VMAF context allocated with `vmaf_init()`.
- *
- * @param cfg  Metadata configuration.
- *
- *
- * @return 0 on success, or < 0 (a negative errno code) on error.
- */
-
-int vmaf_register_metadata_handler(VmafContext *vmaf, VmafMetadataConfiguration cfg);
-
-/**
  * Pooled VMAF score for a specific interval.
  *
  * @param vmaf         The VMAF context allocated with `vmaf_init()`.
@@ -365,6 +320,47 @@ int vmaf_score_pooled_model_collection(VmafContext *vmaf,
 int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
                               enum VmafPoolingMethod pool_method, double *score,
                               unsigned index_low, unsigned index_high);
+
+/**
+ * Picture Pool Configuration
+ */
+typedef struct VmafPictureConfiguration {
+    struct {
+        unsigned w, h;
+        unsigned bpc;
+        enum VmafPixelFormat pix_fmt;
+    } pic_params;
+    unsigned pic_cnt;
+} VmafPictureConfiguration;
+
+/**
+ * Preallocate pictures for use with multi-threaded feature extraction.
+ * Pictures are allocated once and automatically returned to the pool when
+ * fully unref'd, avoiding repeated allocation/deallocation overhead.
+ *
+ * @param vmaf VMAF context allocated with `vmaf_init()`.
+ *
+ * @param cfg  Picture configuration including dimensions and pool size.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_preallocate_pictures(VmafContext *vmaf,
+                              VmafPictureConfiguration cfg);
+
+/**
+ * Fetch a preallocated picture from the picture pool.
+ * The picture must be returned to the pool via vmaf_picture_unref() when done.
+ * Pictures automatically return to the pool when their reference count reaches zero.
+ *
+ * @param vmaf VMAF context initialized with `vmaf_preallocate_pictures()`.
+ *
+ * @param pic  Output picture from the pool.
+ *
+ *
+ * @return 0 on success, or < 0 (a negative errno code) on error.
+ */
+int vmaf_fetch_preallocated_picture(VmafContext *vmaf, VmafPicture *pic);
 
 /**
  * Close a VMAF instance and free all associated memory.

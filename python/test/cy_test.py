@@ -13,6 +13,7 @@ class AdmDwt2PyTest(unittest.TestCase):
     def setUp(self) -> None:
         pass
 
+
     def test_adm_dwt2_py(self):
         np.random.seed(0)
         x = np.random.uniform(low=-128, high=127, size=[324, 576]).astype(np.float64)

@@ -100,6 +100,27 @@ static void usage(const char *const app, const char *const reason, ...) {
     exit(1);
 }
 
+#define CHECKED_APPEND(arr, cnt, val, app, desc) do {                   \
+    if ((cnt) == CLI_SETTINGS_STATIC_ARRAY_LEN)                         \
+        usage((app), "A maximum of %d %s are supported\n",              \
+              CLI_SETTINGS_STATIC_ARRAY_LEN, (desc));                   \
+    (arr)[(cnt)++] = (val);                                             \
+} while (0)
+
+#define CHECKED_REPLACE(arr, cnt, val, app, desc) do {                  \
+    CLIFeatureConfig _val = (val);                                      \
+    unsigned _i;                                                        \
+    for (_i = 0; _i < (cnt); _i++)                                      \
+        if (!strcmp((arr)[_i].name, _val.name)) {                       \
+            free((arr)[_i].buf);                                        \
+            vmaf_feature_dictionary_free(&(arr)[_i].opts_dict);         \
+            (arr)[_i] = _val;                                           \
+            break;                                                      \
+        }                                                               \
+    if (_i == (cnt))                                                    \
+        CHECKED_APPEND((arr), (cnt), _val, (app), (desc));              \
+} while (0)
+
 static void error(const char *const app, const char *const optarg,
                   const int option, const char *const shouldbe)
 {
@@ -218,6 +239,10 @@ static CLIModelConfig parse_model_config(const char *const optarg,
             model_cfg.cfg.flags |=
                 !strcmp(val, "true") ? VMAF_MODEL_FLAG_ENABLE_TRANSFORM : 0;
         } else {
+            if (model_cfg.overload_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
+                usage(app, "A maximum of %d feature overloads per model"
+                      " are supported\n", CLI_SETTINGS_STATIC_ARRAY_LEN);
+            }
             char *name = strsep(&key, ".");
             model_cfg.feature_overload[model_cfg.overload_cnt].name = name;
             char *opt = strsep(&key, ".");
@@ -273,29 +298,34 @@ static void aom_ctc_v1_0(CLISettings *settings, const char *const app)
         .version = "vmaf_v0.6.1",
         .cfg = { .name = "vmaf" },
     };
-    settings->model_config[settings->model_cnt++] = cfg;
+    CHECKED_APPEND(settings->model_config, settings->model_cnt, cfg,
+                   app, "models");
 
     CLIModelConfig cfg_neg = {
         .version = "vmaf_v0.6.1neg",
         .cfg = { .name = "vmaf_neg" },
     };
-    settings->model_config[settings->model_cnt++] = cfg_neg;
+    CHECKED_APPEND(settings->model_config, settings->model_cnt, cfg_neg,
+                   app, "models");
 
-    settings->feature_cfg[settings->feature_cnt++] =
+    CHECKED_APPEND(settings->feature_cfg, settings->feature_cnt,
         parse_feature_config("psnr=reduced_hbd_peak=true:"
-                             "enable_apsnr=true:min_sse=0.5", app);
+                             "enable_apsnr=true:min_sse=0.5", app),
+        app, "features");
 
-    settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("ciede", app);
+    CHECKED_APPEND(settings->feature_cfg, settings->feature_cnt,
+        parse_feature_config("ciede", app), app, "features");
 
-    settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("float_ssim=enable_db=true:clip_db=true", app);
+    CHECKED_APPEND(settings->feature_cfg, settings->feature_cnt,
+        parse_feature_config("float_ssim=enable_db=true:clip_db=true", app),
+        app, "features");
 
-    settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("float_ms_ssim=enable_db=true:clip_db=true", app);
+    CHECKED_APPEND(settings->feature_cfg, settings->feature_cnt,
+        parse_feature_config("float_ms_ssim=enable_db=true:clip_db=true", app),
+        app, "features");
 
-    settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("psnr_hvs", app);
+    CHECKED_APPEND(settings->feature_cfg, settings->feature_cnt,
+        parse_feature_config("psnr_hvs", app), app, "features");
 }
 
 static void aom_ctc_v2_0(CLISettings *settings, const char *app)
@@ -306,8 +336,8 @@ static void aom_ctc_v2_0(CLISettings *settings, const char *app)
 static void aom_ctc_v3_0(CLISettings *settings, const char *app)
 {
     aom_ctc_v2_0(settings, app);
-    settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("cambi", app);
+    CHECKED_APPEND(settings->feature_cfg, settings->feature_cnt,
+        parse_feature_config("cambi", app), app, "features");
 }
 
 static void aom_ctc_v4_0(CLISettings *settings, const char *app)
@@ -324,6 +354,15 @@ static void aom_ctc_v6_0(CLISettings *settings, const char *app)
 {
     aom_ctc_v5_0(settings, app);
     settings->common_bitdepth = true;
+}
+
+static void aom_ctc_v7_0(CLISettings *settings, const char *app)
+{
+    aom_ctc_v6_0(settings, app);
+    CHECKED_REPLACE(settings->feature_cfg, settings->feature_cnt,
+        parse_feature_config("float_ssim=scale=1:enable_db=true:clip_db=true",
+                             app),
+        app, "features");
 }
 
 static void parse_aom_ctc(CLISettings *settings, const char *const optarg,
@@ -362,6 +401,11 @@ static void parse_aom_ctc(CLISettings *settings, const char *const optarg,
         return;
     }
 
+    if (!strcmp(optarg, "v7.0")) {
+        aom_ctc_v7_0(settings, app);
+        return;
+    }
+
     usage(app, "bad aom_ctc version \"%s\"", optarg);
 }
 
@@ -371,22 +415,26 @@ static void nflx_ctc_v1_0(CLISettings *settings, const char *const app)
         .version = "vmaf_4k_v0.6.1",
         .cfg = { .name = "vmaf" },
     };
-    settings->model_config[settings->model_cnt++] = cfg;
+    CHECKED_APPEND(settings->model_config, settings->model_cnt, cfg,
+                   app, "models");
 
     CLIModelConfig cfg_neg = {
         .version = "vmaf_4k_v0.6.1neg",
         .cfg = { .name = "vmaf_neg" },
     };
-    settings->model_config[settings->model_cnt++] = cfg_neg;
+    CHECKED_APPEND(settings->model_config, settings->model_cnt, cfg_neg,
+                   app, "models");
 
-    settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("psnr=enable_chroma=true:enable_apsnr=true", app);
+    CHECKED_APPEND(settings->feature_cfg, settings->feature_cnt,
+        parse_feature_config("psnr=enable_chroma=true:enable_apsnr=true", app),
+        app, "features");
 
-    settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("float_ssim=enable_db=true:clip_db=true", app);
+    CHECKED_APPEND(settings->feature_cfg, settings->feature_cnt,
+        parse_feature_config("float_ssim=enable_db=true:clip_db=true", app),
+        app, "features");
 
-    settings->feature_cfg[settings->feature_cnt++] =
-        parse_feature_config("cambi", app);
+    CHECKED_APPEND(settings->feature_cfg, settings->feature_cnt,
+        parse_feature_config("cambi", app), app, "features");
 }
 
 static void parse_nflx_ctc(CLISettings *settings, const char *const optarg,
@@ -446,20 +494,12 @@ void cli_parse(const int argc, char *const *const argv,
             settings->output_fmt = VMAF_OUTPUT_FORMAT_SUB;
             break;
         case 'm':
-            if (settings->model_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
-                usage(argv[0], "A maximum of %d models are supported\n",
-                      CLI_SETTINGS_STATIC_ARRAY_LEN);
-            }
-            settings->model_config[settings->model_cnt++] =
-                parse_model_config(optarg, argv[0]);
+            CHECKED_APPEND(settings->model_config, settings->model_cnt,
+                parse_model_config(optarg, argv[0]), argv[0], "models");
             break;
         case ARG_FEATURE:
-            if (settings->feature_cnt == CLI_SETTINGS_STATIC_ARRAY_LEN) {
-                usage(argv[0], "A maximum of %d features is supported\n",
-                      CLI_SETTINGS_STATIC_ARRAY_LEN);
-            }
-            settings->feature_cfg[settings->feature_cnt++] =
-                parse_feature_config(optarg, argv[0]);
+            CHECKED_APPEND(settings->feature_cfg, settings->feature_cnt,
+                parse_feature_config(optarg, argv[0]), argv[0], "features");
             break;
         case ARG_THREADS:
             settings->thread_cnt = parse_unsigned(optarg, 't', argv[0]);
@@ -524,7 +564,8 @@ void cli_parse(const int argc, char *const *const argv,
         CLIModelConfig cfg = {
             .version = "vmaf_v0.6.1",
         };
-        settings->model_config[settings->model_cnt++] = cfg;
+        CHECKED_APPEND(settings->model_config, settings->model_cnt, cfg,
+                       argv[0], "models");
 #else
         usage(argv[0], "At least one model (-m/--model) is required "
                        "unless no prediction (-n/--no_prediction) is set");

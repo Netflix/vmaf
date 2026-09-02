@@ -27,10 +27,8 @@
 #include "log.h"
 #include "picture.h"
 
-#ifdef HAVE_CUDA
 #ifdef HAVE_NVTX
-#include "nvtx3/nvToolsExt.h"
-#endif
+#include <nvtx3/nvToolsExt.h>
 #endif
 
 #if VMAF_FLOAT_FEATURES
@@ -41,6 +39,8 @@ extern VmafFeatureExtractor vmaf_fex_float_motion;
 extern VmafFeatureExtractor vmaf_fex_float_moment;
 extern VmafFeatureExtractor vmaf_fex_float_vif;
 #endif
+extern VmafFeatureExtractor vmaf_fex_speed_chroma;
+extern VmafFeatureExtractor vmaf_fex_speed_temporal;
 extern VmafFeatureExtractor vmaf_fex_float_ssim;
 extern VmafFeatureExtractor vmaf_fex_float_ms_ssim;
 extern VmafFeatureExtractor vmaf_fex_ciede;
@@ -66,6 +66,8 @@ static VmafFeatureExtractor *feature_extractor_list[] = {
     &vmaf_fex_float_motion,
     &vmaf_fex_float_moment,
 #endif
+    &vmaf_fex_speed_chroma,
+    &vmaf_fex_speed_temporal,
     &vmaf_fex_float_ms_ssim,
     &vmaf_fex_float_ssim,
     &vmaf_fex_ciede,

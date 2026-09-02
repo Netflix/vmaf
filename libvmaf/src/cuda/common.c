@@ -42,15 +42,15 @@ static int init_with_primary_context(VmafCudaState *cu_state)
 
     const int device_id = 0;
     int n_gpu;
-    res |= cuDeviceGetCount(&n_gpu);
+    res |= cu_state->f->cuDeviceGetCount(&n_gpu);
     if (device_id > n_gpu) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR,
                  "Error: device_id %d is out of range\n", device_id);
         return -EINVAL;
     }
 
-    res |= cuDeviceGet(&cu_device, device_id);
-    res |= cuDevicePrimaryCtxRetain(&cu_context, cu_device);
+    res |= cu_state->f->cuDeviceGet(&cu_device, device_id);
+    res |= cu_state->f->cuDevicePrimaryCtxRetain(&cu_context, cu_device);
     if (res != CUDA_SUCCESS) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR, "Error: failed to initialize CUDA\n");
         return -EINVAL;
@@ -60,16 +60,15 @@ static int init_with_primary_context(VmafCudaState *cu_state)
     cu_state->release_ctx = 1;
     cu_state->dev = cu_device;
 
-    CHECK_CUDA(cuCtxPushCurrent((cu_state->ctx)));
+    CHECK_CUDA(cu_state->f, cuCtxPushCurrent((cu_state->ctx)));
 
     int low, high;
-    CHECK_CUDA(cuCtxGetStreamPriorityRange(&low, &high));
+    CHECK_CUDA(cu_state->f, cuCtxGetStreamPriorityRange(&low, &high));
     const int prio = 0;
     const int prio2 = MAX(low, MIN(high, prio));
-    CHECK_CUDA(cuStreamCreateWithPriority(&cu_state->str,
+    CHECK_CUDA(cu_state->f, cuStreamCreateWithPriority(&cu_state->str,
                                           CU_STREAM_NON_BLOCKING, prio2));
-
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_state->f, cuCtxPopCurrent(NULL));
     return 0;
 }
 
@@ -78,10 +77,10 @@ static int init_with_provided_context(VmafCudaState *cu_state, CUcontext cu_cont
     if (!cu_state) return -EINVAL;
     if (!cu_context) return -EINVAL;
 
-    CHECK_CUDA(cuCtxPushCurrent(cu_context));
+    CHECK_CUDA(cu_state->f, cuCtxPushCurrent(cu_context));
 
     CUdevice cu_device = 0;
-    int err = cuCtxGetDevice(&cu_device);
+    int err = cu_state->f->cuCtxGetDevice(&cu_device);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR, "failed to get CUDA device\n");
         return -EINVAL;
@@ -92,13 +91,12 @@ static int init_with_provided_context(VmafCudaState *cu_state, CUcontext cu_cont
     cu_state->dev = cu_device;
 
     int low, high;
-    CHECK_CUDA(cuCtxGetStreamPriorityRange(&low, &high));
+    CHECK_CUDA(cu_state->f ,cuCtxGetStreamPriorityRange(&low, &high));
     const int prio = 0;
     const int prio2 = MAX(low, MIN(high, prio));
-    CHECK_CUDA(cuStreamCreateWithPriority(&cu_state->str,
+    CHECK_CUDA(cu_state->f ,cuStreamCreateWithPriority(&cu_state->str,
                                           CU_STREAM_NON_BLOCKING, prio2));
-
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_state->f, cuCtxPopCurrent(NULL));
 
     return 0;
 }
@@ -110,8 +108,13 @@ int vmaf_cuda_state_init(VmafCudaState **cu_state, VmafCudaConfiguration cfg)
     VmafCudaState *const c = *cu_state = malloc(sizeof(*c));
     if (!c) return -ENOMEM;
     memset(c, 0, sizeof(*c));
+    int err = cuda_load_functions(&c->f, NULL /* log_ctx */);
+    if (!c->f || err) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR, "Error: failed to load CUDA functions\n");
+        return -EINVAL;
+    }
 
-    int err = cuInit(0);
+    err = c->f->cuInit(0);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR, "problem during CUDA initialization\n");
         return -EINVAL;
@@ -127,9 +130,9 @@ int vmaf_cuda_sync(VmafCudaState *cu_state)
 {
     if (is_cudastate_empty(cu_state)) return -EINVAL;
 
-    CHECK_CUDA(cuCtxPushCurrent((cu_state->ctx)));
-    int err = cuCtxSynchronize();
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_state->f, cuCtxPushCurrent((cu_state->ctx)));
+    int err = cu_state->f->cuCtxSynchronize();
+    CHECK_CUDA(cu_state->f, cuCtxPopCurrent(NULL));
 
     return err;
 }
@@ -138,12 +141,12 @@ int vmaf_cuda_release(VmafCudaState *cu_state)
 {
     if (is_cudastate_empty(cu_state)) return CUDA_SUCCESS;
 
-    CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
-    CHECK_CUDA(cuStreamDestroy(cu_state->str));
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_state->f, cuCtxPushCurrent(cu_state->ctx));
+    CHECK_CUDA(cu_state->f, cuStreamDestroy(cu_state->str));
+    CHECK_CUDA(cu_state->f, cuCtxPopCurrent(NULL));
 
     if (cu_state->release_ctx)
-        CHECK_CUDA(cuDevicePrimaryCtxRelease(cu_state->dev));
+        CHECK_CUDA(cu_state->f, cuDevicePrimaryCtxRelease(cu_state->dev));
 
     memset((void *)cu_state, 0, sizeof(*cu_state));
 
@@ -162,10 +165,10 @@ int vmaf_cuda_buffer_alloc(VmafCudaState *cu_state, VmafCudaBuffer **p_buf,
     *p_buf = buf;
     buf->size = size;
 
-    CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
-    CHECK_CUDA(cuMemAlloc(&buf->data, buf->size));
+    CHECK_CUDA(cu_state->f, cuCtxPushCurrent(cu_state->ctx));
+    CHECK_CUDA(cu_state->f, cuMemAlloc(&buf->data, buf->size));
 
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_state->f, cuCtxPopCurrent(NULL));
     return CUDA_SUCCESS;
 }
 
@@ -174,11 +177,11 @@ int vmaf_cuda_buffer_free(VmafCudaState *cu_state, VmafCudaBuffer *buf)
     if (is_cudastate_empty(cu_state)) return -EINVAL;
     if (!buf) return -EINVAL;
 
-    CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
-    CHECK_CUDA(cuMemFree(buf->data));
+    CHECK_CUDA(cu_state->f, cuCtxPushCurrent(cu_state->ctx));
+    CHECK_CUDA(cu_state->f, cuMemFree(buf->data));
     memset(buf, 0, sizeof(*buf));
 
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_state->f, cuCtxPopCurrent(NULL));
     return CUDA_SUCCESS;
 }
 
@@ -188,10 +191,13 @@ int vmaf_cuda_buffer_host_alloc(VmafCudaState *cu_state, void **p_buf,
     if (is_cudastate_empty(cu_state)) return -EINVAL;
     if (!p_buf) return -EINVAL;
 
-    CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
-    CHECK_CUDA(cuMemHostAlloc(p_buf, size, CU_MEMHOSTALLOC_PORTABLE));
-
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_state->f, cuCtxPushCurrent(cu_state->ctx));
+    CHECK_CUDA(cu_state->f, cuMemHostAlloc(p_buf, size, 0x01));
+    if (!(*p_buf)) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR, "failed to allocate host memory\n");
+        return -ENOMEM;
+    }
+    CHECK_CUDA(cu_state->f, cuCtxPopCurrent(NULL));
     return CUDA_SUCCESS;
 }
 
@@ -200,10 +206,10 @@ int vmaf_cuda_buffer_host_free(VmafCudaState *cu_state, void *buf)
     if (is_cudastate_empty(cu_state)) return -EINVAL;
     if (!buf) return -EINVAL;
 
-    CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
-    CHECK_CUDA(cuMemFreeHost(buf));
+    CHECK_CUDA(cu_state->f, cuCtxPushCurrent(cu_state->ctx));
+    CHECK_CUDA(cu_state->f, cuMemFreeHost(buf));
     buf = NULL;
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_state->f, cuCtxPopCurrent(NULL));
     return CUDA_SUCCESS;
 }
 
@@ -214,10 +220,10 @@ int vmaf_cuda_buffer_upload_async(VmafCudaState *cu_state, VmafCudaBuffer *buf,
     if (!buf) return -EINVAL;
     if (!src) return -EINVAL;
 
-    CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
-    CHECK_CUDA(cuMemcpyHtoDAsync(buf->data, src, buf->size,
+    CHECK_CUDA(cu_state->f, cuCtxPushCurrent(cu_state->ctx));
+    CHECK_CUDA(cu_state->f, cuMemcpyHtoDAsync(buf->data, src, buf->size,
                                  c_stream == 0 ? c_stream : cu_state->str));
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_state->f, cuCtxPopCurrent(NULL));
 
     return CUDA_SUCCESS;
 }
@@ -230,10 +236,10 @@ int vmaf_cuda_buffer_download_async(VmafCudaState *cu_state,
     if (!buf) return -EINVAL;
     if (!dst) return -EINVAL;
 
-    CHECK_CUDA(cuCtxPushCurrent(cu_state->ctx));
-    CHECK_CUDA(cuMemcpyDtoHAsync(dst, buf->data, buf->size,
+    CHECK_CUDA(cu_state->f, cuCtxPushCurrent(cu_state->ctx));
+    CHECK_CUDA(cu_state->f, cuMemcpyDtoHAsync(dst, buf->data, buf->size,
                                  c_stream == 0 ? c_stream : cu_state->str));
-    CHECK_CUDA(cuCtxPopCurrent(NULL));
+    CHECK_CUDA(cu_state->f, cuCtxPopCurrent(NULL));
 
     return CUDA_SUCCESS;
 }

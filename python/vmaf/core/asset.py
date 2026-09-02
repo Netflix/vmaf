@@ -46,7 +46,7 @@ class Asset(WorkdirEnabled):
     SUPPORTED_RESAMPLING_TYPES = ['bilinear', 'bicubic', 'lanczos']
     DEFAULT_RESAMPLING_TYPE = 'bicubic'
 
-    ORDERED_FILTER_LIST = ['crop', 'pad', 'gblur', 'eq', 'lutyuv', 'yadif']
+    ORDERED_FILTER_LIST = ['crop', 'pad', 'gblur', 'eq', 'lutyuv', 'yadif', 'format', 'fps', 'select']
 
     # ==== constructor ====
 
@@ -837,12 +837,24 @@ class Asset(WorkdirEnabled):
         return self.get_filter_cmd('pad', None)
 
     @property
+    def fps_cmd(self):
+        return self.get_filter_cmd('fps', None)
+
+    @property
     def ref_pad_cmd(self):
         return self.get_filter_cmd('pad', 'ref')
 
     @property
     def dis_pad_cmd(self):
         return self.get_filter_cmd('pad', 'dis')
+
+    @property
+    def ref_fps_cmd(self):
+        return self.get_filter_cmd('fps', 'ref')
+
+    @property
+    def dis_fps_cmd(self):
+        return self.get_filter_cmd('fps', 'dis')
 
     def get_filter_cmd(self, key, target=None):
         assert key in self.ORDERED_FILTER_LIST, 'key {key} is not in SUPPORTED_FILTER_TYPES'.format(key=key)

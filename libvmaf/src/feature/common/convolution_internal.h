@@ -38,12 +38,12 @@ FORCE_INLINE float convolution_edge_s(bool horizontal, const float *filter, int 
 			if (j_tap < 0)
 				j_tap = -j_tap;
 			else if (j_tap >= width)
-				j_tap = width - (j_tap - width + 1);
+				j_tap = width - (j_tap - width + 2);
 		} else {
 			if (i_tap < 0)
 				i_tap = -i_tap;
 			else if (i_tap >= height)
-				i_tap = height - (i_tap - height + 1);
+				i_tap = height - (i_tap - height + 2);
 		}
 
 		accum += filter[k] * src[i_tap * stride + j_tap];
@@ -66,13 +66,13 @@ FORCE_INLINE float convolution_edge_sq_s(bool horizontal, const float *filter, i
 			if (j_tap < 0)
 				j_tap = -j_tap;
 			else if (j_tap >= width)
-				j_tap = width - (j_tap - width + 1);
+				j_tap = width - (j_tap - width + 2);
 		}
 		else {
 			if (i_tap < 0)
 				i_tap = -i_tap;
 			else if (i_tap >= height)
-				i_tap = height - (i_tap - height + 1);
+				i_tap = height - (i_tap - height + 2);
 		}
 		src_val = src[i_tap * stride + j_tap];
 		accum += filter[k] * (src_val * src_val);
@@ -95,13 +95,13 @@ FORCE_INLINE float convolution_edge_xy_s(bool horizontal, const float *filter, i
 			if (j_tap < 0)
 				j_tap = -j_tap;
 			else if (j_tap >= width)
-				j_tap = width - (j_tap - width + 1);
+				j_tap = width - (j_tap - width + 2);
 		}
 		else {
 			if (i_tap < 0)
 				i_tap = -i_tap;
 			else if (i_tap >= height)
-				i_tap = height - (i_tap - height + 1);
+				i_tap = height - (i_tap - height + 2);
 		}
 		src_val1 = src1[i_tap * stride1 + j_tap];
 		src_val2 = src2[i_tap * stride2 + j_tap];

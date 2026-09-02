@@ -24,6 +24,7 @@
 #include "cpu.h"
 #include "feature_collector.h"
 #include "feature_extractor.h"
+#include "feature_name.h"
 #include "log.h"
 #include "luminance_tools.h"
 #include "mem.h"
@@ -43,6 +44,9 @@
 /* Visibility threshold for luminance ΔL < tvi_threshold*L_mean for BT.1886 */
 #define DEFAULT_CAMBI_TVI (0.019)
 
+/* Luminance value below which we assume any banding is not visible */
+#define DEFAULT_CAMBI_VLT (0.0)
+
 /* Max log contrast luma levels */
 #define DEFAULT_CAMBI_MAX_LOG_CONTRAST (2)
 
@@ -52,9 +56,18 @@
 /* EOTF to use for the visibility threshold calculations. One of ['bt1886', 'pq']. Default: 'bt1886'. */
 #define DEFAULT_CAMBI_EOTF ("bt1886")
 
+/* CAMBI speed-up for resolutions >=1080p by down-scaling right after the sptial mask */
+#define DEFAULT_CAMBI_HIGH_RES_SPEEDUP (0)
+#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_1080p (1920 * 1080)
+#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_1440p (2560 * 1440)
+#define CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_2160p (3840 * 2160)
+
 #define CAMBI_MIN_WIDTH_HEIGHT (216)
 #define CAMBI_4K_WIDTH (3840)
 #define CAMBI_4K_HEIGHT (2160)
+
+/* Default maximum value allowed for CAMBI */
+#define DEFAULT_CAMBI_MAX_VAL (1000.0)
 
 #define NUM_SCALES 5
 static const int g_scale_weights[NUM_SCALES] = {16, 8, 4, 2, 1};
@@ -76,6 +89,8 @@ static const int g_contrast_weights[32] = {1, 2, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7
 #define PICS_BUFFER_SIZE 2
 #define MASK_FILTER_SIZE 7
 
+#include "cambi.h"
+
 typedef struct CambiBuffers {
     float *c_values;
     uint32_t *mask_dp;
@@ -86,10 +101,24 @@ typedef struct CambiBuffers {
     uint16_t *derivative_buffer;
     int *diff_weights;
     int *all_diffs;
+    uint16_t v_band_base;
+    uint16_t v_band_size;
 } CambiBuffers;
 
-typedef void (*VmafRangeUpdater)(uint16_t *arr, int left, int right);
 typedef void (*VmafDerivativeCalculator)(const uint16_t *image_data, uint16_t *derivative_buffer, int width, int height, int row, int stride);
+typedef void (*VmafFilterMode)(const VmafPicture *image, int width, int height, uint16_t *buffer);
+typedef void (*VmafDecimate)(VmafPicture *image, unsigned width, unsigned height);
+typedef void (*VmafCalcCValues)(VmafPicture *pic, const VmafPicture *mask_pic,
+                                float *c_values, uint16_t *histograms, uint16_t window_size,
+                                const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
+                                const int *diff_weights, const int *all_diffs, int width, int height);
+
+static void filter_mode(const VmafPicture *image, int width, int height, uint16_t *buffer);
+static void decimate(VmafPicture *image, unsigned width, unsigned height);
+static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
+                               float *c_values, uint16_t *histograms, uint16_t window_size,
+                               const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
+                               const int *diff_weights, const int *all_diffs, int width, int height);
 
 typedef struct CambiState {
     VmafPicture pics[PICS_BUFFER_SIZE];
@@ -101,19 +130,39 @@ typedef struct CambiState {
     uint16_t window_size;
     uint16_t src_window_size;
     double topk;
+    double cambi_topk;
     double tvi_threshold;
+    double cambi_max_val;
+    double cambi_vis_lum_threshold;
+    uint16_t vlt_luma;
     uint16_t max_log_contrast;
     char *heatmaps_path;
     char *eotf;
+    char *cambi_eotf;
     bool full_ref;
+    int cambi_high_res_speedup;
+
     FILE *heatmaps_files[NUM_SCALES];
-    VmafRangeUpdater inc_range_callback;
-    VmafRangeUpdater dec_range_callback;
     VmafDerivativeCalculator derivative_callback;
+    VmafCalcCValues calc_c_values_callback;
+    VmafFilterMode filter_mode_callback;
+    VmafDecimate decimate_callback;
     CambiBuffers buffers;
+    VmafDictionary *feature_name_dict;
 } CambiState;
 
 static const VmafOption options[] = {
+    {
+        .name = "cambi_max_val",
+        .help = "maximum value allowed; larger values will be clipped to this value",
+        .offset = offsetof(CambiState, cambi_max_val),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_CAMBI_MAX_VAL,
+        .min = 0.0,
+        .max = 1000.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "cmxv",
+    },
     {
         .name = "enc_width",
         .help = "Encoding width",
@@ -122,6 +171,8 @@ static const VmafOption options[] = {
         .default_val.i = 0,
         .min = 180,
         .max = 7680,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "encw",
     },
     {
         .name = "enc_height",
@@ -131,6 +182,8 @@ static const VmafOption options[] = {
         .default_val.i = 0,
         .min = 150,
         .max = 7680,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "ench",
     },
     {
         .name = "enc_bitdepth",
@@ -140,6 +193,8 @@ static const VmafOption options[] = {
         .default_val.i = 0,
         .min = 6,
         .max = 16,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "encbd",
     },
     {
         .name = "src_width",
@@ -149,6 +204,8 @@ static const VmafOption options[] = {
         .default_val.i = 0,
         .min = 320,
         .max = 7680,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "srcw",
     },
     {
         .name = "src_height",
@@ -158,15 +215,19 @@ static const VmafOption options[] = {
         .default_val.i = 0,
         .min = 200,
         .max = 4320,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "srch",
     },
     {
         .name = "window_size",
-        .help = "Window size to compute CAMBI: 63 corresponds to ~1 degree at 4k",
+        .help = "Window size to compute CAMBI: 65 corresponds to ~1 degree at 4k",
         .offset = offsetof(CambiState, window_size),
         .type = VMAF_OPT_TYPE_INT,
         .default_val.i = DEFAULT_CAMBI_WINDOW_SIZE,
         .min = 15,
         .max = 127,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "ws",
     },
     {
         .name = "topk",
@@ -176,6 +237,18 @@ static const VmafOption options[] = {
         .default_val.d = DEFAULT_CAMBI_TOPK_POOLING,
         .min = 0.0001,
         .max = 1.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "cambi_topk",
+        .help = "Ratio of pixels for the spatial pooling computation, must be 0 < cambi_topk <= 1.0",
+        .offset = offsetof(CambiState, cambi_topk),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_CAMBI_TOPK_POOLING,
+        .min = 0.0001,
+        .max = 1.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "ctpk",
     },
     {
         .name = "tvi_threshold",
@@ -185,6 +258,19 @@ static const VmafOption options[] = {
         .default_val.d = DEFAULT_CAMBI_TVI,
         .min = 0.0001,
         .max = 1.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "tvit",
+    },
+    {
+        .name = "cambi_vis_lum_threshold",
+        .help = "Luminance value below which we assume any banding is not visible",
+        .offset = offsetof(CambiState, cambi_vis_lum_threshold),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_CAMBI_VLT,
+        .min = 0.0,
+        .max = 300.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "vlt",
     },
     {
         .name = "max_log_contrast",
@@ -196,6 +282,8 @@ static const VmafOption options[] = {
         .default_val.i = DEFAULT_CAMBI_MAX_LOG_CONTRAST,
         .min = 0,
         .max = 5,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "mlc",
     },
     {
         .name = "heatmaps_path",
@@ -217,6 +305,29 @@ static const VmafOption options[] = {
         .offset = offsetof(CambiState, eotf),
         .type = VMAF_OPT_TYPE_STRING,
         .default_val.s = DEFAULT_CAMBI_EOTF,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "cambi_eotf",
+        .help = "Determines the EOTF used to compute the visibility thresholds. Possible values: ['bt1886', 'pq']. Default: 'bt1886'. If both eotf and cambi_eotf are set, cambi_eotf takes precedence.",
+        .offset = offsetof(CambiState, cambi_eotf),
+        .type = VMAF_OPT_TYPE_STRING,
+        .default_val.s = DEFAULT_CAMBI_EOTF,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "ceot",
+    },
+    {
+        .name = "cambi_high_res_speedup",
+        .help = "Speed up the processing by downsampling post spatial mask for resolutions >= 1080p. "
+                "Min speed-up resolution possible values: [1080, 1440, 2160, 0]. Default: 0 (not applied)"
+                "Note some loss of accuracy is expected with this speedup.",
+        .offset = offsetof(CambiState, cambi_high_res_speedup),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = DEFAULT_CAMBI_HIGH_RES_SPEEDUP,
+        .min = 0,
+        .max = CAMBI_4K_HEIGHT,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+        .alias = "hrs",
     },
     { 0 }
 };
@@ -282,12 +393,33 @@ static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, VmafLu
     }
 }
 
+static int get_vlt_luma(double visibility_luminance_threshold, VmafLumaRange luma_range, VmafEOTF eotf) {
+    // find the smallest luma value above the visibility_luminance_threshold
+
+    uint16_t sample = luma_range.foot;
+
+    while (vmaf_luminance_get_luminance(sample, luma_range, eotf) < visibility_luminance_threshold) {
+        sample++;
+    }
+    if (sample == luma_range.foot) {
+        return 0;
+    } else {
+        return sample;
+    }
+}
+
 static FORCE_INLINE void adjust_window_size(uint16_t *window_size,
-                                                   unsigned input_width,
-                                                   unsigned input_height)
+                                            unsigned input_width,
+                                            unsigned input_height,
+                                            bool cambi_high_res_speedup)
 {
     // Adjustment weight: (input_width + input_height) / (CAMBI_4K_WIDTH + CAMBI_4K_HEIGHT)
     (*window_size) = (((*window_size) * (input_width+input_height)) / 375) >> 4;
+    if (cambi_high_res_speedup) {
+        (*window_size) = ((*window_size) + 1) >> 1;
+    }
+    // round up to odd
+    *window_size |= 1;
 }
 
 static int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_consider,
@@ -345,6 +477,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 
     CambiState *s = fex->priv;
 
+    s->feature_name_dict =
+        vmaf_feature_name_dict_from_provided_features(fex->provided_features, fex->options, s);
+    if (!s->feature_name_dict)
+        return -ENOMEM;
+
     if (s->enc_bitdepth == 0) {
         s->enc_bitdepth = bpc;
     }
@@ -355,6 +492,12 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (s->src_width == 0 || s->src_height == 0) {
         s->src_width = w;
         s->src_height = h;
+    }
+
+    // if the encode had been downscaled, there is no need to upscale it back to the encoding resolution
+    if (s->enc_height > h || s->enc_width > w) {
+        s->enc_width = w;
+        s->enc_height = h;
     }
 
     if (s->enc_width < CAMBI_MIN_WIDTH_HEIGHT && s->enc_height < CAMBI_MIN_WIDTH_HEIGHT) {
@@ -368,6 +511,27 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     }
     if (s->src_width < s->enc_width && s->src_height > s->enc_height) {
         return -EINVAL;
+    }
+
+    int enc_pix = s->enc_width * s->enc_height;
+    switch (s->cambi_high_res_speedup) {
+        case 1080:
+            if (enc_pix < CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_1080p) {
+                s->cambi_high_res_speedup = 0;
+            }
+            break;
+        case 1440:
+            if (enc_pix < CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_1440p) {
+                s->cambi_high_res_speedup = 0;
+            }
+            break;
+        case 2160:
+            if (enc_pix < CAMBI_HIGH_RES_SPEEDUP_THRESHOLD_2160p) {
+                s->cambi_high_res_speedup = 0;
+            }
+            break;
+        default:
+            s->cambi_high_res_speedup = 0;
     }
 
     int alloc_w = s->full_ref ? MAX(s->src_width, s->enc_width) : s->enc_width;
@@ -387,8 +551,16 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     err = vmaf_luminance_init_luma_range(&luma_range, 10, VMAF_PIXEL_RANGE_LIMITED);
     if (err) return err;
 
+    /* use cambi_eotf if it has a non-default value, else use eotf */
+    const char *effective_eotf;
+    if (strcmp(s->cambi_eotf, DEFAULT_CAMBI_EOTF) != 0) {
+        effective_eotf = s->cambi_eotf;
+    } else {
+        effective_eotf = s->eotf;
+    }
+
     VmafEOTF eotf;
-    err = vmaf_luminance_init_eotf(&eotf, s->eotf);
+    err = vmaf_luminance_init_eotf(&eotf, effective_eotf);
     if (err) return err;
 
     s->buffers.tvi_for_diff = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
@@ -398,14 +570,29 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->buffers.tvi_for_diff[d] += num_diffs;
     }
 
+    // get the largest luma value below cambi_vis_lum_threshold
+    s->vlt_luma = get_vlt_luma(s->cambi_vis_lum_threshold, luma_range, eotf);
+
     s->src_window_size = s->window_size;
-    adjust_window_size(&s->window_size, s->enc_width, s->enc_height);
-    adjust_window_size(&s->src_window_size, s->src_width, s->src_height);
+    adjust_window_size(&s->window_size, s->enc_width, s->enc_height, (bool) s->cambi_high_res_speedup);
+    adjust_window_size(&s->src_window_size, s->src_width, s->src_height, (bool) s->cambi_high_res_speedup);
+
+    int max_window = MAX(s->window_size, s->src_window_size);
+    if (max_window * max_window >= CAMBI_RECIPROCAL_LUT_SIZE) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+            "cambi: window_size %d too large for reciprocal LUT\n", max_window);
+        return -EINVAL;
+    }
+
     s->buffers.c_values = aligned_malloc(ALIGN_CEIL(alloc_w * sizeof(float)) * alloc_h, 32);
     if (!s->buffers.c_values) return -ENOMEM;
 
-    const uint16_t num_bins = 1024 + (s->buffers.all_diffs[2 * num_diffs] - s->buffers.all_diffs[0]);
-    s->buffers.c_values_histograms = aligned_malloc(ALIGN_CEIL(alloc_w * num_bins * sizeof(uint16_t)), 32);
+    {
+        int v_lo_signed = (int)s->vlt_luma - 3 * (int)num_diffs + 1;
+        s->buffers.v_band_base = v_lo_signed > 0 ? (uint16_t)v_lo_signed : 0;
+        s->buffers.v_band_size = s->buffers.tvi_for_diff[num_diffs - 1] + 1 - s->buffers.v_band_base;
+    }
+    s->buffers.c_values_histograms = aligned_malloc(ALIGN_CEIL(alloc_w * s->buffers.v_band_size * sizeof(uint16_t)), 32);
     if (!s->buffers.c_values_histograms) return -ENOMEM;
 
     int pad_size = MASK_FILTER_SIZE >> 1;
@@ -439,16 +626,18 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         }
     }
 
-    s->inc_range_callback = increment_range;
-    s->dec_range_callback = decrement_range;
     s->derivative_callback = get_derivative_data_for_row;
+    s->calc_c_values_callback = calculate_c_values;
+    s->filter_mode_callback = filter_mode;
+    s->decimate_callback = decimate;
 
 #if ARCH_X86
     unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {
-        s->inc_range_callback = cambi_increment_range_avx2;
-        s->dec_range_callback = cambi_decrement_range_avx2;
         s->derivative_callback = get_derivative_data_for_row_avx2;
+        s->calc_c_values_callback = calculate_c_values_avx2;
+        s->filter_mode_callback = filter_mode_avx2;
+        s->decimate_callback = decimate_avx2;
     }
 #endif
 
@@ -752,6 +941,47 @@ static FORCE_INLINE uint16_t get_mask_index(unsigned input_width, unsigned input
 * To calculate the square sums, it uses a dynamic programming algorithm based on inclusion-exclusion.
 * To save memory, it uses a DP matrix of only the necessary size, rather than the full matrix, and indexes its rows cyclically.
 */
+/*
+ * Computes one DP row using a 1D row prefix sum + element-wise add of the previous DP row.
+ * Equivalent to the SAT recurrence:
+ *   dp[r][c] = a[r][c] + dp[r-1][c] + dp[r][c-1] - dp[r-1][c-1]
+ * but rewritten as:
+ *   R[c] = a[r][c] + R[c-1]                  (1D prefix sum of derivative)
+ *   dp[r][c] = dp[r-1][c] + R[c]             (element-wise add, no inter-column dep)
+ */
+static FORCE_INLINE void compute_dp_row(uint32_t *dp_curr, const uint32_t *dp_prev,
+                                          const uint16_t *deriv, int width, int pad_size,
+                                          bool deriv_valid) {
+    uint32_t prefix = 0;
+    int dp_offset = pad_size + 1;
+    int actual_width = deriv_valid ? width : 0;
+    int j;
+    for (j = 0; j < actual_width; j++) {
+        prefix += deriv[j];
+        dp_curr[dp_offset + j] = dp_prev[dp_offset + j] + prefix;
+    }
+    int n = width + pad_size;
+    for (; j < n; j++) {
+        dp_curr[dp_offset + j] = dp_prev[dp_offset + j] + prefix;
+    }
+}
+
+/*
+ * For each output column j in [0, width), computes
+ *   result = dp_bottom[j + delta] - dp_bottom[j] - dp_top[j + delta] + dp_top[j]
+ *   mask_row[j] = (result > mask_index)
+ * where delta = 2*pad_size + 1.
+ */
+static FORCE_INLINE void compute_mask_row(uint16_t *mask_row,
+                                            const uint32_t *dp_bottom, const uint32_t *dp_top,
+                                            int width, int pad_size, uint32_t mask_index) {
+    const int delta = 2 * pad_size + 1;
+    for (int j = 0; j < width; j++) {
+        uint32_t result = dp_bottom[j + delta] + dp_top[j] - dp_bottom[j] - dp_top[j + delta];
+        mask_row[j] = (uint16_t)(result > mask_index);
+    }
+}
+
 static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *mask,
                                        uint32_t *dp, uint16_t *derivative_buffer, uint16_t mask_index,
                                        uint16_t filter_size, int width, int height, VmafDerivativeCalculator derivative_callback) {
@@ -766,19 +996,13 @@ static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *ma
 
     // Initial computation: fill dp except for the last row
     for (int i = 0; i < pad_size; i++) {
-        if (i < height) {
+        bool deriv_valid = (i < height);
+        if (deriv_valid) {
             derivative_callback(image_data, derivative_buffer, width, height, i, stride);
         }
-        for (int j = 0; j < width + pad_size; j++) {
-            int value = (i < height && j < width ? derivative_buffer[j] : 0);
-            int curr_row = i + pad_size + 1;
-            int curr_col = j + pad_size + 1;
-            dp[curr_row * dp_width + curr_col] =
-                value
-                + dp[(curr_row - 1) * dp_width + curr_col]
-                + dp[curr_row * dp_width + curr_col - 1]
-                - dp[(curr_row - 1) * dp_width + curr_col - 1];
-        }
+        int curr_row = i + pad_size + 1;
+        compute_dp_row(&dp[curr_row * dp_width], &dp[(curr_row - 1) * dp_width],
+                       derivative_buffer, width, pad_size, deriv_valid);
     }
 
     // Start from the last row in the dp matrix
@@ -788,34 +1012,19 @@ static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *ma
     int bottom = (curr_compute + pad_size) % dp_height;
     int top = (curr_compute + dp_height - pad_size - 1) % dp_height;
     for (int i = pad_size; i < height + pad_size; i++) {
-        if (i < height) {
+        bool deriv_valid = (i < height);
+        if (deriv_valid) {
             derivative_callback(image_data, derivative_buffer, width, height, i, stride);
         }
-        // First compute the values of dp for curr_row
-        for (int j = 0; j < width + pad_size; j++) {
-            int value = (i < height && j < width ? derivative_buffer[j] : 0);
-            int curr_col = j + pad_size + 1;
-            dp[curr_row * dp_width + curr_col] =
-                value
-                + dp[prev_row * dp_width + curr_col]
-                + dp[curr_row * dp_width + curr_col - 1]
-                - dp[prev_row * dp_width + curr_col - 1];
-        }
+        compute_dp_row(&dp[curr_row * dp_width], &dp[prev_row * dp_width],
+                       derivative_buffer, width, pad_size, deriv_valid);
         prev_row = curr_row;
         curr_row = (curr_row + 1 == dp_height ? 0 : curr_row + 1);
 
         // Then use the values to compute the square sum for the curr_compute row.
-        for (int j = 0; j < width; j++) {
-            int curr_col = j + pad_size + 1;
-            int right = curr_col + pad_size;
-            int left = curr_col - pad_size - 1;
-            int result =
-                dp[bottom * dp_width + right]
-                - dp[bottom * dp_width + left]
-                - dp[top * dp_width + right]
-                + dp[top * dp_width + left];
-            mask_data[(i - pad_size) * stride + j] = (result > mask_index);
-        }
+        compute_mask_row(&mask_data[(i - pad_size) * stride],
+                          &dp[bottom * dp_width], &dp[top * dp_width],
+                          width, pad_size, mask_index);
         curr_compute = (curr_compute + 1 == dp_height ? 0 : curr_compute + 1);
         bottom = (bottom + 1 == dp_height ? 0 : bottom + 1);
         top = (top + 1 == dp_height ? 0 : top + 1);
@@ -830,18 +1039,25 @@ static void get_spatial_mask(const VmafPicture *image, VmafPicture *mask,
 }
 
 static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int *diff_weights,
-                           const int *diffs, uint16_t num_diffs, const uint16_t *tvi_thresholds, int histogram_col, int histogram_width) {
-    uint16_t p_0 = histograms[value * histogram_width + histogram_col];
+                           const int *diffs, uint16_t num_diffs, const uint16_t *tvi_thresholds, uint16_t vlt_luma,
+                           uint16_t v_band_offset_val, uint16_t v_band_size,
+                           int histogram_col, int histogram_width) {
+    int compact_v_signed = (int)value - (int)v_band_offset_val;
+    if ((unsigned)compact_v_signed >= v_band_size) return 0.0f;
+    uint16_t compact_v = (uint16_t)compact_v_signed;
+    uint16_t p_0 = histograms[compact_v * histogram_width + histogram_col];
     float val, c_value = 0.0;
     for (uint16_t d = 0; d < num_diffs; d++) {
-        if (value <= tvi_thresholds[d]) {
-            uint16_t p_1 = histograms[(value + diffs[num_diffs + d + 1]) * histogram_width + histogram_col];
-            uint16_t p_2 = histograms[(value + diffs[num_diffs - d - 1]) * histogram_width + histogram_col];
+        if ((value <= tvi_thresholds[d]) && ((value + diffs[num_diffs + d + 1]) > vlt_luma)) {
+            int idx1 = compact_v_signed + diffs[num_diffs + d + 1];
+            int idx2 = compact_v_signed + diffs[num_diffs - d - 1];
+            uint16_t p_1 = histograms[idx1 * histogram_width + histogram_col];
+            uint16_t p_2 = (idx2 >= 0) ? histograms[idx2 * histogram_width + histogram_col] : 0;
             if (p_1 > p_2) {
-                val = (float)(diff_weights[d] * p_0 * p_1) / (p_1 + p_0);
+                val = (float)(diff_weights[d] * p_0 * p_1) * reciprocal_lut[p_1 + p_0];
             }
             else {
-                val = (float)(diff_weights[d] * p_0 * p_2) / (p_2 + p_0);
+                val = (float)(diff_weights[d] * p_0 * p_2) * reciprocal_lut[p_2 + p_0];
             }
 
             if (val > c_value) {
@@ -853,74 +1069,38 @@ static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int
     return c_value;
 }
 
-static FORCE_INLINE void update_histogram_subtract_edge(uint16_t *histograms, uint16_t *image, uint16_t *mask,
-                                                          int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                          const uint16_t num_diffs, VmafRangeUpdater dec_range_callback) {
-    uint16_t mask_val = mask[(i - pad_size - 1) * stride + j];
-    if (mask_val) {
-        uint16_t val = image[(i - pad_size - 1) * stride + j] + num_diffs;
-        dec_range_callback(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
-    }
-}
+// A pixel with raw value v contributes to a histogram cell that is queried by
+// some output pixel only if some d-iteration in c_value_pixel can fire for an
+// output value v_out related to v. Tracing the gating condition (v_out <=
+// tvi_thresholds[d]) && (v_out + (d+1) > vlt_luma) over all d and all three
+// query roles (p_0, p_1, p_2) shows v needs to satisfy
+//     vlt_luma - 3*num_diffs < v <= tvi_for_diff[num_diffs - 1]
+// (where tvi_for_diff is already in adjusted = raw + num_diffs space).
+// Pixels outside this band can be skipped: the cells they would update are
+// only ever read by output pixels whose c_value would be 0 regardless. The
+// skip is therefore bit-identical.
+//
+// The two-sided bounds check is collapsed to a single unsigned compare:
+//     ((uint16_t)(v - v_band_base) >= v_band_size)
+// where v_band_base = max(0, vlt_luma - 3*num_diffs + 1) and v_band_size is
+// the count of values in the useful band. Compiler emits ~1 sub + 1 cmp per
+// pixel with no second branch, which costs less when the skip rarely fires.
 
-static FORCE_INLINE void update_histogram_subtract(uint16_t *histograms, uint16_t *image, uint16_t *mask,
-                                                          int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                          const uint16_t num_diffs, VmafRangeUpdater dec_range_callback) {
-    uint16_t mask_val = mask[(i - pad_size - 1) * stride + j];
-    if (mask_val) {
-        uint16_t val = image[(i - pad_size - 1) * stride + j] + num_diffs;
-        dec_range_callback(&histograms[val * width], j - pad_size, j + pad_size + 1);
-    }
-}
-
-static FORCE_INLINE void update_histogram_add_edge(uint16_t *histograms, uint16_t *image, uint16_t *mask,
-                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                     const uint16_t num_diffs, VmafRangeUpdater inc_range_callback) {
-    uint16_t mask_val = mask[(i + pad_size) * stride + j];
-    if (mask_val) {
-        uint16_t val = image[(i + pad_size) * stride + j] + num_diffs;
-        inc_range_callback(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
-    }
-}
-
-static FORCE_INLINE void update_histogram_add(uint16_t *histograms, uint16_t *image, uint16_t *mask,
-                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                     const uint16_t num_diffs, VmafRangeUpdater inc_range_callback) {
-    uint16_t mask_val = mask[(i + pad_size) * stride + j];
-    if (mask_val) {
-        uint16_t val = image[(i + pad_size) * stride + j] + num_diffs;
-        inc_range_callback(&histograms[val * width], j - pad_size, j + pad_size + 1);
-    }
-}
-
-static FORCE_INLINE void update_histogram_add_edge_first_pass(uint16_t *histograms, uint16_t *image, uint16_t *mask,
-                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                     const uint16_t num_diffs, VmafRangeUpdater inc_range_callback) {
-    uint16_t mask_val = mask[i * stride + j];
-    if (mask_val) {
-        uint16_t val = image[i * stride + j] + num_diffs;
-        inc_range_callback(&histograms[val * width], MAX(j - pad_size, 0), MIN(j + pad_size + 1, width));
-    }
-}
-
-static FORCE_INLINE void update_histogram_add_first_pass(uint16_t *histograms, uint16_t *image, uint16_t *mask,
-                                                     int i, int j, int width, ptrdiff_t stride, uint16_t pad_size,
-                                                     const uint16_t num_diffs, VmafRangeUpdater inc_range_callback) {
-    uint16_t mask_val = mask[i * stride + j];
-    if (mask_val) {
-        uint16_t val = image[i * stride + j] + num_diffs;
-        inc_range_callback(&histograms[val * width], j - pad_size, j + pad_size + 1);
-    }
-}
-
-static FORCE_INLINE void calculate_c_values_row(float *c_values, uint16_t *histograms, uint16_t *image,
-                                                       uint16_t *mask, int row, int width, ptrdiff_t stride,
-                                                       const uint16_t num_diffs, const uint16_t *tvi_for_diff,
-                                                       const int *diff_weights, const int *all_diffs) {
+static void calculate_c_values_row(float *c_values, const uint16_t *histograms, const uint16_t *image,
+                                    const uint16_t *mask, int row, int width, ptrdiff_t stride,
+                                    const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
+                                    const int *diff_weights, const int *all_diffs,
+                                    const float *reciprocal_lut) {
+    (void)reciprocal_lut;
+    int v_lo_signed = (int)vlt_luma - 3 * (int)num_diffs + 1;
+    uint16_t v_band_base = v_lo_signed > 0 ? (uint16_t)v_lo_signed : 0;
+    uint16_t v_band_size = tvi_for_diff[num_diffs - 1] + 1 - v_band_base;
+    uint16_t v_band_offset_val = v_band_base + num_diffs;
     for (int col = 0; col < width; col++) {
         if (mask[row * stride + col]) {
             c_values[row * width + col] = c_value_pixel(
-                histograms, image[row * stride + col] + num_diffs, diff_weights, all_diffs, num_diffs, tvi_for_diff, col, width
+                histograms, image[row * stride + col] + num_diffs, diff_weights, all_diffs, num_diffs, tvi_for_diff, vlt_luma,
+                v_band_offset_val, v_band_size, col, width
             );
         }
     }
@@ -928,34 +1108,32 @@ static FORCE_INLINE void calculate_c_values_row(float *c_values, uint16_t *histo
 
 static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
                                float *c_values, uint16_t *histograms, uint16_t window_size,
-                               const uint16_t num_diffs, const uint16_t *tvi_for_diff,
-                               const int *diff_weights, const int *all_diffs, int width, int height,
-                               VmafRangeUpdater inc_range_callback, VmafRangeUpdater dec_range_callback) {
+                               const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
+                               const int *diff_weights, const int *all_diffs, int width, int height) {
 
     uint16_t pad_size = window_size >> 1;
-    const uint16_t num_bins = 1024 + (all_diffs[2*num_diffs] - all_diffs[0]);
+
+    int v_lo_signed = (int)vlt_luma - 3 * (int)num_diffs + 1;
+    uint16_t v_band_base = v_lo_signed > 0 ? (uint16_t)v_lo_signed : 0;
+    uint16_t v_band_size = tvi_for_diff[num_diffs - 1] + 1 - v_band_base;
 
     uint16_t *image = pic->data[0];
     uint16_t *mask = mask_pic->data[0];
     ptrdiff_t stride = pic->stride[0] >> 1;
 
     memset(c_values, 0.0, sizeof(float) * width * height);
-
-    // Use a histogram for each pixel in width
-    // histograms[i * width + j] accesses the j'th histogram, i'th value
-    // This is done for cache optimization reasons
-    memset(histograms, 0, width * num_bins * sizeof(uint16_t));
+    memset(histograms, 0, width * v_band_size * sizeof(uint16_t));
 
     // First pass: first pad_size rows
     for (int i = 0; i < pad_size; i++) {
         for (int j = 0; j < pad_size; j++) {
-            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, increment_range);
         }
         for (int j = pad_size; j < width - pad_size - 1; j++) {
-            update_histogram_add_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+            update_histogram_add_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, increment_range);
         }
         for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
-            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+            update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, increment_range);
         }
     }
 
@@ -963,45 +1141,39 @@ static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
     for (int i = 0; i < pad_size + 1; i++) {
         if (i + pad_size < height) {
             for (int j = 0; j < pad_size; j++) {
-                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, increment_range);
             }
             for (int j = pad_size; j < width - pad_size - 1; j++) {
-                update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+                update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, increment_range);
             }
             for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
-                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
+                update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, increment_range);
             }
         }
-        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs);
+        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
     }
     for (int i = pad_size + 1; i < height - pad_size; i++) {
-        for (int j = 0; j < pad_size; j++) {
-            update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
-            update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
-        }
-        for (int j = pad_size; j < width - pad_size - 1; j++) {
-            update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
-            update_histogram_add(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
-        }
-        for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
-            update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
-            update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, inc_range_callback);
-        }
-        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs);
+        for (int j = 0; j < pad_size; j++)
+            uh_slide_edge(histograms, image, mask, i, j, width, stride, pad_size, v_band_base, v_band_size, increment_range, decrement_range);
+        for (int j = pad_size; j < width - pad_size - 1; j++)
+            uh_slide(histograms, image, mask, i, j, width, stride, pad_size, v_band_base, v_band_size, increment_range, decrement_range);
+        for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++)
+            uh_slide_edge(histograms, image, mask, i, j, width, stride, pad_size, v_band_base, v_band_size, increment_range, decrement_range);
+        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
     }
     for (int i = height - pad_size; i < height; i++) {
         if (i - pad_size - 1 >= 0) {
             for (int j = 0; j < pad_size; j++) {
-                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
+                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, decrement_range);
             }
             for (int j = pad_size; j < width - pad_size - 1; j++) {
-                update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
+                update_histogram_subtract(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, decrement_range);
             }
             for (int j = MAX(width - pad_size - 1, pad_size); j < width; j++) {
-                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, dec_range_callback);
+                update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, decrement_range);
             }
         }
-        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, diff_weights, all_diffs);
+        calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
     }
 }
 
@@ -1091,10 +1263,15 @@ static int dump_c_values(FILE *heatmaps_files[], const float *c_values, int widt
 }
 
 static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
-                       const uint16_t num_diffs, const uint16_t *tvi_for_diff,
-                       CambiBuffers buffers, VmafRangeUpdater inc_range_callback, VmafRangeUpdater dec_range_callback,
-                       VmafDerivativeCalculator derivative_callback, double *score, bool write_heatmaps, FILE *heatmaps_files[],
-                       int width, int height, int frame) {
+                       const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
+                       CambiBuffers buffers,
+                       VmafDerivativeCalculator derivative_callback,
+                       VmafCalcCValues calc_c_values_callback,
+                       VmafFilterMode filter_mode_callback,
+                       VmafDecimate decimate_callback,
+                       double *score, bool write_heatmaps, FILE *heatmaps_files[],
+                       int width, int height, int frame, bool cambi_high_res_speedup) {
+
     double scores_per_scale[NUM_SCALES];
     VmafPicture *image = &pics[0];
     VmafPicture *mask = &pics[1];
@@ -1104,18 +1281,17 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
 
     get_spatial_mask(image, mask, buffers.mask_dp, buffers.derivative_buffer, width, height, derivative_callback);
     for (unsigned scale = 0; scale < NUM_SCALES; scale++) {
-        if (scale > 0) {
+        if (scale > 0 || cambi_high_res_speedup) {
             scaled_width = (scaled_width + 1) >> 1;
             scaled_height = (scaled_height + 1) >> 1;
-            decimate(image, scaled_width, scaled_height);
-            decimate(mask, scaled_width, scaled_height);
+            decimate_callback(image, scaled_width, scaled_height);
+            decimate_callback(mask, scaled_width, scaled_height);
         }
 
-        filter_mode(image, scaled_width, scaled_height, buffers.filter_mode_buffer);
+        filter_mode_callback(image, scaled_width, scaled_height, buffers.filter_mode_buffer);
 
-        calculate_c_values(image, mask, buffers.c_values, buffers.c_values_histograms, window_size,
-                           num_diffs, tvi_for_diff, buffers.diff_weights, buffers.all_diffs, scaled_width, scaled_height,
-                           inc_range_callback, dec_range_callback);
+        calc_c_values_callback(image, mask, buffers.c_values, buffers.c_values_histograms, window_size,
+                               num_diffs, tvi_for_diff, vlt_luma, buffers.diff_weights, buffers.all_diffs, scaled_width, scaled_height);
 
         if (write_heatmaps) {
             int err = dump_c_values(heatmaps_files, buffers.c_values, scaled_width, scaled_height, scale, window_size,
@@ -1142,8 +1318,18 @@ static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double 
     if (err) return err;
 
     bool write_heatmaps = s->heatmaps_path && !is_src;
-    err = cambi_score(s->pics, window_size, s->topk, num_diffs, s->buffers.tvi_for_diff,
-                      s->buffers, s->inc_range_callback, s->dec_range_callback, s->derivative_callback, score, write_heatmaps, s->heatmaps_files, width, height, frame);
+    double topk;
+    /* use the original topk setting if it has a non-default value, else use the cambi_topk one */
+    if (s->topk != DEFAULT_CAMBI_TOPK_POOLING) {
+        topk = s->topk;
+    } else {
+        topk = s->cambi_topk;
+    }
+    err = cambi_score(s->pics, window_size, topk, num_diffs, s->buffers.tvi_for_diff, s->vlt_luma,
+                      s->buffers, s->derivative_callback, s->calc_c_values_callback,
+                      s->filter_mode_callback, s->decimate_callback, score,
+                      write_heatmaps, s->heatmaps_files, width, height, frame, (bool) s->cambi_high_res_speedup);
+
     if (err) return err;
 
     return 0;
@@ -1165,7 +1351,9 @@ static int extract(VmafFeatureExtractor *fex,
     int err = preprocess_and_extract_cambi(s, dist_pic, &dist_score, false, index);
     if (err) return err;
 
-    err = vmaf_feature_collector_append(feature_collector, "cambi", dist_score, index);
+    err = vmaf_feature_collector_append_with_dict(
+        feature_collector, s->feature_name_dict, "Cambi_feature_cambi_score", MIN(dist_score, s->cambi_max_val), index
+    );
     if (err) return err;
 
     if (s->full_ref) {
@@ -1173,11 +1361,15 @@ static int extract(VmafFeatureExtractor *fex,
         int err = preprocess_and_extract_cambi(s, ref_pic, &src_score, true, index);
         if (err) return err;
 
-        err = vmaf_feature_collector_append(feature_collector, "cambi_source", src_score, index);
+        err = vmaf_feature_collector_append_with_dict(
+            feature_collector, s->feature_name_dict, "cambi_source", MIN(src_score, s->cambi_max_val), index
+        );
         if (err) return err;
 
         double combined_score = combine_dist_src_scores(dist_score, src_score);
-        err = vmaf_feature_collector_append(feature_collector, "cambi_full_reference", combined_score, index);
+        err = vmaf_feature_collector_append_with_dict(
+            feature_collector, s->feature_name_dict, "cambi_full_reference", MIN(combined_score, s->cambi_max_val), index
+        );
         if (err) return err;
     }
 
@@ -1207,11 +1399,14 @@ static int close_cambi(VmafFeatureExtractor *fex) {
         }
     }
 
+    if (s->feature_name_dict)
+        vmaf_dictionary_free(&s->feature_name_dict);
+
     return err;
 }
 
 static const char *provided_features[] = {
-    "cambi",
+    "Cambi_feature_cambi_score",
     NULL
 };
 

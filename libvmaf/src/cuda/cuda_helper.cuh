@@ -20,30 +20,34 @@
 #ifndef __CUDA_HELPER_H__
 #define __CUDA_HELPER_H__
 
+#ifdef DEVICE_CODE
+#include <cstdint>
+#ifndef __clang__
+#include <cuda_runtime.h>
+#endif
+#endif
+
 #include "assert.h"
 #include "stdio.h"
-#include <cuda.h>
-#include <vector_types.h>
+#include <ffnvcodec/dynlink_loader.h>
 
 #define DIV_ROUND_UP(x, y) (((x) + (y)-1) / (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-#define CHECK_CUDA(CALL)                                                       \
-    do {                                                                       \
-        if (CUDA_SUCCESS != CALL) {                                            \
-            const char *err_txt;                                               \
-            const CUresult err = CALL;                                         \
-            cuGetErrorName(err, &err_txt);                                     \
-            printf("code: %d; description: %s\n", (int)err, err_txt);          \
-            assert(0);                                                         \
-        }                                                                      \
-    } while (0);
+#define CHECK_CUDA(funcs, CALL)                                                 \
+    do {                                                                        \
+        const CUresult cu_err = funcs->CALL;                                    \
+        if (CUDA_SUCCESS != cu_err) {                                           \
+            const char *err_txt;                                                \
+            funcs->cuGetErrorName(cu_err, &err_txt);                            \
+            printf("code: %d; description: %s\n", (int)cu_err, err_txt);        \
+            assert(0);                                                          \
+        }                                                                       \
+    } while (0)
 
-#ifdef __CUDACC__
-#include <cstdint>
+#ifdef DEVICE_CODE
 namespace {
-
     __forceinline__ __device__ int64_t warp_reduce(int64_t x) {
 #pragma unroll
         for (int i = 16; i > 0; i >>= 1) {

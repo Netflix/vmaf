@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 # endif
 # include <stdio.h>
 # include <stdint.h>
+# include "libvmaf/picture.h"
 
 # if defined(__cplusplus)
 extern "C" {
@@ -61,6 +62,9 @@ typedef void* (*raw_input_open_func)(FILE *_fin,
                                      int pix_fmt,
                                      unsigned bitdepth);
 
+typedef int (*video_input_fetch_into_vmaf_picture_func)(void *_ctx, FILE *_fin,
+                                                   VmafPicture *pic);
+
 /**Pluggable method table for accessing different formats.*/
 struct video_input_vtbl {
   raw_input_open_func           open_raw;
@@ -68,6 +72,7 @@ struct video_input_vtbl {
   video_input_get_info_func     get_info;
   video_input_fetch_frame_func  fetch_frame;
   video_input_close_func        close;
+  video_input_fetch_into_vmaf_picture_func fetch_into_vmaf_picture;
 };
 
 struct video_input {
@@ -86,6 +91,7 @@ void video_input_close(video_input *_vid);
 void video_input_get_info(video_input *_vid, video_input_info *_ti);
 int video_input_fetch_frame(video_input *_vid, video_input_ycbcr _ycbcr,
                             char _tag[5]);
+int video_input_fetch_into_vmaf_picture(video_input *_vid, VmafPicture *pic);
 
 typedef enum {
   /** Chroma decimation by 2 in both the X and Y directions (4:2:0).

@@ -3,6 +3,10 @@ if cc.has_function('strsep')
   compat_cflags += '-DHAVE_STRSEP'
 endif
 
+if not get_option('enable_tools')
+    subdir_done()
+endif
+
 vmaf = executable(
     'vmaf',
     ['vmaf.c', 'cli_parse.c', 'y4m_input.c', 'vidinput.c', 'yuv_input.c'],

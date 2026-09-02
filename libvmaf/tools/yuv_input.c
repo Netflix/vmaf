@@ -140,10 +140,42 @@ static void yuv_input_close(yuv_input *_yuv){
   free(_yuv->dst_buf);
 }
 
+static int yuv_fetch_into_vmaf_picture(yuv_input *yuv, FILE *fin, VmafPicture *pic) {
+  (void) yuv;
+  size_t bytes_per_sample = (pic->bpc + 7) / 8;
+
+  for (unsigned i = 0; i < 3; i++) {
+    size_t row_bytes = (size_t)pic->w[i] * bytes_per_sample;
+    if (pic->stride[i] == (ptrdiff_t)row_bytes) {
+      size_t total = row_bytes * pic->h[i];
+      size_t bytes_read = fread(pic->data[i], 1, total, fin);
+      if (bytes_read == 0 && i == 0) return 0;
+      if (bytes_read != total) {
+        fprintf(stderr, "Error reading YUV frame data.\n");
+        return -1;
+      }
+    } else {
+      uint8_t *dst = pic->data[i];
+      for (unsigned j = 0; j < pic->h[i]; j++) {
+        size_t bytes_read = fread(dst, 1, row_bytes, fin);
+        if (bytes_read == 0 && i == 0 && j == 0) return 0;
+        if (bytes_read != row_bytes) {
+          fprintf(stderr, "Error reading YUV frame data.\n");
+          return -1;
+        }
+        dst += pic->stride[i];
+      }
+    }
+  }
+
+  return 1;
+}
+
 OC_EXTERN const video_input_vtbl YUV_INPUT_VTBL={
   (raw_input_open_func)yuv_input_open,
   (video_input_open_func)NULL,
   (video_input_get_info_func)yuv_input_get_info,
   (video_input_fetch_frame_func)yuv_input_fetch_frame,
-  (video_input_close_func)yuv_input_close
+  (video_input_close_func)yuv_input_close,
+  (video_input_fetch_into_vmaf_picture_func)yuv_fetch_into_vmaf_picture
 };

@@ -20,6 +20,11 @@
 #define CONVOLUTION_H_
 
 /*
+Filter widths above this one will not use the AVX path for convolutions.
+*/
+#define MAX_FWIDTH_AVX_CONV 17
+
+/*
  * All functions listed here expect a SYMMETRICAL filter.
  * All array arguments must be 32-byte aligned.
  *

@@ -1,6 +1,7 @@
 import os
 from abc import ABCMeta, abstractmethod, ABC
 import re
+from collections import defaultdict
 from xml.etree import ElementTree
 import copy
 
@@ -17,10 +18,11 @@ from vmaf.core.result import Result
 from vmaf.core.feature_assembler import FeatureAssembler
 from vmaf.core.train_test_model import TrainTestModel, LibsvmNusvrTrainTestModel, \
     BootstrapLibsvmNusvrTrainTestModel
+from vmaf.core.cambi_feature_extractor import CambiFeatureExtractor, CambiFullReferenceFeatureExtractor
 from vmaf.core.feature_extractor import SsimFeatureExtractor, \
-    MsSsimFeatureExtractor, \
-    VmafFeatureExtractor, PsnrFeatureExtractor, VmafIntegerFeatureExtractor, \
-    FeatureExtractor
+    MsSsimFeatureExtractor, SpeedChromaFeatureExtractor, PsnrFeatureExtractor, VmafFeatureExtractor, \
+    VmafIntegerFeatureExtractor, \
+    FeatureExtractor, SpeedTemporalFeatureExtractor
 from vmaf.core.vmafexec_feature_extractor import CIEDE2000FeatureExtractor
 from vmaf.tools.decorator import override
 
@@ -785,12 +787,12 @@ class FeatureDiscoveryMixin(object):
         feature_found = False
         for feature_fullname in frame.attrib:
             if feature_ == feature_fullname:
-                feature_scores[i_feature].append(
+                feature_scores[i_feature][feature_origin].append(
                     float(frame.attrib[feature_fullname]))
                 if feature_nicknames[i_feature] is None:
-                    feature_nicknames[i_feature] = feature_origin
+                    feature_nicknames[i_feature] = [feature_origin]
                 else:
-                    assert feature_nicknames[i_feature] == feature_origin
+                    assert feature_nicknames[i_feature] == [feature_origin]
                 feature_found = True
                 break
         return feature_found
@@ -801,16 +803,14 @@ class FeatureDiscoveryMixin(object):
         feature_found = False
         for feature_fullname in frame.attrib:
             if feature_fullname.startswith(feature_prefix):
-                feature_scores[i_feature].append(
-                    float(frame.attrib[feature_fullname]))
                 feature_suffix = feature_fullname[len(feature_prefix):]
                 feature_nickname = feature_origin + '_' + feature_suffix
                 if feature_nicknames[i_feature] is None:
-                    feature_nicknames[i_feature] = feature_nickname
-                else:
-                    assert feature_nicknames[i_feature] == feature_nickname
+                    feature_nicknames[i_feature] = []
+                if feature_nickname not in feature_nicknames[i_feature]:
+                    feature_nicknames[i_feature].append(feature_nickname)
+                feature_scores[i_feature][feature_nickname].append(float(frame.attrib[feature_fullname]))
                 feature_found = True
-                break
         return feature_found
 
 
@@ -1190,12 +1190,12 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
     DEFAULT_MODEL_FILEPATH = vmaf.model_path("vmaf_v0.6.1.json")
 
     FEATURES = [
-                'adm2', 'motion2', 'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
-                'adm_scale0', 'adm_scale1','adm_scale2','adm_scale3', 'motion',
-                'float_psnr', 'psnr_y', 'psnr_cb', 'psnr_cr',
-                'float_ssim', 'float_ms_ssim', 'ssim', 'ms_ssim',
-                'float_moment_ref1st', 'float_moment_dis1st', 'float_moment_ref2nd', 'float_moment_dis2nd',
-                ]
+        'adm2', 'adm3', 'motion2', 'motion3', 'vif_scale0', 'vif_scale1', 'vif_scale2', 'vif_scale3',
+        'adm_scale0', 'adm_scale1', 'adm_scale2', 'adm_scale3', 'motion', 'cambi', 'speed_chroma_uv',
+        'float_psnr', 'psnr_y', 'psnr_cb', 'psnr_cr',
+        'float_ssim', 'float_ms_ssim', 'ssim', 'ms_ssim',
+        'float_moment_ref1st', 'float_moment_dis1st', 'float_moment_ref2nd', 'float_moment_dis2nd',
+    ]
 
     @classmethod
     def get_feature_scores_key(cls, atom_feature):
@@ -1219,7 +1219,8 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
             if use_default_built_in_model:
                 models = []
         else:
-            model0 = ['name=vmaf']
+            model0 = []
+            model0.append(f'name=vmaf')
 
             if self.optional_dict is not None and 'model_filepath' in self.optional_dict:
                 model_filepath = self.optional_dict['model_filepath']
@@ -1351,14 +1352,21 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
         width = quality_width
         height = quality_height
         pixel_format, bitdepth = convert_pixel_format_ffmpeg2vmafexec(fmt)
+        if asset.dis_encode_width_height is not None:
+            enc_width, enc_height = asset.dis_encode_width_height
+        else:
+            enc_width, enc_height = None, None
+        enc_bitdepth = asset.dis_encode_bitdepth
         output = log_file_path
         exe = self._get_exec()
         logger = self.logger
 
         ExternalProgramCaller.call_vmafexec(reference, distorted, width, height, pixel_format, bitdepth,
-                                          float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
-                                          no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger,
-                                          vif_enhn_gain_limit, adm_enhn_gain_limit, motion_force_zero)
+                                            float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
+                                            no_prediction, models, subsample, n_threads, disable_avx, output, exe,
+                                            logger,
+                                            vif_enhn_gain_limit, adm_enhn_gain_limit, motion_force_zero,
+                                            enc_width, enc_height, enc_bitdepth)
 
     def _get_exec(self):
         return None  # signaling default
@@ -1372,7 +1380,7 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
         root = tree.getroot()
         scores_dict = {}
 
-        feature_scores = [[] for _ in self.FEATURES]
+        feature_scores = [defaultdict(list) for _ in self.FEATURES]
         feature_nicknames = [None for _ in self.FEATURES]
 
         if self.optional_dict is not None and 'no_prediction' in self.optional_dict:
@@ -1449,7 +1457,9 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
         for i_feature, feature in enumerate(self.FEATURES):
             if len(feature_scores[i_feature]) != 0:
                 assert feature_nicknames[i_feature] is not None
-                quality_result[self.get_feature_scores_key(feature_nicknames[i_feature])] = feature_scores[i_feature]
+                for feature_nickname in feature_nicknames[i_feature]:
+                    quality_result[self.get_feature_scores_key(feature_nickname)] = feature_scores[i_feature][
+                        feature_nickname]
         return quality_result
 
 
@@ -1457,3 +1467,55 @@ if __name__ == '__main__':
     import doctest
 
     doctest.testmod()
+
+
+class SpeedChromaQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
+    TYPE = 'SpeedChroma'
+    VERSION = SpeedChromaFeatureExtractor.VERSION
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return SpeedChromaFeatureExtractor
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'speed_chroma_uv'
+
+
+class SpeedChromaUQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
+    TYPE = 'SpeedChromaU'
+    VERSION = SpeedChromaFeatureExtractor.VERSION
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return SpeedChromaFeatureExtractor
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'speed_chroma_u'
+
+
+class SpeedChromaVQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
+    TYPE = 'SpeedChromaV'
+    VERSION = SpeedChromaFeatureExtractor.VERSION
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return SpeedChromaFeatureExtractor
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'speed_chroma_v'
+
+
+class SpeedTemporalQualityRunner(QualityRunnerFromFeatureExtractor, ABC):
+    TYPE = 'SpeedTemporal'
+    VERSION = SpeedTemporalFeatureExtractor.VERSION
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_extractor_class(self):
+        return SpeedTemporalFeatureExtractor
+
+    @override(QualityRunnerFromFeatureExtractor)
+    def _get_feature_key_for_score(self):
+        return 'speed_temporal'

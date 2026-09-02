@@ -21,21 +21,24 @@
 #include "test.h"
 #include "thread_pool.h"
 
-static void fn_a(void *data)
+static void fn_a(void *data, void **thread_data)
 {
     (void) data;
+    (void) thread_data;
     printf("thread ");
 }
 
-static void fn_b(void *data)
+static void fn_b(void *data, void **thread_data)
 {
     (void) data;
+    (void) thread_data;
     printf("pool ");
 }
 
-static void fn_c(void *data)
+static void fn_c(void *data, void **thread_data)
 {
     (void) data;
+    (void) thread_data;
     printf("test ");
 }
 
@@ -43,8 +46,9 @@ typedef struct Fps {
     unsigned num, den;
 } Fps;
 
-static void fn_d(void *data)
+static void fn_d(void *data, void **thread_data)
 {
+    (void) thread_data;
     Fps *fps = data;
     printf("FPS: %d/%d ", fps->num, fps->den);
 }
@@ -54,9 +58,9 @@ static char *test_thread_pool_create_enqueue_wait_and_destroy()
     int err;
 
     VmafThreadPool *pool;
-    unsigned n_threads = 8;
+    VmafThreadPoolConfig cfg = { .n_threads = 8 };
 
-    err = vmaf_thread_pool_create(&pool, n_threads);
+    err = vmaf_thread_pool_create(&pool, cfg);
     mu_assert("problem during vmaf_thread_pool_init", !err);
     err = vmaf_thread_pool_enqueue(pool, fn_a, NULL, 0);
     mu_assert("problem during vmaf_thread_pool_enqueue", !err);

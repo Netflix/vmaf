@@ -21,14 +21,12 @@ from vmaf.tools.scanf import sscanf, IncompleteCaptureError, FormatError
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
 
-
 try:
     multiprocessing.set_start_method('fork')
 except ValueError:  # noqa, If platform does not support, just ignore
     pass
 except RuntimeError:  # noqa, If context has already being set, just ignore
     pass
-
 
 def get_stdout_logger():
     import logging
@@ -38,12 +36,10 @@ def get_stdout_logger():
     logger.addHandler(handler)
     return logger
 
-
 def close_logger(logger):
     for handler in logger.handlers:
         handler.close()
         logger.removeHandler(handler)
-
 
 def get_file_name_without_extension(path):
     """
@@ -62,7 +58,6 @@ def get_file_name_without_extension(path):
     """
     return Path(path).stem
 
-
 def get_file_name_with_extension(path):
     """
 
@@ -76,7 +71,6 @@ def get_file_name_with_extension(path):
     """
     return Path(path).name
 
-
 def get_file_name_extension(path):
     """
     >>> get_file_name_extension("file:///mnt/zli/test.txt")
@@ -89,7 +83,6 @@ def get_file_name_extension(path):
     '265'
     """
     return Path(path).suffix[1:]
-
 
 def get_dir_without_last_slash(path: str) -> str:
     """
@@ -106,16 +99,13 @@ def get_dir_without_last_slash(path: str) -> str:
     """
     return os.path.dirname(path)
 
-
 def make_parent_dirs_if_nonexist(path):
     dst_dir = get_dir_without_last_slash(path)
     os.makedirs(dst_dir, exist_ok=True)
 
-
 def delete_dir_if_exists(dir_to_delete):
     if os.path.isdir(dir_to_delete):
         os.rmdir(dir_to_delete)
-
 
 def get_normalized_string_from_dict(d):
     """ Normalized string representation with sorted keys.
@@ -124,7 +114,6 @@ def get_normalized_string_from_dict(d):
     'bitrate_kbps_45_max_buffer_sec_5.0'
     """
     return '_'.join(map(lambda k: '{k}_{v}'.format(k=k,v=d[k]), sorted(d.keys())))
-
 
 def get_hashable_value_tuple_from_dict(d):
     """ Hashable tuple of values with sorted keys.
@@ -137,7 +126,6 @@ def get_hashable_value_tuple_from_dict(d):
     return tuple(map(
         lambda k: tuple(d[k]) if isinstance(d[k], list) else d[k],
         sorted(d.keys())))
-
 
 def get_unique_str_from_recursive_dict(d):
     """ String representation with sorted keys and values for recursive dict.
@@ -160,7 +148,6 @@ def get_unique_str_from_recursive_dict(d):
             return d
     return json.dumps(to_ordered_dict_recursively(d))
 
-
 def indices(a, func):
     """
     Get indices of elements in an array which satisfies func
@@ -176,7 +163,6 @@ def indices(a, func):
     [2, 5, 8]
     """
     return [i for (i, val) in enumerate(a) if func(val)]
-
 
 def import_python_file(filepath : str, override : dict = None):
     """
@@ -224,7 +210,6 @@ def import_python_file(filepath : str, override : dict = None):
         os.remove(tmpfile.name)
         return ret
 
-
 def make_absolute_path(path: str, current_dir: str) -> str:
     """
     >>> make_absolute_path('abc/cde.fg', '/xyz/')
@@ -238,10 +223,8 @@ def make_absolute_path(path: str, current_dir: str) -> str:
     else:
         return current_dir + path
 
-
 def empty_object():
     return type('', (), {})()
-
 
 def get_cmd_option(argv, begin, end, option):
     """
@@ -267,7 +250,6 @@ def get_cmd_option(argv, begin, end, option):
         return argv[itr + 1]
     return None
 
-
 def cmd_option_exists(argv, begin, end, option):
     """
 
@@ -289,7 +271,6 @@ def cmd_option_exists(argv, begin, end, option):
             found = True
             break
     return found
-
 
 def index_and_value_of_min(l):
     """
@@ -337,7 +318,6 @@ def parallel_map(func, list_args, processes=None):
     
     return [return_dict[i] for i in range(len(list_args))]
 
-
 def check_program_exist(program):
     """
 
@@ -363,7 +343,6 @@ def check_program_exist(program):
         else:
             # Something else went wrong while trying to run `wget`
             raise
-
 
 def check_scanf_match(string, template):
     """
@@ -403,7 +382,6 @@ def check_scanf_match(string, template):
 
     return False
 
-
 def match_any_files(template):
     dir_ = os.path.dirname(template)
     for filename in os.listdir(dir_):
@@ -411,7 +389,6 @@ def match_any_files(template):
         if check_scanf_match(filepath, template):
             return True
     return False
-
 
 def unroll_dict_of_lists(dict_of_lists):
     """ Unfold a dictionary of lists into a list of dictionaries.
@@ -440,7 +417,6 @@ def unroll_dict_of_lists(dict_of_lists):
 
     return list_of_dicts
 
-
 def neg_if_even(x):
     """
     >>> neg_if_even(2)
@@ -457,7 +433,6 @@ def neg_if_even(x):
     """
     return 1 - (x % 2 == 0) * 2
 
-
 def get_unique_sorted_list(l):
     """
     >>> get_unique_sorted_list([3, 4, 4, 1])
@@ -467,7 +442,6 @@ def get_unique_sorted_list(l):
     """
     return sorted(list(set(l)))
 
-
 class Timer(object):
 
     def __enter__(self):
@@ -475,7 +449,6 @@ class Timer(object):
 
     def __exit__(self, type, value, traceback):
         print('Elapsed: %s sec' % (time() - self.tstart))
-
 
 def dedup_value_in_dict(d):
     """
@@ -493,9 +466,7 @@ def dedup_value_in_dict(d):
         d_[key] = value
     return d_
 
-
 class MyTestCase(unittest.TestCase):
-
     def setUp(self):
         self.verificationErrors = []
         self.maxDiff = None
@@ -520,7 +491,6 @@ class MyTestCase(unittest.TestCase):
             super().assertTrue(expr, msg)
         except AssertionError as e:
             self.verificationErrors.append(str(e))
-
 
 class QualityRunnerTestMixin(object):
 
@@ -559,7 +529,6 @@ class QualityRunnerTestMixin(object):
         ax.set_xlabel('Frame Number')
         ax.set_ylabel('Score')
         ax.plot(result[runner_class.get_scores_key()], label=label)
-
 
 def find_linear_function_parameters(p1, p2):
     """
@@ -610,7 +579,6 @@ def find_linear_function_parameters(p1, p2):
         beta = p1[1] - (p1[0] * alpha)
 
     return alpha, beta
-
 
 def piecewise_linear_mapping(x, knots):
     """
@@ -723,7 +691,6 @@ def piecewise_linear_mapping(x, knots):
 
     return y
 
-
 def round_up_to_odd(f):
     """
     >>> round_up_to_odd(32.6)
@@ -732,7 +699,6 @@ def round_up_to_odd(f):
     35
     """
     return int(np.ceil(f) // 2 * 2 + 1)
-
 
 class NoPrint(object):
 
@@ -744,10 +710,8 @@ class NoPrint(object):
         sys.stdout.close()
         sys.stdout = self._original_stdout
 
-
 def linear_func(x, a, b):
     return a*x + b
-
 
 def linear_fit(x, y):
     """
@@ -763,7 +727,6 @@ def linear_fit(x, y):
 
     import scipy.optimize
     return scipy.optimize.curve_fit(linear_func, x, y, [1.0, 0.0])
-
 
 def map_yuv_type_to_bitdepth(yuv_type):
     """
@@ -804,7 +767,6 @@ def map_yuv_type_to_bitdepth(yuv_type):
         return 16
     else:
         return None
-
 
 if __name__ == '__main__':
     import doctest

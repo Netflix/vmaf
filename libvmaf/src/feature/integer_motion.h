@@ -41,12 +41,12 @@ edge_16(bool horizontal, const uint16_t *src, int width,
             if (j_tap < 0)
                 j_tap = -j_tap;
             else if (j_tap >= width)
-                j_tap = width - (j_tap - width + 1);
+                j_tap = width - (j_tap - width + 2);
         } else {
             if (i_tap < 0)
                 i_tap = -i_tap;
             else if (i_tap >= height)
-                i_tap = height - (i_tap - height + 1);
+                i_tap = height - (i_tap - height + 2);
         }
         accum += filter[k] * src[i_tap * stride + j_tap];
     }

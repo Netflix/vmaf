@@ -31,27 +31,37 @@ wget https://github.com/Netflix/vmaf_resource/raw/master/python/test/resource/yu
 wget https://github.com/Netflix/vmaf_resource/raw/master/python/test/resource/yuv/src01_hrc01_576x324.yuv
 ```
 
-## Docker with CUDA support 
+## Use docker with GPU support
 
 To run docker containers with GPU support you have to install the [nvidia container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
-After that a CUDA enabled container can be built using the below command line:
+The above built container already has CUDA support inside and can use CUDA when the nvidia runtime is in use:
 ```shell script
-docker build -f Dockerfile.cuda -t vmaf_cuda .
+docker run --gpus all --rm -v $(pwd):/files vmaf \
+    yuv420p 576 324 \
+    /files/src01_hrc00_576x324.yuv \
+    /files/src01_hrc01_576x324.yuv \
+    --out-fmt json
 ```
 
-Besides VMAF the container also build ffmpeg support to enable GPU enabled decode to be able to run VMAF at speed of light.
-
+While CUDA support is already fast using the `vmaf` tool the tool itself is heavily IO bottlenecked and a usage with ffmpeg and corresponding hardware decoders is much more efficient. To enable that we provide a separate Dockerfile that builds ffmpeg with cuda support and the vmaf filter. To build the container use:
 ```shell script
-REF_VIDEO=$PWD/data/text_ref.mp4 
-DIS_VIDEO=$PWD/data/text_dis.mp4 
-
-docker run --gpus all  -e NVIDIA_DRIVER_CAPABILITIES=compute,video -v $REF_VIDEO:/data/ref.mp4 -v $DIS_VIDEO:/data/dis.mp4 vmaf_cuda
+docker build -f Dockerfile.ffmpeg -t ffmpeg_vmaf .
 ```
-To run a custom ffmpeg command line inside the container use: 
+Usage of the container is very similar to the above examples. For example to run the vmaf filter on two mp4 files use:
 ```shell script
-docker run --gpus all -e NVIDIA_DRIVER_CAPABILITIES=compute,video --entrypoint=bash -it --rm vmaf_cuda 
+wget https://ultravideo.fi/video/Beauty_3840x2160_120fps_420_8bit_HEVC_RAW.hevc
+
+docker run --gpus all  -e NVIDIA_DRIVER_CAPABILITIES=compute,video -v $(pwd):/files ffmpeg_vmaf  \
+  -y -hwaccel cuda -hwaccel_output_format cuda -i /files/Beauty_3840x2160_120fps_420_8bit_HEVC_RAW.hevc \
+  -fps_mode vfr -c:a copy -c:v hevc_nvenc -b:v 2M /files/dist.mp4
+
+docker run --gpus all  -e NVIDIA_DRIVER_CAPABILITIES=compute,video -v $(pwd):/files ffmpeg_vmaf \
+    -hwaccel cuda -hwaccel_output_format cuda -i /files/Beauty_3840x2160_120fps_420_8bit_HEVC_RAW.hevc \
+    -hwaccel cuda -hwaccel_output_format cuda -i /files/dist.mp4 \
+    -filter_complex "[0:v]scale_cuda=format=yuv420p[ref];[1:v]scale_cuda=format=yuv420p[dist];[ref][dist]libvmaf_cuda" \
+    -f null -
 ```
 
-For 420 video format we will have to convert from NV12 to 420 as well: 
-`-filter_complex [0:v]scale_cuda=format=yuv420p[ref];[1:v]scale_cuda=format=yuv420p[dist];[dist][ref]libvmaf_cuda`
+As you see for 420 video format we will have to convert from NV12 to 420 as seen above using `scale_cuda`. For other formats like yuv444p or yuv422p you can directly use the input from the decoder without conversion.
+`-filter_complex [0:v][1:v]libvmaf_cuda`
  

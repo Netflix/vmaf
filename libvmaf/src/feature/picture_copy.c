@@ -21,44 +21,46 @@
 #include <libvmaf/picture.h>
 
 void picture_copy_hbd(float *dst, ptrdiff_t dst_stride,
-                      VmafPicture *src, int offset, float scaler)
+                      VmafPicture *src, int offset, float scaler, int channel)
 {
     float *float_data = dst;
-    uint16_t *data = src->data[0];
+    uint16_t *data = src->data[channel];
 
-    for (unsigned i = 0; i < src->h[0]; i++) {
-        for (unsigned j = 0; j < src->w[0]; j++) {
+    for (unsigned i = 0; i < src->h[channel]; i++) {
+        for (unsigned j = 0; j < src->w[channel]; j++) {
             float_data[j] = (float) data[j] / scaler + offset;
         }
         float_data += dst_stride / sizeof(float);
-        data += src->stride[0] / 2;
+        data += src->stride[channel] / 2;
     }
     return;
 }
 
 void picture_copy(float *dst, ptrdiff_t dst_stride,
-                  VmafPicture *src, int offset, unsigned bpc)
+                  VmafPicture *src, int offset, unsigned bpc, int channel)
 {
     if (bpc == 10) {
-        picture_copy_hbd(dst, dst_stride, src, offset, 4.0f);
+        picture_copy_hbd(dst, dst_stride, src, offset, 4.0f, channel);
         return;
-    } else if (bpc == 12) {
-        picture_copy_hbd(dst, dst_stride, src, offset, 16.0f);
+    }
+    else if (bpc == 12) {
+        picture_copy_hbd(dst, dst_stride, src, offset, 16.0f, channel);
         return;
-    } else if (bpc == 16) {
-        picture_copy_hbd(dst, dst_stride, src, offset, 256.0f);
+    }
+    else if (bpc == 16) {
+        picture_copy_hbd(dst, dst_stride, src, offset, 256.0f, channel);
         return;
     }
 
     float *float_data = dst;
-    uint8_t *data = src->data[0];
+    uint8_t *data = src->data[channel];
 
-    for (unsigned i = 0; i < src->h[0]; i++) {
-        for (unsigned j = 0; j < src->w[0]; j++) {
+    for (unsigned i = 0; i < src->h[channel]; i++) {
+        for (unsigned j = 0; j < src->w[channel]; j++) {
             float_data[j] = (float) data[j] + offset;
         }
         float_data += dst_stride / sizeof(float);
-        data += src->stride[0];
+        data += src->stride[channel];
     }
 
     return;
