@@ -171,9 +171,9 @@ struct dwt_model_params {
 
 // 0 -> Y, 1 -> Cb, 2 -> Cr
 static const struct dwt_model_params dwt_7_9_YCbCr_threshold[3] = {
-    {.a = 0.495, .k = 0.466, .f0 = 0.401, .g = {1.501, 1.0, 0.534, 1.0}},
-    {.a = 1.633, .k = 0.353, .f0 = 0.209, .g = {1.520, 1.0, 0.502, 1.0}},
-    {.a = 0.944, .k = 0.521, .f0 = 0.404, .g = {1.868, 1.0, 0.516, 1.0}}};
+    {0.495, 0.466, 0.401, {1.501, 1.0, 0.534, 1.0}},
+    {1.633, 0.353, 0.209, {1.520, 1.0, 0.502, 1.0}},
+    {0.944, 0.521, 0.404, {1.868, 1.0, 0.516, 1.0}}};
 
 /*
  * The following dwt basis function amplitudes, A(lambda,theta), are taken from
@@ -193,4 +193,16 @@ static const float dwt_7_9_basis_function_amplitudes[6][4] = {
     {0.045943, 0.059758, 0.077727, 0.059758},
     {0.023013, 0.030018, 0.039156, 0.030018}};
 
+#if defined(_MSC_VER) && defined(_M_X64)
+static inline int __builtin_clz(unsigned x) {
+    if (x == 0) return 32;
+    unsigned n = 0;
+    if ((x & 0xFFFF0000) == 0) { n += 16; x <<= 16; }
+    if ((x & 0xFF000000) == 0) { n += 8;  x <<= 8; }
+    if ((x & 0xF0000000) == 0) { n += 4;  x <<= 4; }
+    if ((x & 0xC0000000) == 0) { n += 2;  x <<= 2; }
+    if ((x & 0x80000000) == 0) { n += 1; }
+    return n;
+}
+#endif
 #endif /* _FEATURE_ADM_H_ */
