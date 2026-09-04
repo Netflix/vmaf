@@ -273,6 +273,7 @@ if is_asm_enabled
         arm64_sources = [
           feature_src_dir + 'arm64/vif_neon.c',
           feature_src_dir + 'arm64/adm_neon.c',
+          feature_src_dir + 'arm64/motion_neon.c',
         ]
 
           arm64_static_lib = static_library(
@@ -316,8 +317,7 @@ if is_asm_enabled
             'x86_avx512',
             x86_avx512_sources,
             include_directories : vmaf_base_include,
-            c_args : ['-mavx512f', '-mavx512dq', '-mavx512bw', '-mavx512cd', '-mavx512dq',
-                      '-mavx512vbmi', '-mavx512vl'] +
+            c_args : ['-mavx512f', '-mavx512dq', '-mavx512bw', '-mavx512cd', '-mavx512vl'] +
                      vmaf_cflags_common,
         )
 
@@ -608,6 +608,7 @@ libvmaf = library(
       math_lib,
       stdatomic_dependency,
       cuda_dependency,
+	  rev_dep
     ],
     objects : [
         platform_specific_cpu_objects,

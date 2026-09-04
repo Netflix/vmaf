@@ -26,11 +26,11 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Cache ccache files
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             .ccache
