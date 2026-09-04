@@ -23,9 +23,10 @@
  * between glibc and CUDA in the low bits, and the device math runs in
  * float32 (the CPU reference truncates every intermediate to float anyway).
  *
- * Uses YUV420P input so the fused nearest-neighbor chroma upsampling in the
- * kernel is exercised against the CPU's scale_chroma_planes. Also checks the
- * identical-frame case, where both implementations must return +inf.
+ * Uses YUV420P and YUV422P input so both axes of the fused nearest-neighbor
+ * chroma upsampling are exercised independently against the CPU's
+ * scale_chroma_planes. Also checks the identical-frame case, where both
+ * implementations must return +inf.
  *
  * Exits with meson's SKIP code (77) when no CUDA device is available so CI
  * without a GPU reports the test as skipped.
@@ -43,9 +44,6 @@
 #include "libvmaf/picture.h"
 
 #define N_FRAMES 4
-#define TEST_W 768
-#define TEST_H 432
-
 #define CIEDE_EPS 1e-3
 
 static uint32_t lcg_state;
@@ -86,8 +84,8 @@ static void fill_pictures(VmafPicture *ref, VmafPicture *dist, unsigned bpc,
 }
 
 // returns 0 on success, 1 when CUDA is unavailable (caller should skip)
-static int run_pass(int use_cuda, unsigned bpc, double scores[N_FRAMES],
-                    char **fail)
+static int run_pass(int use_cuda, enum VmafPixelFormat pix_fmt, unsigned bpc,
+                    unsigned w, unsigned h, double scores[N_FRAMES], char **fail)
 {
     int err = 0;
     *fail = NULL;
@@ -117,10 +115,8 @@ static int run_pass(int use_cuda, unsigned bpc, double scores[N_FRAMES],
 
     for (unsigned i = 0; i < N_FRAMES; i++) {
         VmafPicture ref, dist;
-        err = vmaf_picture_alloc(&ref, VMAF_PIX_FMT_YUV420P, bpc,
-                                 TEST_W, TEST_H);
-        err |= vmaf_picture_alloc(&dist, VMAF_PIX_FMT_YUV420P, bpc,
-                                  TEST_W, TEST_H);
+        err = vmaf_picture_alloc(&ref, pix_fmt, bpc, w, h);
+        err |= vmaf_picture_alloc(&dist, pix_fmt, bpc, w, h);
         if (err) { *fail = "problem during vmaf_picture_alloc"; return 0; }
         fill_pictures(&ref, &dist, bpc, i);
         err = vmaf_read_pictures(vmaf, &ref, &dist, i);
@@ -141,15 +137,16 @@ static int run_pass(int use_cuda, unsigned bpc, double scores[N_FRAMES],
     return 0;
 }
 
-static char *parity(unsigned bpc)
+static char *parity(enum VmafPixelFormat pix_fmt, unsigned bpc,
+                    unsigned w, unsigned h)
 {
     double cpu[N_FRAMES], gpu[N_FRAMES];
     char *fail = NULL;
 
-    run_pass(0, bpc, cpu, &fail);
+    run_pass(0, pix_fmt, bpc, w, h, cpu, &fail);
     if (fail) return fail;
 
-    if (run_pass(1, bpc, gpu, &fail)) {
+    if (run_pass(1, pix_fmt, bpc, w, h, gpu, &fail)) {
         fprintf(stderr, "no CUDA device available, skipping\n");
         exit(77);
     }
@@ -163,8 +160,9 @@ static char *parity(unsigned bpc)
 
     for (unsigned i = 0; i < N_FRAMES - 1; i++) {
         if (fabs(cpu[i] - gpu[i]) > CIEDE_EPS) {
-            fprintf(stderr, "mismatch %u bpc, frame %u: cpu=%.9f gpu=%.9f\n",
-                    bpc, i, cpu[i], gpu[i]);
+            fprintf(stderr, "mismatch format %d, %u bpc, %ux%u, frame %u: "
+                    "cpu=%.9f gpu=%.9f\n", pix_fmt, bpc, w, h, i,
+                    cpu[i], gpu[i]);
             return "cpu/cuda ciede2000 score mismatch";
         }
     }
@@ -174,17 +172,29 @@ static char *parity(unsigned bpc)
 
 static char *test_ciede_cuda_parity_8bpc(void)
 {
-    return parity(8);
+    return parity(VMAF_PIX_FMT_YUV420P, 8, 768, 432);
 }
 
 static char *test_ciede_cuda_parity_10bpc(void)
 {
-    return parity(10);
+    return parity(VMAF_PIX_FMT_YUV420P, 10, 768, 432);
+}
+
+static char *test_ciede_cuda_parity_422_8bpc(void)
+{
+    return parity(VMAF_PIX_FMT_YUV422P, 8, 64, 48);
+}
+
+static char *test_ciede_cuda_parity_422_10bpc(void)
+{
+    return parity(VMAF_PIX_FMT_YUV422P, 10, 64, 48);
 }
 
 char *run_tests()
 {
     mu_run_test(test_ciede_cuda_parity_8bpc);
     mu_run_test(test_ciede_cuda_parity_10bpc);
+    mu_run_test(test_ciede_cuda_parity_422_8bpc);
+    mu_run_test(test_ciede_cuda_parity_422_10bpc);
     return NULL;
 }

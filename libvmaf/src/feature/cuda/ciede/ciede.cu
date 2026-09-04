@@ -241,17 +241,17 @@ __device__ __forceinline__ void block_reduce_de(double de,
             blockIdx.y * gridDim.x + blockIdx.x] = sh[0];
 }
 
-// scale_chroma_planes in feature/ciede.c halves the column index when the
-// format is vertically subsampled and advances the source row every second
-// output row when horizontally subsampled — replicated as-is for parity
-__device__ __forceinline__ int chroma_col(int j, int ss_ver)
+// scale_chroma_planes in feature/ciede.c halves the column index for
+// horizontal subsampling and advances the source row every second output row
+// for vertical subsampling.
+__device__ __forceinline__ int chroma_col(int j, int ss_hor)
 {
-    return ss_ver ? j / 2 : j;
+    return ss_hor ? j / 2 : j;
 }
 
-__device__ __forceinline__ int chroma_row(int i, int ss_hor)
+__device__ __forceinline__ int chroma_row(int i, int ss_ver)
 {
-    return ss_hor ? i / 2 : i;
+    return ss_ver ? i / 2 : i;
 }
 
 extern "C" {
@@ -265,8 +265,8 @@ __global__ void ciede_kernel_8bpc(const VmafPicture ref, const VmafPicture dis,
 
     double de00 = 0.0;
     if (j < width && i < height) {
-        const int cj = chroma_col(j, ss_ver);
-        const int ci = chroma_row(i, ss_hor);
+        const int cj = chroma_col(j, ss_hor);
+        const int ci = chroma_row(i, ss_ver);
 
         const float r_y = (reinterpret_cast<const uint8_t*>(ref.data[0]) +
                 (size_t)i * ref.stride[0])[j];
@@ -298,8 +298,8 @@ __global__ void ciede_kernel_16bpc(const VmafPicture ref, const VmafPicture dis,
 
     double de00 = 0.0;
     if (j < width && i < height) {
-        const int cj = chroma_col(j, ss_ver);
-        const int ci = chroma_row(i, ss_hor);
+        const int cj = chroma_col(j, ss_hor);
+        const int ci = chroma_row(i, ss_ver);
 
         const float r_y = reinterpret_cast<const uint16_t*>(
                 reinterpret_cast<const uint8_t*>(ref.data[0]) +
