@@ -39,7 +39,9 @@ typedef struct VmafThreadPool {
     struct {
         pthread_mutex_t lock;
         pthread_cond_t empty;
+        pthread_cond_t not_full;
         VmafThreadPoolJob *head, *tail;
+        unsigned depth;
     } queue;
     pthread_cond_t working;
     unsigned n_threads;
@@ -82,6 +84,10 @@ static void *vmaf_thread_pool_runner(void *p)
             pthread_cond_wait(&(pool->queue.empty), &(pool->queue.lock));
         if (pool->stop) break;
         VmafThreadPoolJob *job = vmaf_thread_pool_fetch_job(pool);
+        if (job) {
+            pool->queue.depth--;
+            pthread_cond_signal(&(pool->queue.not_full));
+        }
         pool->n_working++;
         pthread_mutex_unlock(&(pool->queue.lock));
         if (job) {
@@ -122,6 +128,7 @@ int vmaf_thread_pool_create(VmafThreadPool **pool, VmafThreadPoolConfig cfg)
 
     pthread_mutex_init(&(p->queue.lock), NULL);
     pthread_cond_init(&(p->queue.empty), NULL);
+    pthread_cond_init(&(p->queue.not_full), NULL);
     pthread_cond_init(&(p->working), NULL);
 
     for (unsigned i = 0; i < cfg.n_threads; i++) {
@@ -153,6 +160,15 @@ int vmaf_thread_pool_enqueue(VmafThreadPool *pool,
 
     pthread_mutex_lock(&(pool->queue.lock));
 
+    while (pool->queue.depth >= pool->n_threads && !pool->stop)
+        pthread_cond_wait(&(pool->queue.not_full), &(pool->queue.lock));
+
+    if (pool->stop) {
+        pthread_mutex_unlock(&(pool->queue.lock));
+        vmaf_thread_pool_job_destroy(job);
+        return -ECANCELED;
+    }
+
     if (!pool->queue.head) {
         pool->queue.head = job;
         pool->queue.tail = pool->queue.head;
@@ -160,6 +176,7 @@ int vmaf_thread_pool_enqueue(VmafThreadPool *pool,
         pool->queue.tail->next = job;
         pool->queue.tail = job;
     }
+    pool->queue.depth++;
 
     pthread_cond_broadcast(&(pool->queue.empty));
     pthread_mutex_unlock(&(pool->queue.lock));
@@ -199,6 +216,7 @@ int vmaf_thread_pool_destroy(VmafThreadPool *pool)
 
     pool->stop = true;
     pthread_cond_broadcast(&(pool->queue.empty));
+    pthread_cond_broadcast(&(pool->queue.not_full));
     pthread_mutex_unlock(&(pool->queue.lock));
     vmaf_thread_pool_wait(pool);
 
@@ -212,6 +230,7 @@ int vmaf_thread_pool_destroy(VmafThreadPool *pool)
 
     pthread_mutex_destroy(&(pool->queue.lock));
     pthread_cond_destroy(&(pool->queue.empty));
+    pthread_cond_destroy(&(pool->queue.not_full));
     pthread_cond_destroy(&(pool->working));
 
     free(pool);

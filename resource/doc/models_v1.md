@@ -1,6 +1,6 @@
 # Models (v1)
 
-As of June 2026, this repository ships a new generation of VMAF models, referred to as **VMAF v1**. These models have demonstrated better accuracy compared to the previous set of models (VMAF v0). For more information please refer to the tech blog XXX. For the previous generation of models, see [models_v0.md](models_v0.md).
+As of June 2026, this repository ships a new generation of VMAF models, referred to as **VMAF v1**. These models have demonstrated better accuracy compared to the previous set of models (VMAF v0). For more information please refer to the [tech blog](https://medium.com/netflix-techblog/vmaf-v1-good-is-not-good-enough-60d7e4244ea8). For the previous generation of models, see [models_v0.md](models_v0.md).
 
 The v1 models live under `model/vmaf_v1.0.16/` and are selected via the `--model` option, in the same way as the v0 models.
 

@@ -25,7 +25,7 @@ jobs:
       CXX: ${{ matrix.CXX }}
     steps:
       - name: Setup python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: 3.11
       - name: Install meson and ninja
@@ -41,7 +41,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           brew install -q ninja nasm
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Build vmaf
         run: |
           meson setup libvmaf libvmaf/build --buildtype release
