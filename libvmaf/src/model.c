@@ -284,7 +284,7 @@ int vmaf_model_collection_append(VmafModelCollection **model_collection,
     if (mc->cnt == mc->size) {
         const size_t sz = mc->size * sizeof(*mc->model) * 2;
         VmafModel **m = realloc(mc->model, sz);
-        if (!m) goto fail;
+        if (!m) return -ENOMEM;
         mc->model = m;
         mc->size *= 2;
     }

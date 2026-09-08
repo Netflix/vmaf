@@ -245,3 +245,14 @@ if is_asm_enabled and (host_machine.cpu_family().startswith('arm64') or host_mac
 
     test('test_motion_neon', test_motion_neon)
 endif
+
+test_model_collection_alloc = executable('test_model_collection_alloc',
+    ['test.c', 'test_model_collection_alloc.c', '../src/dict.c', '../src/pdjson.c',
+     '../src/read_json_model.c', '../src/log.c', json_model_c_sources],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    c_args : vmaf_cflags_common,
+    dependencies : [thread_lib, cuda_dependency],
+    objects : libsvm_static_lib.extract_all_objects(recursive: true),
+)
+test('test_model_collection_alloc', test_model_collection_alloc)
