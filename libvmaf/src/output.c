@@ -37,12 +37,18 @@ static unsigned max_capacity(VmafFeatureCollector *fc)
     return capacity;
 }
 
+/* Report files list these four methods. The order statistics that follow them
+ * in enum VmafPoolingMethod are available through the API only, so that the
+ * pooled_metrics schema does not change. */
 static const char *pool_method_name[] = {
     [VMAF_POOL_METHOD_MIN] = "min",
     [VMAF_POOL_METHOD_MAX] = "max",
     [VMAF_POOL_METHOD_MEAN] = "mean",
     [VMAF_POOL_METHOD_HARMONIC_MEAN] = "harmonic_mean",
 };
+
+static const unsigned pool_method_name_cnt =
+    sizeof(pool_method_name) / sizeof(pool_method_name[0]);
 
 static int count_leading_zeros_d(double x)
 {
@@ -120,7 +126,7 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
         fprintf(outfile, "    <metric name=\"%s\" ",
                 vmaf_feature_name_alias(feature_name));
 
-        for (unsigned j = 1; j < VMAF_POOL_METHOD_NB; j++) {
+        for (unsigned j = 1; j < pool_method_name_cnt; j++) {
             double score;
             int err = vmaf_feature_score_pooled(vmaf, feature_name, j, &score,
                                                 0, pic_cnt - 1);
@@ -239,7 +245,7 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
         fprintf(outfile, "%s", i > 0 ? ",\n" : "\n");
         fprintf(outfile, "    \"%s\": {",
                 vmaf_feature_name_alias(feature_name));
-        for (unsigned j = 1; j < VMAF_POOL_METHOD_NB; j++) {
+        for (unsigned j = 1; j < pool_method_name_cnt; j++) {
             double score;
             int err = vmaf_feature_score_pooled(vmaf, feature_name, j, &score,
                                                 0, pic_cnt - 1);
