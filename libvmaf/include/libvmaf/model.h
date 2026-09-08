@@ -47,6 +47,15 @@ int vmaf_model_load(VmafModel **model, VmafModelConfig *cfg,
 int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg,
                               const char *path);
 
+/**
+ * Override options for the named feature extractor in a model.
+ *
+ * A NULL argument returns -EINVAL without consuming opts_dict. Otherwise,
+ * opts_dict is consumed, including on allocation failure or when the model
+ * has no matching feature. The caller must not reuse or free it after the call.
+ * This operation is not transactional: an error can leave earlier features
+ * updated.
+ */
 int vmaf_model_feature_overload(VmafModel *model, const char *feature_name,
                                 VmafFeatureDictionary *opts_dict);
 
@@ -80,6 +89,14 @@ int vmaf_model_collection_load_from_path(VmafModel **model,
                                          VmafModelConfig *cfg,
                                          const char *path);
 
+/**
+ * Override options in each collection member and the lead model.
+ *
+ * A NULL argument (including *model_collection) returns -EINVAL without
+ * consuming opts_dict. Otherwise, opts_dict is consumed even on failure.
+ * Earlier members may already be updated if a later member fails; the lead
+ * model is still processed after a collection-copy failure.
+ */
 int vmaf_model_collection_feature_overload(VmafModel *model,
                                            VmafModelCollection **model_collection,
                                            const char *feature_name,

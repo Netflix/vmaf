@@ -164,3 +164,17 @@ Create a new `VmafFeatureExtractor` and add it to the build as well as the `feat
 The remainder of your work should take place in the `.extract()` callback. This callback is called for every pair of input pictures. Read the pixel data make some computations and then write the output(s) to the `VmafFeatureCollector` via the `vmaf_feature_collector_append()` api. An important thing to know about this callback is that it can (and probably is) being called in an arbitrary order. If your feature extractor has a temporal requirement (i.e. `motion`), set the `VMAF_FEATURE_EXTRACTOR_TEMPORAL` flag and the `VmafFeatureExtractorContext` will ensure that this callback is executed in serial. For an example of a feature extractor with a temporal dependency see the [motion](https://github.com/Netflix/vmaf/blob/master/libvmaf/src/feature/integer_motion.c) feature extractor.
 
 If the `VMAF_FEATURE_EXTRACTOR_TEMPORAL` is set, it is likely that you have buffers that need flushing. If this is the case, `.flush()` is called in a loop until something non-zero is returned.
+
+### Feature-option dictionary ownership
+
+`vmaf_model_feature_overload()` and
+`vmaf_model_collection_feature_overload()` take ownership of `opts_dict` after
+validating their arguments. If an argument is NULL (including a NULL collection
+stored in `*model_collection`), they return `-EINVAL` and the caller still owns
+the dictionary. Otherwise they consume it on both success and failure, including
+allocation failure and a feature name that matches no feature in the model.
+Do not reuse or free the dictionary after such a call.
+
+Overloading is not transactional: features or collection members updated before
+an error remain updated. A collection-copy failure is reported to the caller;
+the lead-model overload still runs and consumes the original dictionary.
