@@ -388,13 +388,20 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
     VmafDictionary *d = NULL;
     if (s) {
         err = vmaf_dictionary_copy(&s, &d);
-        if (err) return err;
+        if (err) {
+            vmaf_dictionary_free(&d);
+            return err;
+        }
         err = vmaf_dictionary_free(&s);
         if (err) return err;
     }
 
     VmafFeatureExtractorContext *fex_ctx;
     err = vmaf_feature_extractor_context_create(&fex_ctx, fex, d);
+    if (err) {
+        vmaf_dictionary_free(&d);
+        return err;
+    }
 #ifdef HAVE_CUDA
     err |= set_fex_cuda_state(fex_ctx, vmaf);
 #endif
@@ -440,9 +447,16 @@ int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
         VmafDictionary *d = NULL;
         if (model->feature[i].opts_dict) {
             err = vmaf_dictionary_copy(&model->feature[i].opts_dict, &d);
-            if (err) return err;
+            if (err) {
+                vmaf_dictionary_free(&d);
+                return err;
+            }
         }
         err = vmaf_feature_extractor_context_create(&fex_ctx, fex, d);
+        if (err) {
+            vmaf_dictionary_free(&d);
+            return err;
+        }
 #ifdef HAVE_CUDA
         err |= set_fex_cuda_state(fex_ctx, vmaf);
 #endif
@@ -519,11 +533,19 @@ static void threaded_extract_batch_func(void *e, void **thread_data)
             VmafDictionary *d = NULL;
             if (opts_dict) {
                 int err = vmaf_dictionary_copy(&opts_dict, &d);
-                if (err) { f->err = err; break; }
+                if (err) {
+                    vmaf_dictionary_free(&d);
+                    f->err = err;
+                    break;
+                }
             }
             int err = vmaf_feature_extractor_context_create(&td->fex_ctx[i],
                                                              fex, d);
-            if (err) { f->err = err; break; }
+            if (err) {
+                vmaf_dictionary_free(&d);
+                f->err = err;
+                break;
+            }
         }
 
         if (fex->flags & VMAF_FEATURE_EXTRACTOR_PREV_REF) {
