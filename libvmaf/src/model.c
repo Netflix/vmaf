@@ -228,7 +228,10 @@ int vmaf_model_feature_overload(VmafModel *model, const char *feature_name,
         VmafDictionary *d =
             vmaf_dictionary_merge((VmafDictionary**)&model->feature[i].opts_dict,
                                   (VmafDictionary**)&opts_dict, 0);
-        if (!d) return -ENOMEM;
+        if (!d) {
+            err = -ENOMEM;
+            goto exit;
+        }
         err = vmaf_dictionary_free(&model->feature[i].opts_dict);
         if (err) goto exit;
         model->feature[i].opts_dict = d;
@@ -363,17 +366,23 @@ int vmaf_model_collection_feature_overload(VmafModel *model,
                                            const char *feature_name,
                                            VmafFeatureDictionary *opts_dict)
 {
-    if (!model_collection) return -EINVAL;
+    if (!model_collection || !*model_collection) return -EINVAL;
+    if (!model || !feature_name || !opts_dict) return -EINVAL;
     VmafModelCollection *mc = *model_collection;
 
     int err = 0;
     for (unsigned i = 0; i < mc->cnt; i++) {
         VmafFeatureDictionary *d = NULL;
-        if (vmaf_dictionary_copy((VmafDictionary**)&opts_dict, (VmafDictionary**)&d)) goto exit;
+        const int copy_err =
+            vmaf_dictionary_copy((VmafDictionary**)&opts_dict, (VmafDictionary**)&d);
+        if (copy_err) {
+            err |= copy_err;
+            err |= vmaf_dictionary_free((VmafDictionary**)&d);
+            break;
+        }
         err |= vmaf_model_feature_overload(mc->model[i], feature_name, d);
     }
 
-exit:
     err |= vmaf_model_feature_overload(model, feature_name, opts_dict);
     return err;
 }
