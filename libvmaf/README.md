@@ -178,3 +178,17 @@ Do not reuse or free the dictionary after such a call.
 Overloading is not transactional: features or collection members updated before
 an error remain updated. A collection-copy failure is reported to the caller;
 the lead-model overload still runs and consumes the original dictionary.
+
+
+Feature registration also owns private option copies. Invalid options or a
+failed copy release those private allocations; a model's original options stay
+with the model and can be corrected before retrying registration. Features
+registered before a later error remain registered.
+
+`vmaf_use_feature()` has a different existing boundary from model overloads:
+it retains the supplied dictionary on argument/name rejection or failure to
+copy it. After copying succeeds it consumes the supplied dictionary, including
+when option validation or registration later fails. An error code alone cannot
+distinguish these stages. This cleanup preserves that boundary; it does not
+redesign the ownership API. Worker context creation follows the same private
+copy cleanup rule while retaining the registered source options.

@@ -117,6 +117,8 @@ typedef struct VmafFeatureExtractorContext {
     VmafFeatureExtractor *fex;
 } VmafFeatureExtractorContext;
 
+/* On success the context owns opts_dict. On failure *fex_ctx is NULL and
+ * opts_dict remains owned by the caller. */
 int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
                                           VmafFeatureExtractor *fex,
                                           VmafDictionary *opts_dict);
