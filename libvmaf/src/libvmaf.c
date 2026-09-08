@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <math.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -995,14 +996,74 @@ int vmaf_score_at_index_model_collection(VmafContext *vmaf,
                                                         index, score);
 }
 
+static int pooled_score_compare(const void *a, const void *b)
+{
+    const double x = *(const double*)a;
+    const double y = *(const double*)b;
+    return (x > y) - (x < y);
+}
+
+static int feature_score_percentile(VmafContext *vmaf, const char *feature_name,
+                                     double percentile, double *score,
+                                     unsigned index_low, unsigned index_high)
+{
+    const uint64_t step = vmaf->cfg.n_subsample > 1 ? vmaf->cfg.n_subsample : 1;
+    const uint64_t first = ((uint64_t)index_low + step - 1) / step * step;
+    if (first > index_high) return -EINVAL;
+    const uint64_t count = ((uint64_t)index_high - first) / step + 1;
+    if (count > SIZE_MAX / sizeof(double)) return -ENOMEM;
+
+    double *samples = malloc((size_t)count * sizeof(*samples));
+    if (!samples) return -ENOMEM;
+
+    int err = 0;
+    size_t n = 0;
+    for (uint64_t i = first; i <= index_high; i += step) {
+        double value;
+        err = vmaf_feature_score_at_index(vmaf, feature_name, &value, (unsigned)i);
+        if (err) goto free_samples;
+        if (!isfinite(value)) {
+            err = -EINVAL;
+            goto free_samples;
+        }
+        samples[n++] = value;
+    }
+
+    qsort(samples, n, sizeof(*samples), pooled_score_compare);
+    /* The same linear interpolation used by bootstrap confidence intervals
+     * in predict.c and by the Python harness's numpy.percentile calls. */
+    const double rank = percentile * (n - 1) / 100.;
+    const size_t lo = (size_t)floor(rank);
+    const size_t hi = (size_t)ceil(rank);
+    *score = lo == hi ? samples[lo] :
+        samples[lo] * (hi - rank) + samples[hi] * (rank - lo);
+
+free_samples:
+    free(samples);
+    return err;
+}
+
 int vmaf_feature_score_pooled(VmafContext *vmaf, const char *feature_name,
                               enum VmafPoolingMethod pool_method, double *score,
                               unsigned index_low, unsigned index_high)
 {
     if (!vmaf) return -EINVAL;
     if (!feature_name) return -EINVAL;
+    if (!score) return -EINVAL;
     if (index_low > index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
+
+    double percentile;
+    switch (pool_method) {
+    case VMAF_POOL_METHOD_MEDIAN: percentile = 50.; break;
+    case VMAF_POOL_METHOD_PERC5: percentile = 5.; break;
+    case VMAF_POOL_METHOD_PERC10: percentile = 10.; break;
+    case VMAF_POOL_METHOD_PERC20: percentile = 20.; break;
+    default: percentile = -1.; break;
+    }
+    if (percentile >= 0.)
+        return feature_score_percentile(vmaf, feature_name, percentile, score,
+                                         index_low, index_high);
 
     unsigned pic_cnt = 0;
     double min = 0., max = 0., sum = 0., i_sum = 0.;

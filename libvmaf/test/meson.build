@@ -245,3 +245,11 @@ if is_asm_enabled and (host_machine.cpu_family().startswith('arm64') or host_mac
 
     test('test_motion_neon', test_motion_neon)
 endif
+
+test_pool_percentile = executable('test_pool_percentile',
+    ['test.c', 'test_pool_percentile.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies : [math_lib, stdatomic_dependency, cuda_dependency],
+)
+test('test_pool_percentile', test_pool_percentile)
