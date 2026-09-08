@@ -116,7 +116,6 @@ int vmaf_model_load_from_path(VmafModel **model, VmafModelConfig *cfg,
 void vmaf_model_destroy(VmafModel *model);
 ```
 
-
 A VMAF score is a fusion of several elementary features which are specified by a model file. The next step is to register all feature extractors required by your model or models with `vmaf_use_features_from_model()`. If there are auxillary metrics (i.e. `PSNR`) you would also like to extract use `vmaf_use_feature()` to register it directly.
 
 ```c
@@ -141,6 +140,32 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
 ```
 
 After your pictures have been read, you can retrieve a vmaf score. Use `vmaf_score_at_index` to get the score at single index, and use `vmaf_score_pooled()` to get a pooled score across multiple frames.
+
+The C API supports `VMAF_POOL_METHOD_MEDIAN`, `VMAF_POOL_METHOD_PERC5`,
+`VMAF_POOL_METHOD_PERC10`, and `VMAF_POOL_METHOD_PERC20` in addition to the
+existing min, max, mean, and harmonic-mean methods. For example:
+
+```c
+double low_percentile;
+int err = vmaf_score_pooled(vmaf, model, VMAF_POOL_METHOD_PERC10,
+                            &low_percentile, 0, last_frame_index);
+```
+
+These order statistics use the inclusive frame interval and `n_subsample` from
+`VmafConfiguration`. Sort the selected scores ascending, locate rank
+`percentile * (n - 1) / 100`, and linearly interpolate between its neighboring
+samples. This matches the Python harness's `numpy.percentile` default: the 10th
+percentile of `[1, 2, 3, 4]` is `1.3`, and its median is `2.5`. A single selected
+frame returns its own value. An interval selecting no frames, or a non-finite
+score, returns `-EINVAL`; unavailable frame scores propagate the lookup error.
+`vmaf_feature_score_pooled()` leaves its destination score unchanged on failure.
+
+Percentile pooling uses O(n) temporary memory and O(n log n) sorting time.
+Existing pooling methods retain their accumulation order and do not allocate
+this buffer. The methods also work with `vmaf_feature_score_pooled()` and the
+model-collection pooling API, which delegate to the same feature reduction.
+This adds C API support; FFmpeg's filter option mapping needs a separate update
+before its `pool` option can select these methods.
 
 ```c
 int vmaf_score_at_index(VmafContext *vmaf, VmafModel *model, double *score,
