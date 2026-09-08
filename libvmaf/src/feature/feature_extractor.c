@@ -137,8 +137,10 @@ int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
                                           VmafFeatureExtractor *fex,
                                           VmafDictionary *opts_dict)
 {
-    VmafFeatureExtractorContext *f = *fex_ctx = malloc(sizeof(*f));
-    if (!f) return -ENOMEM;
+    int err = -ENOMEM;
+    *fex_ctx = NULL;
+    VmafFeatureExtractorContext *f = malloc(sizeof(*f));
+    if (!f) return err;
     memset(f, 0, sizeof(*f));
 
     VmafFeatureExtractor *x = malloc(sizeof(*x));
@@ -155,17 +157,21 @@ int vmaf_feature_extractor_context_create(VmafFeatureExtractorContext **fex_ctx,
 
     f->opts_dict = opts_dict;
     if (f->fex->options && f->fex->priv) {
-        int err = vmaf_fex_ctx_parse_options(f);
-        if (err) return err;
+        err = vmaf_fex_ctx_parse_options(f);
+        if (err) {
+            if (f->fex->priv_size) free(f->fex->priv);
+            goto free_x;
+        }
     }
 
+    *fex_ctx = f;
     return 0;
 
 free_x:
     free(x);
 free_f:
     free(f);
-    return -ENOMEM;
+    return err;
 }
 
 int vmaf_feature_extractor_context_init(VmafFeatureExtractorContext *fex_ctx,
