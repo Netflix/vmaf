@@ -3170,7 +3170,7 @@ void adm_dwt2_s123_combined_avx2(const int32_t *i4_ref_scale, const int32_t *i4_
 
 
     int w_mod4 = (w  - (w  % 4));
-    int half_w_mod4 = ((w + 1) / 2) - ((((w + 1) / 2) - 1) % 4);
+    int half_w_mod4 = (((w + 1) / 2) - 2) - ((((w + 1) / 2) - 3) % 4);
 
     // printf("%dx%d %d\n", w,h, half_w_mod4);
 
