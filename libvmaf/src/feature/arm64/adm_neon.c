@@ -56,6 +56,11 @@ void adm_dwt2_8_neon(const uint8_t *src, const adm_dwt_band_t *dst,
     const int32x4_t add_shift_hp_vec = vdupq_n_s32(add_shift_HP);
     const int32x4_t shift_hp_vec = vdupq_n_s32(-shift_HP);
 
+    const int16_t *filter_lo = dwt2_db2_coeffs_lo;
+    const int16_t *filter_hi = dwt2_db2_coeffs_hi;
+    const int w_half = (w + 1) / 2;
+    const int half_w_mod8 = (w_half - 2) - ((w_half - 3) % 8);
+
     for (int i = 0; i < (h + 1) / 2; ++i)
     {
         /* Vertical pass. */
@@ -108,7 +113,7 @@ void adm_dwt2_8_neon(const uint8_t *src, const adm_dwt_band_t *dst,
         int32_t accum_h = add_shift_HP;
         int32_t accum_d = add_shift_HP;
 
-        for (int idx = 0; idx < 3; idx++)
+        for (int idx = 0; idx < 4; idx++)
         {
             int j_idx = ind_x[idx][0];
             int16_t s_lo = tmplo[j_idx];
@@ -139,7 +144,7 @@ void adm_dwt2_8_neon(const uint8_t *src, const adm_dwt_band_t *dst,
         int16_t *p_low = tmplo + 2;  // 2*j (j=1) - 1 --> 2 -1 = 1
         int16_t *p_high = tmphi + 2; // 2*j (j=1) - 1 --> 2 -1 = 1
         int stride_h = i * dst_stride + 1;
-        for (int j = 1; j < ((w + 1) / 2); j += 8, p_low += 16, p_high += 16, stride_h += 8)
+        for (int j = 1; j < half_w_mod8; j += 8, p_low += 16, p_high += 16, stride_h += 8)
         {
             int16x8x2_t low_s0s1_vec_s16, low_s2s3_vec_s16;
             int16x8x2_t high_s0s1_vec_s16, high_s2s3_vec_s16;
@@ -158,6 +163,52 @@ void adm_dwt2_8_neon(const uint8_t *src, const adm_dwt_band_t *dst,
             NEON_ADM_STORE_ZIPPED_ACCUM_LO_HI_WITH_RIGHT_SHIFT_S16x8(low_accum_vec_hi, shift_hp_vec, (dst->band_v + stride_h));
             NEON_ADM_STORE_ZIPPED_ACCUM_LO_HI_WITH_RIGHT_SHIFT_S16x8(high_accum_vec_lo, shift_hp_vec, (dst->band_h + stride_h));
             NEON_ADM_STORE_ZIPPED_ACCUM_LO_HI_WITH_RIGHT_SHIFT_S16x8(high_accum_vec_hi, shift_hp_vec, (dst->band_d + stride_h));
+        }
+
+        for (int j = half_w_mod8; j < w_half; ++j)
+        {
+            int j0 = ind_x[0][j];
+            int j1 = ind_x[1][j];
+            int j2 = ind_x[2][j];
+            int j3 = ind_x[3][j];
+
+            int16_t s0 = tmplo[j0];
+            int16_t s1 = tmplo[j1];
+            int16_t s2 = tmplo[j2];
+            int16_t s3 = tmplo[j3];
+
+            int32_t accum = add_shift_HP;
+            accum += (int32_t)filter_lo[0] * s0;
+            accum += (int32_t)filter_lo[1] * s1;
+            accum += (int32_t)filter_lo[2] * s2;
+            accum += (int32_t)filter_lo[3] * s3;
+            dst->band_a[i * dst_stride + j] = (int16_t)(accum >> shift_HP);
+
+            accum = add_shift_HP;
+            accum += (int32_t)filter_hi[0] * s0;
+            accum += (int32_t)filter_hi[1] * s1;
+            accum += (int32_t)filter_hi[2] * s2;
+            accum += (int32_t)filter_hi[3] * s3;
+            dst->band_v[i * dst_stride + j] = (int16_t)(accum >> shift_HP);
+
+            s0 = tmphi[j0];
+            s1 = tmphi[j1];
+            s2 = tmphi[j2];
+            s3 = tmphi[j3];
+
+            accum = add_shift_HP;
+            accum += (int32_t)filter_lo[0] * s0;
+            accum += (int32_t)filter_lo[1] * s1;
+            accum += (int32_t)filter_lo[2] * s2;
+            accum += (int32_t)filter_lo[3] * s3;
+            dst->band_h[i * dst_stride + j] = (int16_t)(accum >> shift_HP);
+
+            accum = add_shift_HP;
+            accum += (int32_t)filter_hi[0] * s0;
+            accum += (int32_t)filter_hi[1] * s1;
+            accum += (int32_t)filter_hi[2] * s2;
+            accum += (int32_t)filter_hi[3] * s3;
+            dst->band_d[i * dst_stride + j] = (int16_t)(accum >> shift_HP);
         }
     }
 }

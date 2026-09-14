@@ -713,7 +713,7 @@ void adm_decouple_avx2(AdmBuffer *buf, int w, int h, int stride,
     }
 
     int64_t ot_dp, o_mag_sq, t_mag_sq;
-    int right_mod8 = right - (right % 8);
+    int right_mod8 = right - ((right - left) % 8);
 
     for (int i = top; i < bottom; ++i) {
         for (int j = left; j < right_mod8; j+=8) {
@@ -3170,7 +3170,7 @@ void adm_dwt2_s123_combined_avx2(const int32_t *i4_ref_scale, const int32_t *i4_
 
 
     int w_mod4 = (w  - (w  % 4));
-    int half_w_mod4 = ((w + 1) / 2) - ((((w + 1) / 2) - 1) % 4);
+    int half_w_mod4 = (((w + 1) / 2) - 2) - ((((w + 1) / 2) - 3) % 4);
 
     // printf("%dx%d %d\n", w,h, half_w_mod4);
 
