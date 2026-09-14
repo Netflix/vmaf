@@ -245,3 +245,7 @@ if is_asm_enabled and (host_machine.cpu_family().startswith('arm64') or host_mac
 
     test('test_motion_neon', test_motion_neon)
 endif
+
+if get_option('enable_checkasm')
+    subdir('checkasm')
+endif
