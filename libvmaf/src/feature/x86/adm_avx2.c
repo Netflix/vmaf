@@ -713,7 +713,7 @@ void adm_decouple_avx2(AdmBuffer *buf, int w, int h, int stride,
     }
 
     int64_t ot_dp, o_mag_sq, t_mag_sq;
-    int right_mod8 = right - (right % 8);
+    int right_mod8 = right - ((right - left) % 8);
 
     for (int i = top; i < bottom; ++i) {
         for (int j = left; j < right_mod8; j+=8) {
