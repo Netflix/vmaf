@@ -113,7 +113,7 @@ void adm_dwt2_8_neon(const uint8_t *src, const adm_dwt_band_t *dst,
         int32_t accum_h = add_shift_HP;
         int32_t accum_d = add_shift_HP;
 
-        for (int idx = 0; idx < 3; idx++)
+        for (int idx = 0; idx < 4; idx++)
         {
             int j_idx = ind_x[idx][0];
             int16_t s_lo = tmplo[j_idx];
