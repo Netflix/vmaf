@@ -766,6 +766,15 @@ void vif_statistic_8_neon(struct VifPublicState *s, float *num, float *den, unsi
                 }
             }
         }
+
+        if (j != w)
+        {
+            VifResiduals residuals = vif_compute_line_residuals(s, j, w, 0);
+            accum_num_log += residuals.accum_num_log;
+            accum_den_log += residuals.accum_den_log;
+            accum_num_non_log += residuals.accum_num_non_log;
+            accum_den_non_log += residuals.accum_den_non_log;
+        }
     }
     num[0] = accum_num_log / 2048.0 + (accum_den_non_log - ((accum_num_non_log) / 16384.0) / (65025.0));
     den[0] = accum_den_log / 2048.0 + accum_den_non_log;
