@@ -20,10 +20,21 @@
 #define FEATURE_MOTION_H_
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 static const uint16_t filter[5] = { 3571, 16004, 26386, 16004, 3571 };
 static const int filter_width = sizeof(filter) / sizeof(filter[0]);
+
+uint64_t motion_score_pipeline_8(const uint8_t *prev, ptrdiff_t prev_stride,
+                                  const uint8_t *cur, ptrdiff_t cur_stride,
+                                  int32_t *y_row, unsigned w, unsigned h,
+                                  unsigned bpc);
+
+uint64_t motion_score_pipeline_16(const uint8_t *prev_u8, ptrdiff_t prev_stride,
+                                   const uint8_t *cur_u8, ptrdiff_t cur_stride,
+                                   int32_t *y_row, unsigned w, unsigned h,
+                                   unsigned bpc);
 
 static inline uint32_t
 edge_16(bool horizontal, const uint16_t *src, int width,

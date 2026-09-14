@@ -24,6 +24,8 @@
 #include <stdint.h>
 
 #include "common/macros.h"
+#include "luminance_tools.h"
+#include "picture.h"
 
 #ifndef MAX
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
@@ -33,6 +35,39 @@
 #endif
 
 typedef void (*VmafRangeUpdater)(uint16_t *arr, int left, int right);
+
+void get_derivative_data_for_row(const uint16_t *image_data,
+                                  uint16_t *derivative_buffer, int width,
+                                  int height, int row, int stride);
+
+void decimate(VmafPicture *image, unsigned width, unsigned height);
+
+void filter_mode(const VmafPicture *image, int width, int height,
+                  uint16_t *buffer);
+
+void calculate_c_values_row(float *c_values, const uint16_t *histograms,
+                             const uint16_t *image, const uint16_t *mask,
+                             int row, int width, ptrdiff_t stride,
+                             const uint16_t num_diffs,
+                             const uint16_t *tvi_for_diff, uint16_t vlt_luma,
+                             const int *diff_weights, const int *all_diffs,
+                             const float *reciprocal_lut);
+
+void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
+                         float *c_values, uint16_t *histograms,
+                         uint16_t window_size, const uint16_t num_diffs,
+                         const uint16_t *tvi_for_diff, uint16_t vlt_luma,
+                         const int *diff_weights, const int *all_diffs,
+                         int width, int height);
+
+int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_consider,
+                         int **diffs_weights, int **all_diffs);
+
+int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth,
+                      VmafLumaRange luma_range, VmafEOTF eotf);
+
+int get_vlt_luma(double visibility_luminance_threshold,
+                  VmafLumaRange luma_range, VmafEOTF eotf);
 
 // Auto-generated reciprocal LUT for cambi c_value_pixel
 // reciprocal_lut[i] = 1.0f / (float)i, with [0] = 0.0f

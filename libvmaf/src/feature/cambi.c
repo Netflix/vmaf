@@ -113,12 +113,6 @@ typedef void (*VmafCalcCValues)(VmafPicture *pic, const VmafPicture *mask_pic,
                                 const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
                                 const int *diff_weights, const int *all_diffs, int width, int height);
 
-static void filter_mode(const VmafPicture *image, int width, int height, uint16_t *buffer);
-static void decimate(VmafPicture *image, unsigned width, unsigned height);
-static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
-                               float *c_values, uint16_t *histograms, uint16_t window_size,
-                               const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
-                               const int *diff_weights, const int *all_diffs, int width, int height);
 
 typedef struct CambiState {
     VmafPicture pics[PICS_BUFFER_SIZE];
@@ -362,7 +356,7 @@ static enum CambiTVIBisectFlag tvi_hard_threshold_condition(int sample, int diff
     return CAMBI_TVI_BISECT_CORRECT;
 }
 
-static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, VmafLumaRange luma_range, VmafEOTF eotf) {
+int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, VmafLumaRange luma_range, VmafEOTF eotf) {
     enum CambiTVIBisectFlag tvi_bisect;
     const int max_val = (1 << bitdepth) - 1;
 
@@ -393,7 +387,7 @@ static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, VmafLu
     }
 }
 
-static int get_vlt_luma(double visibility_luminance_threshold, VmafLumaRange luma_range, VmafEOTF eotf) {
+int get_vlt_luma(double visibility_luminance_threshold, VmafLumaRange luma_range, VmafEOTF eotf) {
     // find the smallest luma value above the visibility_luminance_threshold
 
     uint16_t sample = luma_range.foot;
@@ -422,7 +416,7 @@ static FORCE_INLINE void adjust_window_size(uint16_t *window_size,
     *window_size |= 1;
 }
 
-static int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_consider,
+int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_consider,
                                int **diffs_weights, int **all_diffs)
 {
     *diffs_to_consider = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
@@ -457,7 +451,7 @@ static void decrement_range(uint16_t *arr, int left, int right) {
     }
 }
 
-static void get_derivative_data_for_row(const uint16_t *image_data, uint16_t *derivative_buffer, int width, int height, int row, int stride) {
+void get_derivative_data_for_row(const uint16_t *image_data, uint16_t *derivative_buffer, int width, int height, int row, int stride) {
     for (int col = 0; col < width; col++) {
         bool horizontal_derivative = (col == width - 1 || image_data[row * stride + col] == image_data[row * stride + col + 1]);
         bool vertical_derivative = (row == height - 1 || image_data[row * stride + col] == image_data[(row + 1) * stride + col]);
@@ -872,7 +866,7 @@ static int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocess
 }
 
 /* Banding detection functions */
-static void decimate(VmafPicture *image, unsigned width, unsigned height) {
+void decimate(VmafPicture *image, unsigned width, unsigned height) {
     uint16_t *data = image->data[0];
     ptrdiff_t stride = image->stride[0] >> 1;
     for (unsigned i = 0; i < height; i++) {
@@ -894,7 +888,7 @@ static inline uint16_t mode3(uint16_t a, uint16_t b, uint16_t c) {
     return min3(a, b, c);
 }
 
-static void filter_mode(const VmafPicture *image, int width, int height, uint16_t *buffer) {
+void filter_mode(const VmafPicture *image, int width, int height, uint16_t *buffer) {
     uint16_t *data = image->data[0];
     ptrdiff_t stride = image->stride[0] >> 1;
     int curr_line = 0;
@@ -1086,7 +1080,7 @@ static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int
 // the count of values in the useful band. Compiler emits ~1 sub + 1 cmp per
 // pixel with no second branch, which costs less when the skip rarely fires.
 
-static void calculate_c_values_row(float *c_values, const uint16_t *histograms, const uint16_t *image,
+void calculate_c_values_row(float *c_values, const uint16_t *histograms, const uint16_t *image,
                                     const uint16_t *mask, int row, int width, ptrdiff_t stride,
                                     const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
                                     const int *diff_weights, const int *all_diffs,
@@ -1106,7 +1100,7 @@ static void calculate_c_values_row(float *c_values, const uint16_t *histograms, 
     }
 }
 
-static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
+void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
                                float *c_values, uint16_t *histograms, uint16_t window_size,
                                const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
                                const int *diff_weights, const int *all_diffs, int width, int height) {
