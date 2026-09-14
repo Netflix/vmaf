@@ -2581,7 +2581,7 @@ void adm_dwt2_s123_combined_avx512(const int32_t *i4_ref_scale, const int32_t *i
 
 
     int w_mod8 = (w  - (w  % 8));
-    int half_w_mod8 = ((w + 1) / 2) - ((((w + 1) / 2) - 1) % 8);
+    int half_w_mod8 = (((w + 1) / 2) - 2) - ((((w + 1) / 2) - 3) % 8);
 
     for (int i = 0; i < (h + 1) / 2; ++i)
     {
