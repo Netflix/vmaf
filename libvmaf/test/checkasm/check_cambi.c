@@ -95,6 +95,13 @@ static void check_get_derivative_data_for_row(void)
     }
 }
 
+typedef void (*compute_dp_row_fn)(uint32_t *dp_curr, const uint32_t *dp_prev,
+                                   const uint16_t *deriv, int width,
+                                   int pad_size, bool deriv_valid);
+typedef void (*compute_mask_row_fn)(uint16_t *mask_row,
+                                     const uint32_t *dp_bottom,
+                                     const uint32_t *dp_top, int width,
+                                     int pad_size, uint32_t mask_index);
 typedef void (*decimate_fn)(VmafPicture *image, unsigned width,
                              unsigned height);
 typedef void (*filter_mode_fn)(const VmafPicture *image, int width,
@@ -106,6 +113,32 @@ typedef void (*calc_c_values_fn)(VmafPicture *pic, const VmafPicture *mask_pic,
                                   const uint16_t *tvi_for_diff,
                                   uint16_t vlt_luma, const int *diff_weights,
                                   const int *all_diffs, int width, int height);
+
+static compute_dp_row_fn get_compute_dp_row(unsigned cpu_flags)
+{
+#if ARCH_X86
+    compute_dp_row_fn fn = compute_dp_row;
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = compute_dp_row_avx2;
+    return fn;
+#else
+    (void) cpu_flags;
+    return 0;
+#endif
+}
+
+static compute_mask_row_fn get_compute_mask_row(unsigned cpu_flags)
+{
+#if ARCH_X86
+    compute_mask_row_fn fn = compute_mask_row;
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = compute_mask_row_avx2;
+    return fn;
+#else
+    (void) cpu_flags;
+    return 0;
+#endif
+}
 
 static decimate_fn get_decimate(unsigned cpu_flags)
 {
@@ -151,6 +184,124 @@ static const struct { unsigned w, h; } pic_sizes[] = {
     { 64, 48 },
     { 173, 65 },
 };
+
+#define DP_MAX_WIDTH 256
+#define DP_MAX_PAD   8
+#define DP_MAX_LEN   (DP_MAX_WIDTH + 2 * DP_MAX_PAD + 1)
+
+static const struct { int width, pad_size; } dp_row_sizes[] = {
+    { 4,           1 },
+    { 8,           3 },
+    { 16,          3 },
+    { 37,          3 },
+    { 173,         3 },
+    { DP_MAX_WIDTH, 7 },
+};
+
+static void check_compute_dp_row(void)
+{
+    CHECKASM_ALIGN(uint32_t dp_prev[DP_MAX_LEN]);
+    CHECKASM_ALIGN(uint32_t dp_curr_c[DP_MAX_LEN]);
+    CHECKASM_ALIGN(uint32_t dp_curr_a[DP_MAX_LEN]);
+    CHECKASM_ALIGN(uint16_t deriv[DP_MAX_WIDTH]);
+
+    checkasm_declare(void, uint32_t *, const uint32_t *, const uint16_t *,
+                      int, int, bool);
+
+    if (!checkasm_check_func(get_compute_dp_row(checkasm_get_cpu_flags()),
+                              "compute_dp_row"))
+        return;
+
+    INITIALIZE_BUF(dp_prev);
+    INITIALIZE_BUF(deriv);
+
+    for (size_t i = 0; i < sizeof(dp_row_sizes) / sizeof(*dp_row_sizes); i++) {
+        const int width = dp_row_sizes[i].width;
+        const int pad_size = dp_row_sizes[i].pad_size;
+
+        for (int pass = 0; pass < 2; pass++) {
+            const bool deriv_valid = pass == 0;
+
+            CLEAR_BUF(dp_curr_c);
+            CLEAR_BUF(dp_curr_a);
+
+            checkasm_call_ref(dp_curr_c, dp_prev, deriv, width, pad_size,
+                               deriv_valid);
+            checkasm_call_new(dp_curr_a, dp_prev, deriv, width, pad_size,
+                               deriv_valid);
+
+            char name[64];
+            snprintf(name, sizeof(name), "w%d_pad%d_valid%d", width,
+                      pad_size, deriv_valid);
+            checkasm_check1d(uint32_t, dp_curr_c, dp_curr_a,
+                              width + 2 * pad_size + 1, name);
+        }
+    }
+
+    checkasm_bench_new(dp_curr_a, dp_prev, deriv, DP_MAX_WIDTH, DP_MAX_PAD,
+                        true);
+}
+
+static void build_dp_row_pair(uint32_t *dp_top, uint32_t *dp_bottom,
+                               int width, int pad_size)
+{
+    CHECKASM_ALIGN(uint32_t dp_zero[DP_MAX_LEN]);
+    CHECKASM_ALIGN(uint16_t deriv1[DP_MAX_WIDTH]);
+    CHECKASM_ALIGN(uint16_t deriv2[DP_MAX_WIDTH]);
+
+    CLEAR_BUF(dp_zero);
+    checkasm_clear(dp_top, DP_MAX_LEN * sizeof(*dp_top));
+    checkasm_clear(dp_bottom, DP_MAX_LEN * sizeof(*dp_bottom));
+    INITIALIZE_BUF(deriv1);
+    INITIALIZE_BUF(deriv2);
+    for (int j = 0; j < width; j++) {
+        deriv1[j] &= 0xff;
+        deriv2[j] &= 0xff;
+    }
+
+    compute_dp_row(dp_top, dp_zero, deriv1, width, pad_size, true);
+    compute_dp_row(dp_bottom, dp_top, deriv2, width, pad_size, true);
+}
+
+static void check_compute_mask_row(void)
+{
+    CHECKASM_ALIGN(uint32_t dp_bottom[DP_MAX_LEN]);
+    CHECKASM_ALIGN(uint32_t dp_top[DP_MAX_LEN]);
+    CHECKASM_ALIGN(uint16_t mask_row_c[DP_MAX_WIDTH]);
+    CHECKASM_ALIGN(uint16_t mask_row_a[DP_MAX_WIDTH]);
+
+    checkasm_declare(void, uint16_t *, const uint32_t *, const uint32_t *,
+                      int, int, uint32_t);
+
+    if (!checkasm_check_func(get_compute_mask_row(checkasm_get_cpu_flags()),
+                              "compute_mask_row"))
+        return;
+
+    const uint32_t mask_index = 32;
+
+    for (size_t i = 0; i < sizeof(dp_row_sizes) / sizeof(*dp_row_sizes); i++) {
+        const int width = dp_row_sizes[i].width;
+        const int pad_size = dp_row_sizes[i].pad_size;
+
+        build_dp_row_pair(dp_top, dp_bottom, width, pad_size);
+
+        CLEAR_BUF(mask_row_c);
+        CLEAR_BUF(mask_row_a);
+
+        checkasm_call_ref(mask_row_c, dp_bottom, dp_top, width, pad_size,
+                           mask_index);
+        checkasm_call_new(mask_row_a, dp_bottom, dp_top, width, pad_size,
+                           mask_index);
+
+        char name[64];
+        snprintf(name, sizeof(name), "w%d_pad%d", width, pad_size);
+        checkasm_check1d(uint16_t, mask_row_c, mask_row_a, width, name);
+    }
+
+    build_dp_row_pair(dp_top, dp_bottom, DP_MAX_WIDTH, DP_MAX_PAD);
+    checkasm_bench_new(mask_row_a, dp_bottom, dp_top, DP_MAX_WIDTH,
+                        DP_MAX_PAD, mask_index);
+}
 
 static void check_decimate(void)
 {
@@ -355,6 +506,12 @@ void checkasm_check_cambi(void)
 {
     check_get_derivative_data_for_row();
     checkasm_report("get_derivative_data_for_row");
+
+    check_compute_dp_row();
+    checkasm_report("compute_dp_row");
+
+    check_compute_mask_row();
+    checkasm_report("compute_mask_row");
 
     check_decimate();
     checkasm_report("decimate");
