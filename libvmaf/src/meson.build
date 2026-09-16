@@ -330,7 +330,9 @@ if is_cuda_enabled
             else
                 cl_exe = find_program('cl', required: false)
                 if cl_exe.found()
-                    nvcc_ccbin_flags = ['--allow-unsupported-compiler', '-ccbin', cl_exe.full_path()]
+                    cl_path = cl_exe.full_path()
+                    message('Found MSVC cl.exe at: ' + cl_path)
+                    nvcc_ccbin_flags = ['--allow-unsupported-compiler', '-ccbin', cl_path]
                 else
                     error('MSVC cl.exe not found. nvcc on Windows requires Visual Studio Build Tools.')
                 endif
