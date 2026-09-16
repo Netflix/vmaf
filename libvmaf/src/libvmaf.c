@@ -191,6 +191,21 @@ int vmaf_cuda_import_state(VmafContext *vmaf, VmafCudaState *cu_state)
 
     vmaf->cuda.state = *cu_state;
 
+    /* GPU feature extraction is not threaded (see the "multithreading for GPU
+     * ... disabled for now" note at the read dispatch in vmaf_read_pictures).
+     * With a thread pool present, vmaf_read_pictures returns early via
+     * threaded_read_pictures_batch, which bypasses the HAVE_CUDA device-picture
+     * cleanup below it (the cuEventRecord(finished) + vmaf_picture_unref of
+     * ref_device/dist_device), and feature extractors flush from worker threads
+     * that lack the bound CUDA context. As a result `vmaf --gpumask 0 --threads N`
+     * aborts with "context could not be synchronized". Tear the pool down on
+     * CUDA import so CUDA runs take the single-threaded path (GPU feature
+     * threading yields no throughput benefit anyway). */
+    if (vmaf->thread_pool) {
+        vmaf_thread_pool_destroy(vmaf->thread_pool);
+        vmaf->thread_pool = NULL;
+    }
+
     return 0;
 }
 
