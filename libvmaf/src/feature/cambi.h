@@ -45,6 +45,14 @@ void decimate(VmafPicture *image, unsigned width, unsigned height);
 void filter_mode(const VmafPicture *image, int width, int height,
                   uint16_t *buffer);
 
+void compute_dp_row(uint32_t *dp_curr, const uint32_t *dp_prev,
+                     const uint16_t *deriv, int width, int pad_size,
+                     bool deriv_valid);
+
+void compute_mask_row(uint16_t *mask_row, const uint32_t *dp_bottom,
+                       const uint32_t *dp_top, int width, int pad_size,
+                       uint32_t mask_index);
+
 void calculate_c_values_row(float *c_values, const uint16_t *histograms,
                              const uint16_t *image, const uint16_t *mask,
                              int row, int width, ptrdiff_t stride,
