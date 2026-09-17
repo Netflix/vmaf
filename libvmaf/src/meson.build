@@ -313,6 +313,8 @@ if is_cuda_enabled
         cuda_dir + 'ring_buffer.c',
     ]
     gencode = []
+    nvcc_ccbin_flags = []
+    nvcc_host_includes = []
     if get_option('enable_nvcc')
         nvcc_exe = find_program('nvcc')
 
