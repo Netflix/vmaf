@@ -46,7 +46,12 @@ option('enable_nvtx',
 option('enable_nvcc',
     type: 'boolean',
     value: true,
-    description: 'Use clang to compile CUDA code.')
+    description: 'Compile CUDA kernels with nvcc; with clang when false.')
+
+option('cudatoolkit_path',
+    type: 'string',
+    value: '',
+    description: 'CUDA toolkit root for the clang build (enable_nvcc=false); derived from bin2c when empty.')
 
 option('enable_checkasm',
     type: 'boolean',
