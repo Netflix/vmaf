@@ -362,6 +362,8 @@ if is_cuda_enabled
         cuda_dir + 'ring_buffer.c',
     ]
     gencode = []
+    cuda_kernel_ext = 'fatbin'
+    cuda_compat_header = []
     if get_option('enable_nvcc')
         cuda_lang = add_languages('cuda', required : true)
         cuda_compiler = meson.get_compiler('cuda')
@@ -393,14 +395,27 @@ if is_cuda_enabled
         endif
 
     else
+        # Device-only compilation with clang against cuda_runtime_compat.h
+        # instead of the toolkit headers, which do not support a MinGW host.
+        # The driver JIT compiles the PTX when the module is loaded.
         nvcc_exe = find_program('clang')
+        cuda_path = get_option('cudatoolkit_path')
+        if cuda_path == ''
+            # bin2c lives in the toolkit's bin directory
+            fs = import('fs')
+            cuda_path = fs.parent(fs.parent(find_program('bin2c').full_path()))
+        endif
+        cuda_kernel_ext = 'ptx'
+        cuda_compat_header = files(cuda_dir + 'cuda_runtime_compat.h')
         gencode = [
             '--cuda-gpu-arch=sm_75',
             '--cuda-device-only',
-            '-S'
-            # many complaints about device intrinsics when compiling without CTK and the ffmpeg cuda runtime header
-            #            '-nocudainc',
-            #            '-nocudalib',
+            '--cuda-path=' + cuda_path,
+            '-nocudainc',
+            '-Wno-unknown-cuda-version',
+            '-include', cuda_compat_header,
+            '-S',
+            '-O3', # nvcc optimizes device code by default, clang does not
         ]
     endif
     message('CUDA gencode = @0@'.format(gencode))
@@ -408,10 +423,10 @@ if is_cuda_enabled
 
     cuda_flags = []
     if get_option('buildtype') == 'debug'
-        cuda_flags += ['-DCUDA_DEBUG', '-G']
+        cuda_flags += ['-DCUDA_DEBUG'] + (get_option('enable_nvcc') ? ['-G'] : ['-O0', '-g'])
     else
         if is_nvtx_enabled
-            cuda_flags += ['-lineinfo']
+            cuda_flags += [get_option('enable_nvcc') ? '-lineinfo' : '-gline-tables-only']
         endif
     endif
 
@@ -419,8 +434,9 @@ if is_cuda_enabled
     foreach name, _cu : cuda_cu_sources
         t = custom_target('cu_ptx_target_' + name,
             build_by_default: true,
-            output : ['@0@.fatbin'.format(name)],
+            output : ['@0@.@1@'.format(name, cuda_kernel_ext)],
             input : _cu,
+            depend_files : cuda_compat_header,
             command : [nvcc_exe,
                 gencode,
                 '@INPUT@',
