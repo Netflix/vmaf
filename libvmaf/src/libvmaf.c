@@ -649,6 +649,12 @@ static int flush_context_threaded(VmafContext *vmaf)
     for (unsigned i = 0; i < rfe.cnt; i++) {
         if (!(rfe.fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_TEMPORAL))
             continue;
+        /* CUDA feature extractors are flushed by the HAVE_CUDA block in
+         * flush_context(); flushing them here as well double-appends their
+         * final scores. */
+        if (rfe.fex_ctx[i]->fex->flags & VMAF_FEATURE_EXTRACTOR_CUDA)
+            continue;
+
         err |= vmaf_feature_extractor_context_flush(rfe.fex_ctx[i],
                                                     vmaf->feature_collector);
     }
@@ -734,6 +740,21 @@ enum  {
     HW_FLAG_DEVICE = 1 << 1,
 };
 
+static uint8_t rfe_cuda_plane_mask(RegisteredFeatureExtractors *rfe)
+{
+    // existing CUDA feature extractors are luma-only, so only upload the
+    // chroma planes when a registered extractor declares it reads them
+    uint8_t mask = 0x1;
+    for (unsigned i = 0; i < rfe->cnt; i++) {
+        const uint64_t flags = rfe->fex_ctx[i]->fex->flags;
+        if ((flags & VMAF_FEATURE_EXTRACTOR_CUDA) &&
+            (flags & VMAF_FEATURE_EXTRACTOR_CUDA_CHROMA))
+            mask |= 0x6;
+    }
+
+    return mask;
+}
+
 static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
                                   VmafPicture *pic_device, unsigned hw_flags)
 {
@@ -748,7 +769,8 @@ static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
         if (!vmaf->cuda.state.ctx)
             return -EINVAL;
         err |= vmaf_ring_buffer_fetch_next_picture(vmaf->cuda.ring_buffer, pic_device);
-        err |= vmaf_cuda_picture_upload_async(pic_device, pic, 0x1);
+        err |= vmaf_cuda_picture_upload_async(pic_device, pic,
+                rfe_cuda_plane_mask(&vmaf->registered_feature_extractors));
         if (err) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                     "problem moving host pic into cuda device buffer\n");
@@ -778,7 +800,9 @@ static int translate_picture_device(VmafContext *vmaf, VmafPicture *pic,
         return err;
     }
 
-    err = vmaf_cuda_picture_download_async(pic, pic_host, 0x1);
+    // host pictures always carry every plane, so CPU feature extractors
+    // that read chroma (psnr, ciede, ...) expect all of them here
+    err = vmaf_cuda_picture_download_async(pic, pic_host, 0x7);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR,
                  "problem moving cuda pic into host buffer\n");

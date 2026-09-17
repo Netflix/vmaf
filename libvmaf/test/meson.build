@@ -195,8 +195,26 @@ test_cuda_pic_preallocation = executable('test_cuda_pic_preallocation',
     c_args: ['-DHAVE_CUDA=1']
 )
 
+test_cuda_psnr_ssim_parity = executable('test_cuda_psnr_ssim_parity',
+    ['test.c', 'test_cuda_psnr_ssim_parity.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: cuda_dependency,
+    c_args: ['-DHAVE_CUDA=1']
+)
+
+test_cuda_ciede_parity = executable('test_cuda_ciede_parity',
+    ['test.c', 'test_cuda_ciede_parity.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: cuda_dependency,
+    c_args: ['-DHAVE_CUDA=1']
+)
+
 test('test_ring_buffer', test_ring_buffer)
 test('test_cuda_pic_preallocation', test_cuda_pic_preallocation)
+test('test_cuda_psnr_ssim_parity', test_cuda_psnr_ssim_parity)
+test('test_cuda_ciede_parity', test_cuda_ciede_parity)
 endif
 
 test_pic_preallocation = executable('test_pic_preallocation',
