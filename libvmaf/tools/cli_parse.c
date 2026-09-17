@@ -1,5 +1,9 @@
 #include <assert.h>
+#ifdef HAVE_GETOPT_H
 #include <getopt.h>
+#else
+#error "Meson target is missing getopt_dependency"
+#endif
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>

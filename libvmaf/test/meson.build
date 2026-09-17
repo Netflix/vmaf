@@ -38,7 +38,7 @@ test_log = executable('test_log',
 test_thread_pool = executable('test_thread_pool',
     ['test.c', 'test_thread_pool.c', '../src/thread_pool.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    dependencies : thread_lib,
+    dependencies : [thread_lib, getopt_dependency]
 )
 
 test_model = executable('test_model',
@@ -66,7 +66,9 @@ test_feature_extractor = executable('test_feature_extractor',
      '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c',
      '../src/metadata_handler.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
+    c_args : vmaf_cflags_common,
+    cpp_args : vmaf_cflags_common,
+    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency, getopt_dependency],
     objects : [
       common_cuda_objects,
       platform_specific_cpu_objects,
@@ -122,6 +124,7 @@ test_cli_parse = executable('test_cli_parse',
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/'), include_directories('../tools/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     c_args : [compat_cflags],
+    dependencies : getopt_dependency
 )
 
 test_psnr = executable('test_psnr',
