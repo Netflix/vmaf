@@ -65,14 +65,17 @@ jobs:
         run: |
           meson setup libvmaf libvmaf/build --buildtype=release -Denable_tests=false --default-library static --prefix "C:/install"
           meson install -C libvmaf/build
-      - name: Prepare static libs for MSVC
+      - name: Prepare MSVC install for FFmpeg
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
+          # pthread-win32 still installs Meson/CMake .a names; libvmaf is already vmaf.lib
           Rename-Item -Path C:\install\lib\libpthreadVC3.a  -NewName C:\install\lib\pthreadVC3.lib
           Rename-Item -Path C:\install\lib\libpthreadVCE3.a -NewName C:\install\lib\pthreadVCE3.lib
           Rename-Item -Path C:\install\lib\libpthreadVSE3.a -NewName C:\install\lib\pthreadVSE3.lib
-          Rename-Item -Path C:\install\lib\libvmaf.a        -NewName C:\install\lib\vmaf.lib
+          if (-not (Test-Path C:\install\lib\vmaf.lib)) {
+            throw "expected C:\install\lib\vmaf.lib after static MSVC install"
+          }
           echo "INCLUDE=C:/install/include;$env:INCLUDE" >> $env:GITHUB_ENV
           echo "LIB=C:/install/lib;$env:LIB" >> $env:GITHUB_ENV
           echo "PATH=C:/install/bin;$env:PATH" >> $env:GITHUB_ENV
