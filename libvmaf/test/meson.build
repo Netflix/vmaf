@@ -30,6 +30,13 @@ test_feature_collector = executable('test_feature_collector',
     objects : libsvm_static_lib.extract_all_objects(recursive: true),
 )
 
+test_pool_percentile = executable('test_pool_percentile',
+    ['test.c', 'test_pool_percentile.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies : [math_lib, stdatomic_dependency, cuda_dependency],
+)
+
 test_log = executable('test_log',
     ['test.c', 'test_log.c', '../src/log.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
@@ -208,6 +215,7 @@ test('test_pic_preallocation', test_pic_preallocation)
 
 test('test_picture', test_picture)
 test('test_feature_collector', test_feature_collector)
+test('test_pool_percentile', test_pool_percentile)
 test('test_thread_pool', test_thread_pool)
 test('test_model', test_model)
 test('test_predict', test_predict)
