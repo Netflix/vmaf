@@ -769,7 +769,10 @@ static void check_adm_dwt2_s123(void)
 #if ARCH_AARCH64
         const int input_stride = w + 3;
 #else
-        const int input_stride = stride;
+        /* The bands hold (w + 1) / 2 samples per row, but the source planes
+           hold w. integer_compute_adm() passes the stride of the previous
+           scale, which is at least w, for both. */
+        const int input_stride = stride * 2;
 #endif
         int32_t *i4_ref = malloc((size_t) h * input_stride * sizeof(int32_t));
         int32_t *i4_dis = malloc((size_t) h * input_stride * sizeof(int32_t));
@@ -800,7 +803,7 @@ static void check_adm_dwt2_s123(void)
                 i4_dis[k] = scale == 1 ? (int16_t)checkasm_rand_uint32() : (int32_t)checkasm_rand_uint32();
             }
 #else
-            const int ref_stride = stride, dis_stride = stride;
+            const int ref_stride = input_stride, dis_stride = input_stride;
 #endif
             if (checkasm_check_func(
                     get_dwt2_s123_combined(checkasm_get_cpu_flags()),
