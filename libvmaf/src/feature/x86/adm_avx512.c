@@ -2997,10 +2997,10 @@ void adm_dwt2_16_avx512(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffe
     int16_t *tmphi = tmplo + w;
     int32_t accum;
 
-    __m512i f01_lo = _mm512_set1_epi32(filter_lo[0] + (uint32_t)(filter_lo[1] << 16) /* + (1 << 16) */);
-    __m512i f23_lo = _mm512_set1_epi32(filter_lo[2] + (uint32_t)(filter_lo[3] << 16) /* + (1 << 16) */);
-    __m512i f01_hi = _mm512_set1_epi32(filter_hi[0] + (uint32_t)(filter_hi[1] << 16) + (1 << 16));
-    __m512i f23_hi = _mm512_set1_epi32(filter_hi[2] + (uint32_t)(filter_hi[3] << 16) /*+ (1 << 16)*/);
+    __m512i f01_lo = _mm512_set1_epi32(filter_lo[0] + ((uint32_t)filter_lo[1] << 16) /* + (1 << 16) */);
+    __m512i f23_lo = _mm512_set1_epi32(filter_lo[2] + ((uint32_t)filter_lo[3] << 16) /* + (1 << 16) */);
+    __m512i f01_hi = _mm512_set1_epi32(filter_hi[0] + ((uint32_t)filter_hi[1] << 16) + (1 << 16));
+    __m512i f23_hi = _mm512_set1_epi32(filter_hi[2] + ((uint32_t)filter_hi[3] << 16) /*+ (1 << 16)*/);
 
     __m512i accum0, accum0_lo, accum0_hi;
     //__m512i norm_lo = _mm512_set1_epi32((int32_t)dwt2_db2_coeffs_lo_sum * add_shift_VP);

@@ -2908,10 +2908,10 @@ void adm_dwt2_16_avx2(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffer 
     int16_t *tmphi = tmplo + w;
     int32_t accum;
 
-    __m256i f01_lo = _mm256_set1_epi32(filter_lo[0] + (uint32_t)(filter_lo[1] << 16) /* + (1 << 16) */);
-    __m256i f23_lo = _mm256_set1_epi32(filter_lo[2] + (uint32_t)(filter_lo[3] << 16) /* + (1 << 16) */);
-    __m256i f01_hi = _mm256_set1_epi32(filter_hi[0] + (uint32_t)(filter_hi[1] << 16) + (1 << 16));
-    __m256i f23_hi = _mm256_set1_epi32(filter_hi[2] + (uint32_t)(filter_hi[3] << 16) /*+ (1 << 16)*/);
+    __m256i f01_lo = _mm256_set1_epi32(filter_lo[0] + ((uint32_t)filter_lo[1] << 16) /* + (1 << 16) */);
+    __m256i f23_lo = _mm256_set1_epi32(filter_lo[2] + ((uint32_t)filter_lo[3] << 16) /* + (1 << 16) */);
+    __m256i f01_hi = _mm256_set1_epi32(filter_hi[0] + ((uint32_t)filter_hi[1] << 16) + (1 << 16));
+    __m256i f23_hi = _mm256_set1_epi32(filter_hi[2] + ((uint32_t)filter_hi[3] << 16) /*+ (1 << 16)*/);
 
     __m256i  accum0_lo, accum0_hi;
 
