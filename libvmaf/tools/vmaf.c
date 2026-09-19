@@ -217,7 +217,10 @@ int main(int argc, char *argv[])
     model_collection = malloc(model_sz);
     memset(model_collection, 0, model_collection_sz);
 
-    const char *model_collection_label[c.model_cnt];
+    /* cli_parse() leaves model_cnt at 0 when --no_prediction is given without
+       a --model, and a variable length array needs a positive bound. Only the
+       first model_collection_cnt entries are ever used, and that is 0 here. */
+    const char *model_collection_label[c.model_cnt ? c.model_cnt : 1];
     unsigned model_collection_cnt = 0;
 
     for (unsigned i = 0; i < c.model_cnt; i++) {
