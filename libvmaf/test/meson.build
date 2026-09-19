@@ -6,10 +6,26 @@ test_inc = include_directories('.')
 
 test_context = executable('test_context',
     ['test.c', 'test_context.c'],
-    include_directories : [libvmaf_inc, test_inc],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     dependencies:[stdatomic_dependency, cuda_dependency],
 )
+
+# GNU link wrapping makes allocation/partial-copy failures deterministic without
+# production hooks. A static library is required to wrap its internal calls.
+if host_machine.system() == 'linux' and get_option('default_library') != 'shared' and cc.has_link_argument('-Wl,--wrap=malloc')
+    test_registration_failure = executable('test_registration_failure',
+        ['test.c', 'test_registration_failure.c'],
+        include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
+        link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+        dependencies : [stdatomic_dependency, cuda_dependency, thread_lib],
+        link_args : ['-Wl,--wrap=malloc', '-Wl,--wrap=calloc',
+                     '-Wl,--wrap=vmaf_dictionary_copy',
+                     '-Wl,--wrap=vmaf_dictionary_free',
+                     '-Wl,--wrap=vmaf_feature_extractor_context_create'],
+    )
+    test('test_registration_failure', test_registration_failure)
+endif
 
 test_picture = executable('test_picture',
     ['test.c', 'test_picture.c', '../src/picture.c', '../src/mem.c', '../src/ref.c', '../src/thread_pool.c'],
@@ -206,6 +222,7 @@ test_pic_preallocation = executable('test_pic_preallocation',
 )
 test('test_pic_preallocation', test_pic_preallocation)
 
+test('test_context', test_context)
 test('test_picture', test_picture)
 test('test_feature_collector', test_feature_collector)
 test('test_thread_pool', test_thread_pool)
