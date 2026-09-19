@@ -200,7 +200,7 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
                             thr[thread_item] += flt_row[1];
                         }
                         else {
-                            thr[thread_item] += (int16_t)(((ONE_BY_15 * abs((int32_t)src)) + 2048) >> 12);;
+                            thr[thread_item] += ((ONE_BY_15 * abs((int32_t)src) + 2048) >> 12);
                         }
                     }
                 }
@@ -216,8 +216,12 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
         if ((y + row) < end_row && x < end_col) {
             sb = src_band[(y + row) * src_stride + x];
         }
-        sb = abs(int32_t(i_rfactor[blockIdx.z] * sb)) - (thr[row] << shift_sub_block);
-        accum_thread_reg[row] = max(0, sb);
+        sb = int32_t(i_rfactor[blockIdx.z] * sb);
+        const int64_t sb_magnitude = sb < 0 ? -(int64_t)sb : (int64_t)sb;
+        const int64_t sb_after_threshold =
+            sb_magnitude - (int64_t)thr[row] * ((int64_t)1 << shift_sub_block);
+        accum_thread_reg[row] = sb_after_threshold <= 0 ? 0 :
+            sb_after_threshold > INT32_MAX ? INT32_MAX : (int32_t)sb_after_threshold;
     }
 
     const int band2 = blockIdx.z;

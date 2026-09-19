@@ -259,7 +259,7 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
 		sum += flt_ptr[src_stride]; \
 		sum += flt_ptr[src_stride + 1]; \
 		sum += flt_ptr[1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[0]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[0]) + 2048) >> 12);\
 		sum += flt_ptr[1]; \
 		sum += flt_ptr[src_stride + 1]; \
 		sum += flt_ptr[src_stride]; \
@@ -280,7 +280,7 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
 		sum += flt_ptr[src_stride + w - 1]; \
 		sum += flt_ptr[src_stride + w - 1]; \
 		sum += flt_ptr[w - 2]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]) + 2048) >> 12);\
 		sum += flt_ptr[w - 1]; \
 		sum += flt_ptr[src_stride + w - 2]; \
 		sum += flt_ptr[src_stride + w - 1]; \
@@ -301,7 +301,7 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
 		sum += flt_ptr[src_stride + j]; \
 		sum += flt_ptr[src_stride + j + 1]; \
 		sum += flt_ptr[j - 1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[j]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[j]) + 2048) >> 12);\
 		sum += flt_ptr[j + 1]; \
 		sum += flt_ptr[src_stride + j - 1]; \
 		sum += flt_ptr[src_stride + j]; \
@@ -326,7 +326,7 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[0]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[0]) + 2048) >> 12);\
 		sum += flt_ptr[1]; \
 		sum += flt_ptr[1]; \
 		sum += flt_ptr[0]; \
@@ -351,7 +351,7 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[w - 2]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]) + 2048) >> 12);\
 		sum += flt_ptr[w - 1]; \
 		sum += flt_ptr[w - 2]; \
 		sum += flt_ptr[w - 1]; \
@@ -376,7 +376,7 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[j - 1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[j]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[j]) + 2048) >> 12);\
 		sum += flt_ptr[j + 1]; \
 		sum += flt_ptr[j - 1]; \
 		sum += flt_ptr[j]; \
@@ -401,7 +401,7 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[j - 1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[j]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[j]) + 2048) >> 12);\
 		sum += flt_ptr[j + 1]; \
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
@@ -428,7 +428,7 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[0]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[0]) + 2048) >> 12);\
 		sum += flt_ptr[1]; \
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
@@ -455,7 +455,7 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[w - 2]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]) + 2048) >> 12);\
 		sum += flt_ptr[w - 1]; \
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
@@ -688,8 +688,11 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
 #define ADM_CM_ACCUM_ROUND(x, thr, shift_xsub, x_sq, add_shift_xsq, shift_xsq, val, \
                            add_shift_xcub, shift_xcub, accum_inner) \
 { \
-    x = abs(x) - ((int32_t)(thr) << shift_xsub); \
-    x = x < 0 ? 0 : x; \
+    const int64_t x_magnitude = x < 0 ? -(int64_t)x : (int64_t)x; \
+    const int64_t x_after_threshold = \
+        x_magnitude - (int64_t)thr * ((int64_t)1 << shift_xsub); \
+    x = x_after_threshold <= 0 ? 0 : \
+        x_after_threshold > INT32_MAX ? INT32_MAX : (int32_t)x_after_threshold; \
     x_sq = (int32_t)((((int64_t)x * x) + add_shift_xsq) >> shift_xsq); \
     val = (((int64_t)x_sq * x) + add_shift_xcub) >> shift_xcub; \
     accum_inner += val; \
