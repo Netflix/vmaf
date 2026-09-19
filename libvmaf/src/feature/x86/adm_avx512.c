@@ -361,6 +361,10 @@
     src01 = _mm512_srai_epi32(_mm512_add_epi32(_mm512_mullo_epi32(_mm512_abs_epi32(src01), one_by_15), const_2048_32b), 12); \
     src11 = _mm512_srai_epi32(_mm512_add_epi32(_mm512_mullo_epi32(_mm512_abs_epi32(src11), one_by_15), const_2048_32b), 12); \
     src21 = _mm512_srai_epi32(_mm512_add_epi32(_mm512_mullo_epi32(_mm512_abs_epi32(src21), one_by_15), const_2048_32b), 12); \
+    /* keep the low 16 bits, like the (int16_t) cast of the scalar centre tap */ \
+    src01 = _mm512_srai_epi32(_mm512_slli_epi32(src01, 16), 16); \
+    src11 = _mm512_srai_epi32(_mm512_slli_epi32(src11, 16), 16); \
+    src21 = _mm512_srai_epi32(_mm512_slli_epi32(src21, 16), 16); \
     src01 = _mm512_sub_epi32(src01, flt01); \
     src11 = _mm512_sub_epi32(src11, flt11); \
     src21 = _mm512_sub_epi32(src21, flt21); \

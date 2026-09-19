@@ -124,6 +124,21 @@ test_cli_parse = executable('test_cli_parse',
     c_args : [compat_cflags],
 )
 
+test_adm_cm_large_coeffs = executable('test_adm_cm_large_coeffs',
+    ['test.c', 'test_adm_cm_large_coeffs.c', '../src/mem.c', '../src/picture.c', '../src/ref.c',
+     '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c',
+     '../src/metadata_handler.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
+    objects : [
+      common_cuda_objects,
+      platform_specific_cpu_objects,
+      libvmaf_feature_static_lib.extract_all_objects(recursive: true),
+      libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
+      libsvm_static_lib.extract_all_objects(recursive: true),
+    ]
+)
+
 test_psnr = executable('test_psnr',
     ['test.c', 'test_psnr.c', '../src/picture.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
@@ -220,6 +235,7 @@ test('test_ciede', test_ciede)
 test('test_cambi', test_cambi)
 test('test_luminance_tools', test_luminance_tools)
 test('test_cli_parse', test_cli_parse)
+test('test_adm_cm_large_coeffs', test_adm_cm_large_coeffs)
 test('test_psnr', test_psnr)
 test('test_framesync', test_framesync)
 test('test_propagate_metadata', test_propagate_metadata)
