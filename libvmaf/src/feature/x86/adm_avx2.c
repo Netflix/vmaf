@@ -2006,11 +2006,13 @@ float adm_cm_avx2(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride
     const int32_t add_shift_xvsq = 268435456;
     const int32_t add_shift_xdsq = 536870912;
 
+    /* shift_xhcub and shift_xvcub are 0 for a band of 9 to 16 samples, where
+     * pow(2, shift - 1) is inf and its conversion to uint32_t is undefined. */
     const uint32_t shift_xhcub = (uint32_t)ceil(log2(w) - 4);
-    const uint32_t add_shift_xhcub = (uint32_t)pow(2, (shift_xhcub - 1));
+    const uint32_t add_shift_xhcub = shift_xhcub ? 1u << (shift_xhcub - 1) : 0;
 
     const uint32_t shift_xvcub = (uint32_t)ceil(log2(w) - 4);
-    const uint32_t add_shift_xvcub = (uint32_t)pow(2, (shift_xvcub - 1));
+    const uint32_t add_shift_xvcub = shift_xvcub ? 1u << (shift_xvcub - 1) : 0;
 
     const uint32_t shift_xdcub = (uint32_t)ceil(log2(w) - 3);
     const uint32_t add_shift_xdcub = (uint32_t)pow(2, (shift_xdcub - 1));

@@ -153,6 +153,21 @@ test_barten_csf = executable('test_barten_csf',
     dependencies : math_lib,
 )
 
+test_adm_cm_small_width = executable('test_adm_cm_small_width',
+    ['test.c', 'test_adm_cm_small_width.c', '../src/mem.c', '../src/picture.c', '../src/ref.c',
+     '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c',
+     '../src/metadata_handler.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
+    objects : [
+      common_cuda_objects,
+      platform_specific_cpu_objects,
+      libvmaf_feature_static_lib.extract_all_objects(recursive: true),
+      libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
+      libsvm_static_lib.extract_all_objects(recursive: true),
+    ]
+)
+
 test_motion_blend = executable('test_motion_blend',
     ['test.c', 'test_motion_blend.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
@@ -225,6 +240,7 @@ test('test_framesync', test_framesync)
 test('test_propagate_metadata', test_propagate_metadata)
 test('test_adm_csf', test_adm_csf)
 test('test_barten_csf', test_barten_csf)
+test('test_adm_cm_small_width', test_adm_cm_small_width)
 test('test_motion_blend', test_motion_blend)
 
 if is_asm_enabled and (host_machine.cpu_family().startswith('arm64') or host_machine.cpu_family().startswith('aarch64'))
