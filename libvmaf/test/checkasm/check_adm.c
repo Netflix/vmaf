@@ -379,11 +379,9 @@ static void check_adm_dwt2(void)
                                      "adm_dwt2_16_%dx%d", w, h))
             {
                 checkasm_call_ref((const uint8_t *) src, &buf.ref_dwt2, &buf,
-                                   w, h, w * (int) sizeof(uint16_t),
-                                   dst_stride, 10);
+                                   w, h, w, dst_stride, 10);
                 checkasm_call_new((const uint8_t *) src, &buf.dis_dwt2, &buf,
-                                   w, h, w * (int) sizeof(uint16_t),
-                                   dst_stride, 10);
+                                   w, h, w, dst_stride, 10);
 
                 check2d_band(buf.ref_dwt2.band_a, buf.dis_dwt2.band_a,
                              w_half, h_half, dst_stride, "band_a");
@@ -395,8 +393,7 @@ static void check_adm_dwt2(void)
                              w_half, h_half, dst_stride, "band_d");
 
                 checkasm_bench_new((const uint8_t *) src, &buf.dis_dwt2, &buf,
-                                    w, h, w * (int) sizeof(uint16_t),
-                                    dst_stride, 10);
+                                    w, h, w, dst_stride, 10);
             }
             free(src);
         }
