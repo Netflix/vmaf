@@ -79,7 +79,10 @@ static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic)
     ret = video_input_fetch_into_vmaf_picture(vid, pic);
     if (ret < 1) {
         vmaf_picture_unref(pic);
-        return !ret;
+        /* 0 is end of input, anything below it is a read error. !ret maps the
+           error to 0, which the caller reads as a picture it may hand to
+           vmaf_read_pictures(), although the picture has just been released. */
+        return ret < 0 ? -1 : 1;
     }
     return 0;
 }
