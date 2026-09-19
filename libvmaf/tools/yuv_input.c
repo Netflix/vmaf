@@ -141,12 +141,25 @@ static void yuv_input_close(yuv_input *_yuv){
 }
 
 static int yuv_fetch_into_vmaf_picture(yuv_input *yuv, FILE *fin, VmafPicture *pic) {
-  (void) yuv;
   size_t bytes_per_sample = (pic->bpc + 7) / 8;
 
   for (unsigned i = 0; i < 3; i++) {
-    size_t row_bytes = (size_t)pic->w[i] * bytes_per_sample;
-    if (pic->stride[i] == (ptrdiff_t)row_bytes) {
+    /* A plane occupies ceil(width / dec) * ceil(height / dec) samples in the
+       file, which is what yuv_input_open() sized dst_buf_sz with, but
+       VmafPicture carries floor(width / dec) * floor(height / dec). The two
+       differ when a frame dimension is odd, and the samples the picture does
+       not carry still have to be consumed or the next frame is read from the
+       wrong offset. */
+    const unsigned dec_h = i ? (unsigned)yuv->dst_c_dec_h : 1;
+    const unsigned dec_v = i ? (unsigned)yuv->dst_c_dec_v : 1;
+    const unsigned src_h = (yuv->height + dec_v - 1) / dec_v;
+    const size_t src_row_bytes =
+      (size_t)((yuv->width + dec_h - 1) / dec_h) * bytes_per_sample;
+    const size_t row_bytes = (size_t)pic->w[i] * bytes_per_sample;
+    const size_t skip_bytes = src_row_bytes - row_bytes;
+
+    if (skip_bytes == 0 && src_h == pic->h[i] &&
+        pic->stride[i] == (ptrdiff_t)row_bytes) {
       size_t total = row_bytes * pic->h[i];
       size_t bytes_read = fread(pic->data[i], 1, total, fin);
       if (bytes_read == 0 && i == 0) return 0;
@@ -156,14 +169,24 @@ static int yuv_fetch_into_vmaf_picture(yuv_input *yuv, FILE *fin, VmafPicture *p
       }
     } else {
       uint8_t *dst = pic->data[i];
-      for (unsigned j = 0; j < pic->h[i]; j++) {
-        size_t bytes_read = fread(dst, 1, row_bytes, fin);
+      for (unsigned j = 0; j < src_h; j++) {
+        /* Rows past the end of the picture are read into the reader's own
+           buffer so that the stream stays usable when it cannot be seeked. */
+        uint8_t *row = j < pic->h[i] ? dst : yuv->dst_buf;
+        size_t bytes_read = fread(row, 1, row_bytes, fin);
         if (bytes_read == 0 && i == 0 && j == 0) return 0;
         if (bytes_read != row_bytes) {
           fprintf(stderr, "Error reading YUV frame data.\n");
           return -1;
         }
-        dst += pic->stride[i];
+        if (skip_bytes) {
+          bytes_read = fread(yuv->dst_buf, 1, skip_bytes, fin);
+          if (bytes_read != skip_bytes) {
+            fprintf(stderr, "Error reading YUV frame data.\n");
+            return -1;
+          }
+        }
+        if (j < pic->h[i]) dst += pic->stride[i];
       }
     }
   }
