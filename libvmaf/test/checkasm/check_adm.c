@@ -379,11 +379,9 @@ static void check_adm_dwt2(void)
                                      "adm_dwt2_16_%dx%d", w, h))
             {
                 checkasm_call_ref((const uint8_t *) src, &buf.ref_dwt2, &buf,
-                                   w, h, w * (int) sizeof(uint16_t),
-                                   dst_stride, 10);
+                                   w, h, w, dst_stride, 10);
                 checkasm_call_new((const uint8_t *) src, &buf.dis_dwt2, &buf,
-                                   w, h, w * (int) sizeof(uint16_t),
-                                   dst_stride, 10);
+                                   w, h, w, dst_stride, 10);
 
                 check2d_band(buf.ref_dwt2.band_a, buf.dis_dwt2.band_a,
                              w_half, h_half, dst_stride, "band_a");
@@ -395,8 +393,7 @@ static void check_adm_dwt2(void)
                              w_half, h_half, dst_stride, "band_d");
 
                 checkasm_bench_new((const uint8_t *) src, &buf.dis_dwt2, &buf,
-                                    w, h, w * (int) sizeof(uint16_t),
-                                    dst_stride, 10);
+                                    w, h, w, dst_stride, 10);
             }
             free(src);
         }
@@ -641,15 +638,19 @@ static void check_adm_dwt2_s123(void)
         dwt2_src_indices_filt(buf_c.ind_y, buf_c.ind_x, w, h);
         dwt2_src_indices_filt(buf_a.ind_y, buf_a.ind_x, w, h);
         const int stride = (int) (buf_c.ind_size_x >> 2);
+        /* The bands hold (w + 1) / 2 samples per row, but the source planes
+           hold w. integer_compute_adm() passes the stride of the previous
+           scale, which is at least w, for both. */
+        const int src_stride = stride * 2;
         const int w_half = (w + 1) / 2, h_half = (h + 1) / 2;
 
-        int32_t *i4_ref = malloc((size_t) h * stride * sizeof(int32_t));
-        int32_t *i4_dis = malloc((size_t) h * stride * sizeof(int32_t));
+        int32_t *i4_ref = malloc((size_t) h * src_stride * sizeof(int32_t));
+        int32_t *i4_dis = malloc((size_t) h * src_stride * sizeof(int32_t));
         for (int r = 0; r < h; r++) {
-            for (int c = 0; c < stride; c++) {
-                i4_ref[r * stride + c] =
+            for (int c = 0; c < src_stride; c++) {
+                i4_ref[r * src_stride + c] =
                     (int32_t) ((checkasm_rand_uint32() % 16001) - 8000);
-                i4_dis[r * stride + c] =
+                i4_dis[r * src_stride + c] =
                     (int32_t) ((checkasm_rand_uint32() % 16001) - 8000);
             }
         }
@@ -662,10 +663,10 @@ static void check_adm_dwt2_s123(void)
                     get_dwt2_s123_combined(checkasm_get_cpu_flags()),
                     "adm_dwt2_s123_%dx%d_scale%d", w, h, scale))
             {
-                checkasm_call_ref(i4_ref, i4_dis, &buf_c, w, h, stride,
-                                   stride, stride, scale);
-                checkasm_call_new(i4_ref, i4_dis, &buf_a, w, h, stride,
-                                   stride, stride, scale);
+                checkasm_call_ref(i4_ref, i4_dis, &buf_c, w, h, src_stride,
+                                   src_stride, stride, scale);
+                checkasm_call_new(i4_ref, i4_dis, &buf_a, w, h, src_stride,
+                                   src_stride, stride, scale);
 
                 check2d_band_i32(buf_c.i4_ref_dwt2.band_a,
                                  buf_a.i4_ref_dwt2.band_a, w_half, h_half,
@@ -692,8 +693,8 @@ static void check_adm_dwt2_s123(void)
                                  buf_a.i4_dis_dwt2.band_d, w_half, h_half,
                                  stride, "i4_dis_dwt2.band_d");
 
-                checkasm_bench_new(i4_ref, i4_dis, &buf_a, w, h, stride,
-                                    stride, stride, scale);
+                checkasm_bench_new(i4_ref, i4_dis, &buf_a, w, h, src_stride,
+                                    src_stride, stride, scale);
             }
         }
 
