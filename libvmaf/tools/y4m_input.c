@@ -857,20 +857,39 @@ static int y4m_fetch_into_vmaf_picture(y4m_input *_y4m, FILE *_fin, VmafPicture 
   size_t bytes_per_sample = (pic->bpc + 7) / 8;
 
   for (unsigned i = 0; i < 3; i++) {
-    size_t row_bytes = (size_t)pic->w[i] * bytes_per_sample;
-    if (pic->stride[i] == (ptrdiff_t)row_bytes) {
+    /* As in yuv_input.c: a plane occupies ceil(width / dec) *
+       ceil(height / dec) samples in the file, which is what dst_buf_sz was
+       sized with, while VmafPicture carries floor(width / dec) *
+       floor(height / dec). Consume the difference so that the next frame
+       header is found where it is. */
+    const unsigned dec_h = i ? (unsigned)_y4m->dst_c_dec_h : 1;
+    const unsigned dec_v = i ? (unsigned)_y4m->dst_c_dec_v : 1;
+    const unsigned src_h = ((unsigned)_y4m->pic_h + dec_v - 1) / dec_v;
+    const size_t src_row_bytes =
+      (size_t)(((unsigned)_y4m->pic_w + dec_h - 1) / dec_h) * bytes_per_sample;
+    const size_t row_bytes = (size_t)pic->w[i] * bytes_per_sample;
+    const size_t skip_bytes = src_row_bytes - row_bytes;
+
+    if (skip_bytes == 0 && src_h == pic->h[i] &&
+        pic->stride[i] == (ptrdiff_t)row_bytes) {
       if (fread(pic->data[i], 1, row_bytes * pic->h[i], _fin) != row_bytes * pic->h[i]) {
         fprintf(stderr, "Error reading YUV frame data.\n");
         return -1;
       }
     } else {
       uint8_t *dst = pic->data[i];
-      for (unsigned j = 0; j < pic->h[i]; j++) {
-        if (fread(dst, 1, row_bytes, _fin) != row_bytes) {
+      for (unsigned j = 0; j < src_h; j++) {
+        uint8_t *row = j < pic->h[i] ? dst : _y4m->dst_buf;
+        if (fread(row, 1, row_bytes, _fin) != row_bytes) {
           fprintf(stderr, "Error reading YUV frame data.\n");
           return -1;
         }
-        dst += pic->stride[i];
+        if (skip_bytes &&
+            fread(_y4m->dst_buf, 1, skip_bytes, _fin) != skip_bytes) {
+          fprintf(stderr, "Error reading YUV frame data.\n");
+          return -1;
+        }
+        if (j < pic->h[i]) dst += pic->stride[i];
       }
     }
   }
