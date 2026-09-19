@@ -728,7 +728,9 @@ void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h)
         src_ind_y[2][i] = ind2;
         src_ind_y[3][i] = ind3;
     }
-    for (i = h_half - 2; i < h_half; ++i) { /* i : h_half - 3 to  h_half */
+    /* The mirrored tail never starts below 1: for h_half == 2 it would
+     * overwrite the i == 0 entries above with { -1, 0, 1, 2 }. */
+    for (i = (h_half > 2) ? h_half - 2 : 1; i < h_half; ++i) { /* i : h_half - 3 to  h_half */
         ind1 = 2 * i;
         ind0 = ind1 - 1;
         ind2 = ind1 + 1;
@@ -768,7 +770,7 @@ void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h)
         src_ind_x[2][j] = ind2;
         src_ind_x[3][j] = ind3;
     }
-    for (j = w_half - 2; j < w_half; ++j) { /* j : w_half - 3 to  w_half */
+    for (j = (w_half > 2) ? w_half - 2 : 1; j < w_half; ++j) { /* j : w_half - 3 to  w_half */
         ind1 = 2 * j;
         ind0 = ind1 - 1;
         ind2 = ind1 + 1;
