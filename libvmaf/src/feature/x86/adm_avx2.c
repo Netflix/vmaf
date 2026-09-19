@@ -2908,10 +2908,10 @@ void adm_dwt2_16_avx2(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffer 
     int16_t *tmphi = tmplo + w;
     int32_t accum;
 
-    __m256i f01_lo = _mm256_set1_epi32(filter_lo[0] + (uint32_t)(filter_lo[1] << 16) /* + (1 << 16) */);
-    __m256i f23_lo = _mm256_set1_epi32(filter_lo[2] + (uint32_t)(filter_lo[3] << 16) /* + (1 << 16) */);
-    __m256i f01_hi = _mm256_set1_epi32(filter_hi[0] + (uint32_t)(filter_hi[1] << 16) + (1 << 16));
-    __m256i f23_hi = _mm256_set1_epi32(filter_hi[2] + (uint32_t)(filter_hi[3] << 16) /*+ (1 << 16)*/);
+    __m256i f01_lo = _mm256_set1_epi32(filter_lo[0] + ((uint32_t)filter_lo[1] << 16) /* + (1 << 16) */);
+    __m256i f23_lo = _mm256_set1_epi32(filter_lo[2] + ((uint32_t)filter_lo[3] << 16) /* + (1 << 16) */);
+    __m256i f01_hi = _mm256_set1_epi32(filter_hi[0] + ((uint32_t)filter_hi[1] << 16) + (1 << 16));
+    __m256i f23_hi = _mm256_set1_epi32(filter_hi[2] + ((uint32_t)filter_hi[3] << 16) /*+ (1 << 16)*/);
 
     __m256i  accum0_lo, accum0_hi;
 
@@ -2926,14 +2926,14 @@ void adm_dwt2_16_avx2(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffer 
             uint16_t u_s2 = src[ind_y[2][i] * src_stride + j];
             uint16_t u_s3 = src[ind_y[3][i] * src_stride + j];
 
-            accum = 0;
+            /* normalizing is done for range from(0 to N) to (-N/2 to N/2).
+             * The offset goes in first: subtracted last, three 16-bit samples
+             * of 42456 or more take the sum past INT32_MAX on the way. */
+            accum = -((int32_t)dwt2_db2_coeffs_lo_sum * add_shift_VP);
             accum += (int32_t)filter_lo[0] * (int32_t)u_s0;
             accum += (int32_t)filter_lo[1] * (int32_t)u_s1;
             accum += (int32_t)filter_lo[2] * (int32_t)u_s2;
             accum += (int32_t)filter_lo[3] * (int32_t)u_s3;
-
-            /* normalizing is done for range from(0 to N) to (-N/2 to N/2) */
-            accum -= (int32_t)dwt2_db2_coeffs_lo_sum * add_shift_VP;
 
             tmplo[j] = (accum + add_shift_VP) >> shift_VP;
 
