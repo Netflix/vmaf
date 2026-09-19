@@ -246,6 +246,13 @@ if is_asm_enabled and (host_machine.cpu_family().startswith('arm64') or host_mac
     test('test_motion_neon', test_motion_neon)
 endif
 
+test_thread_pool_create_errors = executable('test_thread_pool_create_errors',
+    ['test.c', 'test_thread_pool_create_errors.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src')],
+    dependencies : thread_lib,
+)
+test('test_thread_pool_create_errors', test_thread_pool_create_errors, timeout : 10)
+
 if get_option('enable_checkasm')
     subdir('checkasm')
 endif

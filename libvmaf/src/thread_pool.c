@@ -122,6 +122,7 @@ int vmaf_thread_pool_create(VmafThreadPool **pool, VmafThreadPoolConfig cfg)
     p->workers = malloc(sizeof(*p->workers) * cfg.n_threads);
     if (!p->workers) {
         free(p);
+        *pool = NULL;
         return -ENOMEM;
     }
     memset(p->workers, 0, sizeof(*p->workers) * cfg.n_threads);
@@ -134,7 +135,17 @@ int vmaf_thread_pool_create(VmafThreadPool **pool, VmafThreadPoolConfig cfg)
     for (unsigned i = 0; i < cfg.n_threads; i++) {
         p->workers[i].pool = p;
         pthread_t thread;
-        pthread_create(&thread, NULL, vmaf_thread_pool_runner, &p->workers[i]);
+        const int err =
+            pthread_create(&thread, NULL, vmaf_thread_pool_runner, &p->workers[i]);
+        if (err) {
+            /* Only successfully started workers can leave the stop wait. */
+            pthread_mutex_lock(&(p->queue.lock));
+            p->n_threads = i;
+            pthread_mutex_unlock(&(p->queue.lock));
+            vmaf_thread_pool_destroy(p);
+            *pool = NULL;
+            return -err;
+        }
         pthread_detach(thread);
     }
 
