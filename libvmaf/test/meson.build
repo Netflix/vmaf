@@ -159,6 +159,21 @@ test_motion_blend = executable('test_motion_blend',
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
 )
 
+test_adm_dwt2_16 = executable('test_adm_dwt2_16',
+    ['test.c', 'test_adm_dwt2_16.c', '../src/mem.c', '../src/picture.c', '../src/ref.c',
+     '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c',
+     '../src/metadata_handler.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
+    objects : [
+      common_cuda_objects,
+      platform_specific_cpu_objects,
+      libvmaf_feature_static_lib.extract_all_objects(recursive: true),
+      libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
+      libsvm_static_lib.extract_all_objects(recursive: true),
+    ]
+)
+
 if float_enabled
     test_vif_tools = executable('test_vif_tools',
         ['test.c', 'test_vif_tools.c'],
@@ -222,6 +237,7 @@ test('test_luminance_tools', test_luminance_tools)
 test('test_cli_parse', test_cli_parse)
 test('test_psnr', test_psnr)
 test('test_framesync', test_framesync)
+test('test_adm_dwt2_16', test_adm_dwt2_16)
 test('test_propagate_metadata', test_propagate_metadata)
 test('test_adm_csf', test_adm_csf)
 test('test_barten_csf', test_barten_csf)
