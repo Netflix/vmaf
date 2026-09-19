@@ -199,6 +199,14 @@ test('test_ring_buffer', test_ring_buffer)
 test('test_cuda_pic_preallocation', test_cuda_pic_preallocation)
 endif
 
+test_video_input = executable('test_video_input',
+    ['test.c', 'test_video_input.c', '../tools/vidinput.c',
+     '../tools/yuv_input.c', '../tools/y4m_input.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/'), include_directories('../tools/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    c_args : [compat_cflags],
+)
+
 test_pic_preallocation = executable('test_pic_preallocation',
     ['test.c', 'test_pic_preallocation.c'],
     include_directories : [libvmaf_inc, test_inc],
@@ -207,6 +215,7 @@ test_pic_preallocation = executable('test_pic_preallocation',
 test('test_pic_preallocation', test_pic_preallocation)
 
 test('test_picture', test_picture)
+test('test_video_input', test_video_input)
 test('test_feature_collector', test_feature_collector)
 test('test_thread_pool', test_thread_pool)
 test('test_model', test_model)
