@@ -53,7 +53,7 @@ static inline int64_t mm_hadd_epi64(__m128i v)
 		sum += flt_ptr[src_stride]; \
 		sum += flt_ptr[src_stride + 1]; \
 		sum += flt_ptr[1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[0]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[0]) + 2048) >> 12);\
 		sum += flt_ptr[1]; \
 		sum += flt_ptr[src_stride + 1]; \
 		sum += flt_ptr[src_stride]; \
@@ -74,7 +74,7 @@ static inline int64_t mm_hadd_epi64(__m128i v)
 		sum += flt_ptr[src_stride + w - 1]; \
 		sum += flt_ptr[src_stride + w - 1]; \
 		sum += flt_ptr[w - 2]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]) + 2048) >> 12);\
 		sum += flt_ptr[w - 1]; \
 		sum += flt_ptr[src_stride + w - 2]; \
 		sum += flt_ptr[src_stride + w - 1]; \
@@ -95,7 +95,7 @@ static inline int64_t mm_hadd_epi64(__m128i v)
 		sum += flt_ptr[src_stride + j]; \
 		sum += flt_ptr[src_stride + j + 1]; \
 		sum += flt_ptr[j - 1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[j]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[j]) + 2048) >> 12);\
 		sum += flt_ptr[j + 1]; \
 		sum += flt_ptr[src_stride + j - 1]; \
 		sum += flt_ptr[src_stride + j]; \
@@ -120,7 +120,7 @@ static inline int64_t mm_hadd_epi64(__m128i v)
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[0]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[0]) + 2048) >> 12);\
 		sum += flt_ptr[1]; \
 		sum += flt_ptr[1]; \
 		sum += flt_ptr[0]; \
@@ -145,7 +145,7 @@ static inline int64_t mm_hadd_epi64(__m128i v)
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[w - 2]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]) + 2048) >> 12);\
 		sum += flt_ptr[w - 1]; \
 		sum += flt_ptr[w - 2]; \
 		sum += flt_ptr[w - 1]; \
@@ -170,7 +170,7 @@ static inline int64_t mm_hadd_epi64(__m128i v)
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[j - 1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[j]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[j]) + 2048) >> 12);\
 		sum += flt_ptr[j + 1]; \
 		sum += flt_ptr[j - 1]; \
 		sum += flt_ptr[j]; \
@@ -195,7 +195,7 @@ static inline int64_t mm_hadd_epi64(__m128i v)
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[j - 1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[j]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[j]) + 2048) >> 12);\
 		sum += flt_ptr[j + 1]; \
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
@@ -295,7 +295,7 @@ static inline int64_t mm_hadd_epi64(__m128i v)
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[1]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[0]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[0]) + 2048) >> 12);\
 		sum += flt_ptr[1]; \
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
@@ -322,7 +322,7 @@ static inline int64_t mm_hadd_epi64(__m128i v)
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
 		sum += flt_ptr[w - 2]; \
-		sum += (int16_t)(((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]))+ 2048)>>12);\
+		sum += ((ONE_BY_15 * abs((int32_t) src_ptr[w - 1]) + 2048) >> 12);\
 		sum += flt_ptr[w - 1]; \
 		src_ptr += src_stride; \
 		flt_ptr += src_stride; \
@@ -644,8 +644,11 @@ static inline int64_t mm_hadd_epi64(__m128i v)
 #define ADM_CM_ACCUM_ROUND(x, thr, shift_xsub, x_sq, add_shift_xsq, shift_xsq, val, \
                            add_shift_xcub, shift_xcub, accum_inner) \
 { \
-    x = abs(x) - ((int32_t)(thr) << shift_xsub); \
-    x = x < 0 ? 0 : x; \
+    const int64_t x_magnitude = x < 0 ? -(int64_t)x : (int64_t)x; \
+    const int64_t x_after_threshold = \
+        x_magnitude - (int64_t)thr * ((int64_t)1 << shift_xsub); \
+    x = x_after_threshold <= 0 ? 0 : \
+        x_after_threshold > INT32_MAX ? INT32_MAX : (int32_t)x_after_threshold; \
     x_sq = (int32_t)((((int64_t)x * x) + add_shift_xsq) >> shift_xsq); \
     val = (((int64_t)x_sq * x) + add_shift_xcub) >> shift_xcub; \
     accum_inner += val; \
@@ -654,8 +657,11 @@ static inline int64_t mm_hadd_epi64(__m128i v)
 #define ADM_CM_ACCUM_ROUND_avx256(x, thr, shift_xsub, x_sq, add_shift_xsq, shift_xsq, val, \
                            add_shift_xcub, shift_xcub, accum_inner_lo, accum_inner_hi) \
 { \
+    __m256i threshold_overflow = _mm256_cmpgt_epi32( \
+        thr, _mm256_set1_epi32(INT32_MAX >> shift_xsub)); \
     x = _mm256_sub_epi32(_mm256_abs_epi32(x), _mm256_slli_epi32(thr, shift_xsub)); \
     x = _mm256_max_epi32(x, _mm256_setzero_si256()); \
+    x = _mm256_andnot_si256(threshold_overflow, x); \
     __m256i x_sq_lo = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(x, x), _mm256_set1_epi64x(add_shift_xsq)), shift_xsq); \
     __m256i x_sq_hi = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(_mm256_srli_epi64(x, 32), _mm256_srli_epi64(x, 32)), _mm256_set1_epi64x(add_shift_xsq)), shift_xsq); \
     x_sq_lo = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(x_sq_lo, x), _mm256_set1_epi64x(add_shift_xcub)), shift_xcub); \
