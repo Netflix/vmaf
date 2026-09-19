@@ -1334,6 +1334,15 @@ void adm_dwt2_8_avx2(const uint8_t *src, const adm_dwt_band_t *dst,
 
 static inline uint16_t get_best15_from32(uint32_t temp, int *x)
 {
+    /* Unlike the scalar and AVX-512 versions, the callers below run this on
+       every lane and select afterwards, so the function also sees the values
+       they discard. Below 32768 the shift count 17 - clz is not positive, and
+       __builtin_clz(0) has no defined result. Return what the select picks
+       for those lanes. */
+    if (temp < 32768) {
+        *x = 0;
+        return (uint16_t) temp;
+    }
     int k = __builtin_clz(temp);    //built in for intel
     k = 17 - k;
     temp = (temp + (1 << (k - 1))) >> k;
