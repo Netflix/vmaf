@@ -784,8 +784,8 @@ void adm_decouple_avx2(AdmBuffer *buf, int w, int h, int stride,
             __m256i eqz_od = _mm256_cmpeq_epi32(od, _mm256_setzero_si256());
 
             tmp_kh = blend(const_32768_32b, tmp_kh, eqz_oh);
-			tmp_kv = blend(const_32768_32b, tmp_kv, eqz_ov);
-			tmp_kd = blend(const_32768_32b, tmp_kd, eqz_od);
+            tmp_kv = blend(const_32768_32b, tmp_kv, eqz_ov);
+            tmp_kd = blend(const_32768_32b, tmp_kd, eqz_od);
 
             tmp_kh = _mm256_max_epi32(tmp_kh, _mm256_setzero_si256());
             tmp_kh = _mm256_min_epi32(tmp_kh, const_32768_32b);
