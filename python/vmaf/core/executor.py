@@ -636,7 +636,7 @@ class Executor(TypeVersionEnabled):
         ffmpeg_cmd += [VmafExternalConfig.get_and_assert_ffmpeg()]
         ffmpeg_cmd += [src_fmt_cmd]
         ffmpeg_cmd += ['-i', path]
-        ffmpeg_cmd += ['-an', '-vsync', '0']
+        ffmpeg_cmd += ['-an', '-fps_mode', 'passthrough']
         ffmpeg_cmd += ['-pix_fmt', workfile_yuv_type]
         ffmpeg_cmd += [vframes_cmd]
         ffmpeg_cmd += ['-vf', vf_cmd]
