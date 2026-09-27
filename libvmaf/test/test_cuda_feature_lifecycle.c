@@ -143,7 +143,17 @@ static char *lifecycle(const char *name, enum VmafPixelFormat format,
 
 static char *test_lifecycle(void)
 {
-    return lifecycle("psnr_cuda", VMAF_PIX_FMT_YUV420P, 64, 48, 1);
+    const char *names[] = { "psnr_cuda", "ssim_cuda" };
+    for (unsigned i = 0; i < 2; i++) {
+        char *fail = lifecycle(names[i], VMAF_PIX_FMT_YUV420P, 64, 48, 1);
+        if (fail) return fail;
+    }
+    /* Exercise both SSIM allocation layouts and its invalid-window path. */
+    char *fail = lifecycle("ssim_cuda", VMAF_PIX_FMT_YUV420P, 768, 432, 1);
+    if (fail) return fail;
+    fail = lifecycle("ssim_cuda", VMAF_PIX_FMT_YUV420P, 8, 8, 0);
+    if (fail) return fail;
+    return NULL;
 }
 
 char *run_tests(void)

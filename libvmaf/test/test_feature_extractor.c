@@ -51,6 +51,10 @@ static char *test_get_feature_extractor_by_name_and_feature_name()
     fex = vmaf_get_feature_extractor_by_feature_name("psnr_y", flags);
     mu_assert("CUDA PSNR registration failed",
               fex && !strcmp(fex->name, "psnr_cuda"));
+
+    fex = vmaf_get_feature_extractor_by_feature_name("float_ssim", flags);
+    mu_assert("CUDA SSIM registration failed",
+              fex && !strcmp(fex->name, "ssim_cuda"));
 #endif
 
     return NULL;
