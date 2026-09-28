@@ -215,6 +215,7 @@ test_pic_preallocation = executable('test_pic_preallocation',
 )
 test('test_pic_preallocation', test_pic_preallocation)
 
+test('test_context', test_context)
 test('test_picture', test_picture)
 test('test_feature_collector', test_feature_collector)
 test('test_thread_pool', test_thread_pool)
