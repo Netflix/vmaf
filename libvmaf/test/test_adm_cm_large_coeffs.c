@@ -37,6 +37,7 @@ typedef float (*adm_cm_fn)(AdmBuffer *buf, int w, int h, int src_stride,
                            double adm_csf_scale, double adm_csf_diag_scale,
                            double adm_noise_weight, bool measure_aim);
 
+#if ARCH_X86
 static uint32_t lcg_state;
 
 /* Magnitudes of 12000 to 22916 with a random sign. 22916 bounds the magnitude
@@ -103,6 +104,7 @@ static int matches_scalar(adm_cm_fn fn, const char *name)
     }
     return 1;
 }
+#endif
 
 static char *test_adm_cm_large_coeffs_match_scalar()
 {

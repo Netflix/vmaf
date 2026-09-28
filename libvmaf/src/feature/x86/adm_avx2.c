@@ -664,8 +664,8 @@ static inline int64_t mm_hadd_epi64(__m128i v)
     x = _mm256_andnot_si256(threshold_overflow, x); \
     __m256i x_sq_lo = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(x, x), _mm256_set1_epi64x(add_shift_xsq)), shift_xsq); \
     __m256i x_sq_hi = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(_mm256_srli_epi64(x, 32), _mm256_srli_epi64(x, 32)), _mm256_set1_epi64x(add_shift_xsq)), shift_xsq); \
-    x_sq_lo = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(x_sq_lo, x), _mm256_set1_epi64x(add_shift_xcub)), shift_xcub); \
-    x_sq_hi = _mm256_srli_epi64(_mm256_add_epi64(_mm256_mul_epi32(x_sq_hi, _mm256_srli_epi64(x, 32)), _mm256_set1_epi64x(add_shift_xcub)), shift_xcub); \
+    x_sq_lo = sra_epi64(_mm256_add_epi64(_mm256_mul_epi32(x_sq_lo, x), _mm256_set1_epi64x(add_shift_xcub)), _mm256_set1_epi64x(shift_xcub)); \
+    x_sq_hi = sra_epi64(_mm256_add_epi64(_mm256_mul_epi32(x_sq_hi, _mm256_srli_epi64(x, 32)), _mm256_set1_epi64x(add_shift_xcub)), _mm256_set1_epi64x(shift_xcub)); \
     accum_inner_lo = _mm256_add_epi64(accum_inner_lo, x_sq_lo); \
     accum_inner_hi = _mm256_add_epi64(accum_inner_hi, x_sq_hi); \
 }
