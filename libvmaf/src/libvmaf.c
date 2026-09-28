@@ -639,7 +639,7 @@ static int validate_pic_params(VmafContext *vmaf, VmafPicture *ref,
     {
         return -EINVAL;
     }
-    if ((ref->bpc != dist->bpc) && (ref->bpc != vmaf->pic_params.bpc))
+    if ((ref->bpc != dist->bpc) || (ref->bpc != vmaf->pic_params.bpc))
         return -EINVAL;
     if (ref_priv->buf_type != dist_priv->buf_type)
         return -EINVAL;
