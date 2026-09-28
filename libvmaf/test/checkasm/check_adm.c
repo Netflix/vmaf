@@ -285,6 +285,17 @@ static void fill_band(int16_t *band, int rows, int stride)
                 (int16_t) ((checkasm_rand_uint32() % 16001) - 8000);
 }
 
+/* The whole range of a scale 0 dwt2 coefficient, whose magnitude is bounded by
+ * (54822 * 27395 + 32768) >> 16 = 22916. */
+static void fill_band_dwt2_range(int16_t *band, int rows, int stride)
+{
+    if (!band) return;
+    for (int i = 0; i < rows; i++)
+        for (int j = 0; j < stride; j++)
+            band[i * stride + j] =
+                (int16_t) ((checkasm_rand_uint32() % 45833) - 22916);
+}
+
 static void copy_band(int16_t *dst, const int16_t *src, int rows, int stride)
 {
     if (!dst || !src) return;
@@ -643,9 +654,9 @@ static void check_adm_cm(void)
         adm_dwt_band_t *a_bands[4] = { &buf_a.decouple_r, &buf_a.decouple_a,
                                         &buf_a.csf_f, &buf_a.csf_a };
         for (int b = 0; b < 4; b++) {
-            fill_band(c_bands[b]->band_h, h_half, stride);
-            fill_band(c_bands[b]->band_v, h_half, stride);
-            fill_band(c_bands[b]->band_d, h_half, stride);
+            fill_band_dwt2_range(c_bands[b]->band_h, h_half, stride);
+            fill_band_dwt2_range(c_bands[b]->band_v, h_half, stride);
+            fill_band_dwt2_range(c_bands[b]->band_d, h_half, stride);
             copy_band(a_bands[b]->band_h, c_bands[b]->band_h, h_half, stride);
             copy_band(a_bands[b]->band_v, c_bands[b]->band_v, h_half, stride);
             copy_band(a_bands[b]->band_d, c_bands[b]->band_d, h_half, stride);
