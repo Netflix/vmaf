@@ -143,8 +143,8 @@ static char *lifecycle(const char *name, enum VmafPixelFormat format,
 
 static char *test_lifecycle(void)
 {
-    const char *names[] = { "psnr_cuda", "ssim_cuda" };
-    for (unsigned i = 0; i < 2; i++) {
+    const char *names[] = { "psnr_cuda", "ssim_cuda", "ciede_cuda" };
+    for (unsigned i = 0; i < 3; i++) {
         char *fail = lifecycle(names[i], VMAF_PIX_FMT_YUV420P, 64, 48, 1);
         if (fail) return fail;
     }
@@ -153,6 +153,25 @@ static char *test_lifecycle(void)
     if (fail) return fail;
     fail = lifecycle("ssim_cuda", VMAF_PIX_FMT_YUV420P, 8, 8, 0);
     if (fail) return fail;
+    const struct {
+        enum VmafPixelFormat format;
+        unsigned width, height;
+        int valid;
+    } cases[] = {
+        { VMAF_PIX_FMT_YUV420P, 64, 49, 0 },
+        { VMAF_PIX_FMT_YUV420P, 65, 48, 0 },
+        { VMAF_PIX_FMT_YUV422P, 65, 48, 0 },
+        { VMAF_PIX_FMT_YUV422P, 64, 49, 1 },
+        { VMAF_PIX_FMT_YUV444P, 65, 49, 1 },
+        { VMAF_PIX_FMT_YUV400P, 64, 48, 0 },
+        { VMAF_PIX_FMT_YUV444P, 0, 48, 0 },
+        { VMAF_PIX_FMT_YUV444P, 64, 0, 0 },
+    };
+    for (unsigned i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        fail = lifecycle("ciede_cuda", cases[i].format,
+                          cases[i].width, cases[i].height, cases[i].valid);
+        if (fail) return fail;
+    }
     return NULL;
 }
 

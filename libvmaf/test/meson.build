@@ -218,6 +218,13 @@ test_cuda_ssim_parity = executable('test_cuda_ssim_parity',
     dependencies : [cuda_dependency, math_lib],
 )
 test('test_cuda_ssim_parity', test_cuda_ssim_parity)
+test_cuda_ciede_parity = executable('test_cuda_ciede_parity',
+    ['test.c', 'test_cuda_ciede_parity.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies : [cuda_dependency, math_lib],
+)
+test('test_cuda_ciede_parity', test_cuda_ciede_parity)
 test_cuda_device_input = executable('test_cuda_device_input',
     ['test.c', 'test_cuda_device_input.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
