@@ -847,6 +847,48 @@ static char *test_get_speed_score() {
     return NULL;
 }
 
+static char *test_speed_init_rejects_frame_below_one_block() {
+    SpeedOptions opt = {
+        .speed_kernelscale = 1.0,
+        .speed_prescale = 1.0,
+        .speed_prescale_method = "nearest",
+        .speed_sigma_nn = 0.29,
+        .speed_nn_floor = 0.0,
+    };
+
+    // 72 >> NUM_SCALES is 4 rows, less than one 5x5 block: this is the
+    // 4:2:0 chroma plane of a 256x144 frame.
+    SpeedState too_small = { 0 };
+    mu_assert("speed_init() accepted a plane with no complete block",
+              speed_init(&too_small, &opt, 128, 72) == -EINVAL);
+    mu_assert("speed_init() allocated before rejecting the plane",
+              !too_small.buffers.tmp_buffer);
+
+    // 80 >> NUM_SCALES is exactly one block.
+    SpeedState smallest = { 0 };
+    mu_assert("speed_init() rejected the smallest valid plane",
+              speed_init(&smallest, &opt, 128, 80) == 0);
+    speed_close(&smallest);
+
+    return NULL;
+}
+
+static char *test_speed_chroma_init_rejects_144p() {
+    VmafFeatureExtractor *fex =
+        vmaf_get_feature_extractor_by_name("speed_chroma");
+    mu_assert("speed_chroma is not registered", fex);
+
+    VmafFeatureExtractorContext *fex_ctx;
+    int err = vmaf_feature_extractor_context_create(&fex_ctx, fex, NULL);
+    mu_assert("problem during vmaf_feature_extractor_context_create", !err);
+    err = vmaf_feature_extractor_context_init(fex_ctx, VMAF_PIX_FMT_YUV420P,
+                                              8, 256, 144);
+    mu_assert("speed_chroma initialized on a 256x144 4:2:0 frame", err);
+    vmaf_feature_extractor_context_destroy(fex_ctx);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_est_params_13x9);
@@ -856,6 +898,8 @@ char *run_tests()
     mu_run_test(test_get_eigenvalues_9x9);
     mu_run_test(test_get_eigenvalues_25x25);
     mu_run_test(test_get_speed_score);
+    mu_run_test(test_speed_init_rejects_frame_below_one_block);
+    mu_run_test(test_speed_chroma_init_rejects_144p);
 
     return NULL;
 }
