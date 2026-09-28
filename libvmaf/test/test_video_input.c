@@ -47,10 +47,13 @@ static void plane_dims(unsigned plane, unsigned w, unsigned h,
 
 /* Writes FRAME_CNT frames in the layout a raw file uses: every plane holds
  * ceil(dimension / decimation) samples. */
-static FILE *write_clip(unsigned w, unsigned h, unsigned dec_h,
-                        unsigned dec_v, const char *y4m_header)
+static FILE *write_clip(const char *path, unsigned w, unsigned h,
+                        unsigned dec_h, unsigned dec_v, const char *y4m_header)
 {
-    FILE *f = tmpfile();
+    /* A named file in the working directory rather than tmpfile(): the
+     * msvcrt tmpfile() creates its file in the root of the drive, which
+     * fails for a user without administrator rights. */
+    FILE *f = fopen(path, "w+b");
     if (!f) return NULL;
 
     if (y4m_header) {
@@ -77,13 +80,14 @@ static FILE *write_clip(unsigned w, unsigned h, unsigned dec_h,
 
 fail:
     fclose(f);
+    remove(path);
     return NULL;
 }
 
 /* Every sample the picture carries must be the sample the file holds at the
  * same position of the same plane, for every frame of the clip. */
 static char *check_clip(video_input *vid, unsigned w, unsigned h,
-                        unsigned dec_h, unsigned dec_v, const char *what)
+                        unsigned dec_h, unsigned dec_v, char *what)
 {
     for (unsigned n = 0; n < FRAME_CNT; n++) {
         VmafPicture pic;
@@ -129,7 +133,8 @@ static char *check_clip(video_input *vid, unsigned w, unsigned h,
 
 static char *test_yuv_even_dimensions()
 {
-    FILE *f = write_clip(20, 20, 2, 2, NULL);
+    const char *path = "test_video_input_even.yuv";
+    FILE *f = write_clip(path, 20, 20, 2, 2, NULL);
     mu_assert("could not create the test clip", f);
 
     video_input vid;
@@ -139,6 +144,7 @@ static char *test_yuv_even_dimensions()
     char *msg = check_clip(&vid, 20, 20, 2, 2,
                            "a 20x20 4:2:0 raw clip did not read back");
     video_input_close(&vid);
+    remove(path);
     return msg;
 }
 
@@ -146,7 +152,8 @@ static char *test_yuv_odd_dimensions()
 {
     /* 19x19 4:2:0: the chroma planes are 10x10 in the file and 9x9 in the
        picture, so every frame holds 38 samples the picture does not. */
-    FILE *f = write_clip(19, 19, 2, 2, NULL);
+    const char *path = "test_video_input_odd.yuv";
+    FILE *f = write_clip(path, 19, 19, 2, 2, NULL);
     mu_assert("could not create the test clip", f);
 
     video_input vid;
@@ -156,12 +163,14 @@ static char *test_yuv_odd_dimensions()
     char *msg = check_clip(&vid, 19, 19, 2, 2,
                            "a 19x19 4:2:0 raw clip did not read back");
     video_input_close(&vid);
+    remove(path);
     return msg;
 }
 
 static char *test_y4m_odd_dimensions()
 {
-    FILE *f = write_clip(19, 19, 2, 2,
+    const char *path = "test_video_input_odd.y4m";
+    FILE *f = write_clip(path, 19, 19, 2, 2,
                          "YUV4MPEG2 W19 H19 F25:1 Ip A1:1 C420jpeg\n");
     mu_assert("could not create the test clip", f);
 
@@ -172,6 +181,7 @@ static char *test_y4m_odd_dimensions()
     char *msg = check_clip(&vid, 19, 19, 2, 2,
                            "a 19x19 4:2:0 y4m clip did not read back");
     video_input_close(&vid);
+    remove(path);
     return msg;
 }
 
