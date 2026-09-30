@@ -1575,7 +1575,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     speed_init(&s->speed_state, &s->speed_options, w, h);
 
     size_t float_stride = s->speed_state.float_stride;
-    size_t frame_size = float_stride * h;
+    // filter_and_downscale() reads and writes these buffers at the
+    // prescaled height, so size them like speed_chroma does.
+    size_t frame_size = float_stride * s->speed_state.dimensions.alloc_height;
     s->frame_buffer_ref[0] = aligned_malloc(frame_size, 32);
     s->frame_buffer_ref[1] = aligned_malloc(frame_size, 32);
     s->frame_buffer_dis[0] = aligned_malloc(frame_size, 32);
