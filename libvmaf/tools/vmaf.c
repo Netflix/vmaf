@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
     VmafModelCollection **model_collection;
     const size_t model_collection_sz =
         sizeof(*model_collection) * c.model_cnt;
-    model_collection = malloc(model_sz);
+    model_collection = malloc(model_collection_sz);
     memset(model_collection, 0, model_collection_sz);
 
     const char **model_collection_label = alloca(c.model_cnt * sizeof(*model_collection_label));

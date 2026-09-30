@@ -525,7 +525,12 @@ static int model_collection_parse(json_stream *s, VmafModel **model,
                 if (err) return err;
             }
 
-            sprintf((char*)c.name, "%s_%04d", name, ++i);
+            const int n = snprintf((char*)c.name, cfg_name_sz, "%s_%04d",
+                                   name, ++i);
+            if (n < 0 || (size_t)n >= cfg_name_sz) {
+                free((char*)name);
+                return -EINVAL;
+            }
             continue;
         }
 
