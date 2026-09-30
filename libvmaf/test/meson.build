@@ -37,7 +37,7 @@ test_log = executable('test_log',
 test_thread_pool = executable('test_thread_pool',
     ['test.c', 'test_thread_pool.c', '../src/thread_pool.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    dependencies : [thread_lib, getopt_dependency]
+    dependencies : thread_lib,
 )
 
 test_model = executable('test_model',
@@ -65,9 +65,7 @@ test_feature_extractor = executable('test_feature_extractor',
      '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c', '../src/svm.cpp',
      '../src/metadata_handler.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
-    c_args : vmaf_cflags_common,
-    cpp_args : vmaf_cflags_common,
-    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency, getopt_dependency],
+    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
     objects : [
       common_cuda_objects,
       platform_specific_cpu_objects,

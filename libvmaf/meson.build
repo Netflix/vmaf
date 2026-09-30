@@ -46,7 +46,7 @@ if not cc.check_header('stdatomic.h')
     endif
 endif
 
-if cc.check_header('getopt.h', args: test_args)
+if cc.has_function('getopt_long', prefix : '#include <getopt.h>', args : test_args)
     getopt_dependency = declare_dependency(compile_args : '-DHAVE_GETOPT_H')
 else
     getopt_dependency = declare_dependency(
