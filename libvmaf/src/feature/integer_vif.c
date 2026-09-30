@@ -603,23 +603,24 @@ int vif_buffer_alloc(VifBuffer *buf, unsigned w, unsigned h, unsigned bpc)
     if (!data) return -ENOMEM;
     memset(data, 0, data_sz);
 
-    buf->data = data; data = (char *)data + pad_size;
-    buf->ref = data; data = (char *)data + frame_size + pad_size + pad_size;
-    buf->dis = data; data = (char *)data + frame_size + pad_size;
-    buf->mu1 = data; data = (char *)data + h * buf->stride_16;
-    buf->mu2 = data; data = (char *)data + h * buf->stride_16;
-    buf->mu1_32 = data; data = (char *)data + buf->stride_32;
-    buf->mu2_32 = data; data = (char *)data + buf->stride_32;
-    buf->ref_sq = data; data = (char *)data + buf->stride_32;
-    buf->dis_sq = data; data = (char *)data + buf->stride_32;
-    buf->ref_dis = data; data = (char *)data + buf->stride_32;
-    buf->tmp.mu1 = data; data = (char *)data + buf->stride_tmp;
-    buf->tmp.mu2 = data; data = (char *)data + buf->stride_tmp;
-    buf->tmp.ref = data; data = (char *)data + buf->stride_tmp;
-    buf->tmp.dis = data; data = (char *)data + buf->stride_tmp;
-    buf->tmp.ref_dis = data; data = (char *)data + buf->stride_tmp;
-    buf->tmp.ref_convol = data; data = (char *)data + buf->stride_tmp;
-    buf->tmp.dis_convol = data;
+    char *p = data;
+    buf->data = data; p += pad_size;
+    buf->ref = p; p += frame_size + pad_size + pad_size;
+    buf->dis = p; p += frame_size + pad_size;
+    buf->mu1 = p; p += h * buf->stride_16;
+    buf->mu2 = p; p += h * buf->stride_16;
+    buf->mu1_32 = p; p += buf->stride_32;
+    buf->mu2_32 = p; p += buf->stride_32;
+    buf->ref_sq = p; p += buf->stride_32;
+    buf->dis_sq = p; p += buf->stride_32;
+    buf->ref_dis = p; p += buf->stride_32;
+    buf->tmp.mu1 = p; p += buf->stride_tmp;
+    buf->tmp.mu2 = p; p += buf->stride_tmp;
+    buf->tmp.ref = p; p += buf->stride_tmp;
+    buf->tmp.dis = p; p += buf->stride_tmp;
+    buf->tmp.ref_dis = p; p += buf->stride_tmp;
+    buf->tmp.ref_convol = p; p += buf->stride_tmp;
+    buf->tmp.dis_convol = p;
 
     return 0;
 }
