@@ -339,7 +339,7 @@ void calculate_c_values_avx2(VmafPicture *pic, const VmafPicture *mask_pic,
     memset(c_values, 0.0, sizeof(float) * width * height);
     memset(histograms, 0, width * v_band_size * sizeof(uint16_t));
 
-    for (int i = 0; i < pad_size; i++) {
+    for (int i = 0; i < MIN(pad_size, height); i++) {
         for (int j = 0; j < pad_size; j++) {
             update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_increment_range_avx2);
         }
@@ -351,7 +351,7 @@ void calculate_c_values_avx2(VmafPicture *pic, const VmafPicture *mask_pic,
         }
     }
 
-    for (int i = 0; i < pad_size + 1; i++) {
+    for (int i = 0; i < MIN(pad_size + 1, height); i++) {
         if (i + pad_size < height) {
             for (int j = 0; j < pad_size; j++) {
                 update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_increment_range_avx2);
@@ -374,7 +374,7 @@ void calculate_c_values_avx2(VmafPicture *pic, const VmafPicture *mask_pic,
             uh_slide_edge(histograms, image, mask, i, j, width, stride, pad_size, v_band_base, v_band_size, cambi_increment_range_avx2, cambi_decrement_range_avx2);
         calculate_c_values_row_avx2(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
     }
-    for (int i = height - pad_size; i < height; i++) {
+    for (int i = MAX(height - pad_size, 0); i < height; i++) {
         if (i - pad_size - 1 >= 0) {
             for (int j = 0; j < pad_size; j++) {
                 update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, cambi_decrement_range_avx2);
