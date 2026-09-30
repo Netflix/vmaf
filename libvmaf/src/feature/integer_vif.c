@@ -85,7 +85,7 @@ static const VmafOption options[] = {
     { 0 }
 };
 
-static FORCE_INLINE void
+void
 pad_top_and_bottom(VifBuffer buf, unsigned h, int fwidth)
 {
     const unsigned fwidth_half = fwidth / 2;
@@ -121,7 +121,7 @@ decimate_and_pad(VifBuffer buf, unsigned w, unsigned h, int scale)
     pad_top_and_bottom(buf, h / 2, vif_filter1d_width[scale]);
 }
 
-static void subsample_rd_8(VifBuffer buf, unsigned w, unsigned h)
+void subsample_rd_8(VifBuffer buf, unsigned w, unsigned h)
 {
     const unsigned fwidth = vif_filter1d_width[1];
     const uint16_t *vif_filt_s1 = vif_filter1d_table[1];
@@ -165,7 +165,7 @@ static void subsample_rd_8(VifBuffer buf, unsigned w, unsigned h)
     decimate_and_pad(buf, w, h, 0);
 }
 
-static void subsample_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale, int bpc)
+void subsample_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale, int bpc)
 {
     const unsigned fwidth = vif_filter1d_width[scale + 1];
     const uint16_t *vif_filt = vif_filter1d_table[scale + 1];
@@ -223,7 +223,7 @@ static void subsample_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale, in
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-static inline void log_generate(uint16_t *log2_table)
+void log_generate(uint16_t *log2_table)
 {
     for (unsigned i = 32767; i < 65536; ++i) {
         log2_table[i] = (uint16_t)round(log2f((float)i) * 2048);
@@ -586,6 +586,50 @@ VifResiduals vif_compute_line_residuals(VifPublicState *s, unsigned from,
 }
 
 
+int vif_buffer_alloc(VifBuffer *buf, unsigned w, unsigned h, unsigned bpc)
+{
+    const bool hbd = bpc > 8;
+
+    buf->stride = ALIGN_CEIL(w << hbd);
+    buf->stride_16 = ALIGN_CEIL(w * sizeof(uint16_t));
+    buf->stride_32 = ALIGN_CEIL(w * sizeof(uint32_t));
+    buf->stride_tmp = ALIGN_CEIL((MAX_ALIGN + w + MAX_ALIGN) * sizeof(uint32_t));
+    const size_t frame_size = buf->stride * h;
+    const size_t pad_size = buf->stride * 8;
+    const size_t data_sz =
+        2 * (pad_size + frame_size + pad_size) + 2 * (h * buf->stride_16) +
+        5 * (buf->stride_32) + 7 * buf->stride_tmp;
+    void *data = aligned_malloc(data_sz, MAX_ALIGN);
+    if (!data) return -ENOMEM;
+    memset(data, 0, data_sz);
+
+    buf->data = data; data += pad_size;
+    buf->ref = data; data += frame_size + pad_size + pad_size;
+    buf->dis = data; data += frame_size + pad_size;
+    buf->mu1 = data; data += h * buf->stride_16;
+    buf->mu2 = data; data += h * buf->stride_16;
+    buf->mu1_32 = data; data += buf->stride_32;
+    buf->mu2_32 = data; data += buf->stride_32;
+    buf->ref_sq = data; data += buf->stride_32;
+    buf->dis_sq = data; data += buf->stride_32;
+    buf->ref_dis = data; data += buf->stride_32;
+    buf->tmp.mu1 = data; data += buf->stride_tmp;
+    buf->tmp.mu2 = data; data += buf->stride_tmp;
+    buf->tmp.ref = data; data += buf->stride_tmp;
+    buf->tmp.dis = data; data += buf->stride_tmp;
+    buf->tmp.ref_dis = data; data += buf->stride_tmp;
+    buf->tmp.ref_convol = data; data += buf->stride_tmp;
+    buf->tmp.dis_convol = data;
+
+    return 0;
+}
+
+void vif_buffer_free(VifBuffer *buf)
+{
+    if (buf->data) aligned_free(buf->data);
+    memset(buf, 0, sizeof(*buf));
+}
+
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
@@ -625,39 +669,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     log_generate(s->public.log2_table);
 
     (void)pix_fmt;
-    const bool hbd = bpc > 8;
 
-    s->public.buf.stride = ALIGN_CEIL(w << hbd);
-    s->public.buf.stride_16 = ALIGN_CEIL(w * sizeof(uint16_t));
-    s->public.buf.stride_32 = ALIGN_CEIL(w * sizeof(uint32_t));
-    s->public.buf.stride_tmp =
-        ALIGN_CEIL((MAX_ALIGN + w + MAX_ALIGN) * sizeof(uint32_t));
-    const size_t frame_size = s->public.buf.stride * h;
-    const size_t pad_size = s->public.buf.stride * 8;
-    const size_t data_sz =
-        2 * (pad_size + frame_size + pad_size) + 2 * (h * s->public.buf.stride_16) +
-        5 * (s->public.buf.stride_32) + 7 * s->public.buf.stride_tmp;
-    void *data = aligned_malloc(data_sz, MAX_ALIGN);
-    if (!data) return -ENOMEM;
-    memset(data, 0, data_sz);
-
-    s->public.buf.data = data; data += pad_size;
-    s->public.buf.ref = data; data += frame_size + pad_size + pad_size;
-    s->public.buf.dis = data; data += frame_size + pad_size;
-    s->public.buf.mu1 = data; data += h * s->public.buf.stride_16;
-    s->public.buf.mu2 = data; data += h * s->public.buf.stride_16;
-    s->public.buf.mu1_32 = data; data += s->public.buf.stride_32;
-    s->public.buf.mu2_32 = data; data += s->public.buf.stride_32;
-    s->public.buf.ref_sq = data; data += s->public.buf.stride_32;
-    s->public.buf.dis_sq = data; data += s->public.buf.stride_32;
-    s->public.buf.ref_dis = data; data += s->public.buf.stride_32;
-    s->public.buf.tmp.mu1 = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.mu2 = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.ref = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.dis = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.ref_dis = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.ref_convol = data; data += s->public.buf.stride_tmp;
-    s->public.buf.tmp.dis_convol = data;
+    if (vif_buffer_alloc(&s->public.buf, w, h, bpc)) goto fail;
 
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features,
@@ -667,7 +680,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     return 0;
 
 fail:
-    if (data) aligned_free(data);
+    vif_buffer_free(&s->public.buf);
     vmaf_dictionary_free(&s->feature_name_dict);
     return -ENOMEM;
 }
@@ -838,7 +851,7 @@ static int extract(VmafFeatureExtractor *fex,
 static int close(VmafFeatureExtractor *fex)
 {
     VifState *s = fex->priv;
-    if (s->public.buf.data) aligned_free(s->public.buf.data);
+    vif_buffer_free(&s->public.buf);
     vmaf_dictionary_free(&s->feature_name_dict);
     return 0;
 }

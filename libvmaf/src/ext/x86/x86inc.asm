@@ -815,9 +815,26 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
     %1: %2
 %endmacro
 
-; This is needed for ELF, otherwise the GNU linker assumes the stack is executable by default.
 %if FORMAT_ELF
+    ; The GNU linker assumes the stack is executable by default.
     [SECTION .note.GNU-stack noalloc noexec nowrite progbits]
+
+    %ifdef __NASM_VER__
+        %if __NASM_VER__ >= 0x020e0300 ; 2.14.03
+            %if ARCH_X86_64
+                ; Control-flow Enforcement Technology (CET) properties.
+                [SECTION .note.gnu.property alloc noexec nowrite note align=gprsize]
+                dd 0x00000004  ; n_namesz
+                dd gprsize + 8 ; n_descsz
+                dd 0x00000005  ; n_type = NT_GNU_PROPERTY_TYPE_0
+                db "GNU",0     ; n_name
+                dd 0xc0000002  ; pr_type = GNU_PROPERTY_X86_FEATURE_1_AND
+                dd 0x00000004  ; pr_datasz
+                dd 0x00000002  ; pr_data = GNU_PROPERTY_X86_FEATURE_1_SHSTK
+                dd 0x00000000  ; pr_padding
+            %endif
+        %endif
+    %endif
 %endif
 
 ; Tell debuggers how large the function was.

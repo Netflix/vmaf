@@ -119,6 +119,12 @@ static inline void PADDING_SQ_DATA_2(VifBuffer buf, int w, unsigned fwidth_half)
 void vif_statistic_8(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h);
 void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h, int bpc, int scale);
 
+int vif_buffer_alloc(VifBuffer *buf, unsigned w, unsigned h, unsigned bpc);
+void vif_buffer_free(VifBuffer *buf);
+void log_generate(uint16_t *log2_table);
+void subsample_rd_8(VifBuffer buf, unsigned w, unsigned h);
+void subsample_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale, int bpc);
+
 /*
  * Compute vif residuals on a vertically filtered line 
  * This is a support method for block based vip_statistic_xxx method and is typically called

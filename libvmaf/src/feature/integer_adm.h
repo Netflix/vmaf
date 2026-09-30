@@ -5,6 +5,7 @@
 #include "stdio.h"
 #include <errno.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -59,6 +60,62 @@ typedef struct AdmBuffer {
 #ifndef NUM_BUFS_ADM
 #define NUM_BUFS_ADM 30
 #endif
+
+int adm_buffer_alloc(AdmBuffer *buf, int w, int h);
+void adm_buffer_free(AdmBuffer *buf);
+void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h);
+
+void adm_dwt2_8(const uint8_t *src, const adm_dwt_band_t *dst,
+                 AdmBuffer *buf, int w, int h, int src_stride, int dst_stride);
+
+void adm_dwt2_16(const uint16_t *src, const adm_dwt_band_t *dst,
+                  AdmBuffer *buf, int w, int h, int src_stride,
+                  int dst_stride, int inp_size_bits);
+
+void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
+                   double adm_enhn_gain_limit, int32_t *adm_div_lookup);
+
+void adm_csf(AdmBuffer *buf, int w, int h, int stride,
+             double adm_norm_view_dist, int adm_ref_display_height,
+             int adm_csf_mode, double adm_csf_scale,
+             double adm_csf_diag_scale, bool measure_aim);
+
+float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
+             double adm_norm_view_dist, int adm_ref_display_height,
+             int adm_csf_mode, double adm_csf_scale,
+             double adm_csf_diag_scale, double adm_noise_weight,
+             bool measure_aim);
+
+void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
+                        double adm_enhn_gain_limit, int32_t *adm_div_lookup);
+
+void adm_dwt2_s123_combined(const int32_t *i4_ref_scale,
+                             const int32_t *i4_curr_dis, AdmBuffer *buf,
+                             int w, int h, int ref_stride, int dis_stride,
+                             int dst_stride, int scale);
+
+void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride,
+                 double adm_norm_view_dist, int adm_ref_display_height,
+                 int adm_csf_mode, double adm_csf_scale,
+                 double adm_csf_diag_scale, bool measure_aim);
+
+float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride,
+                 int csf_a_stride, int scale, double adm_norm_view_dist,
+                 int adm_ref_display_height, int adm_csf_mode,
+                 double adm_csf_scale, double adm_csf_diag_scale,
+                 double adm_noise_weight, bool measure_aim);
+
+float adm_csf_den_scale(const adm_dwt_band_t *src, int w, int h,
+                         int src_stride, double adm_norm_view_dist,
+                         int adm_ref_display_height, int adm_csf_mode,
+                         double adm_csf_scale, double adm_csf_diag_scale,
+                         double adm_noise_weight);
+
+float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, int h,
+                        int src_stride, double adm_norm_view_dist,
+                        int adm_ref_display_height, int adm_csf_mode,
+                        double adm_csf_scale, double adm_csf_diag_scale,
+                        double adm_noise_weight);
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327

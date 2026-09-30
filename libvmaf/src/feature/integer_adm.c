@@ -38,7 +38,6 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 typedef struct AdmState {
-    size_t integer_stride;
     AdmBuffer buf;
     bool debug;
     bool adm_skip_aim;
@@ -706,7 +705,7 @@ dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
     accum_inner += val; \
 }
 
-static void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h)
+void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h)
 {
     int ind0, ind1, ind2, ind3;
     const unsigned h_half = (h + 1) / 2;
@@ -796,7 +795,7 @@ static void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-static void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
+void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
                          double adm_enhn_gain_limit,
                          int32_t *adm_div_lookup)
 {
@@ -926,7 +925,7 @@ static inline uint16_t get_best15_from32(uint32_t temp, int *x)
     return temp;
 }
 
-static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
+void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
                               double adm_enhn_gain_limit,
                               int32_t *adm_div_lookup)
 {
@@ -1070,7 +1069,7 @@ static void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
     }
 }
 
-static void adm_csf(AdmBuffer *buf, int w, int h, int stride,
+void adm_csf(AdmBuffer *buf, int w, int h, int stride,
                     double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode, double adm_csf_scale,
                     double adm_csf_diag_scale, bool measure_aim)
 {
@@ -1185,7 +1184,7 @@ static void adm_csf(AdmBuffer *buf, int w, int h, int stride,
     }
 }
 
-static void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride,
+void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride,
                        double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode, double adm_csf_scale,
                        double adm_csf_diag_scale, bool measure_aim)
 {
@@ -1289,7 +1288,7 @@ static void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride,
     }
 }
 
-static float adm_csf_den_scale(const adm_dwt_band_t *src, int w, int h,
+float adm_csf_den_scale(const adm_dwt_band_t *src, int w, int h,
                                int src_stride,
                                double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode,
                                double adm_csf_scale, double adm_csf_diag_scale, double adm_noise_weight)
@@ -1391,7 +1390,7 @@ static float adm_csf_den_scale(const adm_dwt_band_t *src, int w, int h,
 
 }
 
-static float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, int h,
+float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, int h,
                               int src_stride,
                               double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode,
                               double adm_csf_scale, double adm_csf_diag_scale, double adm_noise_weight)
@@ -1496,7 +1495,7 @@ static float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, in
     return (den_scale_h + den_scale_v + den_scale_d);
 }
 
-static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
+float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
                     double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode,
                     double adm_csf_scale, double adm_csf_diag_scale, double adm_noise_weight, bool measure_aim)
 {
@@ -1908,7 +1907,7 @@ static float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stri
     return (num_scale_h + num_scale_v + num_scale_d);
 }
 
-static float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride, int scale,
+float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride, int scale,
                        double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode, double adm_csf_scale,
                        double adm_csf_diag_scale, double adm_noise_weight, bool measure_aim)
 {
@@ -2359,7 +2358,7 @@ static void i16_to_i32(adm_dwt_band_t *src, i4_adm_dwt_band_t *dst,
     }
 }
 
-static void adm_dwt2_8(const uint8_t *src, const adm_dwt_band_t *dst,
+void adm_dwt2_8(const uint8_t *src, const adm_dwt_band_t *dst,
                        AdmBuffer *buf, int w, int h, int src_stride,
                        int dst_stride)
 {
@@ -2577,7 +2576,7 @@ static void adm_dwt2_16_lo(const uint16_t *src, const adm_dwt_band_t *dst, AdmBu
     }
 }
 
-static void adm_dwt2_16(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffer *buf, int w, int h,
+void adm_dwt2_16(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffer *buf, int w, int h,
                         int src_stride, int dst_stride, int inp_size_bits)
 {
     const int16_t *filter_lo = dwt2_db2_coeffs_lo;
@@ -2674,7 +2673,7 @@ static void adm_dwt2_16(const uint16_t *src, const adm_dwt_band_t *dst, AdmBuffe
     }
 }
 
-static void adm_dwt2_s123_combined(const int32_t *i4_ref_scale, const int32_t *i4_curr_dis,
+void adm_dwt2_s123_combined(const int32_t *i4_ref_scale, const int32_t *i4_curr_dis,
                                    AdmBuffer *buf, int w, int h, int ref_stride,
                                    int dis_stride, int dst_stride, int scale)
 {
@@ -3058,6 +3057,62 @@ static inline void *i4_init_dwt_band_hvd(i4_adm_dwt_band_t *band, char *data_top
     return data_top;
 }
 
+int adm_buffer_alloc(AdmBuffer *buf, int w, int h)
+{
+    memset(buf, 0, sizeof(*buf));
+
+    buf->ind_size_x   = ALIGN_CEIL(((w + 1) / 2) * sizeof(int32_t));
+    buf->ind_size_y   = ALIGN_CEIL(((h + 1) / 2) * sizeof(int32_t));
+    size_t buf_sz_one = buf->ind_size_x * ((h + 1) / 2);
+
+    buf->data_buf = aligned_malloc(buf_sz_one * NUM_BUFS_ADM, MAX_ALIGN);
+    if (!buf->data_buf) goto fail;
+    memset(buf->data_buf, 0, buf_sz_one * NUM_BUFS_ADM);
+    buf->tmp_ref = aligned_malloc(ALIGN_CEIL(w * sizeof(int32_t)) * 4, MAX_ALIGN);
+    if (!buf->tmp_ref) goto fail;
+    buf->buf_x_orig = aligned_malloc(buf->ind_size_x * 4, MAX_ALIGN);
+    if (!buf->buf_x_orig) goto fail;
+    buf->buf_y_orig = aligned_malloc(buf->ind_size_y * 4, MAX_ALIGN);
+    if (!buf->buf_y_orig) goto fail;
+
+    void *data_top = buf->data_buf;
+    data_top = init_dwt_band(&buf->ref_dwt2, data_top, buf_sz_one / 2);
+    data_top = init_dwt_band(&buf->dis_dwt2, data_top, buf_sz_one / 2);
+    data_top = init_dwt_band_hvd(&buf->decouple_r, data_top, buf_sz_one / 2);
+    data_top = init_dwt_band_hvd(&buf->decouple_a, data_top, buf_sz_one / 2);
+    data_top = init_dwt_band_hvd(&buf->csf_a, data_top, buf_sz_one / 2);
+    data_top = init_dwt_band_hvd(&buf->csf_f, data_top, buf_sz_one / 2);
+
+    data_top = i4_init_dwt_band(&buf->i4_ref_dwt2, data_top, buf_sz_one);
+    data_top = i4_init_dwt_band(&buf->i4_dis_dwt2, data_top, buf_sz_one);
+    data_top = i4_init_dwt_band_hvd(&buf->i4_decouple_r, data_top, buf_sz_one);
+    data_top = i4_init_dwt_band_hvd(&buf->i4_decouple_a, data_top, buf_sz_one);
+    data_top = i4_init_dwt_band_hvd(&buf->i4_csf_a, data_top, buf_sz_one);
+    data_top = i4_init_dwt_band_hvd(&buf->i4_csf_f, data_top, buf_sz_one);
+
+    void *ind_buf_y = buf->buf_y_orig;
+    init_index(buf->ind_y, ind_buf_y, buf->ind_size_y);
+    void *ind_buf_x = buf->buf_x_orig;
+    init_index(buf->ind_x, ind_buf_x, buf->ind_size_x);
+
+    div_lookup_generator();
+
+    return 0;
+
+fail:
+    adm_buffer_free(buf);
+    return -ENOMEM;
+}
+
+void adm_buffer_free(AdmBuffer *buf)
+{
+    if (buf->data_buf)    aligned_free(buf->data_buf);
+    if (buf->tmp_ref)     aligned_free(buf->tmp_ref);
+    if (buf->buf_x_orig)  aligned_free(buf->buf_x_orig);
+    if (buf->buf_y_orig)  aligned_free(buf->buf_y_orig);
+    memset(buf, 0, sizeof(*buf));
+}
+
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h)
 {
@@ -3114,41 +3169,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     }
 #endif
 
-    s->integer_stride   = ALIGN_CEIL(w * sizeof(int32_t));
-    s->buf.ind_size_x   = ALIGN_CEIL(((w + 1) / 2) * sizeof(int32_t));
-    s->buf.ind_size_y   = ALIGN_CEIL(((h + 1) / 2) * sizeof(int32_t));
-    size_t buf_sz_one   = s->buf.ind_size_x * ((h + 1) / 2);
-
-    s->buf.data_buf     = aligned_malloc(buf_sz_one * NUM_BUFS_ADM, MAX_ALIGN);
-    if (!s->buf.data_buf) goto fail;
-    s->buf.tmp_ref      = aligned_malloc(s->integer_stride * 4, MAX_ALIGN);
-    if (!s->buf.tmp_ref) goto fail;
-    s->buf.buf_x_orig   = aligned_malloc(s->buf.ind_size_x * 4, MAX_ALIGN);
-    if (!s->buf.buf_x_orig) goto fail;
-    s->buf.buf_y_orig   = aligned_malloc(s->buf.ind_size_y * 4, MAX_ALIGN);
-    if (!s->buf.buf_y_orig) goto fail;
-
-    void *data_top = s->buf.data_buf;
-    data_top = init_dwt_band(&s->buf.ref_dwt2, data_top, buf_sz_one / 2);
-    data_top = init_dwt_band(&s->buf.dis_dwt2, data_top, buf_sz_one / 2);
-    data_top = init_dwt_band_hvd(&s->buf.decouple_r, data_top, buf_sz_one / 2);
-    data_top = init_dwt_band_hvd(&s->buf.decouple_a, data_top, buf_sz_one / 2);
-    data_top = init_dwt_band_hvd(&s->buf.csf_a, data_top, buf_sz_one / 2);
-    data_top = init_dwt_band_hvd(&s->buf.csf_f, data_top, buf_sz_one / 2);
-
-    data_top = i4_init_dwt_band(&s->buf.i4_ref_dwt2, data_top, buf_sz_one);
-    data_top = i4_init_dwt_band(&s->buf.i4_dis_dwt2, data_top, buf_sz_one);
-    data_top = i4_init_dwt_band_hvd(&s->buf.i4_decouple_r, data_top, buf_sz_one);
-    data_top = i4_init_dwt_band_hvd(&s->buf.i4_decouple_a, data_top, buf_sz_one);
-    data_top = i4_init_dwt_band_hvd(&s->buf.i4_csf_a, data_top, buf_sz_one);
-    data_top = i4_init_dwt_band_hvd(&s->buf.i4_csf_f, data_top, buf_sz_one);
-
-    void *ind_buf_y = s->buf.buf_y_orig;
-    init_index(s->buf.ind_y, ind_buf_y, s->buf.ind_size_y);
-    void *ind_buf_x = s->buf.buf_x_orig;
-    init_index(s->buf.ind_x, ind_buf_x, s->buf.ind_size_x);
-
-    div_lookup_generator();
+    if (adm_buffer_alloc(&s->buf, w, h)) goto fail;
 
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features,
@@ -3158,10 +3179,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     return 0;
 
 fail:
-    if (s->buf.data_buf)    aligned_free(s->buf.data_buf);
-    if (s->buf.tmp_ref)     aligned_free(s->buf.tmp_ref);
-    if (s->buf.buf_x_orig)  aligned_free(s->buf.buf_x_orig);
-    if (s->buf.buf_y_orig)  aligned_free(s->buf.buf_y_orig);
+    adm_buffer_free(&s->buf);
     vmaf_dictionary_free(&s->feature_name_dict);
     return -ENOMEM;
 }
@@ -3263,10 +3281,7 @@ static int close(VmafFeatureExtractor *fex)
 {
     AdmState *s = fex->priv;
 
-    if (s->buf.data_buf)    aligned_free(s->buf.data_buf);
-    if (s->buf.tmp_ref)     aligned_free(s->buf.tmp_ref);
-    if (s->buf.buf_x_orig)  aligned_free(s->buf.buf_x_orig);
-    if (s->buf.buf_y_orig)  aligned_free(s->buf.buf_y_orig);
+    adm_buffer_free(&s->buf);
     vmaf_dictionary_free(&s->feature_name_dict);
 
     return 0;

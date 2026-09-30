@@ -33,6 +33,7 @@
 #include "picture.h"
 #include "picture_copy.h"
 #include "vif_tools.h"
+#include "speed.h"
 
 #include "cpu.h"
 #if ARCH_X86
@@ -684,10 +685,10 @@ static float compute_mean(SpeedDimensions dim, const float *data,
 
 // Scalar reference implementation of the covariance-sum kernel.
 // Returns the un-normalized sum; the /N division happens in compute_covariance.
-static double compute_cov_kernel_scalar(const float *data_x, const float *data_y,
-                                        size_t stride_px, size_t height,
-                                        size_t width, double mean_x,
-                                        double mean_y)
+double compute_cov_kernel_scalar(const float *data_x, const float *data_y,
+                                 size_t stride_px, size_t height,
+                                 size_t width, double mean_x,
+                                 double mean_y)
 {
     double result = 0;
     for (size_t i = 0; i < height; i++) {

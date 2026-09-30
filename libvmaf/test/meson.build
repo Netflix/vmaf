@@ -122,6 +122,7 @@ test_cli_parse = executable('test_cli_parse',
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/'), include_directories('../tools/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
     c_args : [compat_cflags],
+    dependencies : getopt_dependency
 )
 
 test_psnr = executable('test_psnr',
@@ -226,3 +227,26 @@ test('test_propagate_metadata', test_propagate_metadata)
 test('test_adm_csf', test_adm_csf)
 test('test_barten_csf', test_barten_csf)
 test('test_motion_blend', test_motion_blend)
+
+if is_asm_enabled and (host_machine.cpu_family().startswith('arm64') or host_machine.cpu_family().startswith('aarch64'))
+    test_motion_neon = executable('test_motion_neon',
+        ['test.c', 'test_motion_neon.c', '../src/mem.c', '../src/picture.c', '../src/ref.c',
+         '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c',
+         '../src/metadata_handler.c'],
+        include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+        dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
+        objects : [
+          common_cuda_objects,
+          platform_specific_cpu_objects,
+          libvmaf_feature_static_lib.extract_all_objects(recursive: true),
+          libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
+          libsvm_static_lib.extract_all_objects(recursive: true),
+        ]
+    )
+
+    test('test_motion_neon', test_motion_neon)
+endif
+
+if get_option('enable_checkasm')
+    subdir('checkasm')
+endif

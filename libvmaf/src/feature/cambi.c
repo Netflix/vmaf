@@ -112,13 +112,15 @@ typedef void (*VmafCalcCValues)(VmafPicture *pic, const VmafPicture *mask_pic,
                                 float *c_values, uint16_t *histograms, uint16_t window_size,
                                 const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
                                 const int *diff_weights, const int *all_diffs, int width, int height);
+typedef void (*VmafComputeDpRow)(uint32_t *dp_curr, const uint32_t *dp_prev,
+                                 const uint16_t *deriv, int width, int pad_size, bool deriv_valid);
+typedef void (*VmafComputeMaskRow)(uint16_t *mask_row, const uint32_t *dp_bottom, const uint32_t *dp_top,
+                                   int width, int pad_size, uint32_t mask_index);
 
-static void filter_mode(const VmafPicture *image, int width, int height, uint16_t *buffer);
-static void decimate(VmafPicture *image, unsigned width, unsigned height);
-static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
-                               float *c_values, uint16_t *histograms, uint16_t window_size,
-                               const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
-                               const int *diff_weights, const int *all_diffs, int width, int height);
+void compute_dp_row(uint32_t *dp_curr, const uint32_t *dp_prev,
+                    const uint16_t *deriv, int width, int pad_size, bool deriv_valid);
+void compute_mask_row(uint16_t *mask_row, const uint32_t *dp_bottom, const uint32_t *dp_top,
+                      int width, int pad_size, uint32_t mask_index);
 
 typedef struct CambiState {
     VmafPicture pics[PICS_BUFFER_SIZE];
@@ -147,6 +149,8 @@ typedef struct CambiState {
     VmafCalcCValues calc_c_values_callback;
     VmafFilterMode filter_mode_callback;
     VmafDecimate decimate_callback;
+    VmafComputeDpRow compute_dp_row_callback;
+    VmafComputeMaskRow compute_mask_row_callback;
     CambiBuffers buffers;
     VmafDictionary *feature_name_dict;
 } CambiState;
@@ -362,7 +366,7 @@ static enum CambiTVIBisectFlag tvi_hard_threshold_condition(int sample, int diff
     return CAMBI_TVI_BISECT_CORRECT;
 }
 
-static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, VmafLumaRange luma_range, VmafEOTF eotf) {
+int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, VmafLumaRange luma_range, VmafEOTF eotf) {
     enum CambiTVIBisectFlag tvi_bisect;
     const int max_val = (1 << bitdepth) - 1;
 
@@ -393,7 +397,7 @@ static int get_tvi_for_diff(int diff, double tvi_threshold, int bitdepth, VmafLu
     }
 }
 
-static int get_vlt_luma(double visibility_luminance_threshold, VmafLumaRange luma_range, VmafEOTF eotf) {
+int get_vlt_luma(double visibility_luminance_threshold, VmafLumaRange luma_range, VmafEOTF eotf) {
     // find the smallest luma value above the visibility_luminance_threshold
 
     uint16_t sample = luma_range.foot;
@@ -422,7 +426,7 @@ static FORCE_INLINE void adjust_window_size(uint16_t *window_size,
     *window_size |= 1;
 }
 
-static int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_consider,
+int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_consider,
                                int **diffs_weights, int **all_diffs)
 {
     *diffs_to_consider = aligned_malloc(ALIGN_CEIL(sizeof(uint16_t)) * num_diffs, 16);
@@ -457,7 +461,7 @@ static void decrement_range(uint16_t *arr, int left, int right) {
     }
 }
 
-static void get_derivative_data_for_row(const uint16_t *image_data, uint16_t *derivative_buffer, int width, int height, int row, int stride) {
+void get_derivative_data_for_row(const uint16_t *image_data, uint16_t *derivative_buffer, int width, int height, int row, int stride) {
     for (int col = 0; col < width; col++) {
         bool horizontal_derivative = (col == width - 1 || image_data[row * stride + col] == image_data[row * stride + col + 1]);
         bool vertical_derivative = (row == height - 1 || image_data[row * stride + col] == image_data[(row + 1) * stride + col]);
@@ -630,6 +634,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->calc_c_values_callback = calculate_c_values;
     s->filter_mode_callback = filter_mode;
     s->decimate_callback = decimate;
+    s->compute_dp_row_callback = compute_dp_row;
+    s->compute_mask_row_callback = compute_mask_row;
 
 #if ARCH_X86
     unsigned flags = vmaf_get_cpu_flags();
@@ -638,6 +644,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->calc_c_values_callback = calculate_c_values_avx2;
         s->filter_mode_callback = filter_mode_avx2;
         s->decimate_callback = decimate_avx2;
+        s->compute_dp_row_callback = compute_dp_row_avx2;
+        s->compute_mask_row_callback = compute_mask_row_avx2;
     }
 #endif
 
@@ -872,7 +880,7 @@ static int cambi_preprocessing(const VmafPicture *image, VmafPicture *preprocess
 }
 
 /* Banding detection functions */
-static void decimate(VmafPicture *image, unsigned width, unsigned height) {
+void decimate(VmafPicture *image, unsigned width, unsigned height) {
     uint16_t *data = image->data[0];
     ptrdiff_t stride = image->stride[0] >> 1;
     for (unsigned i = 0; i < height; i++) {
@@ -894,7 +902,7 @@ static inline uint16_t mode3(uint16_t a, uint16_t b, uint16_t c) {
     return min3(a, b, c);
 }
 
-static void filter_mode(const VmafPicture *image, int width, int height, uint16_t *buffer) {
+void filter_mode(const VmafPicture *image, int width, int height, uint16_t *buffer) {
     uint16_t *data = image->data[0];
     ptrdiff_t stride = image->stride[0] >> 1;
     int curr_line = 0;
@@ -949,9 +957,9 @@ static FORCE_INLINE uint16_t get_mask_index(unsigned input_width, unsigned input
  *   R[c] = a[r][c] + R[c-1]                  (1D prefix sum of derivative)
  *   dp[r][c] = dp[r-1][c] + R[c]             (element-wise add, no inter-column dep)
  */
-static FORCE_INLINE void compute_dp_row(uint32_t *dp_curr, const uint32_t *dp_prev,
-                                          const uint16_t *deriv, int width, int pad_size,
-                                          bool deriv_valid) {
+void compute_dp_row(uint32_t *dp_curr, const uint32_t *dp_prev,
+                    const uint16_t *deriv, int width, int pad_size,
+                    bool deriv_valid) {
     uint32_t prefix = 0;
     int dp_offset = pad_size + 1;
     int actual_width = deriv_valid ? width : 0;
@@ -972,9 +980,9 @@ static FORCE_INLINE void compute_dp_row(uint32_t *dp_curr, const uint32_t *dp_pr
  *   mask_row[j] = (result > mask_index)
  * where delta = 2*pad_size + 1.
  */
-static FORCE_INLINE void compute_mask_row(uint16_t *mask_row,
-                                            const uint32_t *dp_bottom, const uint32_t *dp_top,
-                                            int width, int pad_size, uint32_t mask_index) {
+void compute_mask_row(uint16_t *mask_row,
+                      const uint32_t *dp_bottom, const uint32_t *dp_top,
+                      int width, int pad_size, uint32_t mask_index) {
     const int delta = 2 * pad_size + 1;
     for (int j = 0; j < width; j++) {
         uint32_t result = dp_bottom[j + delta] + dp_top[j] - dp_bottom[j] - dp_top[j + delta];
@@ -984,7 +992,9 @@ static FORCE_INLINE void compute_mask_row(uint16_t *mask_row,
 
 static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *mask,
                                        uint32_t *dp, uint16_t *derivative_buffer, uint16_t mask_index,
-                                       uint16_t filter_size, int width, int height, VmafDerivativeCalculator derivative_callback) {
+                                       uint16_t filter_size, int width, int height, VmafDerivativeCalculator derivative_callback,
+                                       VmafComputeDpRow compute_dp_row_callback,
+                                       VmafComputeMaskRow compute_mask_row_callback) {
     uint16_t pad_size = filter_size >> 1;
     uint16_t *image_data = image->data[0];
     uint16_t *mask_data = mask->data[0];
@@ -1001,7 +1011,7 @@ static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *ma
             derivative_callback(image_data, derivative_buffer, width, height, i, stride);
         }
         int curr_row = i + pad_size + 1;
-        compute_dp_row(&dp[curr_row * dp_width], &dp[(curr_row - 1) * dp_width],
+        compute_dp_row_callback(&dp[curr_row * dp_width], &dp[(curr_row - 1) * dp_width],
                        derivative_buffer, width, pad_size, deriv_valid);
     }
 
@@ -1016,13 +1026,13 @@ static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *ma
         if (deriv_valid) {
             derivative_callback(image_data, derivative_buffer, width, height, i, stride);
         }
-        compute_dp_row(&dp[curr_row * dp_width], &dp[prev_row * dp_width],
+        compute_dp_row_callback(&dp[curr_row * dp_width], &dp[prev_row * dp_width],
                        derivative_buffer, width, pad_size, deriv_valid);
         prev_row = curr_row;
         curr_row = (curr_row + 1 == dp_height ? 0 : curr_row + 1);
 
         // Then use the values to compute the square sum for the curr_compute row.
-        compute_mask_row(&mask_data[(i - pad_size) * stride],
+        compute_mask_row_callback(&mask_data[(i - pad_size) * stride],
                           &dp[bottom * dp_width], &dp[top * dp_width],
                           width, pad_size, mask_index);
         curr_compute = (curr_compute + 1 == dp_height ? 0 : curr_compute + 1);
@@ -1033,9 +1043,11 @@ static void get_spatial_mask_for_index(const VmafPicture *image, VmafPicture *ma
 
 static void get_spatial_mask(const VmafPicture *image, VmafPicture *mask,
                              uint32_t *dp, uint16_t *derivative_buffer, unsigned width, unsigned height,
-                             VmafDerivativeCalculator derivative_callback) {
+                             VmafDerivativeCalculator derivative_callback,
+                             VmafComputeDpRow compute_dp_row_callback,
+                             VmafComputeMaskRow compute_mask_row_callback) {
     uint16_t mask_index = get_mask_index(width, height, MASK_FILTER_SIZE);
-    get_spatial_mask_for_index(image, mask, dp, derivative_buffer, mask_index, MASK_FILTER_SIZE, width, height, derivative_callback);
+    get_spatial_mask_for_index(image, mask, dp, derivative_buffer, mask_index, MASK_FILTER_SIZE, width, height, derivative_callback, compute_dp_row_callback, compute_mask_row_callback);
 }
 
 static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int *diff_weights,
@@ -1086,7 +1098,7 @@ static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int
 // the count of values in the useful band. Compiler emits ~1 sub + 1 cmp per
 // pixel with no second branch, which costs less when the skip rarely fires.
 
-static void calculate_c_values_row(float *c_values, const uint16_t *histograms, const uint16_t *image,
+void calculate_c_values_row(float *c_values, const uint16_t *histograms, const uint16_t *image,
                                     const uint16_t *mask, int row, int width, ptrdiff_t stride,
                                     const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
                                     const int *diff_weights, const int *all_diffs,
@@ -1106,7 +1118,7 @@ static void calculate_c_values_row(float *c_values, const uint16_t *histograms, 
     }
 }
 
-static void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
+void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
                                float *c_values, uint16_t *histograms, uint16_t window_size,
                                const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
                                const int *diff_weights, const int *all_diffs, int width, int height) {
@@ -1269,6 +1281,8 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
                        VmafCalcCValues calc_c_values_callback,
                        VmafFilterMode filter_mode_callback,
                        VmafDecimate decimate_callback,
+                       VmafComputeDpRow compute_dp_row_callback,
+                       VmafComputeMaskRow compute_mask_row_callback,
                        double *score, bool write_heatmaps, FILE *heatmaps_files[],
                        int width, int height, int frame, bool cambi_high_res_speedup) {
 
@@ -1279,7 +1293,7 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
     int scaled_width = width;
     int scaled_height = height;
 
-    get_spatial_mask(image, mask, buffers.mask_dp, buffers.derivative_buffer, width, height, derivative_callback);
+    get_spatial_mask(image, mask, buffers.mask_dp, buffers.derivative_buffer, width, height, derivative_callback, compute_dp_row_callback, compute_mask_row_callback);
     for (unsigned scale = 0; scale < NUM_SCALES; scale++) {
         if (scale > 0 || cambi_high_res_speedup) {
             scaled_width = (scaled_width + 1) >> 1;
@@ -1327,7 +1341,7 @@ static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double 
     }
     err = cambi_score(s->pics, window_size, topk, num_diffs, s->buffers.tvi_for_diff, s->vlt_luma,
                       s->buffers, s->derivative_callback, s->calc_c_values_callback,
-                      s->filter_mode_callback, s->decimate_callback, score,
+                      s->filter_mode_callback, s->decimate_callback, s->compute_dp_row_callback, s->compute_mask_row_callback, score,
                       write_heatmaps, s->heatmaps_files, width, height, frame, (bool) s->cambi_high_res_speedup);
 
     if (err) return err;

@@ -14,3 +14,4 @@ build/
 dist/
 vmaf_output.xml
 compile_commands.json
+libvmaf/subprojects/checkasm/
