@@ -186,6 +186,7 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
 
 free_ref:
+    free(s->write_score_parameters);
     if (s->blur[0]) {
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->blur[0]);
         free(s->blur[0]);

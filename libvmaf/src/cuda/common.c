@@ -153,6 +153,9 @@ int vmaf_cuda_release(VmafCudaState *cu_state)
     return CUDA_SUCCESS;
 }
 
+/* CUresult 2 (CUDA_ERROR_OUT_OF_MEMORY); the ffnvcodec headers do not name it. */
+#define VMAF_CUDA_ERROR_OUT_OF_MEMORY 2
+
 int vmaf_cuda_buffer_alloc(VmafCudaState *cu_state, VmafCudaBuffer **p_buf,
                            size_t size)
 {
@@ -162,13 +165,17 @@ int vmaf_cuda_buffer_alloc(VmafCudaState *cu_state, VmafCudaBuffer **p_buf,
     VmafCudaBuffer *buf = (VmafCudaBuffer *)calloc(1, sizeof(*buf));
     if (!buf) return -ENOMEM;
 
-    *p_buf = buf;
     buf->size = size;
 
     CHECK_CUDA(cu_state->f, cuCtxPushCurrent(cu_state->ctx));
-    CHECK_CUDA(cu_state->f, cuMemAlloc(&buf->data, buf->size));
-
+    const CUresult cu_err = cu_state->f->cuMemAlloc(&buf->data, buf->size);
     CHECK_CUDA(cu_state->f, cuCtxPopCurrent(NULL));
+    if (cu_err != CUDA_SUCCESS) {
+        free(buf);
+        return cu_err == VMAF_CUDA_ERROR_OUT_OF_MEMORY ? -ENOMEM : -EIO;
+    }
+
+    *p_buf = buf;
     return CUDA_SUCCESS;
 }
 
