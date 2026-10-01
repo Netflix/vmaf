@@ -138,6 +138,18 @@ float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, int h,
 #define ADM_BORDER_FACTOR (0.1)
 #endif // !ADM_BORDER_FACTOR
 
+/* Smallest frame dimension integer ADM is defined for. Scale 0 splits a frame
+ * into bands of half its size, and every further scale halves again, so a
+ * dimension d reaches scale 3 as a DWT input of ceil(d / 8) samples. The
+ * transform needs 3 of them, which is d >= 17. Below that, scale 3 has an input
+ * of 2 samples or fewer (dwt2_src_indices_filt() then wraps its unsigned loop
+ * bound), and a scale 0 band of 8 samples or fewer makes adm_cm()'s
+ * ceil(log2(w) - 4) negative, which converts to uint32_t undefined and turns
+ * every `>> shift_xhcub` into a shift by 4294967295. float_adm does not score
+ * these frames either: it reads out of bounds up to 8x8 and returns scores
+ * above 1 up to 16x16. */
+#define ADM_MIN_DIM 17u
+
 /* noise multiplicative weight */
 #ifndef DEFAULT_ADM_NOISE_WEIGHT
 #define DEFAULT_ADM_NOISE_WEIGHT (0.03125)
