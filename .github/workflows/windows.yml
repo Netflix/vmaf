@@ -14,8 +14,8 @@ jobs:
           #- msystem: MINGW32
           #  MINGW_PACKAGE_PREFIX: mingw-w64-i686
           #  CFLAGS: -msse2 -mfpmath=sse -mstackrealign
-          - msystem: MINGW64
-            MINGW_PACKAGE_PREFIX: mingw-w64-x86_64
+          - msystem: UCRT64
+            MINGW_PACKAGE_PREFIX: mingw-w64-ucrt-x86_64
     env:
       CC: ccache gcc
       CXX: ccache g++
@@ -70,7 +70,7 @@ jobs:
           name: ${{ matrix.msystem }}-vmaf
           path: ${{ steps.get_info.outputs.path }}
       - name: Upload vmaf
-        if: steps.get_info.outputs.upload_url != 'null' && matrix.msystem == 'MINGW64'
+        if: steps.get_info.outputs.upload_url != 'null' && matrix.msystem == 'UCRT64'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
