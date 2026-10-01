@@ -143,6 +143,13 @@ test_framesync = executable('test_framesync',
     dependencies : [thread_lib, stdatomic_dependency],
 )
 
+test_adm_aim_score = executable('test_adm_aim_score',
+    ['test.c', 'test_adm_aim_score.c', '../src/picture.c', '../src/mem.c', '../src/ref.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies : math_lib,
+)
+
 test_adm_csf = executable('test_adm_csf',
     ['test.c', 'test_adm_csf.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
@@ -192,7 +199,15 @@ if float_enabled
         dependencies : math_lib,
     )
 
+    test_float_adm_aim_score = executable('test_float_adm_aim_score',
+        ['test.c', 'test_float_adm_aim_score.c', '../src/picture.c', '../src/mem.c', '../src/ref.c'],
+        include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+        link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+        dependencies : math_lib,
+    )
+
     test('test_vif_tools', test_vif_tools)
+    test('test_float_adm_aim_score', test_float_adm_aim_score)
     test('test_speed_chroma', test_speed_chroma)
 endif
 
@@ -242,6 +257,7 @@ test('test_psnr', test_psnr)
 test('test_framesync', test_framesync)
 test('test_propagate_metadata', test_propagate_metadata)
 test('test_adm_csf', test_adm_csf)
+test('test_adm_aim_score', test_adm_aim_score)
 test('test_barten_csf', test_barten_csf)
 test('test_motion_blend', test_motion_blend)
 test('test_conversion_policy', test_conversion_policy)

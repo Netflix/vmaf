@@ -3049,6 +3049,10 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
 
         if (den_v == 0.0) {
             out[v].score = 1.0f;
+            // den is 0 (no reference detail): the AIM ratio has no denominator
+            // either. Report its limit, clipped to 1 as in adm.c: all
+            // impairment if aim_num is positive, none if it is 0.
+            out[v].aim = aim_num[v] > 0.0 ? 1.0 : 0.0;
         }
         else {
             // normalize AIM score by the DLM denominator
