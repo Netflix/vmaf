@@ -212,3 +212,102 @@ void adm_dwt2_8_neon(const uint8_t *src, const adm_dwt_band_t *dst,
         }
     }
 }
+
+static inline float32x4_t adm_dot_s16(int16x4_t ah, int16x4_t av,
+                                     int16x4_t bh, int16x4_t bv)
+{
+    const int32x4_t h = vmull_s16(ah, bh);
+    const int32x4_t v = vmull_s16(av, bv);
+    const int64x2_t lo = vaddl_s32(vget_low_s32(h), vget_low_s32(v));
+    const int64x2_t hi = vaddl_s32(vget_high_s32(h), vget_high_s32(v));
+    return vcombine_f32(vcvt_f32_f64(vcvtq_f64_s64(lo)),
+                        vcvt_f32_f64(vcvtq_f64_s64(hi)));
+}
+
+static inline uint32x2_t adm_angle_f64(float32x2_t dot, float32x2_t omag,
+                                      float32x2_t tmag, double cos_sq)
+{
+    const float64x2_t d = vmulq_n_f64(vcvt_f64_f32(dot), 1.0 / 4096.0);
+    const float64x2_t o = vmulq_n_f64(vcvt_f64_f32(omag), 1.0 / 4096.0);
+    const float64x2_t t = vmulq_n_f64(vcvt_f64_f32(tmag), 1.0 / 4096.0);
+    return vmovn_u64(vandq_u64(vcgeq_f64(d, vdupq_n_f64(0)),
+        vcgeq_f64(vmulq_f64(d, d), vmulq_f64(vmulq_n_f64(o, cos_sq), t))));
+}
+
+static inline int16x4_t adm_decouple_band(const int16_t *ref, int16x4_t o,
+                                         int16x4_t t, uint32x4_t angle,
+                                         int gain, const int32_t *lookup)
+{
+    const int32_t div[4] = { lookup[ref[0] + 32768], lookup[ref[1] + 32768],
+                             lookup[ref[2] + 32768], lookup[ref[3] + 32768] };
+    const int32x4_t recip = vld1q_s32(div);
+    const int32x4_t dis = vmovl_s16(t), orig = vmovl_s16(o);
+    const int32x4_t ratio = vcombine_s32(
+        vrshrn_n_s64(vmull_s32(vget_low_s32(recip), vget_low_s32(dis)), 15),
+        vrshrn_n_s64(vmull_s32(vget_high_s32(recip), vget_high_s32(dis)), 15));
+    const int32x4_t k = vbslq_s32(vceqq_s32(orig, vdupq_n_s32(0)),
+        vdupq_n_s32(32768), vmaxq_s32(vdupq_n_s32(0),
+                                      vminq_s32(ratio, vdupq_n_s32(32768))));
+    const int32x4_t rst = vrshrq_n_s32(vmulq_s32(k, orig), 15);
+    if (!vmaxvq_u32(angle)) return vmovn_s32(rst);
+    const int32x4_t scaled = vmulq_n_s32(rst, gain);
+    const uint32x4_t active = vandq_u32(angle, vcgtq_s32(k, vdupq_n_s32(0)));
+    return vmovn_s32(vbslq_s32(
+        vandq_u32(active, vcgtq_s32(orig, vdupq_n_s32(0))), vminq_s32(scaled, dis),
+        vbslq_s32(vandq_u32(active, vcltq_s32(orig, vdupq_n_s32(0))),
+                   vmaxq_s32(scaled, dis), rst)));
+}
+
+void adm_decouple_neon(AdmBuffer *buf, int w, int h, int stride,
+                       double adm_enhn_gain_limit, int32_t *adm_div_lookup)
+{
+    const float cos_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
+    int left = w * ADM_BORDER_FACTOR - 0.5 - 1;
+    int top = h * ADM_BORDER_FACTOR - 0.5 - 1;
+    int right = w - left + 2, bottom = h - top + 2;
+    left = left < 0 ? 0 : left;
+    top = top < 0 ? 0 : top;
+    right = right > w ? w : right;
+    bottom = bottom > h ? h : bottom;
+    if (right - left < 4 || adm_enhn_gain_limit != (int) adm_enhn_gain_limit) {
+        adm_decouple(buf, w, h, stride, adm_enhn_gain_limit, adm_div_lookup);
+        return;
+    }
+    for (int i = top; i < bottom; i++) {
+        for (int j = left; ; j += 4) {
+            if (j > right - 4) j = right - 4;
+            const int off = i * stride + j;
+            const int16x4_t oh = vld1_s16(buf->ref_dwt2.band_h + off);
+            const int16x4_t ov = vld1_s16(buf->ref_dwt2.band_v + off);
+            const int16x4_t od = vld1_s16(buf->ref_dwt2.band_d + off);
+            const int16x4_t th = vld1_s16(buf->dis_dwt2.band_h + off);
+            const int16x4_t tv = vld1_s16(buf->dis_dwt2.band_v + off);
+            const int16x4_t td = vld1_s16(buf->dis_dwt2.band_d + off);
+            uint32x4_t angle = vdupq_n_u32(0);
+            // With gain 1, the Q15 reconstruction already lies between zero and dis.
+            if (adm_enhn_gain_limit != 1.0) {
+                const float32x4_t dot = adm_dot_s16(oh, ov, th, tv);
+                const float32x4_t omag = adm_dot_s16(oh, ov, oh, ov);
+                const float32x4_t tmag = adm_dot_s16(th, tv, th, tv);
+                angle = vcombine_u32(
+                    adm_angle_f64(vget_low_f32(dot), vget_low_f32(omag),
+                                   vget_low_f32(tmag), cos_sq),
+                    adm_angle_f64(vget_high_f32(dot), vget_high_f32(omag),
+                                   vget_high_f32(tmag), cos_sq));
+            }
+            const int16x4_t rh = adm_decouple_band(buf->ref_dwt2.band_h + off,
+                oh, th, angle, adm_enhn_gain_limit, adm_div_lookup);
+            const int16x4_t rv = adm_decouple_band(buf->ref_dwt2.band_v + off,
+                ov, tv, angle, adm_enhn_gain_limit, adm_div_lookup);
+            const int16x4_t rd = adm_decouple_band(buf->ref_dwt2.band_d + off,
+                od, td, angle, adm_enhn_gain_limit, adm_div_lookup);
+            vst1_s16(buf->decouple_r.band_h + off, rh);
+            vst1_s16(buf->decouple_r.band_v + off, rv);
+            vst1_s16(buf->decouple_r.band_d + off, rd);
+            vst1_s16(buf->decouple_a.band_h + off, vsub_s16(th, rh));
+            vst1_s16(buf->decouple_a.band_v + off, vsub_s16(tv, rv));
+            vst1_s16(buf->decouple_a.band_d + off, vsub_s16(td, rd));
+            if (j == right - 4) break;
+        }
+    }
+}
