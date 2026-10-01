@@ -36,6 +36,9 @@
 #include "speed.h"
 
 #include "cpu.h"
+#if ARCH_AARCH64
+#include "arm64/speed_neon.h"
+#endif
 #if ARCH_X86
 #include "x86/cpu.h"
 #include "x86/speed_avx2.h"
@@ -1142,6 +1145,10 @@ int speed_init(SpeedState *s, SpeedOptions *opt, int w, int h)
         return -ENOMEM;
 
     s->compute_cov_kernel = compute_cov_kernel_scalar;
+#if ARCH_AARCH64
+    if (vmaf_get_cpu_flags() & VMAF_ARM_CPU_FLAG_NEON)
+        s->compute_cov_kernel = compute_cov_kernel_neon;
+#endif
 #if ARCH_X86
     unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {
