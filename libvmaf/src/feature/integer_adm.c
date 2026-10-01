@@ -3003,8 +3003,8 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
 		*score = 1.0f;
 	}
 	else {
-		// normalize AIM score by the DLM denominator
-	    *score_aim = aim_num / den;
+		// normalize AIM score by the DLM denominator and clip values larger than 1
+	    *score_aim = MIN(aim_num / den, 1.0f);
 		*score = num / den;
 	}
     *score_num = num;
