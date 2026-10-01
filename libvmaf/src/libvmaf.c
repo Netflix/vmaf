@@ -92,6 +92,8 @@ typedef struct VmafContext {
     } pic_params;
     unsigned pic_cnt;
     bool flushed;
+    unsigned last_index;       // index of the last picture pair accepted
+    bool have_last_index;
     VmafPicture prev_ref;      // n-1 ref pic for PREV_REF extractors (in-order only)
     VmafPicture prev_prev_ref; // n-2 ref pic for PREV_REF extractors (in-order only)
 } VmafContext;
@@ -836,6 +838,11 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     if (!ref != !dist) return -EINVAL;
     if (!ref && !dist) return flush_context(vmaf);
 
+    // The motion extractors compare each picture with the one submitted
+    // before it, and flush() assumes indices 0..n-1 are all present, so
+    // pictures have to arrive in increasing index order.
+    if (vmaf->have_last_index && index <= vmaf->last_index) return -EINVAL;
+
     int err = 0;
 
     vmaf->pic_cnt++;
@@ -844,6 +851,9 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
 
     err = check_picture_pool(vmaf);
     if (err) return err;
+
+    vmaf->last_index = index;
+    vmaf->have_last_index = true;
 
 #ifdef HAVE_CUDA
     err = check_ring_buffer(vmaf);

@@ -133,7 +133,7 @@ int vmaf_picture_alloc(VmafPicture *pic, enum VmafPixelFormat pix_fmt,
                         unsigned bpc, unsigned w, unsigned h);
 ```
 
-Read all of you input pictures in a loop with `vmaf_read_pictures()`. When you are done reading pictures, some feature extractors may have internal buffers may still need to be flushed. Call `vmaf_read_pictures()` again with `ref` and `dist` set to `NULL` to flush these buffers. Once buffers are flushed, all further calls to `vmaf_read_pictures()` are invalid.
+Read all of you input pictures in a loop with `vmaf_read_pictures()`. Submit the pictures in increasing `index` order, starting at 0 and without gaps; an `index` that does not exceed the previous one is rejected with `-EINVAL`. When you are done reading pictures, some feature extractors may have internal buffers may still need to be flushed. Call `vmaf_read_pictures()` again with `ref` and `dist` set to `NULL` to flush these buffers. Once buffers are flushed, all further calls to `vmaf_read_pictures()` are invalid.
 
 ```c
 int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
