@@ -274,6 +274,7 @@ if is_asm_enabled
           feature_src_dir + 'arm64/vif_neon.c',
           feature_src_dir + 'arm64/adm_neon.c',
           feature_src_dir + 'arm64/motion_neon.c',
+          feature_src_dir + 'arm64/speed_neon.c',
         ]
 
           arm64_static_lib = static_library(
