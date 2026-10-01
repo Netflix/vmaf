@@ -69,6 +69,10 @@ void vif_statistic_s(const float *mu1_sq, const float *mu2_sq, const float *xx_f
 
 void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth);
 
+void vif_filter1d_dec16_s(const float *f, const float *src, float *dst,
+                        float *tmp, int w, int h, int src_stride,
+                        int dst_stride, int fwidth);
+
 void vif_filter1d_sq_s(const float *f, const float *src, float *dst, float *tmpbuf, int w, int h, int src_stride, int dst_stride, int fwidth);
 
 void vif_filter1d_xy_s(const float *f, const float *src1, const float *src2, float *dst, float *tmpbuf, int w, int h, int src1_stride, int src2_stride, int dst_stride, int fwidth);
