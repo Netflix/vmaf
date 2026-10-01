@@ -144,8 +144,11 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
     if (y < end_row && x < end_col)
     {
         int pos_x[3] = {x - 1, x, x + 1};
-        pos_x[0] = abs(pos_x[0]);
-        pos_x[2] = pos_x[2] - max(0, 2*(x - w)+1);
+        // the left border mirrors {1, 0, 1} and the right border replicates
+        // {w - 2, w - 1, w - 1}, as the CPU's ADM_CM_THRESH_S_* macros do. Clamp the
+        // neighbour's position: x itself is inside the band.
+        pos_x[0] = min(abs(pos_x[0]), w - 1);
+        pos_x[2] = min(pos_x[2], w - 1);
 
 #pragma unroll
         for (int theta = 0; theta < 3; ++theta)
@@ -165,8 +168,7 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
             for (int row = 0; row < total_rows;++row)
             {
                 int pos_y = y - 1 + row;
-                pos_y = abs(pos_y);
-                pos_y = pos_y - max(0, 2*(y - h)+1);
+                pos_y = min(abs(pos_y), h - 1);
 
                 int16_t src = angles[theta][pos_y * src_stride + x];
                 int16_t *flt_ptr = flt_angles[theta] + pos_y*src_stride;
