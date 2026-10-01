@@ -3120,6 +3120,13 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     (void) pix_fmt;
     (void) bpc;
 
+    if (w < ADM_MIN_DIM || h < ADM_MIN_DIM) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "%s: invalid size (%ux%u), width and height must be at least %u\n",
+                 fex->name, w, h, ADM_MIN_DIM);
+        return -EINVAL;
+    }
+
     s->dwt2_8 = adm_dwt2_8;
     s->dwt2_16 = adm_dwt2_16;
     s->adm_decouple = adm_decouple;
