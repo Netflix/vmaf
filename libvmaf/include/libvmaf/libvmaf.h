@@ -192,7 +192,12 @@ int vmaf_import_feature_score(VmafContext *vmaf, const char *feature_name,
  *
  * @param dist  Distorted picture.
  *
- * @param index Picture index.
+ * @param index Picture index. Submit pictures in increasing index order,
+ *              starting at 0 and without gaps: the motion extractors compare
+ *              a picture with the one submitted before it, and flush only
+ *              completes motion2 for the indices before the first gap. An
+ *              index that does not exceed the previous one is rejected with
+ *              -EINVAL.
  *
  *
  * @return 0 on success, or < 0 (a negative errno code) on error.

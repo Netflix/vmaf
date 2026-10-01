@@ -134,6 +134,13 @@ test_psnr = executable('test_psnr',
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
 )
 
+test_read_pictures_order = executable('test_read_pictures_order',
+    ['test.c', 'test_read_pictures_order.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies:[stdatomic_dependency, cuda_dependency],
+)
+
 test_framesync = executable('test_framesync',
     ['test.c', 'test_framesync.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
@@ -248,6 +255,7 @@ test('test_luminance_tools', test_luminance_tools)
 test('test_cli_parse', test_cli_parse)
 test('test_psnr', test_psnr)
 test('test_framesync', test_framesync)
+test('test_read_pictures_order', test_read_pictures_order)
 test('test_propagate_metadata', test_propagate_metadata)
 test('test_adm_csf', test_adm_csf)
 test('test_barten_csf', test_barten_csf)
