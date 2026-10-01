@@ -695,6 +695,16 @@ angle_flag = ((((float)ot_dp / 4096.0) >= 0.0f) && \
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0))); \
 } \
 
+/* _mm256_madd_epi16 sums two int16 products in int32. The sum wraps in one case
+ * only: both products are 2^30 (four operands of -32768) and the lane reads
+ * INT32_MIN for 2^31. The scalar kernel forms these sums in int64, so read the
+ * squared magnitudes, which are never negative, as unsigned and map INT32_MIN of
+ * the dot product back to 2^31. */
+#define madd_sq_lane(v, lane) ((uint32_t)_mm256_extract_epi32((v), (lane)))
+#define madd_dp_lane(v, lane) \
+    (_mm256_extract_epi32((v), (lane)) == INT32_MIN ? -(int64_t)INT32_MIN \
+                                                    : (int64_t)_mm256_extract_epi32((v), (lane)))
+
 void adm_decouple_avx2(AdmBuffer *buf, int w, int h, int stride,
                          double adm_enhn_gain_limit, int32_t* adm_div_lookup)
 {
@@ -743,14 +753,14 @@ void adm_decouple_avx2(AdmBuffer *buf, int w, int h, int stride,
             __m256i t_mag_sq_256 = _mm256_madd_epi16(th_tv, th_tv);
 
             int angle_flag_r[8];
-            calc_angle(_mm256_extract_epi32(ot_dp_256, 0), _mm256_extract_epi32(o_mag_sq_256, 0), _mm256_extract_epi32(t_mag_sq_256, 0), angle_flag_r[0]);
-            calc_angle(_mm256_extract_epi32(ot_dp_256, 1), _mm256_extract_epi32(o_mag_sq_256, 1), _mm256_extract_epi32(t_mag_sq_256, 1), angle_flag_r[1]);
-            calc_angle(_mm256_extract_epi32(ot_dp_256, 2), _mm256_extract_epi32(o_mag_sq_256, 2), _mm256_extract_epi32(t_mag_sq_256, 2), angle_flag_r[2]);
-            calc_angle(_mm256_extract_epi32(ot_dp_256, 3), _mm256_extract_epi32(o_mag_sq_256, 3), _mm256_extract_epi32(t_mag_sq_256, 3), angle_flag_r[3]);
-            calc_angle(_mm256_extract_epi32(ot_dp_256, 4), _mm256_extract_epi32(o_mag_sq_256, 4), _mm256_extract_epi32(t_mag_sq_256, 4), angle_flag_r[4]);
-            calc_angle(_mm256_extract_epi32(ot_dp_256, 5), _mm256_extract_epi32(o_mag_sq_256, 5), _mm256_extract_epi32(t_mag_sq_256, 5), angle_flag_r[5]);
-            calc_angle(_mm256_extract_epi32(ot_dp_256, 6), _mm256_extract_epi32(o_mag_sq_256, 6), _mm256_extract_epi32(t_mag_sq_256, 6), angle_flag_r[6]);
-            calc_angle(_mm256_extract_epi32(ot_dp_256, 7), _mm256_extract_epi32(o_mag_sq_256, 7), _mm256_extract_epi32(t_mag_sq_256, 7), angle_flag_r[7]);
+            calc_angle(madd_dp_lane(ot_dp_256, 0), madd_sq_lane(o_mag_sq_256, 0), madd_sq_lane(t_mag_sq_256, 0), angle_flag_r[0]);
+            calc_angle(madd_dp_lane(ot_dp_256, 1), madd_sq_lane(o_mag_sq_256, 1), madd_sq_lane(t_mag_sq_256, 1), angle_flag_r[1]);
+            calc_angle(madd_dp_lane(ot_dp_256, 2), madd_sq_lane(o_mag_sq_256, 2), madd_sq_lane(t_mag_sq_256, 2), angle_flag_r[2]);
+            calc_angle(madd_dp_lane(ot_dp_256, 3), madd_sq_lane(o_mag_sq_256, 3), madd_sq_lane(t_mag_sq_256, 3), angle_flag_r[3]);
+            calc_angle(madd_dp_lane(ot_dp_256, 4), madd_sq_lane(o_mag_sq_256, 4), madd_sq_lane(t_mag_sq_256, 4), angle_flag_r[4]);
+            calc_angle(madd_dp_lane(ot_dp_256, 5), madd_sq_lane(o_mag_sq_256, 5), madd_sq_lane(t_mag_sq_256, 5), angle_flag_r[5]);
+            calc_angle(madd_dp_lane(ot_dp_256, 6), madd_sq_lane(o_mag_sq_256, 6), madd_sq_lane(t_mag_sq_256, 6), angle_flag_r[6]);
+            calc_angle(madd_dp_lane(ot_dp_256, 7), madd_sq_lane(o_mag_sq_256, 7), madd_sq_lane(t_mag_sq_256, 7), angle_flag_r[7]);
 
             __m256i angle_flag = _mm256_mullo_epi32(_mm256_setr_epi32(angle_flag_r[0], angle_flag_r[1], angle_flag_r[2], angle_flag_r[3], angle_flag_r[4], angle_flag_r[5], angle_flag_r[6], angle_flag_r[7]), _mm256_set1_epi32(-1));
 
@@ -848,16 +858,18 @@ void adm_decouple_avx2(AdmBuffer *buf, int w, int h, int stride,
             __m256i mask_rst_v = _mm256_and_si256(mask_min_max_v, angle_flag);
             __m256i mask_rst_d = _mm256_and_si256(mask_min_max_d, angle_flag);
 
+            /* Truncate rst * gain like the (int16_t) store of the scalar MIN/MAX does; a rounding
+             * conversion differs from it whenever the gain limit is fractional. */
             __m256d adm_gain_d = _mm256_set1_pd(adm_enhn_gain_limit);
             __m256d rst_h_gainlo_d = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extractf128_si256(rst_h, 0)), adm_gain_d);
             __m256d rst_h_gainhi_d = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extractf128_si256(rst_h, 1)), adm_gain_d);
-            __m256i rst_h_gain = _mm256_insertf128_si256(_mm256_castsi128_si256(_mm256_cvtpd_epi32(rst_h_gainlo_d)), _mm256_cvtpd_epi32(rst_h_gainhi_d),1);
+            __m256i rst_h_gain = _mm256_insertf128_si256(_mm256_castsi128_si256(_mm256_cvttpd_epi32(rst_h_gainlo_d)), _mm256_cvttpd_epi32(rst_h_gainhi_d),1);
             __m256d rst_v_gainlo_d = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extractf128_si256(rst_v, 0)), adm_gain_d);
             __m256d rst_v_gainhi_d = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extractf128_si256(rst_v, 1)), adm_gain_d);
-            __m256i rst_v_gain = _mm256_insertf128_si256(_mm256_castsi128_si256(_mm256_cvtpd_epi32(rst_v_gainlo_d)), _mm256_cvtpd_epi32(rst_v_gainhi_d),1);
+            __m256i rst_v_gain = _mm256_insertf128_si256(_mm256_castsi128_si256(_mm256_cvttpd_epi32(rst_v_gainlo_d)), _mm256_cvttpd_epi32(rst_v_gainhi_d),1);
             __m256d rst_d_gainlo_d = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extractf128_si256(rst_d, 0)), adm_gain_d);
             __m256d rst_d_gainhi_d = _mm256_mul_pd(_mm256_cvtepi32_pd(_mm256_extractf128_si256(rst_d, 1)), adm_gain_d);
-            __m256i rst_d_gain = _mm256_insertf128_si256(_mm256_castsi128_si256(_mm256_cvtpd_epi32(rst_d_gainlo_d)), _mm256_cvtpd_epi32(rst_d_gainhi_d),1);
+            __m256i rst_d_gain = _mm256_insertf128_si256(_mm256_castsi128_si256(_mm256_cvttpd_epi32(rst_d_gainlo_d)), _mm256_cvttpd_epi32(rst_d_gainhi_d),1);
 
             __m256i h_min = _mm256_min_epi32(rst_h_gain, th);
             __m256i v_min = _mm256_min_epi32(rst_v_gain, tv);
