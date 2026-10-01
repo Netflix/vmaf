@@ -124,19 +124,20 @@ static adm_dwt2_16_fn get_dwt2_16(unsigned cpu_flags)
 
 static adm_decouple_fn get_decouple(unsigned cpu_flags)
 {
-#if ARCH_X86
     adm_decouple_fn fn = adm_decouple;
+#if ARCH_X86
     if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
         fn = adm_decouple_avx2;
 #if HAVE_AVX512
     if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
         fn = adm_decouple_avx512;
 #endif
-    return fn;
+#elif ARCH_AARCH64
+    if (cpu_flags & VMAF_ARM_CPU_FLAG_NEON) fn = adm_decouple_neon;
 #else
     (void) cpu_flags;
-    return 0;
 #endif
+    return fn;
 }
 
 static adm_csf_fn get_csf(unsigned cpu_flags)
@@ -415,10 +416,26 @@ static const struct { int w, h; } post_dwt_sizes[] = {
 
 static void check_adm_decouple(void)
 {
-    for (size_t i = 0; i < sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+    static const struct { int w, h; } sizes[] = {
+#if ARCH_AARCH64
+        { 4, 4 }, { 6, 6 }, { 8, 8 }, { 10, 8 }, { 12, 8 }, { 14, 8 }, { 257, 193 },
+#endif
+        { 16, 16 }, { 33, 21 }, { 65, 49 }, { 32, 20 }, { 64, 48 },
+    };
+#if ARCH_AARCH64
+    const int patterns = 5;
+    static const double gains[] = {
+        1.0, 1.1, 1.5, 2.0, 3.0, DEFAULT_ADM_ENHN_GAIN_LIMIT,
+    };
+#else
+    const int patterns = 1;
+    static const double gains[] = { DEFAULT_ADM_ENHN_GAIN_LIMIT };
+#endif
+    for (int pattern = 0; pattern < patterns; pattern++)
+    for (size_t i = 0; i < sizeof(sizes) / sizeof(*sizes);
          i++)
     {
-        const int w = post_dwt_sizes[i].w, h = post_dwt_sizes[i].h;
+        const int w = sizes[i].w, h = sizes[i].h;
 
         AdmBuffer buf_c, buf_a;
         if (adm_buffer_alloc(&buf_c, w, h)) continue;
@@ -428,6 +445,11 @@ static void check_adm_decouple(void)
         }
         const int stride = (int) (buf_c.ind_size_x >> 2);
         const int w_half = (w + 1) / 2, h_half = (h + 1) / 2;
+#if ARCH_AARCH64
+        const int columns = stride;
+#else
+        const int columns = w_half;
+#endif
 
         fill_band(buf_c.ref_dwt2.band_a, h_half, stride);
         fill_band(buf_c.ref_dwt2.band_h, h_half, stride);
@@ -437,6 +459,36 @@ static void check_adm_decouple(void)
         fill_band(buf_c.dis_dwt2.band_h, h_half, stride);
         fill_band(buf_c.dis_dwt2.band_v, h_half, stride);
         fill_band(buf_c.dis_dwt2.band_d, h_half, stride);
+
+        if (pattern) {
+            static const int16_t values[] = {
+                0, 1, -1, 2, -2, 32767, -32768, 16384, -16384, 4095, -4095
+            };
+            int16_t *ref[] = { buf_c.ref_dwt2.band_h, buf_c.ref_dwt2.band_v,
+                               buf_c.ref_dwt2.band_d };
+            int16_t *dis[] = { buf_c.dis_dwt2.band_h, buf_c.dis_dwt2.band_v,
+                               buf_c.dis_dwt2.band_d };
+            for (int row = 0; row < h_half; row++)
+                for (int col = 0; col < stride; col++)
+                    for (int band = 0; band < 3; band++) {
+                        const int off = row * stride + col;
+                        if (pattern == 1) {
+                            ref[band][off] = (int16_t) checkasm_rand_uint32();
+                            dis[band][off] = ref[band][off] / 2;
+                        } else if (pattern == 4) {
+                            ref[band][off] = band == 0 ? 8192 : band == 1 ? 0 : 7;
+                            dis[band][off] = band == 0 ? 8192 :
+                                            band == 1 ? 142 + col % 3 : 21;
+                        } else if (pattern == 3) {
+                            const int value = (checkasm_rand_uint32() % 32001) - 16000;
+                            ref[band][off] = value;
+                            dis[band][off] = value * 3 / 2;
+                        } else {
+                            ref[band][off] = values[(col + band) % 11];
+                            dis[band][off] = values[(row + col + band) % 11];
+                        }
+                    }
+        }
 
         copy_band(buf_a.ref_dwt2.band_a, buf_c.ref_dwt2.band_a, h_half, stride);
         copy_band(buf_a.ref_dwt2.band_h, buf_c.ref_dwt2.band_h, h_half, stride);
@@ -449,29 +501,44 @@ static void check_adm_decouple(void)
 
         checkasm_declare(void, AdmBuffer *, int, int, int, double, int32_t *);
 
+        for (size_t g = 0; g < sizeof(gains) / sizeof(*gains); g++)
         if (checkasm_check_func(get_decouple(checkasm_get_cpu_flags()),
-                                 "adm_decouple_%dx%d", w, h))
+                                 "adm_decouple_%dx%d_pattern%d_gain%g",
+                                 w, h, pattern, gains[g]))
         {
+            const size_t bytes = (size_t) h_half * stride * sizeof(int16_t);
+            memset(buf_c.decouple_r.band_h, 0xa5, bytes);
+            memset(buf_c.decouple_r.band_v, 0xa5, bytes);
+            memset(buf_c.decouple_r.band_d, 0xa5, bytes);
+            memset(buf_c.decouple_a.band_h, 0xa5, bytes);
+            memset(buf_c.decouple_a.band_v, 0xa5, bytes);
+            memset(buf_c.decouple_a.band_d, 0xa5, bytes);
+            memset(buf_a.decouple_r.band_h, 0xa5, bytes);
+            memset(buf_a.decouple_r.band_v, 0xa5, bytes);
+            memset(buf_a.decouple_r.band_d, 0xa5, bytes);
+            memset(buf_a.decouple_a.band_h, 0xa5, bytes);
+            memset(buf_a.decouple_a.band_v, 0xa5, bytes);
+            memset(buf_a.decouple_a.band_d, 0xa5, bytes);
             checkasm_call_ref(&buf_c, w_half, h_half, stride,
-                               DEFAULT_ADM_ENHN_GAIN_LIMIT, div_lookup);
+                               gains[g], div_lookup);
             checkasm_call_new(&buf_a, w_half, h_half, stride,
-                               DEFAULT_ADM_ENHN_GAIN_LIMIT, div_lookup);
+                               gains[g], div_lookup);
 
             check2d_band(buf_c.decouple_r.band_h, buf_a.decouple_r.band_h,
-                         w_half, h_half, stride, "decouple_r.band_h");
+                         columns, h_half, stride, "decouple_r.band_h");
             check2d_band(buf_c.decouple_r.band_v, buf_a.decouple_r.band_v,
-                         w_half, h_half, stride, "decouple_r.band_v");
+                         columns, h_half, stride, "decouple_r.band_v");
             check2d_band(buf_c.decouple_r.band_d, buf_a.decouple_r.band_d,
-                         w_half, h_half, stride, "decouple_r.band_d");
+                         columns, h_half, stride, "decouple_r.band_d");
             check2d_band(buf_c.decouple_a.band_h, buf_a.decouple_a.band_h,
-                         w_half, h_half, stride, "decouple_a.band_h");
+                         columns, h_half, stride, "decouple_a.band_h");
             check2d_band(buf_c.decouple_a.band_v, buf_a.decouple_a.band_v,
-                         w_half, h_half, stride, "decouple_a.band_v");
+                         columns, h_half, stride, "decouple_a.band_v");
             check2d_band(buf_c.decouple_a.band_d, buf_a.decouple_a.band_d,
-                         w_half, h_half, stride, "decouple_a.band_d");
+                         columns, h_half, stride, "decouple_a.band_d");
 
             checkasm_bench_new(&buf_a, w_half, h_half, stride,
-                                DEFAULT_ADM_ENHN_GAIN_LIMIT, div_lookup);
+                                gains[g], div_lookup);
         }
 
         adm_buffer_free(&buf_c);

@@ -8,4 +8,7 @@ void adm_dwt2_8_neon(const uint8_t *src, const adm_dwt_band_t *dst,
                      AdmBuffer *buf, int w, int h, int src_stride,
                      int dst_stride);
 
+void adm_decouple_neon(AdmBuffer *buf, int w, int h, int stride,
+                       double adm_enhn_gain_limit, int32_t *adm_div_lookup);
+
 #endif /* ARM64_ADM_H_ */
