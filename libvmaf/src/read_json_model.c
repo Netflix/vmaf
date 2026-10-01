@@ -443,13 +443,9 @@ static int model_parse(json_stream *s, VmafModel *model,
     return err;
 }
 
-static int vmaf_read_json_model(VmafModel **model, VmafModelConfig *cfg,
-                                json_stream *s)
+static int model_alloc_and_parse(VmafModel *m, VmafModelConfig *cfg,
+                                 json_stream *s)
 {
-    VmafModel *const m = *model = malloc(sizeof(*m));
-    if (!m) return -ENOMEM;
-    memset(m, 0, sizeof(*m));
-
     const size_t model_sz = sizeof(*m->feature) * MAX_FEATURE_COUNT;
     m->feature = malloc(model_sz);
     if (!m->feature) return -ENOMEM;
@@ -464,6 +460,22 @@ static int vmaf_read_json_model(VmafModel **model, VmafModelConfig *cfg,
     memset(m->score_transform.knots.list, 0, knots_sz);
 
     return model_parse(s, m, cfg->flags);
+}
+
+static int vmaf_read_json_model(VmafModel **model, VmafModelConfig *cfg,
+                                json_stream *s)
+{
+    VmafModel *const m = *model = malloc(sizeof(*m));
+    if (!m) return -ENOMEM;
+    memset(m, 0, sizeof(*m));
+
+    const int err = model_alloc_and_parse(m, cfg, s);
+    if (err) {
+        // do not hand a partially built model back to the caller
+        vmaf_model_destroy(m);
+        *model = NULL;
+    }
+    return err;
 }
 
 int vmaf_read_json_model_from_buffer(VmafModel **model, VmafModelConfig *cfg,
