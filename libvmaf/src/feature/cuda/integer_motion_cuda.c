@@ -276,8 +276,12 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     const unsigned src_blurred_idx = (index + 0) % 2;
     const unsigned prev_blurred_idx = (index + 1) % 2;
 
-    // Reset device SAD
-    CHECK_CUDA(cu_f, cuMemsetD8Async(s->sad->data, 0, sizeof(uint64_t), s->str));
+    // Reset device SAD on the picture's stream -- the one the accumulate
+    // kernel below runs on. s->str is a different non-blocking stream with no
+    // ordering edge to it, so a reset issued there can land after the kernel's
+    // atomicAdds have begun and silently wipe part of the sum.
+    CHECK_CUDA(cu_f, cuMemsetD8Async(s->sad->data, 0, sizeof(uint64_t),
+                vmaf_cuda_picture_get_stream(ref_pic)));
 
     // Compute motion score
     CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic), vmaf_cuda_picture_get_ready_event(dist_pic), CU_EVENT_WAIT_DEFAULT));
