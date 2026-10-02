@@ -394,9 +394,7 @@ void vif_filter1d_dec16_scalar_s(const float *f, const float *src, float *dst,
             for (int fi = 0; fi < fwidth; fi++) {
                 int ii = i * 16 - fwidth / 2 + fi;
                 ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 2 : ii);
-                float p = f[fi] * src[ii * src_px_stride + j];
-                VMAF_NO_FUSE(p);
-                accum += p;
+                accum += f[fi] * src[ii * src_px_stride + j];
             }
             tmp[j] = accum;
         }
@@ -406,9 +404,7 @@ void vif_filter1d_dec16_scalar_s(const float *f, const float *src, float *dst,
             for (int fj = 0; fj < fwidth; fj++) {
                 int jj = j * 16 - fwidth / 2 + fj;
                 jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 2 : jj);
-                float p = f[fj] * tmp[jj];
-                VMAF_NO_FUSE(p);
-                accum += p;
+                accum += f[fj] * tmp[jj];
             }
             dst[i * dst_px_stride + j] = accum;
         }

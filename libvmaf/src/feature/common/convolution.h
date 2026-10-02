@@ -30,8 +30,6 @@ Filter widths above this one will not use the AVX path for convolutions.
  */
 #if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
 #define VMAF_NO_FUSE(v) __asm__("" : "+x"(v))
-#elif defined(__GNUC__) && defined(__aarch64__)
-#define VMAF_NO_FUSE(v) __asm__("" : "+w"(v))
 #else
 #define VMAF_NO_FUSE(v) ((void) 0)
 #endif
