@@ -25,6 +25,18 @@ Filter widths above this one will not use the AVX path for convolutions.
 #define MAX_FWIDTH_AVX_CONV 17
 
 /*
+ * Keeps a product from being fused with the following add (FMA contraction),
+ * so results do not depend on -ffp-contract or -mfma.
+ */
+#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
+#define VMAF_NO_FUSE(v) __asm__("" : "+x"(v))
+#elif defined(__GNUC__) && defined(__aarch64__)
+#define VMAF_NO_FUSE(v) __asm__("" : "+w"(v))
+#else
+#define VMAF_NO_FUSE(v) ((void) 0)
+#endif
+
+/*
  * All functions listed here expect a SYMMETRICAL filter.
  * All array arguments must be 32-byte aligned.
  *

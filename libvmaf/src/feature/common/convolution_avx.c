@@ -39,6 +39,7 @@ void convolution_f32_avx_s_1d_h_scanline(const float * RESTRICT filter, int filt
         for (int k = 0; k < filter_width; k++) {
             __m256 g = _mm256_loadu_ps(src + j + k);
             g = _mm256_mul_ps(f[k], g);
+            VMAF_NO_FUSE(g);
             sum = _mm256_add_ps(sum, g);
         }
 
@@ -63,6 +64,7 @@ void convolution_f32_avx_s_1d_v_scanline(const float * RESTRICT filter, int filt
         for (int k = 0; k < filter_width; k++) {
             __m256 g = _mm256_load_ps(src + k * src_stride + j);
             g = _mm256_mul_ps(f[k], g);
+            VMAF_NO_FUSE(g);
             sum = _mm256_add_ps(sum, g);
         }
 
@@ -272,6 +274,7 @@ void convolution_f32_avx_dec16_s(const float * RESTRICT filter, int filter_width
             for (int k = 0; k < filter_width; k++) {
                 __m256 g = _mm256_loadu_ps(rows[k] + j);
                 g = _mm256_mul_ps(f[k], g);
+                VMAF_NO_FUSE(g);
                 sum = _mm256_add_ps(sum, g);
             }
 
@@ -281,7 +284,9 @@ void convolution_f32_avx_dec16_s(const float * RESTRICT filter, int filter_width
             float accum = 0;
 
             for (int k = 0; k < filter_width; k++) {
-                accum += filter[k] * rows[k][j];
+                float p = filter[k] * rows[k][j];
+                VMAF_NO_FUSE(p);
+                accum += p;
             }
 
             tmp[j] = accum;
@@ -294,7 +299,9 @@ void convolution_f32_avx_dec16_s(const float * RESTRICT filter, int filter_width
             for (int k = 0; k < filter_width; k++) {
                 int jj = j * 16 - radius + k;
                 jj = jj < 0 ? -jj : (jj >= width ? 2 * width - jj - 2 : jj);
-                accum += filter[k] * tmp[jj];
+                float p = filter[k] * tmp[jj];
+                VMAF_NO_FUSE(p);
+                accum += p;
             }
 
             dst[(size_t) i * dst_stride + j] = accum;
