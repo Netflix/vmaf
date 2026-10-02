@@ -16,6 +16,7 @@
  *
  */
 
+#include <errno.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -183,11 +184,29 @@ static char *test_feature_extractor_initialization_options()
     return NULL;
 }
 
+static char *test_feature_extractor_invalid_options()
+{
+    VmafFeatureExtractor *fex = vmaf_get_feature_extractor_by_name("motion");
+    mu_assert("motion extractor not found", fex);
+    VmafDictionary *options = NULL;
+    int err = vmaf_dictionary_set(&options, "motion_force_zero", "invalid", 0);
+    mu_assert("option dictionary creation failed", !err);
+    VmafFeatureExtractorContext *ctx = NULL;
+    err = vmaf_feature_extractor_context_create(&ctx, fex, options);
+    mu_assert("invalid option should be rejected", err == -EINVAL);
+    mu_assert("failed context must not be published", !ctx);
+    mu_assert("failed creation consumed caller options",
+              vmaf_dictionary_get(&options, "motion_force_zero", 0));
+    vmaf_dictionary_free(&options);
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_get_feature_extractor_by_name_and_feature_name);
     mu_run_test(test_feature_extractor_context_pool);
     mu_run_test(test_feature_extractor_flush);
     mu_run_test(test_feature_extractor_initialization_options);
+    mu_run_test(test_feature_extractor_invalid_options);
     return NULL;
 }

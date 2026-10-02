@@ -20,7 +20,56 @@
 
 #include "config.h"
 #include "test.h"
+#include "dict.h"
+
+/* model.c is included by this test, so its dictionary calls can be exercised
+ * with deterministic failures without changing the library's allocator/API. */
+static VmafDictionary *test_dictionary_merge(VmafDictionary **a,
+                                             VmafDictionary **b, uint64_t flags);
+static int test_dictionary_copy(VmafDictionary **src, VmafDictionary **dst);
+static int test_dictionary_free(VmafDictionary **dict);
+#define vmaf_dictionary_merge test_dictionary_merge
+#define vmaf_dictionary_copy test_dictionary_copy
+#define vmaf_dictionary_free test_dictionary_free
 #include "model.c"
+#undef vmaf_dictionary_merge
+#undef vmaf_dictionary_copy
+#undef vmaf_dictionary_free
+
+static int fail_merge, fail_copy;
+static VmafDictionary *tracked_input, *tracked_partial;
+static unsigned input_frees, partial_frees;
+
+static VmafDictionary *test_dictionary_merge(VmafDictionary **a,
+                                             VmafDictionary **b, uint64_t flags)
+{
+    if (fail_merge) return NULL;
+    return vmaf_dictionary_merge(a, b, flags);
+}
+
+static int test_dictionary_copy(VmafDictionary **src, VmafDictionary **dst)
+{
+    if (!fail_copy) return vmaf_dictionary_copy(src, dst);
+    /* A real dictionary copy can fail after allocating some entries. */
+    int err = vmaf_dictionary_set(dst, "partial", "copy", 0);
+    tracked_partial = *dst;
+    return err ? err : -ENOMEM;
+}
+
+static int test_dictionary_free(VmafDictionary **dict)
+{
+    if (dict && *dict) {
+        if (*dict == tracked_input) {
+            input_frees++;
+            tracked_input = NULL;
+        }
+        if (*dict == tracked_partial) {
+            partial_frees++;
+            tracked_partial = NULL;
+        }
+    }
+    return vmaf_dictionary_free(dict);
+}
 #include "read_json_model.h"
 
 static int model_compare(VmafModel *model_a, VmafModel *model_b)
@@ -371,8 +420,87 @@ static char *test_model_set_flags()
     return NULL;
 }
 
+static char *test_model_overload_merge_failure_consumes_dictionary(void)
+{
+    VmafModel *model = NULL;
+    VmafModelConfig cfg = { 0 };
+    int err = vmaf_model_load_from_path(&model, &cfg,
+                                       JSON_MODEL_PATH"vmaf_v0.6.1.json");
+    mu_assert("could not load model", !err);
+    VmafFeatureDictionary *dict = NULL;
+    err = vmaf_feature_dictionary_set(&dict, "adm_enhn_gain_limit", "1");
+    mu_assert("could not create options", !err);
+    tracked_input = (VmafDictionary*)dict;
+    input_frees = 0;
+    fail_merge = 1;
+    err = vmaf_model_feature_overload(model, "adm", dict);
+    fail_merge = 0;
+    mu_assert("merge failure not reported", err == -ENOMEM);
+    mu_assert("input dictionary not consumed on merge failure", input_frees == 1);
+    vmaf_model_destroy(model);
+    return NULL;
+}
+
+static char *test_collection_overload_copy_failure(void)
+{
+    /* No matching features are needed to exercise the collection copy path. */
+    VmafModel lead = { 0 }, member = { 0 };
+    VmafModel *members[] = { &member };
+    VmafModelCollection collection = { .model = members, .cnt = 1 };
+    VmafModelCollection *mc = &collection;
+    VmafFeatureDictionary *dict = NULL;
+    int err = vmaf_feature_dictionary_set(&dict, "adm_enhn_gain_limit", "1");
+    mu_assert("could not create options", !err);
+    tracked_input = (VmafDictionary*)dict;
+    input_frees = partial_frees = 0;
+    fail_copy = 1;
+    err = vmaf_model_collection_feature_overload(&lead, &mc, "adm", dict);
+    fail_copy = 0;
+    mu_assert("copy failure was swallowed", err == -ENOMEM);
+    mu_assert("partial copy not freed", partial_frees == 1);
+    mu_assert("input dictionary not consumed", input_frees == 1);
+    return NULL;
+}
+
+static char *test_model_overload_argument_ownership(void)
+{
+    VmafModel model = { 0 };
+    VmafModelCollection collection = { 0 }, *mc = &collection, *empty = NULL;
+    VmafFeatureDictionary *dict = NULL;
+    int err = vmaf_feature_dictionary_set(&dict, "adm_enhn_gain_limit", "1");
+    mu_assert("could not create options", !err);
+    tracked_input = (VmafDictionary*)dict;
+    input_frees = 0;
+    mu_assert("NULL model accepted",
+              vmaf_model_feature_overload(NULL, "adm", dict) == -EINVAL);
+    mu_assert("NULL feature accepted",
+              vmaf_model_feature_overload(&model, NULL, dict) == -EINVAL);
+    mu_assert("NULL options accepted",
+              vmaf_model_feature_overload(&model, "adm", NULL) == -EINVAL);
+    mu_assert("NULL collection pointer accepted",
+              vmaf_model_collection_feature_overload(&model, NULL, "adm", dict) == -EINVAL);
+    mu_assert("NULL collection accepted",
+              vmaf_model_collection_feature_overload(&model, &empty, "adm", dict) == -EINVAL);
+    mu_assert("NULL lead accepted",
+              vmaf_model_collection_feature_overload(NULL, &mc, "adm", dict) == -EINVAL);
+    mu_assert("NULL collection feature accepted",
+              vmaf_model_collection_feature_overload(&model, &mc, NULL, dict) == -EINVAL);
+    mu_assert("NULL collection options accepted",
+              vmaf_model_collection_feature_overload(&model, &mc, "adm", NULL) == -EINVAL);
+    mu_assert("invalid arguments consumed caller's dictionary", !input_frees);
+    mu_assert("caller dictionary no longer usable",
+              vmaf_dictionary_get((VmafDictionary**)&dict, "adm_enhn_gain_limit", 0));
+    mu_assert("no-match overload failed",
+              !vmaf_model_feature_overload(&model, "unknown", dict));
+    mu_assert("no-match overload did not consume dictionary", input_frees == 1);
+    return NULL;
+}
+
 char *run_tests()
 {
+    mu_run_test(test_model_overload_merge_failure_consumes_dictionary);
+    mu_run_test(test_collection_overload_copy_failure);
+    mu_run_test(test_model_overload_argument_ownership);
     mu_run_test(test_json_model);
 #if VMAF_BUILT_IN_MODELS
     mu_run_test(test_built_in_model);
