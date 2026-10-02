@@ -16,6 +16,7 @@
 
 #include <math.h>
 #include <stdint.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,6 +33,7 @@ static char *test_filter_dec16(void)
     };
     static const float scales[] = { 0.1f, 0.5f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f };
     uint32_t state = 123456789;
+    vmaf_init_cpu();
     vmaf_set_cpu_flags_mask(0);
 
     for (unsigned s = 0; s < sizeof(sizes) / sizeof(*sizes); s++) {
@@ -48,7 +50,8 @@ static char *test_filter_dec16(void)
             float *tmp = malloc((size_t)w * sizeof(float));
             float *expected = malloc(dst_count * sizeof(float));
             float *actual = malloc(dst_count * sizeof(float));
-            mu_assert("filter buffer allocation failed", src && full && tmp && expected && actual);
+            float *simd = malloc(dst_count * sizeof(float));
+            mu_assert("filter buffer allocation failed", src && full && tmp && expected && actual && simd);
 
             for (unsigned pattern = 0; pattern < 5; pattern++) {
                 for (size_t i = 0; i < src_count; i++) src[i] = NAN;
@@ -73,7 +76,7 @@ static char *test_filter_dec16(void)
                     float filter[128];
                     speed_get_antialias_filter(filter, 4, scales[k]);
                     for (size_t i = 0; i < dst_count; i++)
-                        expected[i] = actual[i] = -12345.f;
+                        expected[i] = actual[i] = simd[i] = -12345.f;
                     vif_filter1d_s(filter, src, full, tmp, w, h,
                                    src_stride * sizeof(float),
                                    full_stride * sizeof(float), fwidth);
@@ -88,6 +91,17 @@ static char *test_filter_dec16(void)
                                 w, h, layout, pattern, fwidth);
                         return "decimated filter differs from full filter";
                     }
+
+                    vmaf_set_cpu_flags_mask(UINT_MAX);
+                    vif_filter1d_dec16_s(filter, src, simd, tmp, w, h,
+                                         src_stride * sizeof(float),
+                                         dst_stride * sizeof(float), fwidth);
+                    vmaf_set_cpu_flags_mask(0);
+                    if (memcmp(expected, simd, dst_count * sizeof(float))) {
+                        fprintf(stderr, "%dx%d, layout %u, pattern %u, filter %d\n",
+                                w, h, layout, pattern, fwidth);
+                        return "SIMD decimated filter differs from full filter";
+                    }
                 }
             }
             free(allocation);
@@ -95,6 +109,7 @@ static char *test_filter_dec16(void)
             free(tmp);
             free(expected);
             free(actual);
+            free(simd);
         }
     }
     return NULL;

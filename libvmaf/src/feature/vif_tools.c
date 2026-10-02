@@ -380,9 +380,9 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf,
 }
 
 /* src and dst must not overlap; tmp holds at least w floats. */
-void vif_filter1d_dec16_s(const float *f, const float *src, float *dst,
-                        float *tmp, int w, int h, int src_stride,
-                        int dst_stride, int fwidth)
+void vif_filter1d_dec16_scalar_s(const float *f, const float *src, float *dst,
+                                 float *tmp, int w, int h, int src_stride,
+                                 int dst_stride, int fwidth)
 {
     const int src_px_stride = src_stride / sizeof(float);
     const int dst_px_stride = dst_stride / sizeof(float);
@@ -409,6 +409,24 @@ void vif_filter1d_dec16_s(const float *f, const float *src, float *dst,
             dst[i * dst_px_stride + j] = accum;
         }
     }
+}
+
+void vif_filter1d_dec16_s(const float *f, const float *src, float *dst,
+                        float *tmp, int w, int h, int src_stride,
+                        int dst_stride, int fwidth)
+{
+#if ARCH_X86
+    const unsigned flags = vmaf_get_cpu_flags();
+    if ((flags & VMAF_X86_CPU_FLAG_AVX2) && fwidth <= MAX_FWIDTH_AVX_CONV) {
+        convolution_f32_avx_dec16_s(f, fwidth, src, dst, tmp, w, h,
+                                    src_stride / sizeof(float),
+                                    dst_stride / sizeof(float));
+        return;
+    }
+#endif
+
+    vif_filter1d_dec16_scalar_s(f, src, dst, tmp, w, h, src_stride, dst_stride,
+                                fwidth);
 }
 
 // Code optimized by adding intrinsic code for the functions,

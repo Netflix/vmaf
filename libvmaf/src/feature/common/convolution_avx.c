@@ -246,3 +246,58 @@ void convolution_f32_avx_xy_s(const float * RESTRICT filter, int filter_width, c
         }
     }
 }
+
+void convolution_f32_avx_dec16_s(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, float * RESTRICT tmp, int width, int height, int src_stride, int dst_stride) {
+    const int radius = filter_width / 2;
+    const int width_floor_step = vmaf_floorn(width, AVX_STEP);
+
+    __m256 f[MAX_FWIDTH_AVX_CONV];
+    const float *rows[MAX_FWIDTH_AVX_CONV];
+
+    for (int k = 0; k < filter_width; k++) {
+        f[k] = _mm256_broadcast_ss(filter + k);
+    }
+
+    for (int i = 0; i < height / 16; i++) {
+        for (int k = 0; k < filter_width; k++) {
+            int ii = i * 16 - radius + k;
+            ii = ii < 0 ? -ii : (ii >= height ? 2 * height - ii - 2 : ii);
+            rows[k] = src + (size_t) ii * src_stride;
+        }
+
+        // Vertical pass, only at the retained row.
+        for (int j = 0; j < width_floor_step; j += AVX_STEP) {
+            __m256 sum = _mm256_setzero_ps();
+
+            for (int k = 0; k < filter_width; k++) {
+                __m256 g = _mm256_loadu_ps(rows[k] + j);
+                g = _mm256_mul_ps(f[k], g);
+                sum = _mm256_add_ps(sum, g);
+            }
+
+            _mm256_storeu_ps(tmp + j, sum);
+        }
+        for (int j = width_floor_step; j < width; j++) {
+            float accum = 0;
+
+            for (int k = 0; k < filter_width; k++) {
+                accum += filter[k] * rows[k][j];
+            }
+
+            tmp[j] = accum;
+        }
+
+        // Horizontal pass, only at the retained columns.
+        for (int j = 0; j < width / 16; j++) {
+            float accum = 0;
+
+            for (int k = 0; k < filter_width; k++) {
+                int jj = j * 16 - radius + k;
+                jj = jj < 0 ? -jj : (jj >= width ? 2 * width - jj - 2 : jj);
+                accum += filter[k] * tmp[jj];
+            }
+
+            dst[(size_t) i * dst_stride + j] = accum;
+        }
+    }
+}
