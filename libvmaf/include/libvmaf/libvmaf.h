@@ -181,7 +181,10 @@ int vmaf_import_feature_score(VmafContext *vmaf, const char *feature_name,
  * This should be called after feature extractors are registered via
  * `vmaf_use_features_from_model()` and/or `vmaf_use_feature()`.
  * `VmafContext` will take ownership of both `VmafPicture`s (`ref` and `dist`)
- * and `vmaf_picture_unref()`.
+ * and `vmaf_picture_unref()`. This holds when the call returns an error too:
+ * the pictures are released and the caller's structs are cleared. Only a call
+ * without a context, with just one of the two pictures, or the flush call
+ * below takes nothing.
  *
  * When you're done reading pictures call this function again with both `ref`
  * and `dist` set to NULL to flush all feature extractors.
