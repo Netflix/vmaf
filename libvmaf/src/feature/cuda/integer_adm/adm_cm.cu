@@ -61,39 +61,29 @@ extern "C" {
         int32_t accum_thread = 0;
         if (i < end_row && j < end_col) {
 
-            int16_t offset_i[2] = {-1, 1};
-            if (i == 0 && top <= 0) {
-                offset_i[0] = 1;
-            } else if (i == (h - 1) && bottom > (h - 1)) {
-                offset_i[1] = 0;
-            }
-
-            int16_t offset_j[2] = {-1, 1};
-            if (j == 0 && left <= 0) {
-                offset_j[0] = 1;
-            } else if (j == (w - 1) && right > (w - 1)) {
-                offset_j[1] = 0;
-            }
+            // The neighbours as the CPU's I4_ADM_CM_THRESH_S_* macros read them: the
+            // top and left borders mirror {1, 0, 1} and the bottom and right borders
+            // replicate {n - 2, n - 1, n - 1}. Both are min(abs(p), n - 1), which
+            // never leaves [0, h - 1] x [0, w - 1].
+            const int pos_i[3] = {min(abs(i - 1), h - 1), i, min(i + 1, h - 1)};
+            const int pos_j[3] = {min(abs(j - 1), w - 1), j, min(j + 1, w - 1)};
 
             int32_t thr = 0;
             for (int theta = 0; theta < 3; ++theta) {
                 int32_t sum = 0;
-                int32_t src = angles[theta][src_stride * (i + offset_i[0] + 1) + j];
-                int32_t *flt_ptr = flt_angles[theta];
-                flt_ptr += (src_stride * (i + offset_i[0]));
-                sum += flt_ptr[j + offset_j[0]];
-                sum += flt_ptr[j];
-                sum += flt_ptr[j + offset_j[1]];
-                flt_ptr += src_stride;
-                sum += flt_ptr[j + offset_j[0]];
-                sum += (int32_t)((((int64_t)I4_ONE_BY_15 * abs((int32_t)src)) +
-                            add_bef_shift_flt) >>
-                        shift_flt);
-                sum += flt_ptr[j + offset_j[1]];
-                flt_ptr += src_stride * offset_i[1];
-                sum += flt_ptr[j + offset_j[0]];
-                sum += flt_ptr[j];
-                sum += flt_ptr[j + offset_j[1]];
+                const int32_t src = angles[theta][src_stride * i + j];
+                for (int di = 0; di < 3; ++di) {
+                    const int32_t *flt_row = flt_angles[theta] + src_stride * pos_i[di];
+                    sum += flt_row[pos_j[0]];
+                    if (di == 1) {
+                        sum += (int32_t)((((int64_t)I4_ONE_BY_15 * abs(src)) +
+                                    add_bef_shift_flt) >>
+                                shift_flt);
+                    } else {
+                        sum += flt_row[pos_j[1]];
+                    }
+                    sum += flt_row[pos_j[2]];
+                }
                 thr += sum;
             }
             int32_t x = (int32_t)((((int64_t)src_band[i * src_stride + j] *
