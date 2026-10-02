@@ -1,4 +1,5 @@
 #include "feature/integer_adm.h"
+#include "feature/barten_csf_tools.h"
 
 #include <arm_neon.h>
 
@@ -310,4 +311,155 @@ void adm_decouple_neon(AdmBuffer *buf, int w, int h, int stride,
             if (j == right - 4) break;
         }
     }
+}
+
+static inline float
+dwt_quant_step(const struct dwt_model_params *params, int lambda, int theta,
+        double adm_norm_view_dist, int adm_ref_display_height)
+{
+    float r = adm_norm_view_dist * adm_ref_display_height * M_PI / 180.0;
+
+    float temp = log10(pow(2.0, lambda + 1)*params->f0*params->g[theta] / r);
+    float Q = 2.0*params->a*pow(10.0, params->k*temp*temp) /
+        dwt_7_9_basis_function_amplitudes[lambda][theta];
+
+    return Q;
+}
+
+static inline int32x4_t adm_cm_threshold_neon(const adm_dwt_band_t *a,
+                                             const adm_dwt_band_t *f,
+                                             int offset, int stride)
+{
+    const int16_t *angles[3] = { a->band_h, a->band_v, a->band_d };
+    const int16_t *filtered[3] = { f->band_h, f->band_v, f->band_d };
+    int32x4_t threshold = vdupq_n_s32(0);
+    for (int band = 0; band < 3; band++) {
+        const int16_t *p = filtered[band] + offset;
+        int32x4_t sum = vaddl_s16(vld1_s16(p - stride - 1),
+                                 vld1_s16(p - stride));
+        sum = vaddw_s16(sum, vld1_s16(p - stride + 1));
+        sum = vaddw_s16(sum, vld1_s16(p - 1));
+        sum = vaddw_s16(sum, vld1_s16(p + 1));
+        sum = vaddw_s16(sum, vld1_s16(p + stride - 1));
+        sum = vaddw_s16(sum, vld1_s16(p + stride));
+        sum = vaddw_s16(sum, vld1_s16(p + stride + 1));
+        int32x4_t center = vabsq_s32(vmovl_s16(vld1_s16(angles[band] + offset)));
+        center = vmulq_n_s32(center, ONE_BY_15);
+        center = vshrq_n_s32(vaddq_s32(center, vdupq_n_s32(2048)), 12);
+        sum = vaddw_s16(sum, vmovn_s32(center));
+        threshold = vaddq_s32(threshold, sum);
+    }
+    return threshold;
+}
+
+static inline int64x2_t adm_cm_accum_neon(const int16_t *src, int32x4_t threshold,
+                                        uint32x4_t mask, uint16_t factor,
+                                        bool diagonal, int shift_cub)
+{
+    int32x4_t x = vmulq_n_s32(vmovl_s16(vld1_s16(src)), factor);
+    threshold = diagonal ? vshlq_n_s32(threshold, 12) : vshlq_n_s32(threshold, 10);
+    x = vmaxq_s32(vsubq_s32(vabsq_s32(x), threshold), vdupq_n_s32(0));
+    x = vreinterpretq_s32_u32(vandq_u32(vreinterpretq_u32_s32(x), mask));
+    const int32x2_t lo = vget_low_s32(x), hi = vget_high_s32(x);
+    const int64x2_t round_sq = vdupq_n_s64(diagonal ? 536870912 : 268435456);
+    const int64x2_t sq_lo = vaddq_s64(vmull_s32(lo, lo), round_sq);
+    const int64x2_t sq_hi = vaddq_s64(vmull_s32(hi, hi), round_sq);
+    const int32x2_t low = diagonal ? vshrn_n_s64(sq_lo, 30) : vshrn_n_s64(sq_lo, 29);
+    const int32x2_t high = diagonal ? vshrn_n_s64(sq_hi, 30) : vshrn_n_s64(sq_hi, 29);
+    const int64x2_t shift = vdupq_n_s64(-shift_cub);
+    return vaddq_s64(vrshlq_s64(vmull_s32(low, lo), shift),
+                     vrshlq_s64(vmull_s32(high, hi), shift));
+}
+
+float adm_cm_neon(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
+                  double adm_norm_view_dist, int adm_ref_display_height,
+                  int adm_csf_mode, double adm_csf_scale, double adm_csf_diag_scale,
+                  double adm_noise_weight, bool measure_aim)
+{
+    const int left = w * ADM_BORDER_FACTOR - 0.5;
+    const int top = h * ADM_BORDER_FACTOR - 0.5;
+    const int right = w - left, bottom = h - top;
+    if (w < 32 || left < 1 || top < 1 || right >= w || bottom >= h || right - left < 4)
+        goto scalar;
+
+    const adm_dwt_band_t *src = measure_aim ? &buf->decouple_a : &buf->decouple_r;
+    const adm_dwt_band_t *a = measure_aim ? &buf->csf_f : &buf->csf_a;
+    const adm_dwt_band_t *f = measure_aim ? &buf->csf_a : &buf->csf_f;
+    float factor1, factor2;
+    if (adm_csf_mode == ADM_CSF_MODE_BARTEN) {
+        factor1 = barten_csf(0, adm_norm_view_dist, adm_ref_display_height, DEFAULT_ADM_CSF_LUM, adm_csf_scale);
+        factor2 = barten_csf(0, adm_norm_view_dist, adm_ref_display_height, DEFAULT_ADM_CSF_LUM, adm_csf_diag_scale);
+    } else if (adm_csf_mode == ADM_CSF_MODE_BARTEN_WATSON_BLEND) {
+        factor1 = barten_watson_blend_csf(0, 0, adm_norm_view_dist, adm_ref_display_height);
+        factor2 = barten_watson_blend_csf(0, 1, adm_norm_view_dist, adm_ref_display_height);
+    } else if (adm_csf_mode == ADM_CSF_MODE_BARTEN_WATSON_BLEND_MAE) {
+        factor1 = barten_watson_blend_csf_mae(0, 0, adm_norm_view_dist, adm_ref_display_height);
+        factor2 = barten_watson_blend_csf_mae(0, 1, adm_norm_view_dist, adm_ref_display_height);
+    } else {
+        factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 1, adm_norm_view_dist, adm_ref_display_height);
+        factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], 0, 2, adm_norm_view_dist, adm_ref_display_height);
+    }
+    const float rfactor1[3] = { factor1, factor1, factor2 };
+
+    uint16_t i_rfactor[3];
+    if (fabs(adm_norm_view_dist * adm_ref_display_height - DEFAULT_ADM_NORM_VIEW_DIST * DEFAULT_ADM_REF_DISPLAY_HEIGHT) < 1.0e-8 &&
+        adm_csf_mode == ADM_CSF_MODE_WATSON97) {
+        i_rfactor[0] = 36453;
+        i_rfactor[1] = 36453;
+        i_rfactor[2] = 49417;
+    }
+    else {
+        const double pow2_21 = pow(2, 21);
+        const double pow2_23 = pow(2, 23);
+        if (!(rfactor1[0] * pow2_21 >= 0 && rfactor1[0] * pow2_21 < 65536 &&
+              rfactor1[2] * pow2_23 >= 0 && rfactor1[2] * pow2_23 < 65536))
+            goto scalar;
+        i_rfactor[0] = (uint16_t) (rfactor1[0] * pow2_21);
+        i_rfactor[1] = (uint16_t) (rfactor1[1] * pow2_21);
+        i_rfactor[2] = (uint16_t) (rfactor1[2] * pow2_23);
+    }
+
+    const int shift_hv = (int)ceil(log2(w) - 4);
+    const int shift_d = (int)ceil(log2(w) - 3);
+    const int shift_inner = (int)ceil(log2(h));
+    const int64_t round_inner = (uint32_t)pow(2, shift_inner - 1);
+    const int32x4_t lanes = { 0, 1, 2, 3 };
+    int64_t accum_h = 0, accum_v = 0, accum_d = 0;
+
+    for (int i = top; i < bottom; i++) {
+        int64x2_t inner_h = vdupq_n_s64(0);
+        int64x2_t inner_v = vdupq_n_s64(0);
+        int64x2_t inner_d = vdupq_n_s64(0);
+        for (int j = left; j < right; j += 4) {
+            /* Mask samples already counted in the overlapping final vector. */
+            const int col = j < right - 4 ? j : right - 4;
+            const uint32x4_t mask = vcgeq_s32(lanes, vdupq_n_s32(j - col));
+            const int32x4_t threshold = adm_cm_threshold_neon(a, f,
+                                                        i * csf_a_stride + col, csf_a_stride);
+            const int off = i * src_stride + col;
+            inner_h = vaddq_s64(inner_h, adm_cm_accum_neon(src->band_h + off,
+                                  threshold, mask, i_rfactor[0], false, shift_hv));
+            inner_v = vaddq_s64(inner_v, adm_cm_accum_neon(src->band_v + off,
+                                  threshold, mask, i_rfactor[1], false, shift_hv));
+            inner_d = vaddq_s64(inner_d, adm_cm_accum_neon(src->band_d + off,
+                                  threshold, mask, i_rfactor[2], true, shift_d));
+        }
+        /* The scalar path rounds once per row. */
+        accum_h += (vaddvq_s64(inner_h) + round_inner) >> shift_inner;
+        accum_v += (vaddvq_s64(inner_v) + round_inner) >> shift_inner;
+        accum_d += (vaddvq_s64(inner_d) + round_inner) >> shift_inner;
+    }
+    const float fh = (float)(accum_h / pow(2, 52 - shift_hv - shift_inner));
+    const float fv = (float)(accum_v / pow(2, 52 - shift_hv - shift_inner));
+    const float fd = (float)(accum_d / pow(2, 57 - shift_d - shift_inner));
+    const float noise = powf((bottom - top) * (right - left) * adm_noise_weight, 1.0f / 3.0f);
+    const float nh = powf(fh, 1.0f / 3.0f) + noise;
+    const float nv = powf(fv, 1.0f / 3.0f) + noise;
+    const float nd = powf(fd, 1.0f / 3.0f) + noise;
+    return nh + nv + nd;
+
+scalar:
+    return adm_cm(buf, w, h, src_stride, csf_a_stride, adm_norm_view_dist,
+                  adm_ref_display_height, adm_csf_mode, adm_csf_scale,
+                  adm_csf_diag_scale, adm_noise_weight, measure_aim);
 }
