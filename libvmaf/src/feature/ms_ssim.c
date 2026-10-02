@@ -291,7 +291,11 @@ int compute_ms_ssim(const float *ref, const float *cmp, int w, int h,
 
         }
 
-        msssim *= pow(l, alphas[idx]) * pow(c, betas[idx]) * pow(s, gammas[idx]);
+        /* The structure term is a correlation and is negative where ref and
+         * cmp are anti-correlated; pow() of a negative base with a
+         * fractional exponent is NaN. Take its magnitude, as
+         * _ms_ssim_reduce() does for the Rouse path above. */
+        msssim *= pow(l, alphas[idx]) * pow(c, betas[idx]) * pow(fabs(s), gammas[idx]);
         l_scores[idx] = l;
         c_scores[idx] = c;
         s_scores[idx] = s;
