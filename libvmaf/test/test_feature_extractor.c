@@ -16,13 +16,16 @@
  *
  */
 
+#include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "config.h"
 #include "dict.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
+#include "feature/feature_name.h"
 #include "test.h"
 #include "picture.h"
 #include "libvmaf/picture.h"
@@ -183,11 +186,92 @@ static char *test_feature_extractor_initialization_options()
     return NULL;
 }
 
+static void fill_noise(VmafPicture *pic, uint32_t seed)
+{
+    for (unsigned p = 0; p < 3; p++) {
+        uint8_t *data = pic->data[p];
+        for (unsigned i = 0; i < pic->h[p]; i++) {
+            for (unsigned j = 0; j < pic->w[p]; j++) {
+                seed = seed * 1664525u + 1013904223u;
+                data[i * pic->stride[p] + j] = seed >> 24;
+            }
+        }
+    }
+}
+
+static char *run_speed_temporal(const char *prescale)
+{
+    int err = 0;
+
+    VmafFeatureExtractor *fex;
+    fex = vmaf_get_feature_extractor_by_name("speed_temporal");
+    mu_assert("problem during vmaf_get_feature_extractor_by_name", fex);
+
+    VmafDictionary *opts_dict = NULL;
+    err = vmaf_dictionary_set(&opts_dict, "speed_prescale", prescale, 0);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+
+    VmafFeatureExtractorContext *fex_ctx;
+    err = vmaf_feature_extractor_context_create(&fex_ctx, fex, opts_dict);
+    mu_assert("problem during vmaf_feature_extractor_context_create", !err);
+
+    VmafFeatureCollector *vfc;
+    err = vmaf_feature_collector_init(&vfc);
+    mu_assert("problem during vmaf_feature_collector_init", !err);
+
+    for (unsigned i = 0; i < 3; i++) {
+        VmafPicture ref, dist;
+        err = vmaf_picture_alloc(&ref, VMAF_PIX_FMT_YUV420P, 8, 576, 324);
+        mu_assert("problem during vmaf_picture_alloc", !err);
+        err = vmaf_picture_alloc(&dist, VMAF_PIX_FMT_YUV420P, 8, 576, 324);
+        mu_assert("problem during vmaf_picture_alloc", !err);
+        fill_noise(&ref, 2 * i + 1);
+        fill_noise(&dist, 2 * i + 2);
+        err = vmaf_feature_extractor_context_extract(fex_ctx, &ref, NULL,
+                                                     &dist, NULL, i, vfc);
+        vmaf_picture_unref(&ref);
+        vmaf_picture_unref(&dist);
+        mu_assert("problem during vmaf_feature_extractor_context_extract",
+                  !err);
+    }
+
+    char *name = vmaf_feature_name_from_options(
+            "Speed_temporal_feature_speed_temporal_score",
+            fex_ctx->fex->options, fex_ctx->fex->priv);
+    mu_assert("problem during vmaf_feature_name_from_options", name);
+    double score;
+    err = vmaf_feature_collector_get_score(vfc, name, &score, 2);
+    free(name);
+    mu_assert("problem during vmaf_feature_collector_get_score", !err);
+    mu_assert("speed_temporal score is not finite", isfinite(score));
+
+    err = vmaf_feature_extractor_context_close(fex_ctx);
+    mu_assert("problem during vmaf_feature_extractor_context_close", !err);
+    err = vmaf_feature_extractor_context_destroy(fex_ctx);
+    mu_assert("problem during vmaf_feature_extractor_context_destroy", !err);
+    vmaf_feature_collector_destroy(vfc);
+
+    return NULL;
+}
+
+static char *test_speed_temporal_prescale()
+{
+    // speed_temporal must size its frame buffers for the prescaled frame:
+    // speed_prescale > 1 used to write past them (Netflix/vmaf#1626).
+    const char *prescales[] = { "1.0", "1.5", "2.0" };
+    for (unsigned i = 0; i < 3; i++) {
+        char *message = run_speed_temporal(prescales[i]);
+        if (message) return message;
+    }
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_get_feature_extractor_by_name_and_feature_name);
     mu_run_test(test_feature_extractor_context_pool);
     mu_run_test(test_feature_extractor_flush);
     mu_run_test(test_feature_extractor_initialization_options);
+    mu_run_test(test_speed_temporal_prescale);
     return NULL;
 }
