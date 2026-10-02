@@ -266,8 +266,8 @@ class ExternalProgramCaller(object):
                     vmafexec_cmd += f':adm.adm_enhn_gain_limit={adm_enhn_gain_limit}:float_adm.adm_enhn_gain_limit={adm_enhn_gain_limit}'
                 if motion_force_zero:
                     assert isinstance(motion_force_zero, bool)
-                    motion_force_zero = str(motion_force_zero).lower()
-                    vmafexec_cmd += f':motion.motion_force_zero={motion_force_zero}:float_motion.motion_force_zero={motion_force_zero}'
+                    motion_force_zero_str = str(motion_force_zero).lower()
+                    vmafexec_cmd += f':motion.motion_force_zero={motion_force_zero_str}:float_motion.motion_force_zero={motion_force_zero_str}'
                 if enc_width is not None:
                     vmafexec_cmd += f':cambi.enc_width={enc_width}'
                 if enc_height is not None:
