@@ -160,6 +160,16 @@ test_motion_blend = executable('test_motion_blend',
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
 )
 
+if float_enabled
+    test_motion_sad = executable('test_motion_sad',
+        ['test.c', 'test_motion_sad.c'],
+        include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+        link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+        dependencies : math_lib,
+    )
+    test('test_motion_sad', test_motion_sad)
+endif
+
 test_speed_filter = executable('test_speed_filter',
     ['test.c', 'test_speed_filter.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],

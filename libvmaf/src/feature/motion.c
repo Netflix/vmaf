@@ -67,13 +67,15 @@ float vmaf_image_sad_c(const float *img1, const float *img2, int width, int heig
         float accum_scale1 = (float)0.0;
         int scaled_width = (int)(width * 0.5 + 0.5);
         int scaled_height = (int)(height * 0.5 + 0.5);
-        int float_stride = ALIGN_CEIL(width * sizeof(float));
         int scaled_float_stride = ALIGN_CEIL(scaled_width * sizeof(float));
         float *img1_scaled = aligned_malloc(scaled_float_stride * scaled_height, 32);
         float *img2_scaled = aligned_malloc(scaled_float_stride * scaled_height, 32);
 
-        vif_scale_frame_s(vif_scale_bilinear, img1, img1_scaled, width, height, float_stride / sizeof(float), scaled_width, scaled_height, scaled_float_stride / sizeof(float));
-        vif_scale_frame_s(vif_scale_bilinear, img2, img2_scaled, width, height, float_stride / sizeof(float), scaled_width, scaled_height, scaled_float_stride / sizeof(float));
+        /* The inputs' own strides: a chroma plane lives in a buffer sized for
+         * the luma width, so ALIGN_CEIL(width * sizeof(float)) is not its
+         * stride. */
+        vif_scale_frame_s(vif_scale_bilinear, img1, img1_scaled, width, height, img1_stride, scaled_width, scaled_height, scaled_float_stride / sizeof(float));
+        vif_scale_frame_s(vif_scale_bilinear, img2, img2_scaled, width, height, img2_stride, scaled_width, scaled_height, scaled_float_stride / sizeof(float));
 
         for (int i = 0; i < scaled_height; ++i) {
             float accum_line = (float)0.0;
