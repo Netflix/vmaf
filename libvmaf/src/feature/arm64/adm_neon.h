@@ -11,4 +11,21 @@ void adm_dwt2_8_neon(const uint8_t *src, const adm_dwt_band_t *dst,
 void adm_decouple_neon(AdmBuffer *buf, int w, int h, int stride,
                        double adm_enhn_gain_limit, int32_t *adm_div_lookup);
 
+float adm_cm_neon(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
+                  double adm_norm_view_dist, int adm_ref_display_height,
+                  int adm_csf_mode, double adm_csf_scale, double adm_csf_diag_scale,
+                  double adm_noise_weight, bool measure_aim);
+
+void adm_dwt2_s123_combined_neon(const int32_t *ref, const int32_t *dis,
+                                AdmBuffer *buf, int w, int h, int ref_stride,
+                                int dis_stride, int dst_stride, int scale);
+
+void adm_decouple_s123_neon(AdmBuffer *buf, int w, int h, int stride,
+                            double adm_enhn_gain_limit, int32_t *adm_div_lookup);
+
+float i4_adm_cm_neon(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
+                     int scale, double adm_norm_view_dist, int adm_ref_display_height,
+                     int adm_csf_mode, double adm_csf_scale, double adm_csf_diag_scale,
+                     double adm_noise_weight, bool measure_aim);
+
 #endif /* ARM64_ADM_H_ */
