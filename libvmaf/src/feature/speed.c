@@ -989,21 +989,12 @@ static void filter_and_downscale(SpeedDimensions dim, SpeedOptions *opt,
     size_t downscaled_w = dim.scaled_width >> NUM_SCALES;
     size_t downscaled_h = dim.scaled_height >> NUM_SCALES;
 
-#if ARCH_X86
-    vif_filter1d_s(filter_antialias, frame_buffer, curr_scale, tmpbuf,
-                   dim.scaled_width, dim.scaled_height, float_stride,
-                   float_stride, filter_width_antialias);
-
-    vif_dec16_s(curr_scale, frame_buffer, dim.scaled_width, dim.scaled_height,
-                float_stride, float_stride);
-#else
     vif_filter1d_dec16_s(filter_antialias, frame_buffer, curr_scale, tmpbuf,
                         dim.scaled_width, dim.scaled_height, float_stride,
                         float_stride, filter_width_antialias);
     for (size_t i = 0; i < downscaled_h; i++)
         memcpy(frame_buffer + i * stride_px, curr_scale + i * stride_px,
                downscaled_w * sizeof(float));
-#endif
 
     int filter_width = vif_get_filter_size(NUM_SCALES, opt->speed_kernelscale);
     float filter[128];
