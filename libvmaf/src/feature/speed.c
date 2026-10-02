@@ -1642,7 +1642,8 @@ static int extract(VmafFeatureExtractor *fex,
 
     err = vmaf_feature_collector_append_with_dict(
         feature_collector, s->feature_name_dict,
-        "Speed_temporal_feature_speed_temporal_score", score, index);
+        "Speed_temporal_feature_speed_temporal_score",
+        MIN(score, s->speed_temporal_max_val), index);
 
     if (err) return err;
     return 0;
