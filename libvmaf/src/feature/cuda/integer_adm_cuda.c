@@ -36,13 +36,6 @@
 
 #define RES_BUFFER_SIZE 4 * 3 * 2
 
-typedef struct WarpShift {
-    uint32_t shift_cub[3];
-    uint32_t add_shift_cub[3];
-    uint32_t shift_sq[3];
-    uint32_t add_shift_sq[3];
-} WarpShift;
-
 typedef struct AdmStateCuda {
     size_t integer_stride;
     AdmBufferCuda buf;
@@ -75,7 +68,7 @@ typedef struct AdmStateCuda {
                func_adm_csf_den_scale_line_kernel,
                func_adm_csf_den_s123_line_kernel,
                // adm_cm kernel
-               func_adm_cm_reduce_line_kernel_4,
+               func_adm_cm_reduce_line_kernel,
                func_adm_cm_line_kernel_8,
                func_i4_adm_cm_line_kernel;
 
@@ -440,15 +433,14 @@ void i4_adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src
                     0, c_stream, args, NULL));
     }
     {
-        const int val_per_thread = 4;
         const int warps_per_cta = 4;
         const int BLOCKX = VMAF_CUDA_THREADS_PER_WARP * warps_per_cta;
 
         void* args[] = {
             &h, &w, &scale, &buffer_h, &buffer_stride,
             &buf->tmp_accum->data, &buf->adm_cm[scale]};
-        CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_cm_reduce_line_kernel_4,
-                    DIV_ROUND_UP(buffer_stride, BLOCKX * val_per_thread), buffer_h, 3,
+        CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_cm_reduce_line_kernel,
+                    1, buffer_h, 3,
                     BLOCKX, 1, 1,
                     0, c_stream, args, NULL));
     }
@@ -472,33 +464,6 @@ void adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src_st
     int buffer_stride = end_col - start_col;
     int buffer_h = end_row - start_row;
 
-    // precompute warp shift per band
-    //const int32_t shift_sub[3] = {10, 10, 12};
-    const int fixed_shift[3] = {4, 4, 3};
-
-    // accumulation
-    const int32_t shift_xsq[3] = {29, 29, 30};
-    const int32_t add_shift_xsq[3] = {268435456, 268435456, 536870912};
-
-    const int NUM_BANDS = 3;
-    WarpShift ws;
-    for (int band = 0;band < NUM_BANDS;++band) {
-        ws.shift_cub[band] = (uint32_t)(ceil(log2f(w)));
-        if (scale == 0) {
-            ws.shift_cub[band] -= fixed_shift[band];
-            ws.shift_sq[band] = shift_xsq[band];
-            ws.add_shift_sq[band] = add_shift_xsq[band];
-        } else {
-            ws.shift_sq[band] = 30;
-            ws.add_shift_sq[band] = (1 << (ws.shift_sq[band]-1));
-        }
-        ws.add_shift_cub[band] = 1 << (ws.shift_cub[band] - 1);
-    }
-
-    // precompute global shift
-    uint32_t shift_inner_accum = (uint32_t)(ceil(log2f(h)));
-    uint32_t add_shift_inner_accum = 1 << (shift_inner_accum - 1);
-
     // fused
     {
         const int rows_per_thread = 8;
@@ -507,14 +472,24 @@ void adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src_st
         void* args[] = {
             &*buf, &h, &w, &top, &bottom, &left, &right, &start_row, &end_row, &start_col,
             &end_col, &src_stride, &csf_a_stride, &buffer_h, &buffer_stride,
-            &buf->tmp_accum->data, &*p,
-            &scale, &buf->adm_cm[scale], &ws,
-            &shift_inner_accum, &add_shift_inner_accum
+            &buf->tmp_accum->data, &*p
         };
 
         CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_cm_line_kernel_8,
                     DIV_ROUND_UP(buffer_stride, BLOCKX), DIV_ROUND_UP(buffer_h, BLOCKY * rows_per_thread), 3,
                     BLOCKX, BLOCKY, 1,
+                    0, c_stream, args, NULL));
+    }
+    {
+        const int warps_per_cta = 4;
+        const int BLOCKX = VMAF_CUDA_THREADS_PER_WARP * warps_per_cta;
+
+        void* args[] = {
+            &h, &w, &scale, &buffer_h, &buffer_stride,
+            &buf->tmp_accum->data, &buf->adm_cm[scale]};
+        CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_cm_reduce_line_kernel,
+                    1, buffer_h, 3,
+                    BLOCKX, 1, 1,
                     0, c_stream, args, NULL));
     }
 }
@@ -1038,7 +1013,7 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_den_scale_line_kernel, adm_csf_den_module, "adm_csf_den_scale_line_kernel_8_128"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_den_s123_line_kernel, adm_csf_den_module, "adm_csf_den_s123_line_kernel_8_128"));
 
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_cm_reduce_line_kernel_4, adm_cm_module, "adm_cm_reduce_line_kernel_4"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_cm_reduce_line_kernel, adm_cm_module, "adm_cm_reduce_line_kernel"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_cm_line_kernel_8, adm_cm_module, "adm_cm_line_kernel_8"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_i4_adm_cm_line_kernel, adm_cm_module, "i4_adm_cm_line_kernel"));
 
