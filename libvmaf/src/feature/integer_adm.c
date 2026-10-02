@@ -3167,6 +3167,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (flags & VMAF_ARM_CPU_FLAG_NEON) {
         if (!(w % 8)) s->dwt2_8 = adm_dwt2_8_neon;
         s->adm_decouple = adm_decouple_neon;
+        s->adm_cm = adm_cm_neon;
     }
 #endif
 

@@ -168,6 +168,8 @@ static adm_cm_fn get_cm(unsigned cpu_flags)
         fn = adm_cm_avx512;
 #endif
     return fn;
+#elif ARCH_AARCH64
+    return (cpu_flags & VMAF_ARM_CPU_FLAG_NEON) ? adm_cm_neon : adm_cm;
 #else
     (void) cpu_flags;
     return 0;
@@ -406,7 +408,7 @@ static void check_adm_dwt2(void)
     }
 }
 
-static const struct { int w, h; } post_dwt_sizes[] = {
+static const struct adm_test_size { int w, h; } post_dwt_sizes[] = {
     { 16, 16 },
     { 33, 21 },
     { 65, 49 },
@@ -623,10 +625,22 @@ static void check_adm_csf(void)
 
 static void check_adm_cm(void)
 {
-    for (size_t i = 0; i < sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
-         i++)
-    {
-        const int w = post_dwt_sizes[i].w, h = post_dwt_sizes[i].h;
+#if ARCH_AARCH64
+    const struct adm_test_size cm_sizes[] = {
+        { 33, 21 }, { 64, 20 }, { 61, 33 }, { 63, 31 }, { 64, 32 }, { 65, 33 }, { 66, 34 },
+        { 67, 35 }, { 68, 36 }, { 69, 37 }, { 127, 93 }, { 257, 193 }, { 514, 386 },
+    };
+    const size_t nb_sizes = sizeof(cm_sizes) / sizeof(*cm_sizes);
+    const struct adm_test_size *sizes = cm_sizes;
+    const int modes[] = { ADM_CSF_MODE_WATSON97, ADM_CSF_MODE_BARTEN,
+        ADM_CSF_MODE_BARTEN_WATSON_BLEND, ADM_CSF_MODE_BARTEN_WATSON_BLEND_MAE };
+#else
+    const size_t nb_sizes = sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+    const struct adm_test_size *sizes = post_dwt_sizes;
+    const int modes[] = { DEFAULT_ADM_CSF_MODE };
+#endif
+    for (size_t i = 0; i < nb_sizes; i++) {
+        const int w = sizes[i].w, h = sizes[i].h;
 
         AdmBuffer buf_c, buf_a;
         if (adm_buffer_alloc(&buf_c, w, h)) continue;
@@ -646,6 +660,15 @@ static void check_adm_cm(void)
             fill_band(c_bands[b]->band_h, h_half, stride);
             fill_band(c_bands[b]->band_v, h_half, stride);
             fill_band(c_bands[b]->band_d, h_half, stride);
+#if ARCH_AARCH64
+            if (b >= 2) {
+                for (int k = 0; k < h_half * stride; k++) {
+                    c_bands[b]->band_h[k] &= 1023;
+                    c_bands[b]->band_v[k] &= 1023;
+                    c_bands[b]->band_d[k] &= 1023;
+                }
+            }
+#endif
             copy_band(a_bands[b]->band_h, c_bands[b]->band_h, h_half, stride);
             copy_band(a_bands[b]->band_v, c_bands[b]->band_v, h_half, stride);
             copy_band(a_bands[b]->band_d, c_bands[b]->band_d, h_half, stride);
@@ -654,36 +677,55 @@ static void check_adm_cm(void)
         checkasm_declare(float, AdmBuffer *, int, int, int, int, double, int,
                           int, double, double, double, bool);
 
-        for (int aim = 0; aim <= 1; aim++) {
-            if (checkasm_check_func(get_cm(checkasm_get_cpu_flags()),
-                                     "adm_cm_%dx%d_aim%d", w, h, aim))
-            {
-                const float ref = checkasm_call_ref(
-                    &buf_c, w_half, h_half, stride, stride,
-                    DEFAULT_ADM_NORM_VIEW_DIST,
-                    DEFAULT_ADM_REF_DISPLAY_HEIGHT, DEFAULT_ADM_CSF_MODE,
-                    DEFAULT_ADM_CSF_SCALE, DEFAULT_ADM_CSF_DIAG_SCALE,
-                    DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
-                const float new = checkasm_call_new(
-                    &buf_a, w_half, h_half, stride, stride,
-                    DEFAULT_ADM_NORM_VIEW_DIST,
-                    DEFAULT_ADM_REF_DISPLAY_HEIGHT, DEFAULT_ADM_CSF_MODE,
-                    DEFAULT_ADM_CSF_SCALE, DEFAULT_ADM_CSF_DIAG_SCALE,
-                    DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
+        for (size_t m = 0; m < sizeof(modes) / sizeof(*modes); m++) {
+            const int mode = modes[m];
+            const double csf_scale = mode == ADM_CSF_MODE_BARTEN ?
+                0.001 : DEFAULT_ADM_CSF_SCALE;
+            const double csf_diag_scale = mode == ADM_CSF_MODE_BARTEN ?
+                0.001 : DEFAULT_ADM_CSF_DIAG_SCALE;
+#if ARCH_AARCH64
+            const int src_stride = stride - (stride > w_half);
+            const int csf_stride = w_half;
+            const double view_dist = (i & 1) ? 5.0 : DEFAULT_ADM_NORM_VIEW_DIST;
+            const int display_height = (i % 3) ? DEFAULT_ADM_REF_DISPLAY_HEIGHT : 2160;
+#else
+            const int src_stride = stride, csf_stride = stride;
+            const double view_dist = DEFAULT_ADM_NORM_VIEW_DIST;
+            const int display_height = DEFAULT_ADM_REF_DISPLAY_HEIGHT;
+#endif
+            for (int aim = 0; aim <= 1; aim++) {
+                if (checkasm_check_func(get_cm(checkasm_get_cpu_flags()),
+                                         "adm_cm_%dx%d_aim%d_csf%d", w, h, aim, mode))
+                {
+                    const float ref = checkasm_call_ref(
+                        &buf_c, w_half, h_half, src_stride, csf_stride,
+                        view_dist, display_height, mode,
+                        csf_scale, csf_diag_scale,
+                        DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
+                    const float new = checkasm_call_new(
+                        &buf_a, w_half, h_half, src_stride, csf_stride,
+                        view_dist, display_height, mode,
+                        csf_scale, csf_diag_scale,
+                        DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
 
-                const float tol = 1e-4f * (fabsf(ref) + 1.0f);
-                if (fabsf(ref - new) > tol) {
-                    if (checkasm_fail())
-                        fprintf(stderr, "expected %f, got %f\n", ref, new);
+#if ARCH_AARCH64
+                    const bool different = memcmp(&ref, &new, sizeof(ref)) != 0;
+#else
+                    const float tol = 1e-4f * (fabsf(ref) + 1.0f);
+                    const bool different = fabsf(ref - new) > tol;
+#endif
+                    if (different) {
+                        if (checkasm_fail())
+                            fprintf(stderr, "expected %f, got %f\n", ref, new);
+                    }
+
+                    checkasm_bench_new(&buf_a, w_half, h_half, src_stride, csf_stride,
+                                        view_dist, display_height,
+                                        mode,
+                                        csf_scale,
+                                        csf_diag_scale,
+                                        DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
                 }
-
-                checkasm_bench_new(&buf_a, w_half, h_half, stride, stride,
-                                    DEFAULT_ADM_NORM_VIEW_DIST,
-                                    DEFAULT_ADM_REF_DISPLAY_HEIGHT,
-                                    DEFAULT_ADM_CSF_MODE,
-                                    DEFAULT_ADM_CSF_SCALE,
-                                    DEFAULT_ADM_CSF_DIAG_SCALE,
-                                    DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
             }
         }
 
