@@ -16,6 +16,7 @@
  *
  */
 
+#include <errno.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -80,6 +81,43 @@ static char *test_feature_extractor_context_pool()
 
     err = vmaf_fex_ctx_pool_destroy(pool);
     mu_assert("problem during vmaf_fex_ctx_pool_destroy", !err);
+
+    return NULL;
+}
+
+static char *test_float_ms_ssim_minimum_dimension()
+{
+    /* 5 scales and an 11-tap window: 11 << 4 = 176 pixels per dimension */
+    const struct { unsigned w, h; int ok; } cases[] = {
+        { 176, 144, 0 },
+        { 175, 176, 0 },
+        { 176, 175, 0 },
+        { 176, 176, 1 },
+    };
+
+    for (unsigned i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        VmafFeatureExtractor *fex =
+            vmaf_get_feature_extractor_by_name("float_ms_ssim");
+        mu_assert("problem vmaf_get_feature_extractor_by_name", fex);
+        VmafFeatureExtractorContext *fex_ctx;
+        int err = vmaf_feature_extractor_context_create(&fex_ctx, fex, NULL);
+        mu_assert("problem during vmaf_feature_extractor_context_create", !err);
+
+        err = vmaf_feature_extractor_context_init(fex_ctx, VMAF_PIX_FMT_YUV420P,
+                                                  8, cases[i].w, cases[i].h);
+        if (cases[i].ok) {
+            mu_assert("float_ms_ssim init should accept a 176x176 frame", !err);
+            err = vmaf_feature_extractor_context_close(fex_ctx);
+            mu_assert("problem during vmaf_feature_extractor_context_close",
+                      !err);
+        } else {
+            mu_assert("float_ms_ssim init should reject a frame below 176 "
+                      "in either dimension", err == -EINVAL);
+        }
+        err = vmaf_feature_extractor_context_destroy(fex_ctx);
+        mu_assert("problem during vmaf_feature_extractor_context_destroy",
+                  !err);
+    }
 
     return NULL;
 }
@@ -187,6 +225,7 @@ char *run_tests()
 {
     mu_run_test(test_get_feature_extractor_by_name_and_feature_name);
     mu_run_test(test_feature_extractor_context_pool);
+    mu_run_test(test_float_ms_ssim_minimum_dimension);
     mu_run_test(test_feature_extractor_flush);
     mu_run_test(test_feature_extractor_initialization_options);
     return NULL;

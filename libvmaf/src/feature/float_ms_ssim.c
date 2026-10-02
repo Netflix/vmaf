@@ -23,6 +23,8 @@
 #include "feature_collector.h"
 #include "feature_extractor.h"
 
+#include "iqa/ssim_tools.h"
+#include "log.h"
 #include "mem.h"
 #include "ms_ssim.h"
 #include "picture_copy.h"
@@ -68,6 +70,18 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     (void) pix_fmt;
 
     MsSsimState *s = fex->priv;
+
+    /* compute_ms_ssim() halves the frame SCALES - 1 times and needs at least
+     * GAUSSIAN_LEN pixels in both dimensions at every scale, so the smallest
+     * frame is GAUSSIAN_LEN << (SCALES - 1) = 176. Reject anything smaller
+     * here rather than failing in every extract() call. */
+    const unsigned min_dim = GAUSSIAN_LEN << (SCALES - 1);
+    if (w < min_dim || h < min_dim) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "%s: frame %ux%u is below the %ux%u minimum for %d-scale "
+                 "MS-SSIM\n", fex->name, w, h, min_dim, min_dim, SCALES);
+        return -EINVAL;
+    }
 
     const unsigned peak = (1 << bpc) - 1;
     if (s->clip_db) {
