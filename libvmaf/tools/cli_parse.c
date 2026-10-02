@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <string.h>
 
 #include "cli_parse.h"
@@ -195,6 +196,26 @@ static char *strsep(char **sp, char *sep)
 }
 #endif
 
+// Like strsep(s, ":"), but a colon that follows a drive letter ("path=C:\\dir",
+// "path=C:/dir") belongs to the value instead of ending the option.
+static char *next_option(char **s)
+{
+    char *start = *s;
+    if (!start) return NULL;
+    for (char *c = start; *c; c++) {
+        if (*c != ':') continue;
+        const int drive = c - start >= 2 && c[-2] == '=' &&
+                          isalpha((unsigned char)c[-1]) &&
+                          (c[1] == '\\' || c[1] == '/');
+        if (drive) continue;
+        *c = '\0';
+        *s = c + 1;
+        return start;
+    }
+    *s = NULL;
+    return start;
+}
+
 static CLIModelConfig parse_model_config(const char *const optarg,
                                          const char *const app)
 {
@@ -216,7 +237,7 @@ static CLIModelConfig parse_model_config(const char *const optarg,
     };
 
     char *key_val;
-    while ((key_val = strsep(&optarg_copy, ":")) != NULL) {
+    while ((key_val = next_option(&optarg_copy)) != NULL) {
         char *key = strsep(&key_val, "=");
         char *val = strsep(&key_val, "=");
         if (!val) {
