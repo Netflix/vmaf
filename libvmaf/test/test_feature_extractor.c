@@ -16,6 +16,7 @@
  *
  */
 
+#include <errno.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -183,11 +184,54 @@ static char *test_feature_extractor_initialization_options()
     return NULL;
 }
 
+static char *test_adm_minimum_dimension()
+{
+    /* Scale 3 needs a DWT input of 3 samples, ceil(d / 8) >= 3: d >= 17. */
+    const struct { unsigned w, h; int ok; } cases[] = {
+        { 1, 1, 0 },
+        { 8, 8, 0 },
+        { 16, 16, 0 },
+        { 64, 16, 0 },
+        { 16, 64, 0 },
+        { 17, 17, 1 },
+        { 64, 17, 1 },
+        { 17, 64, 1 },
+        { 64, 64, 1 },
+    };
+
+    for (unsigned i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        VmafFeatureExtractor *fex = vmaf_get_feature_extractor_by_name("adm");
+        mu_assert("problem vmaf_get_feature_extractor_by_name", fex);
+        VmafFeatureExtractorContext *fex_ctx;
+        int err = vmaf_feature_extractor_context_create(&fex_ctx, fex, NULL);
+        mu_assert("problem during vmaf_feature_extractor_context_create", !err);
+
+        err = vmaf_feature_extractor_context_init(fex_ctx, VMAF_PIX_FMT_YUV420P,
+                                                  8, cases[i].w, cases[i].h);
+        if (cases[i].ok) {
+            mu_assert("adm init should accept a frame of 17 pixels or more "
+                      "in both dimensions", !err);
+            err = vmaf_feature_extractor_context_close(fex_ctx);
+            mu_assert("problem during vmaf_feature_extractor_context_close",
+                      !err);
+        } else {
+            mu_assert("adm init should reject a frame below 17 pixels in "
+                      "either dimension", err == -EINVAL);
+        }
+        err = vmaf_feature_extractor_context_destroy(fex_ctx);
+        mu_assert("problem during vmaf_feature_extractor_context_destroy",
+                  !err);
+    }
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_get_feature_extractor_by_name_and_feature_name);
     mu_run_test(test_feature_extractor_context_pool);
     mu_run_test(test_feature_extractor_flush);
     mu_run_test(test_feature_extractor_initialization_options);
+    mu_run_test(test_adm_minimum_dimension);
     return NULL;
 }
