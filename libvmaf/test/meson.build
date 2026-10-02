@@ -11,6 +11,13 @@ test_context = executable('test_context',
     dependencies:[stdatomic_dependency, cuda_dependency],
 )
 
+test_integer_adm_aim_clip = executable('test_integer_adm_aim_clip',
+    ['test.c', 'test_integer_adm_aim_clip.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies : [math_lib, stdatomic_dependency, cuda_dependency],
+)
+
 test_picture = executable('test_picture',
     ['test.c', 'test_picture.c', '../src/picture.c', '../src/mem.c', '../src/ref.c', '../src/thread_pool.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
@@ -233,6 +240,7 @@ test('test_psnr', test_psnr)
 test('test_framesync', test_framesync)
 test('test_propagate_metadata', test_propagate_metadata)
 test('test_adm_csf', test_adm_csf)
+test('test_integer_adm_aim_clip', test_integer_adm_aim_clip)
 test('test_barten_csf', test_barten_csf)
 test('test_motion_blend', test_motion_blend)
 
