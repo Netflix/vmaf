@@ -187,6 +187,8 @@ static adm_decouple_fn get_decouple_s123(unsigned cpu_flags)
         fn = adm_decouple_s123_avx512;
 #endif
     return fn;
+#elif ARCH_AARCH64
+    return (cpu_flags & VMAF_ARM_CPU_FLAG_NEON) ? adm_decouple_s123_neon : adm_decouple_s123;
 #else
     (void) cpu_flags;
     return 0;
@@ -204,6 +206,9 @@ static adm_dwt2_s123_fn get_dwt2_s123_combined(unsigned cpu_flags)
         fn = adm_dwt2_s123_combined_avx512;
 #endif
     return fn;
+#elif ARCH_AARCH64
+    return (cpu_flags & VMAF_ARM_CPU_FLAG_NEON) ?
+        adm_dwt2_s123_combined_neon : adm_dwt2_s123_combined;
 #else
     (void) cpu_flags;
     return 0;
@@ -272,6 +277,8 @@ static i4_adm_cm_fn get_i4_cm(unsigned cpu_flags)
         fn = i4_adm_cm_avx512;
 #endif
     return fn;
+#elif ARCH_AARCH64
+    return (cpu_flags & VMAF_ARM_CPU_FLAG_NEON) ? i4_adm_cm_neon : i4_adm_cm;
 #else
     (void) cpu_flags;
     return 0;
@@ -422,7 +429,8 @@ static void check_adm_decouple(void)
 #if ARCH_AARCH64
         { 4, 4 }, { 6, 6 }, { 8, 8 }, { 10, 8 }, { 12, 8 }, { 14, 8 }, { 257, 193 },
 #endif
-        { 16, 16 }, { 33, 21 }, { 65, 49 }, { 32, 20 }, { 64, 48 },
+        { 16, 16 },
+        { 33, 21 }, { 65, 49 }, { 32, 20 }, { 64, 48 },
     };
 #if ARCH_AARCH64
     const int patterns = 5;
@@ -628,7 +636,8 @@ static void check_adm_cm(void)
 #if ARCH_AARCH64
     const struct adm_test_size cm_sizes[] = {
         { 33, 21 }, { 64, 20 }, { 61, 33 }, { 63, 31 }, { 64, 32 }, { 65, 33 }, { 66, 34 },
-        { 67, 35 }, { 68, 36 }, { 69, 37 }, { 127, 93 }, { 257, 193 }, { 514, 386 },
+        { 67, 35 }, { 68, 36 }, { 69, 37 },
+        { 127, 93 }, { 257, 193 }, { 514, 386 },
     };
     const size_t nb_sizes = sizeof(cm_sizes) / sizeof(*cm_sizes);
     const struct adm_test_size *sizes = cm_sizes;
@@ -736,10 +745,18 @@ static void check_adm_cm(void)
 
 static void check_adm_dwt2_s123(void)
 {
-    for (size_t i = 0; i < sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
-         i++)
-    {
-        const int w = post_dwt_sizes[i].w, h = post_dwt_sizes[i].h;
+#if ARCH_AARCH64
+    const struct adm_test_size sizes[] = {
+        { 5, 5 }, { 5, 7 }, { 8, 8 }, { 9, 11 }, { 16, 16 },
+        { 33, 21 }, { 65, 49 }, { 127, 93 }, { 257, 193 },
+    };
+    const size_t nb_sizes = sizeof(sizes) / sizeof(*sizes);
+#else
+    const struct adm_test_size *sizes = post_dwt_sizes;
+    const size_t nb_sizes = sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+#endif
+    for (size_t i = 0; i < nb_sizes; i++) {
+        const int w = sizes[i].w, h = sizes[i].h;
 
         AdmBuffer buf_c, buf_a;
         if (adm_buffer_alloc(&buf_c, w, h)) continue;
@@ -750,59 +767,80 @@ static void check_adm_dwt2_s123(void)
         dwt2_src_indices_filt(buf_c.ind_y, buf_c.ind_x, w, h);
         dwt2_src_indices_filt(buf_a.ind_y, buf_a.ind_x, w, h);
         const int stride = (int) (buf_c.ind_size_x >> 2);
-        const int w_half = (w + 1) / 2, h_half = (h + 1) / 2;
+        const int h_half = (h + 1) / 2;
 
-        int32_t *i4_ref = malloc((size_t) h * stride * sizeof(int32_t));
-        int32_t *i4_dis = malloc((size_t) h * stride * sizeof(int32_t));
+#if ARCH_AARCH64
+        const int input_stride = w + 3;
+#else
+        const int input_stride = stride;
+#endif
+        int32_t *i4_ref = malloc((size_t) h * input_stride * sizeof(int32_t));
+        int32_t *i4_dis = malloc((size_t) h * input_stride * sizeof(int32_t));
         for (int r = 0; r < h; r++) {
-            for (int c = 0; c < stride; c++) {
-                i4_ref[r * stride + c] =
+            for (int c = 0; c < input_stride; c++) {
+                i4_ref[r * input_stride + c] =
                     (int32_t) ((checkasm_rand_uint32() % 16001) - 8000);
-                i4_dis[r * stride + c] =
+                i4_dis[r * input_stride + c] =
                     (int32_t) ((checkasm_rand_uint32() % 16001) - 8000);
             }
         }
+
+#if ARCH_AARCH64
+        const int check_cols = stride;
+#else
+        const int check_cols = (w + 1) / 2;
+#endif
 
         checkasm_declare(void, const int32_t *, const int32_t *, AdmBuffer *,
                           int, int, int, int, int, int);
 
         for (int scale = 1; scale <= 3; scale++) {
+#if ARCH_AARCH64
+            const int ref_stride = w + 1;
+            const int dis_stride = w + 3;
+            for (int k = 0; k < h * input_stride; k++) {
+                i4_ref[k] = scale == 1 ? (int16_t)checkasm_rand_uint32() : (int32_t)checkasm_rand_uint32();
+                i4_dis[k] = scale == 1 ? (int16_t)checkasm_rand_uint32() : (int32_t)checkasm_rand_uint32();
+            }
+#else
+            const int ref_stride = stride, dis_stride = stride;
+#endif
             if (checkasm_check_func(
                     get_dwt2_s123_combined(checkasm_get_cpu_flags()),
                     "adm_dwt2_s123_%dx%d_scale%d", w, h, scale))
             {
-                checkasm_call_ref(i4_ref, i4_dis, &buf_c, w, h, stride,
-                                   stride, stride, scale);
-                checkasm_call_new(i4_ref, i4_dis, &buf_a, w, h, stride,
-                                   stride, stride, scale);
+                checkasm_call_ref(i4_ref, i4_dis, &buf_c, w, h, ref_stride,
+                                   dis_stride, stride, scale);
+                checkasm_call_new(i4_ref, i4_dis, &buf_a, w, h, ref_stride,
+                                   dis_stride, stride, scale);
 
                 check2d_band_i32(buf_c.i4_ref_dwt2.band_a,
-                                 buf_a.i4_ref_dwt2.band_a, w_half, h_half,
+                                 buf_a.i4_ref_dwt2.band_a, check_cols, h_half,
                                  stride, "i4_ref_dwt2.band_a");
                 check2d_band_i32(buf_c.i4_ref_dwt2.band_h,
-                                 buf_a.i4_ref_dwt2.band_h, w_half, h_half,
+                                 buf_a.i4_ref_dwt2.band_h, check_cols, h_half,
                                  stride, "i4_ref_dwt2.band_h");
                 check2d_band_i32(buf_c.i4_ref_dwt2.band_v,
-                                 buf_a.i4_ref_dwt2.band_v, w_half, h_half,
+                                 buf_a.i4_ref_dwt2.band_v, check_cols, h_half,
                                  stride, "i4_ref_dwt2.band_v");
                 check2d_band_i32(buf_c.i4_ref_dwt2.band_d,
-                                 buf_a.i4_ref_dwt2.band_d, w_half, h_half,
+                                 buf_a.i4_ref_dwt2.band_d, check_cols, h_half,
                                  stride, "i4_ref_dwt2.band_d");
                 check2d_band_i32(buf_c.i4_dis_dwt2.band_a,
-                                 buf_a.i4_dis_dwt2.band_a, w_half, h_half,
+                                 buf_a.i4_dis_dwt2.band_a, check_cols, h_half,
                                  stride, "i4_dis_dwt2.band_a");
                 check2d_band_i32(buf_c.i4_dis_dwt2.band_h,
-                                 buf_a.i4_dis_dwt2.band_h, w_half, h_half,
+                                 buf_a.i4_dis_dwt2.band_h, check_cols, h_half,
                                  stride, "i4_dis_dwt2.band_h");
                 check2d_band_i32(buf_c.i4_dis_dwt2.band_v,
-                                 buf_a.i4_dis_dwt2.band_v, w_half, h_half,
+                                 buf_a.i4_dis_dwt2.band_v, check_cols, h_half,
                                  stride, "i4_dis_dwt2.band_v");
                 check2d_band_i32(buf_c.i4_dis_dwt2.band_d,
-                                 buf_a.i4_dis_dwt2.band_d, w_half, h_half,
+                                 buf_a.i4_dis_dwt2.band_d, check_cols, h_half,
                                  stride, "i4_dis_dwt2.band_d");
 
-                checkasm_bench_new(i4_ref, i4_dis, &buf_a, w, h, stride,
-                                    stride, stride, scale);
+                checkasm_bench_new(i4_ref, i4_dis, &buf_a, w, h, ref_stride,
+                                    dis_stride, stride, scale);
             }
         }
 
@@ -815,10 +853,18 @@ static void check_adm_dwt2_s123(void)
 
 static void check_adm_decouple_s123(void)
 {
-    for (size_t i = 0; i < sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
-         i++)
-    {
-        const int w = post_dwt_sizes[i].w, h = post_dwt_sizes[i].h;
+#if ARCH_AARCH64
+    const struct adm_test_size sizes[] = {
+        { 4, 4 }, { 8, 8 }, { 10, 12 }, { 12, 14 }, { 14, 16 },
+        { 33, 21 }, { 65, 49 }, { 127, 93 }, { 257, 193 },
+    };
+    const size_t nb_sizes = sizeof(sizes) / sizeof(*sizes);
+#else
+    const struct adm_test_size *sizes = post_dwt_sizes;
+    const size_t nb_sizes = sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+#endif
+    for (size_t i = 0; i < nb_sizes; i++) {
+        const int w = sizes[i].w, h = sizes[i].h;
 
         AdmBuffer buf_c, buf_a;
         if (adm_buffer_alloc(&buf_c, w, h)) continue;
@@ -829,65 +875,96 @@ static void check_adm_decouple_s123(void)
         const int stride = (int) (buf_c.ind_size_x >> 2);
         const int w_half = (w + 1) / 2, h_half = (h + 1) / 2;
 
-        fill_band_i32(buf_c.i4_ref_dwt2.band_a, h_half, stride);
-        fill_band_i32(buf_c.i4_ref_dwt2.band_h, h_half, stride);
-        fill_band_i32(buf_c.i4_ref_dwt2.band_v, h_half, stride);
-        fill_band_i32(buf_c.i4_ref_dwt2.band_d, h_half, stride);
-        fill_band_i32(buf_c.i4_dis_dwt2.band_a, h_half, stride);
-        fill_band_i32(buf_c.i4_dis_dwt2.band_h, h_half, stride);
-        fill_band_i32(buf_c.i4_dis_dwt2.band_v, h_half, stride);
-        fill_band_i32(buf_c.i4_dis_dwt2.band_d, h_half, stride);
-
-        copy_band_i32(buf_a.i4_ref_dwt2.band_a, buf_c.i4_ref_dwt2.band_a,
-                      h_half, stride);
-        copy_band_i32(buf_a.i4_ref_dwt2.band_h, buf_c.i4_ref_dwt2.band_h,
-                      h_half, stride);
-        copy_band_i32(buf_a.i4_ref_dwt2.band_v, buf_c.i4_ref_dwt2.band_v,
-                      h_half, stride);
-        copy_band_i32(buf_a.i4_ref_dwt2.band_d, buf_c.i4_ref_dwt2.band_d,
-                      h_half, stride);
-        copy_band_i32(buf_a.i4_dis_dwt2.band_a, buf_c.i4_dis_dwt2.band_a,
-                      h_half, stride);
-        copy_band_i32(buf_a.i4_dis_dwt2.band_h, buf_c.i4_dis_dwt2.band_h,
-                      h_half, stride);
-        copy_band_i32(buf_a.i4_dis_dwt2.band_v, buf_c.i4_dis_dwt2.band_v,
-                      h_half, stride);
-        copy_band_i32(buf_a.i4_dis_dwt2.band_d, buf_c.i4_dis_dwt2.band_d,
-                      h_half, stride);
+#if ARCH_AARCH64
+        const int check_cols = stride;
+#else
+        const int check_cols = w_half;
+#endif
 
         checkasm_declare(void, AdmBuffer *, int, int, int, double, int32_t *);
 
-        if (checkasm_check_func(get_decouple_s123(checkasm_get_cpu_flags()),
-                                 "adm_decouple_s123_%dx%d", w, h))
-        {
-            checkasm_call_ref(&buf_c, w_half, h_half, stride,
-                               DEFAULT_ADM_ENHN_GAIN_LIMIT, div_lookup);
-            checkasm_call_new(&buf_a, w_half, h_half, stride,
-                               DEFAULT_ADM_ENHN_GAIN_LIMIT, div_lookup);
+#if ARCH_AARCH64
+        const double gains[] = { 1.0, 1.1, 100.0 };
+        const int patterns = 5;
+#else
+        const double gains[] = { DEFAULT_ADM_ENHN_GAIN_LIMIT };
+        const int patterns = 1;
+#endif
+        for (int pattern = 0; pattern < patterns; pattern++) {
+            int32_t *refs[] = { buf_c.i4_ref_dwt2.band_h,
+                buf_c.i4_ref_dwt2.band_v, buf_c.i4_ref_dwt2.band_d };
+            int32_t *dist[] = { buf_c.i4_dis_dwt2.band_h,
+                buf_c.i4_dis_dwt2.band_v, buf_c.i4_dis_dwt2.band_d };
+            int32_t *refs_a[] = { buf_a.i4_ref_dwt2.band_h,
+                buf_a.i4_ref_dwt2.band_v, buf_a.i4_ref_dwt2.band_d };
+            int32_t *dist_a[] = { buf_a.i4_dis_dwt2.band_h,
+                buf_a.i4_dis_dwt2.band_v, buf_a.i4_dis_dwt2.band_d };
+            for (int k = 0; k < h_half * stride; k++) {
+                for (int band = 0; band < 3; band++) {
+                    int32_t o = (int32_t)(checkasm_rand_uint32() % 16001) - 8000;
+                    int32_t d = (int32_t)(checkasm_rand_uint32() % 16001) - 8000;
+#if ARCH_AARCH64
+                    if (pattern == 1) {
+                        o = (int32_t)(checkasm_rand_uint32() & 0x1ffffff) - 0x1000000;
+                        d = o / 3;
+                    } else if (pattern == 2) {
+                        o = (int32_t)checkasm_rand_uint32();
+                        if (o == INT32_MIN) o++;
+                        d = o / 4 * 3;
+                    } else if (pattern == 3) {
+                        static const int32_t values[] = { 0, 1, -1, 32767, 32768, 32769,
+                            -32768, -32769, (1 << 26) - 1, 1 << 26, (1 << 26) + 1,
+                            (1 << 30) - 1, -(1 << 30) + 1, INT32_MAX, -INT32_MAX };
+                        o = values[(k + band) % (sizeof(values) / sizeof(*values))];
+                        d = o / 3;
+                    }
+                    if (pattern == 4) {
+                        const int32_t base = (1 << (25 + (k % 5))) + 1;
+                        o = band == 1 ? 0 : base;
+                        d = band == 1 ? (int32_t)((base / 3) * tan(M_PI / 180.0)) +
+                            (k % 5) - 2 : base / 3;
+                    }
+#endif
+                    refs_a[band][k] = refs[band][k] = o;
+                    dist_a[band][k] = dist[band][k] = d;
+                }
+            }
+            for (size_t g = 0; g < sizeof(gains) / sizeof(*gains); g++) {
+                if (pattern >= 2 && g) continue;
+                const double gain = gains[g];
+                if (checkasm_check_func(get_decouple_s123(checkasm_get_cpu_flags()),
+                                         "adm_decouple_s123_%dx%d_gain%g_pattern%d", w, h, gain, pattern))
+                {
+                    checkasm_call_ref(&buf_c, w_half, h_half, stride,
+                                       gain, div_lookup);
+                    checkasm_call_new(&buf_a, w_half, h_half, stride,
+                                       gain, div_lookup);
 
-            check2d_band_i32(buf_c.i4_decouple_r.band_h,
-                             buf_a.i4_decouple_r.band_h, w_half, h_half,
-                             stride, "i4_decouple_r.band_h");
-            check2d_band_i32(buf_c.i4_decouple_r.band_v,
-                             buf_a.i4_decouple_r.band_v, w_half, h_half,
-                             stride, "i4_decouple_r.band_v");
-            check2d_band_i32(buf_c.i4_decouple_r.band_d,
-                             buf_a.i4_decouple_r.band_d, w_half, h_half,
-                             stride, "i4_decouple_r.band_d");
-            check2d_band_i32(buf_c.i4_decouple_a.band_h,
-                             buf_a.i4_decouple_a.band_h, w_half, h_half,
-                             stride, "i4_decouple_a.band_h");
-            check2d_band_i32(buf_c.i4_decouple_a.band_v,
-                             buf_a.i4_decouple_a.band_v, w_half, h_half,
-                             stride, "i4_decouple_a.band_v");
-            check2d_band_i32(buf_c.i4_decouple_a.band_d,
-                             buf_a.i4_decouple_a.band_d, w_half, h_half,
-                             stride, "i4_decouple_a.band_d");
+                    check2d_band_i32(buf_c.i4_decouple_r.band_h,
+                                     buf_a.i4_decouple_r.band_h, check_cols, h_half,
+                                     stride, "i4_decouple_r.band_h");
+                    check2d_band_i32(buf_c.i4_decouple_r.band_v,
+                                     buf_a.i4_decouple_r.band_v, check_cols, h_half,
+                                     stride, "i4_decouple_r.band_v");
+                    check2d_band_i32(buf_c.i4_decouple_r.band_d,
+                                     buf_a.i4_decouple_r.band_d, check_cols, h_half,
+                                     stride, "i4_decouple_r.band_d");
+                    check2d_band_i32(buf_c.i4_decouple_a.band_h,
+                                     buf_a.i4_decouple_a.band_h, check_cols, h_half,
+                                     stride, "i4_decouple_a.band_h");
+                    check2d_band_i32(buf_c.i4_decouple_a.band_v,
+                                     buf_a.i4_decouple_a.band_v, check_cols, h_half,
+                                     stride, "i4_decouple_a.band_v");
+                    check2d_band_i32(buf_c.i4_decouple_a.band_d,
+                                     buf_a.i4_decouple_a.band_d, check_cols, h_half,
+                                     stride, "i4_decouple_a.band_d");
 
-            checkasm_bench_new(&buf_a, w_half, h_half, stride,
-                                DEFAULT_ADM_ENHN_GAIN_LIMIT, div_lookup);
+                    checkasm_bench_new(&buf_a, w_half, h_half, stride,
+                                        gain, div_lookup);
+                }
+
+            }
         }
-
         adm_buffer_free(&buf_c);
         adm_buffer_free(&buf_a);
     }
@@ -1083,10 +1160,18 @@ static void check_adm_i4_csf(void)
 
 static void check_adm_i4_cm(void)
 {
-    for (size_t i = 0; i < sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
-         i++)
-    {
-        const int w = post_dwt_sizes[i].w, h = post_dwt_sizes[i].h;
+#if ARCH_AARCH64
+    const struct adm_test_size sizes[] = {
+        { 33, 21 }, { 61, 33 }, { 63, 31 }, { 65, 33 }, { 67, 35 }, { 69, 37 },
+        { 127, 93 }, { 257, 193 }, { 514, 386 },
+    };
+    const size_t nb_sizes = sizeof(sizes) / sizeof(*sizes);
+#else
+    const struct adm_test_size *sizes = post_dwt_sizes;
+    const size_t nb_sizes = sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+#endif
+    for (size_t i = 0; i < nb_sizes; i++) {
+        const int w = sizes[i].w, h = sizes[i].h;
 
         AdmBuffer buf_c, buf_a;
         if (adm_buffer_alloc(&buf_c, w, h)) continue;
@@ -1108,6 +1193,14 @@ static void check_adm_i4_cm(void)
             fill_band_i32(c_bands[b]->band_h, h_half, stride);
             fill_band_i32(c_bands[b]->band_v, h_half, stride);
             fill_band_i32(c_bands[b]->band_d, h_half, stride);
+#if ARCH_AARCH64
+            for (int k = 0; k < h_half * stride; k++) {
+                int32_t *bands[] = { c_bands[b]->band_h, c_bands[b]->band_v, c_bands[b]->band_d };
+                for (int band = 0; band < 3; band++)
+                    bands[band][k] = b >= 2 ? checkasm_rand_uint32() & 4095 :
+                        (int32_t)(checkasm_rand_uint32() & 0x1ffffff) - 0x1000000;
+            }
+#endif
             copy_band_i32(a_bands[b]->band_h, c_bands[b]->band_h, h_half,
                           stride);
             copy_band_i32(a_bands[b]->band_v, c_bands[b]->band_v, h_half,
@@ -1138,8 +1231,13 @@ static void check_adm_i4_cm(void)
                         DEFAULT_ADM_CSF_SCALE, DEFAULT_ADM_CSF_DIAG_SCALE,
                         DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
 
+#if ARCH_AARCH64
+                    const bool different = memcmp(&ref, &new, sizeof(ref)) != 0;
+#else
                     const float tol = 1e-4f * (fabsf(ref) + 1.0f);
-                    if (fabsf(ref - new) > tol) {
+                    const bool different = fabsf(ref - new) > tol;
+#endif
+                    if (different) {
                         if (checkasm_fail())
                             fprintf(stderr, "expected %f, got %f\n", ref,
                                     new);
