@@ -316,6 +316,10 @@ int compute_adm(const float *ref, const float *dis, int w, int h, int ref_stride
 	if (den == 0.0)
 	{
 		*score = 1.0f;
+		// den is 0 (no reference detail): the AIM ratio has no denominator
+		// either. Report its limit, clipped to 1 as below: all impairment
+		// if aim_num is positive, none if it is 0.
+		*score_aim = aim_num > 0.0 ? 1.0 : 0.0;
 	}
 	else
 	{
