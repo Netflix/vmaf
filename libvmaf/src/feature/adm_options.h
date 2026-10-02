@@ -30,9 +30,6 @@
 /* Whether to save intermediate results to files. */
 /* #define ADM_OPT_DEBUG_DUMP */
 
-/* Whether to perform division by reciprocal-multiplication. */
-#define ADM_OPT_RECIP_DIVISION
-
 /* Enhancement gain imposed on adm, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #define DEFAULT_ADM_ENHN_GAIN_LIMIT (100.0)
 
