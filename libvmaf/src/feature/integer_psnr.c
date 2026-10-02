@@ -231,7 +231,18 @@ static int flush(VmafFeatureExtractor *fex,
 
     int err = 0;
     if (s->enable_apsnr) {
-        for (unsigned i = 0; i < 3; i++) {
+        /* Only the planes the extractor scored have a sum to aggregate. */
+        const unsigned n_planes = s->enable_chroma ? 3 : 1;
+        for (unsigned i = 0; i < n_planes; i++) {
+
+            /* No error at all: log10(0) is -inf and the cap below would be
+             * published. Report the per-frame cap, as psnr_* does. */
+            if (s->apsnr.sse[i] == 0) {
+                err |= vmaf_feature_collector_set_aggregate(feature_collector,
+                                                            apsnr_name[i],
+                                                            s->psnr_max[i]);
+                continue;
+            }
 
             double apsnr = 10 * (log10(s->peak * s->peak) +
                                  log10(s->apsnr.n_pixels[i]) -
