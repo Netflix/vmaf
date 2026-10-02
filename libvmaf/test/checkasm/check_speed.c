@@ -34,6 +34,7 @@
 #endif
 
 #if ARCH_X86
+#include "feature/common/convolution.h"
 #include "feature/x86/speed_avx2.h"
 #if HAVE_AVX512
 #include "feature/x86/speed_avx512.h"
@@ -147,6 +148,38 @@ static void check_compute_cov_kernel(void)
     }
 }
 
+typedef void (*filter_dec16_fn)(const float *f, const float *src, float *dst,
+                                float *tmp, int w, int h, int src_stride,
+                                int dst_stride, int fwidth);
+
+#if ARCH_X86
+static void filter_dec16_avx2(const float *f, const float *src, float *dst,
+                              float *tmp, int w, int h, int src_stride,
+                              int dst_stride, int fwidth)
+{
+    if (fwidth > MAX_FWIDTH_AVX_CONV) {
+        vif_filter1d_dec16_scalar_s(f, src, dst, tmp, w, h, src_stride,
+                                    dst_stride, fwidth);
+        return;
+    }
+    convolution_f32_avx_dec16_s(f, fwidth, src, dst, tmp, w, h,
+                                src_stride / sizeof(float),
+                                dst_stride / sizeof(float));
+}
+#endif
+
+static filter_dec16_fn get_filter_dec16(unsigned cpu_flags)
+{
+    filter_dec16_fn fn = vif_filter1d_dec16_scalar_s;
+#if ARCH_X86
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = filter_dec16_avx2;
+#else
+    (void) cpu_flags;
+#endif
+    return fn;
+}
+
 static void filter_dec16_ref(const float *f, const float *src, float *dst,
                              float *tmp, int w, int h, int src_stride,
                              int dst_stride, int fwidth)
@@ -218,10 +251,66 @@ static void check_filter_dec16(void)
     }
 }
 
+static void check_filter_dec16_simd(void)
+{
+    static const struct { int w, h; } filter_sizes[] = {
+        { 16, 16 }, { 17, 31 }, { 31, 17 }, { 64, 64 }, { 79, 48 },
+        { 255, 63 }, { MAX_WIDTH, MAX_HEIGHT },
+    };
+    static const float scales[] = { 0.1f, 0.5f, 1.0f, 2.0f, 4.0f };
+    CHECKASM_ALIGN(float src[BUFFER_SIZE]);
+    CHECKASM_ALIGN(float tmp[MAX_WIDTH]);
+    CHECKASM_ALIGN(float dst_c[(MAX_WIDTH / 16 + 3) * (MAX_HEIGHT / 16) + 1]);
+    CHECKASM_ALIGN(float dst_a[(MAX_WIDTH / 16 + 3) * (MAX_HEIGHT / 16) + 1]);
+    float filter[128];
+
+    checkasm_declare(void, const float *, const float *, float *, float *,
+                      int, int, int, int, int);
+
+    if (!checkasm_check_func(get_filter_dec16(checkasm_get_cpu_flags()),
+                              "filter_dec16_fused"))
+        return;
+
+    for (size_t i = 0; i < BUFFER_SIZE; i++)
+        src[i] = ((int)(checkasm_rand_uint32() & 65535) - 32768) / 128.f;
+
+    for (size_t s = 0; s < sizeof(filter_sizes) / sizeof(*filter_sizes); s++) {
+        const int w = filter_sizes[s].w, h = filter_sizes[s].h;
+        for (unsigned layout = 0; layout < 2; layout++) {
+            const int src_stride = (w + (layout ? 3 : 0)) * sizeof(float);
+            const int dst_stride = (w / 16 + (layout ? 3 : 0)) * sizeof(float);
+            for (size_t k = 0; k < sizeof(scales) / sizeof(*scales); k++) {
+                const int fwidth = vif_get_filter_size(1, scales[k]);
+                if (fwidth / 2 >= w || fwidth / 2 >= h) continue;
+                speed_get_antialias_filter(filter, 4, scales[k]);
+                memset(dst_c, 0xa5, sizeof(dst_c));
+                memset(dst_a, 0xa5, sizeof(dst_a));
+                checkasm_call_ref(filter, src + layout, dst_c + layout, tmp,
+                                  w, h, src_stride, dst_stride, fwidth);
+                checkasm_call_new(filter, src + layout, dst_a + layout, tmp,
+                                  w, h, src_stride, dst_stride, fwidth);
+                if (memcmp(dst_c, dst_a, sizeof(dst_c))) {
+                    if (checkasm_fail())
+                        fprintf(stderr, "%dx%d, layout %u, filter %d\n",
+                                w, h, layout, fwidth);
+                }
+            }
+        }
+    }
+
+    speed_get_antialias_filter(filter, 4, 1.0f);
+    checkasm_bench_new(filter, src, dst_a, tmp, MAX_WIDTH, MAX_HEIGHT,
+                        MAX_WIDTH * sizeof(float),
+                        (MAX_WIDTH / 16) * sizeof(float),
+                        vif_get_filter_size(1, 1.0f));
+}
+
 void checkasm_check_speed(void)
 {
     check_compute_cov_kernel();
     checkasm_report("compute_cov_kernel");
     check_filter_dec16();
     checkasm_report("filter_dec16");
+    check_filter_dec16_simd();
+    checkasm_report("filter_dec16_fused");
 }

@@ -39,6 +39,7 @@ void convolution_f32_avx_s_1d_h_scanline(const float * RESTRICT filter, int filt
         for (int k = 0; k < filter_width; k++) {
             __m256 g = _mm256_loadu_ps(src + j + k);
             g = _mm256_mul_ps(f[k], g);
+            VMAF_NO_FUSE(g);
             sum = _mm256_add_ps(sum, g);
         }
 
@@ -63,6 +64,7 @@ void convolution_f32_avx_s_1d_v_scanline(const float * RESTRICT filter, int filt
         for (int k = 0; k < filter_width; k++) {
             __m256 g = _mm256_load_ps(src + k * src_stride + j);
             g = _mm256_mul_ps(f[k], g);
+            VMAF_NO_FUSE(g);
             sum = _mm256_add_ps(sum, g);
         }
 
@@ -243,6 +245,66 @@ void convolution_f32_avx_xy_s(const float * RESTRICT filter, int filter_width, c
 
         for (int j = j_vec_end; j < width; ++j) {
             dst[i * dst_stride + j] = convolution_edge_s(true, filter, filter_width, tmp, width, height, tmp_stride, i, j);
+        }
+    }
+}
+
+void convolution_f32_avx_dec16_s(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, float * RESTRICT tmp, int width, int height, int src_stride, int dst_stride) {
+    const int radius = filter_width / 2;
+    const int width_floor_step = vmaf_floorn(width, AVX_STEP);
+
+    __m256 f[MAX_FWIDTH_AVX_CONV];
+    const float *rows[MAX_FWIDTH_AVX_CONV];
+
+    for (int k = 0; k < filter_width; k++) {
+        f[k] = _mm256_broadcast_ss(filter + k);
+    }
+
+    for (int i = 0; i < height / 16; i++) {
+        for (int k = 0; k < filter_width; k++) {
+            int ii = i * 16 - radius + k;
+            ii = ii < 0 ? -ii : (ii >= height ? 2 * height - ii - 2 : ii);
+            rows[k] = src + (size_t) ii * src_stride;
+        }
+
+        // Vertical pass, only at the retained row.
+        for (int j = 0; j < width_floor_step; j += AVX_STEP) {
+            __m256 sum = _mm256_setzero_ps();
+
+            for (int k = 0; k < filter_width; k++) {
+                __m256 g = _mm256_loadu_ps(rows[k] + j);
+                g = _mm256_mul_ps(f[k], g);
+                VMAF_NO_FUSE(g);
+                sum = _mm256_add_ps(sum, g);
+            }
+
+            _mm256_storeu_ps(tmp + j, sum);
+        }
+        for (int j = width_floor_step; j < width; j++) {
+            float accum = 0;
+
+            for (int k = 0; k < filter_width; k++) {
+                float p = filter[k] * rows[k][j];
+                VMAF_NO_FUSE(p);
+                accum += p;
+            }
+
+            tmp[j] = accum;
+        }
+
+        // Horizontal pass, only at the retained columns.
+        for (int j = 0; j < width / 16; j++) {
+            float accum = 0;
+
+            for (int k = 0; k < filter_width; k++) {
+                int jj = j * 16 - radius + k;
+                jj = jj < 0 ? -jj : (jj >= width ? 2 * width - jj - 2 : jj);
+                float p = filter[k] * tmp[jj];
+                VMAF_NO_FUSE(p);
+                accum += p;
+            }
+
+            dst[(size_t) i * dst_stride + j] = accum;
         }
     }
 }
