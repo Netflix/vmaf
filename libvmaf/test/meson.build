@@ -12,7 +12,7 @@ test_context = executable('test_context',
 )
 
 test_picture = executable('test_picture',
-    ['test.c', 'test_picture.c', '../src/picture.c', '../src/mem.c', '../src/ref.c', '../src/thread_pool.c'],
+    ['test.c', 'test_picture.c', '../src/picture.c', '../src/mem.c', '../src/ref.c', '../src/log.c', '../src/thread_pool.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     dependencies:[stdatomic_dependency, thread_lib, cuda_dependency],
 )
@@ -261,4 +261,16 @@ endif
 
 if get_option('enable_checkasm')
     subdir('checkasm')
+endif
+
+if get_option('enable_zimg')
+test_colorspace = executable('test_colorspace',
+    ['test.c', 'test_colorspace.c', '../src/picture.c',
+     '../src/mem.c', '../src/ref.c', '../src/log.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    dependencies: [zimg_dependency, thread_lib],
+    c_args: ['-DHAVE_ZIMG=1']
+)
+
+test('test_colorspace', test_colorspace)
 endif

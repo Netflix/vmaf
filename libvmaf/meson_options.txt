@@ -58,3 +58,9 @@ option('bundled_winpthreads',
     type: 'boolean',
     value: true,
     description: 'Use the bundled pthread-win32 implementation (MSVC only). Set to false to use an external pthreads library.')
+
+option('enable_zimg',
+    type: 'boolean',
+    value: false,
+    description: 'Enable zimg-based picture colorspace conversion ' +
+                 '(requires zimg to be installed, e.g. via pkg-config)')
