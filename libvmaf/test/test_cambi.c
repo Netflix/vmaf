@@ -558,7 +558,7 @@ static char *test_weight_scores_per_scale()
 static char *test_adjust_window_size()
 {
     bool cambi_high_res_speedup = false;
-    uint16_t window_size = 63;
+    int window_size = 63;
     adjust_window_size(&window_size, 3840, 2160, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(3840, 2160), ws=63", window_size==63);
 
@@ -744,6 +744,37 @@ static char *test_get_vlt_luma()
     return NULL;
 }
 
+static char *test_integer_options_fill_int_fields()
+{
+    /* Every VMAF_OPT_TYPE_INT option is written and read through an int *. The
+     * field behind it has to be an aligned int and the options must not
+     * disturb their neighbours. */
+    CambiState s;
+    memset(&s, 0, sizeof(s));
+    s.src_window_size = 77;
+    s.vlt_luma = 78;
+
+    for (unsigned i = 0; options[i].name; i++) {
+        const VmafOption *opt = &options[i];
+        if (opt->type != VMAF_OPT_TYPE_INT) continue;
+        mu_assert("integer option offset is a multiple of alignof(int)",
+                  opt->offset % _Alignof(int) == 0);
+        mu_assert("integer option is set to its default",
+                  !vmaf_option_set(opt, &s, NULL));
+    }
+
+    mu_assert("window_size is an int", sizeof(s.window_size) == sizeof(int));
+    mu_assert("max_log_contrast is an int",
+              sizeof(s.max_log_contrast) == sizeof(int));
+    mu_assert("window_size default", s.window_size == DEFAULT_CAMBI_WINDOW_SIZE);
+    mu_assert("max_log_contrast default",
+              s.max_log_contrast == DEFAULT_CAMBI_MAX_LOG_CONTRAST);
+    mu_assert("setting the options leaves src_window_size alone",
+              s.src_window_size == 77);
+    mu_assert("setting the options leaves vlt_luma alone", s.vlt_luma == 78);
+    return NULL;
+}
+
 char *run_tests()
 {
     /* Preprocessing functions */
@@ -768,6 +799,7 @@ char *run_tests()
     mu_run_test(test_get_pixels_in_window);
     mu_run_test(test_weight_scores_per_scale);
     mu_run_test(test_adjust_window_size);
+    mu_run_test(test_integer_options_fill_int_fields);
 
     /* Visibility threshold functions */
     mu_run_test(test_get_tvi_for_diff);
