@@ -34,12 +34,20 @@ is_asm_enabled = get_option('enable_asm') == true
 is_cuda_enabled = get_option('enable_cuda') == true
 is_avx512_enabled = get_option('enable_avx512') == true
 is_nvtx_enabled = get_option('enable_nvtx') == true
+is_zimg_enabled = get_option('enable_zimg') == true
 
-if is_nvtx_enabled    
+if is_nvtx_enabled
     cdata.set10('HAVE_NVTX', is_nvtx_enabled)
 endif
 if is_cuda_enabled
     cdata.set10('HAVE_CUDA', is_cuda_enabled)
+endif
+
+zimg_dependency = []
+if is_zimg_enabled
+    # ZIMG_MATRIX_ICTCP, used for ICtCp conversion, first appeared in zimg 2.7
+    zimg_dependency = dependency('zimg', version: '>=2.7', required: true)
+    cdata.set10('HAVE_ZIMG', is_zimg_enabled)
 endif
 
 if is_asm_enabled
@@ -609,6 +617,9 @@ endif
 if is_nvtx_enabled
     vmaf_cflags_common += '-DHAVE_NVTX'
 endif
+if is_zimg_enabled
+    vmaf_cflags_common += '-DHAVE_ZIMG'
+endif
 
 if host_machine.system() == 'windows'
     vmaf_soversion = ''
@@ -625,6 +636,7 @@ _vmaf_deps = [
     cuda_dependency,
     builtin_clz_dependency,
     rev_dep,
+    zimg_dependency,
 ]
 _vmaf_objs = [
     platform_specific_cpu_objects,

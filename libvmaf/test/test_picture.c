@@ -16,7 +16,9 @@
  *
  */
 
+#include <errno.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "test.h"
 #include "picture.h"
@@ -44,6 +46,47 @@ static char *test_picture_alloc_ref_and_unref()
     return NULL;
 }
 
+static char *test_picture_color_metadata_defaults()
+{
+    int err;
+
+    VmafPicture pic;
+    err = vmaf_picture_alloc(&pic, VMAF_PIX_FMT_YUV420P, 8, 1920, 1080);
+    mu_assert("problem during vmaf_picture_alloc", !err);
+    mu_assert("color.range should default to unknown",
+              pic.color.range == VMAF_COLOR_RANGE_UNKNOWN);
+    mu_assert("color.primaries should default to unknown",
+              pic.color.primaries == VMAF_COLOR_PRIMARIES_UNKNOWN);
+    mu_assert("color.trc should default to unknown",
+              pic.color.trc == VMAF_COLOR_TRC_UNKNOWN);
+    mu_assert("color.matrix should default to unknown",
+              pic.color.matrix == VMAF_COLOR_MATRIX_UNKNOWN);
+
+    pic.color.range = VMAF_COLOR_RANGE_FULL;
+    pic.color.primaries = VMAF_COLOR_PRIMARIES_BT2020;
+    pic.color.trc = VMAF_COLOR_TRC_SMPTE2084;
+    pic.color.matrix = VMAF_COLOR_MATRIX_ICTCP;
+
+    VmafPicture pic_ref;
+    err = vmaf_picture_ref(&pic_ref, &pic);
+    mu_assert("problem during vmaf_picture_ref", !err);
+    mu_assert("color.range should be preserved by vmaf_picture_ref",
+              pic_ref.color.range == VMAF_COLOR_RANGE_FULL);
+    mu_assert("color.primaries should be preserved by vmaf_picture_ref",
+              pic_ref.color.primaries == VMAF_COLOR_PRIMARIES_BT2020);
+    mu_assert("color.trc should be preserved by vmaf_picture_ref",
+              pic_ref.color.trc == VMAF_COLOR_TRC_SMPTE2084);
+    mu_assert("color.matrix should be preserved by vmaf_picture_ref",
+              pic_ref.color.matrix == VMAF_COLOR_MATRIX_ICTCP);
+
+    err = vmaf_picture_unref(&pic);
+    mu_assert("problem during vmaf_picture_unref", !err);
+    err = vmaf_picture_unref(&pic_ref);
+    mu_assert("problem during vmaf_picture_unref", !err);
+
+    return NULL;
+}
+
 static char *test_picture_data_alignment()
 {
     int err;
@@ -65,9 +108,44 @@ static char *test_picture_data_alignment()
     return NULL;
 }
 
+#ifndef HAVE_ZIMG
+static char *test_picture_convert_without_zimg()
+{
+    VmafPicture src, dst;
+    int err = vmaf_picture_alloc(&src, VMAF_PIX_FMT_YUV420P, 8, 16, 16);
+    mu_assert("problem during vmaf_picture_alloc", !err);
+    memset(&dst, 0, sizeof(dst));
+
+    VmafPictureConvertTarget target = {
+        .pix_fmt = VMAF_PIX_FMT_YUV444P,
+        .bpc = 8,
+    };
+    VmafPictureConvertContext *ctx = NULL;
+    err = vmaf_picture_convert_context_init(&ctx, &src, &target);
+    mu_assert("init should be unsupported without zimg", err == -ENOTSUP);
+    mu_assert("no context should be created without zimg", !ctx);
+
+    err = vmaf_picture_convert(ctx, &dst, &src);
+    mu_assert("convert should be unsupported without zimg", err == -ENOTSUP);
+    mu_assert("dst should not be allocated without zimg", !dst.ref);
+
+    err = vmaf_picture_convert_context_close(ctx);
+    mu_assert("close should be unsupported without zimg", err == -ENOTSUP);
+
+    err = vmaf_picture_unref(&src);
+    mu_assert("problem during vmaf_picture_unref", !err);
+
+    return NULL;
+}
+#endif
+
 char *run_tests()
 {
     mu_run_test(test_picture_alloc_ref_and_unref);
+    mu_run_test(test_picture_color_metadata_defaults);
     mu_run_test(test_picture_data_alignment);
+#ifndef HAVE_ZIMG
+    mu_run_test(test_picture_convert_without_zimg);
+#endif
     return NULL;
 }
