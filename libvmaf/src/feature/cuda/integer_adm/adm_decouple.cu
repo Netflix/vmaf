@@ -49,7 +49,7 @@ __global__ void adm_decouple_kernel(AdmBufferCuda buf, int top, int bottom,
     int i = top + blockIdx.y * blockDim.y + threadIdx.y;
     int j = left + blockIdx.x * blockDim.x + threadIdx.x;
     if (i < bottom && j < right) {
-        int32_t ot_dp, o_mag_sq, t_mag_sq;
+        int64_t ot_dp, o_mag_sq, t_mag_sq;
 
         int16_t oh = ref->band_h[i * stride + j];
         int16_t ov = ref->band_v[i * stride + j];
@@ -59,17 +59,20 @@ __global__ void adm_decouple_kernel(AdmBufferCuda buf, int top, int bottom,
         int16_t td = dis->band_d[i * stride + j];
         int32_t rst_h, rst_v, rst_d;
 
-        // the result of 2*int16_t needs 31 bits.
-        // adding two 31 bit values results in 32 bits.
-        // thus there is no need for 64-bit math.
-        ot_dp = (int32_t)oh * th + (int32_t)ov * tv;
-        o_mag_sq = (int32_t)oh * oh + (int32_t)ov * ov;
-        t_mag_sq = (int32_t)th * th + (int32_t)tv * tv;
+        ot_dp = (int64_t)oh * th + (int64_t)ov * tv;
+        o_mag_sq = (int64_t)oh * oh + (int64_t)ov * ov;
+        t_mag_sq = (int64_t)th * th + (int64_t)tv * tv;
 
+        // Decide the angle as the CPU does: round the three integers to float,
+        // divide by 4096 in double and compare. The exact integer test takes a
+        // different decision for vectors whose angle is within float rounding
+        // of one degree.
+        const double ot_dp_f = (double)(float)ot_dp / 4096.0;
         int angle_flag =
-            (ot_dp >= 0) &&
-            double(int64_t(ot_dp) * ot_dp) >=
-            double(int64_t(o_mag_sq) * t_mag_sq) * cos_1deg_sq;
+            (ot_dp_f >= 0.0) &&
+            (ot_dp_f * ot_dp_f >=
+             (double)cos_1deg_sq * ((double)(float)o_mag_sq / 4096.0) *
+                 ((double)(float)t_mag_sq / 4096.0));
 
         int32_t tmp_kh =
             (oh == 0)
