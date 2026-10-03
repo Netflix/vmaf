@@ -68,9 +68,9 @@ static void scale_chroma_planes_hbd(VmafPicture *in, VmafPicture *out)
         uint16_t *out_buf = out->data[p];
         for (unsigned i = 0; i < out->h[p]; i++) {
             for (unsigned j = 0; j < out->w[p]; j++) {
-                out_buf[j] = in_buf[(j / ((p && ss_ver) ? 2 : 1))];
+                out_buf[j] = in_buf[(j / ((p && ss_hor) ? 2 : 1))];
             }
-            in_buf += (((p && ss_hor) ? i % 2 : 1) * in->stride[p]) / 2;
+            in_buf += (((p && ss_ver) ? i % 2 : 1) * in->stride[p]) / 2;
             out_buf += out->stride[p] / 2;
         }
     }
@@ -86,9 +86,9 @@ static void scale_chroma_planes(VmafPicture *in, VmafPicture *out)
         uint8_t *out_buf = out->data[p];
         for (unsigned i = 0; i < out->h[p]; i++) {
             for (unsigned j = 0; j < out->w[p]; j++) {
-                out_buf[j] = in_buf[(j / ((p && ss_ver) ? 2 : 1))];
+                out_buf[j] = in_buf[(j / ((p && ss_hor) ? 2 : 1))];
             }
-            in_buf += ((p && ss_hor) ? i % 2 : 1) * in->stride[p];
+            in_buf += ((p && ss_ver) ? i % 2 : 1) * in->stride[p];
             out_buf += out->stride[p];
         }
     }
