@@ -784,14 +784,18 @@ static int translate_picture_device(VmafContext *vmaf, VmafPicture *pic,
         return err;
     }
 
-    err = vmaf_cuda_picture_download_async(pic, pic_host, 0x1);
+    err = vmaf_cuda_picture_download_async(pic, pic_host, 0x7);
     if (err) {
         vmaf_log(VMAF_LOG_LEVEL_ERROR,
                  "problem moving cuda pic into host buffer\n");
         return err;
     }
 
-    return err;
+    /* CPU extractors may consume pic_host as soon as translation returns. */
+    CudaFunctions *cu_f = vmaf->cuda.state.f;
+    if (cu_f->cuStreamSynchronize(vmaf_cuda_picture_get_stream(pic)))
+        return -EIO;
+    return 0;
 }
 
 static int translate_picture(VmafContext *vmaf, VmafPicture *pic,
@@ -906,20 +910,25 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
         dist = &dist_host;
 #endif
 
-    //multithreading for GPU does not yield performance benefits
-    //disabled for now
-    if (vmaf->thread_pool){
+    if (vmaf->thread_pool) {
+#ifdef HAVE_CUDA
+        /* Pure device extraction has no host pictures to enqueue. Continue
+         * to the common device cleanup after dispatching any CPU features. */
+        if (ref_host.priv)
+            err = threaded_read_pictures_batch(vmaf, ref, dist, index);
+#else
         return threaded_read_pictures_batch(vmaf, ref, dist, index);
+#endif
+    } else {
+        if (vmaf->prev_prev_ref.ref)
+            vmaf_picture_unref(&vmaf->prev_prev_ref);
+        if (vmaf->prev_ref.ref) {
+            vmaf->prev_prev_ref = vmaf->prev_ref;
+            vmaf->prev_ref = (VmafPicture){0};
+        }
+        if (ref && ref->ref)
+            vmaf_picture_ref(&vmaf->prev_ref, ref);
     }
-
-    if (vmaf->prev_prev_ref.ref)
-        vmaf_picture_unref(&vmaf->prev_prev_ref);
-    if (vmaf->prev_ref.ref) {
-        vmaf->prev_prev_ref = vmaf->prev_ref;
-        vmaf->prev_ref = (VmafPicture){0};
-    }
-    if (ref && ref->ref)
-        vmaf_picture_ref(&vmaf->prev_ref, ref);
 #ifdef HAVE_CUDA
     if (ref_host.priv)
         err |= vmaf_picture_unref(&ref_host);
