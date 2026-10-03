@@ -238,7 +238,7 @@ static int flush(VmafFeatureExtractor *fex,
                                  log10(s->apsnr.sse[i]));
 
             double max_apsnr =
-                ceil(10 * log10(s->peak * s->peak *
+                ceil(10 * log10((double)s->peak * s->peak *
                                 s->apsnr.n_pixels[i] *
                                 2));
 
