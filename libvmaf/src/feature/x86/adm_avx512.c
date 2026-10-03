@@ -851,9 +851,14 @@ void adm_decouple_avx512(AdmBuffer *buf, int w, int h, int stride,
             __m512i ot_dp = _mm512_madd_epi16(oh_ov, th_tv);
             __m512i t_mag_sq = _mm512_madd_epi16(th_tv, th_tv);
 
-            __m512 ot_dp_ps = _mm512_mul_ps(inv_4096, _mm512_cvtepi32_ps(ot_dp));
-            __m512 o_mag_sq_ps = _mm512_mul_ps(inv_4096, _mm512_cvtepi32_ps(o_mag_sq));
-            __m512 t_mag_sq_ps = _mm512_mul_ps(inv_4096, _mm512_cvtepi32_ps(t_mag_sq));
+            // _mm512_madd_epi16 sums two int16 products in int32. The sum wraps in one case only:
+            // both products are 2^30 (four operands of -32768) and the lane reads INT32_MIN for
+            // 2^31, which the scalar kernel (int64) does not. Convert the squared magnitudes, which
+            // are never negative, as unsigned, and the dot product as unsigned where it is INT32_MIN.
+            __mmask16 dp_wrapped = _mm512_cmpeq_epi32_mask(ot_dp, _mm512_set1_epi32(INT32_MIN));
+            __m512 ot_dp_ps = _mm512_mul_ps(inv_4096, _mm512_mask_cvtepu32_ps(_mm512_cvtepi32_ps(ot_dp), dp_wrapped, ot_dp));
+            __m512 o_mag_sq_ps = _mm512_mul_ps(inv_4096, _mm512_cvtepu32_ps(o_mag_sq));
+            __m512 t_mag_sq_ps = _mm512_mul_ps(inv_4096, _mm512_cvtepu32_ps(t_mag_sq));
 
             __mmask16 gt_0 = _mm512_cmp_ps_mask(ot_dp_ps, _mm512_setzero_ps(), 13);
             __m512d ot_dp_pd_lo = _mm512_cvtps_pd(_mm512_castps512_ps256(ot_dp_ps));
@@ -958,16 +963,18 @@ void adm_decouple_avx512(AdmBuffer *buf, int w, int h, int stride,
             __mmask16 lt0_rst_d_f = _mm512_cmp_ps_mask(rst_d_f, _mm512_setzero_ps(), 1);
 
             // Apply gain using double precision to match scalar accuracy
+            // Truncating conversions, like the integer store of the scalar MIN/MAX: a rounding
+            // conversion differs from it whenever the gain limit is fractional.
             __m512d adm_gain_d = _mm512_set1_pd(adm_enhn_gain_limit);
             __m512d rst_h_gainlo_d = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_h, 0)), adm_gain_d);
             __m512d rst_h_gainhi_d = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_h, 1)), adm_gain_d);
-            __m512i rst_h_gain = _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvtpd_epi32(rst_h_gainlo_d)), _mm512_cvtpd_epi32(rst_h_gainhi_d), 1);
+            __m512i rst_h_gain = _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvttpd_epi32(rst_h_gainlo_d)), _mm512_cvttpd_epi32(rst_h_gainhi_d), 1);
             __m512d rst_v_gainlo_d = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_v, 0)), adm_gain_d);
             __m512d rst_v_gainhi_d = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_v, 1)), adm_gain_d);
-            __m512i rst_v_gain = _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvtpd_epi32(rst_v_gainlo_d)), _mm512_cvtpd_epi32(rst_v_gainhi_d), 1);
+            __m512i rst_v_gain = _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvttpd_epi32(rst_v_gainlo_d)), _mm512_cvttpd_epi32(rst_v_gainhi_d), 1);
             __m512d rst_d_gainlo_d = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_d, 0)), adm_gain_d);
             __m512d rst_d_gainhi_d = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_d, 1)), adm_gain_d);
-            __m512i rst_d_gain = _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvtpd_epi32(rst_d_gainlo_d)), _mm512_cvtpd_epi32(rst_d_gainhi_d), 1);
+            __m512i rst_d_gain = _mm512_inserti32x8(_mm512_castsi256_si512(_mm512_cvttpd_epi32(rst_d_gainlo_d)), _mm512_cvttpd_epi32(rst_d_gainhi_d), 1);
 
             __m512i h_min = _mm512_min_epi32(rst_h_gain, th);
             __m512i v_min = _mm512_min_epi32(rst_v_gain, tv);
@@ -1399,13 +1406,14 @@ void adm_decouple_s123_avx512(AdmBuffer *buf, int w, int h, int stride,
             __m512 kd_f = _mm512_insertf32x8( _mm512_castps256_ps512(_mm512_cvtepi64_ps(kd_lo_epi64)), _mm512_cvtepi64_ps(kd_hi_epi64), 1);
             __m512 rst_d_f = _mm512_mul_ps(_mm512_mul_ps(kd_f, inv_32768_f), _mm512_mul_ps(_mm512_cvtepi32_ps(od_epi32), inv_64_f));
 
+            // (int64_t) of the product truncates; _mm512_cvttpd_epi64 does too.
 	        __m512d adm_gain_d = _mm512_set1_pd(adm_enhn_gain_limit);
 
             // rst_h min/max as int64
             __m512d rst_h_lo_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_h_epi32,0)), adm_gain_d);
             __m512d rst_h_hi_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_h_epi32,1)), adm_gain_d);
-            __m512i rst_h_lo_gain_epi64 = _mm512_cvtpd_epi64(rst_h_lo_gain_pd);
-            __m512i rst_h_hi_gain_epi64 = _mm512_cvtpd_epi64(rst_h_hi_gain_pd);
+            __m512i rst_h_lo_gain_epi64 = _mm512_cvttpd_epi64(rst_h_lo_gain_pd);
+            __m512i rst_h_hi_gain_epi64 = _mm512_cvttpd_epi64(rst_h_hi_gain_pd);
             __m512i rst_h_min_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(th_lo_epi64, rst_h_lo_gain_epi64), th_lo_epi64, rst_h_lo_gain_epi64);
             __m512i rst_h_min_hi_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(th_hi_epi64, rst_h_hi_gain_epi64), th_hi_epi64, rst_h_hi_gain_epi64);
             __m512i rst_h_max_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(rst_h_lo_gain_epi64, th_lo_epi64), th_lo_epi64, rst_h_lo_gain_epi64);
@@ -1430,8 +1438,8 @@ void adm_decouple_s123_avx512(AdmBuffer *buf, int w, int h, int stride,
             // rst_v min/max as int64
             __m512d rst_v_lo_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_v_epi32,0)), adm_gain_d);
             __m512d rst_v_hi_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_v_epi32,1)), adm_gain_d);
-            __m512i rst_v_lo_gain_epi64 = _mm512_cvtpd_epi64(rst_v_lo_gain_pd);
-            __m512i rst_v_hi_gain_epi64 = _mm512_cvtpd_epi64(rst_v_hi_gain_pd);
+            __m512i rst_v_lo_gain_epi64 = _mm512_cvttpd_epi64(rst_v_lo_gain_pd);
+            __m512i rst_v_hi_gain_epi64 = _mm512_cvttpd_epi64(rst_v_hi_gain_pd);
             __m512i rst_v_min_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(tv_lo_epi64, rst_v_lo_gain_epi64), tv_lo_epi64, rst_v_lo_gain_epi64);
             __m512i rst_v_min_hi_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(tv_hi_epi64, rst_v_hi_gain_epi64), tv_hi_epi64, rst_v_hi_gain_epi64);
             __m512i rst_v_max_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(rst_v_lo_gain_epi64, tv_lo_epi64), tv_lo_epi64, rst_v_lo_gain_epi64);
@@ -1456,8 +1464,8 @@ void adm_decouple_s123_avx512(AdmBuffer *buf, int w, int h, int stride,
             // rst_d min/max as int64
             __m512d rst_d_lo_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_d_epi32,0)), adm_gain_d);
             __m512d rst_d_hi_gain_pd = _mm512_mul_pd(_mm512_cvtepi32_pd(_mm512_extracti32x8_epi32(rst_d_epi32,1)), adm_gain_d);
-            __m512i rst_d_lo_gain_epi64 = _mm512_cvtpd_epi64(rst_d_lo_gain_pd);
-            __m512i rst_d_hi_gain_epi64 = _mm512_cvtpd_epi64(rst_d_hi_gain_pd);
+            __m512i rst_d_lo_gain_epi64 = _mm512_cvttpd_epi64(rst_d_lo_gain_pd);
+            __m512i rst_d_hi_gain_epi64 = _mm512_cvttpd_epi64(rst_d_hi_gain_pd);
             __m512i rst_d_min_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(td_lo_epi64, rst_d_lo_gain_epi64), td_lo_epi64, rst_d_lo_gain_epi64);
             __m512i rst_d_min_hi_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(td_hi_epi64, rst_d_hi_gain_epi64), td_hi_epi64, rst_d_hi_gain_epi64);
             __m512i rst_d_max_lo_epi64 = _mm512_mask_blend_epi64( _mm512_cmpgt_epi64_mask(rst_d_lo_gain_epi64, td_lo_epi64), td_lo_epi64, rst_d_lo_gain_epi64);
