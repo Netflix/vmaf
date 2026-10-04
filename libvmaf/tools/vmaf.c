@@ -80,7 +80,8 @@ static int validate_videos(video_input *vid1, video_input *vid2, bool common_bit
     return err_cnt;
 }
 
-static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic)
+static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic,
+                         VmafColor color)
 {
     int ret = vmaf_fetch_preallocated_picture(vmaf, pic);
     if (ret) {
@@ -93,6 +94,7 @@ static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic)
         vmaf_picture_unref(pic);
         return !ret;
     }
+    pic->color = color;
     return 0;
 }
 
@@ -337,12 +339,12 @@ int main(int argc, char *argv[])
     VmafPicture pic_ref, pic_dist;
 
     for (unsigned i = 0; i < c.frame_skip_ref; i++) {
-        if (!fetch_picture(vmaf, &vid_ref, &pic_ref))
+        if (!fetch_picture(vmaf, &vid_ref, &pic_ref, c.color_ref))
             vmaf_picture_unref(&pic_ref);
     }
 
     for (unsigned i = 0; i < c.frame_skip_dist; i++) {
-        if (!fetch_picture(vmaf, &vid_dist, &pic_dist))
+        if (!fetch_picture(vmaf, &vid_dist, &pic_dist, c.color_dist))
             vmaf_picture_unref(&pic_dist);
     }
 
@@ -355,8 +357,8 @@ int main(int argc, char *argv[])
             break;
 
         VmafPicture pic_ref, pic_dist;
-        int ret1 = fetch_picture(vmaf, &vid_ref, &pic_ref);
-        int ret2 = fetch_picture(vmaf, &vid_dist, &pic_dist);
+        int ret1 = fetch_picture(vmaf, &vid_ref, &pic_ref, c.color_ref);
+        int ret2 = fetch_picture(vmaf, &vid_dist, &pic_dist, c.color_dist);
 
         if (ret1 && ret2) {
             break;
