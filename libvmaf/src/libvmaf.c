@@ -35,6 +35,7 @@
 #include "libvmaf/feature.h"
 #include "libvmaf/picture.h"
 
+#include "conversion_policy.h"
 #include "cpu.h"
 #include "feature/feature_extractor.h"
 #include "feature/feature_collector.h"
@@ -92,6 +93,14 @@ typedef struct VmafContext {
     } pic_params;
     unsigned pic_cnt;
     bool flushed;
+    struct {
+        VmafPictureConvertContext *ref;
+        VmafPictureConvertContext *dist;
+        bool have_target;
+        VmafPictureConvertTarget target;
+        unsigned n_models_with_target;
+        unsigned n_models_without_target;
+    } convert;
     VmafPicture prev_ref;      // n-1 ref pic for PREV_REF extractors (in-order only)
     VmafPicture prev_prev_ref; // n-2 ref pic for PREV_REF extractors (in-order only)
 } VmafContext;
@@ -349,6 +358,10 @@ int vmaf_close(VmafContext *vmaf)
         vmaf_picture_unref(&vmaf->prev_ref);
     if (vmaf->prev_prev_ref.ref)
         vmaf_picture_unref(&vmaf->prev_prev_ref);
+    if (vmaf->convert.ref)
+        vmaf_picture_convert_context_close(vmaf->convert.ref);
+    if (vmaf->convert.dist)
+        vmaf_picture_convert_context_close(vmaf->convert.dist);
     vmaf_framesync_destroy(vmaf->framesync);
     feature_extractor_vector_destroy(&(vmaf->registered_feature_extractors));
     vmaf_feature_collector_destroy(vmaf->feature_collector);
@@ -415,12 +428,16 @@ int vmaf_use_feature(VmafContext *vmaf, const char *feature_name,
     return err;
 }
 
+static int register_conversion_target(VmafContext *vmaf,
+                                      const VmafModel *model);
+
 int vmaf_use_features_from_model(VmafContext *vmaf, VmafModel *model)
 {
     if (!vmaf) return -EINVAL;
     if (!model) return -EINVAL;
 
-    int err = 0;
+    int err = register_conversion_target(vmaf, model);
+    if (err) return err;
 
     unsigned fex_flags = 0;
 
@@ -614,6 +631,116 @@ static int threaded_read_pictures_batch(VmafContext *vmaf, VmafPicture *ref,
     vmaf_picture_ref(&vmaf->prev_ref, ref);
 
     return vmaf_picture_unref(ref) | vmaf_picture_unref(dist);
+}
+
+static int convert_context_get(VmafPictureConvertContext **ctx,
+                               const VmafPicture *pic,
+                               const VmafPictureConvertTarget *model_target)
+{
+    if (*ctx) return 0;
+
+    VmafPictureConvertTarget target = *model_target;
+    if (!target.pix_fmt) target.pix_fmt = pic->pix_fmt;
+    if (!target.bpc) target.bpc = pic->bpc;
+    target.w = pic->w[0];
+    target.h = pic->h[0];
+    target.resample_filter = VMAF_RESAMPLE_DEFAULT;
+    return vmaf_picture_convert_context_init(ctx, pic, &target);
+}
+
+/**
+ * Convert `pic` to `target` into `out`. Leaves `out` untouched when `pic`
+ * already matches it.
+ */
+static int convert_picture(VmafPictureConvertContext **ctx,
+                           const VmafPicture *pic,
+                           const VmafPictureConvertTarget *target,
+                           VmafPicture *out)
+{
+    if (vmaf_conversion_policy_picture_matches(pic, target))
+        return 0;
+    int err = convert_context_get(ctx, pic, target);
+    if (err) return err;
+    return vmaf_picture_convert(*ctx, out, pic);
+}
+
+/**
+ * Convert ref and dist to the target (colorspace, and pixel format and bit
+ * depth where pinned) the registered model(s) declare. Pass-through (no-op) when the model declares
+ * none; an error when it declares one and the source colorimetry is not
+ * fully specified. On success the originals are released and replaced in
+ * place by the converted pictures; on failure they are left untouched.
+ */
+static int convert_pictures(VmafContext *vmaf, VmafPicture *ref,
+                            VmafPicture *dist)
+{
+    bool needs_conversion = false;
+    VmafPictureConvertTarget target = { 0 };
+    int err = vmaf_conversion_policy_target(
+        ref, dist,
+        vmaf->convert.have_target ? &vmaf->convert.target : NULL,
+        &needs_conversion, &target);
+    if (err) return err;
+    if (!needs_conversion) return 0;
+
+    VmafPicture ref_converted = { 0 }, dist_converted = { 0 };
+    err = convert_picture(&vmaf->convert.ref, ref, &target,
+                          &ref_converted);
+    if (err) return err;
+    err = convert_picture(&vmaf->convert.dist, dist, &target,
+                          &dist_converted);
+    if (err) {
+        if (ref_converted.priv) vmaf_picture_unref(&ref_converted);
+        return err;
+    }
+
+    if (ref_converted.priv) {
+        vmaf_picture_unref(ref);
+        *ref = ref_converted;
+    }
+    if (dist_converted.priv) {
+        vmaf_picture_unref(dist);
+        *dist = dist_converted;
+    }
+    return 0;
+}
+
+/*
+ * All models in a run share one set of pictures, so they must agree on the
+ * conversion target: either none declare one, or all declare the same one.
+ */
+static int register_conversion_target(VmafContext *vmaf,
+                                      const VmafModel *model)
+{
+    if (!model->conversion_target.enabled) {
+        if (vmaf->convert.n_models_with_target) goto mismatch;
+        vmaf->convert.n_models_without_target++;
+        return 0;
+    }
+
+    if (vmaf->convert.n_models_without_target) goto mismatch;
+    const VmafPictureConvertTarget model_target = {
+        .pix_fmt = model->conversion_target.pix_fmt,
+        .bpc = model->conversion_target.bpc,
+        .color = model->conversion_target.color,
+    };
+    if (vmaf->convert.have_target &&
+        !vmaf_conversion_policy_target_equal(&vmaf->convert.target,
+                                             &model_target))
+    {
+        goto mismatch;
+    }
+    vmaf->convert.have_target = true;
+    vmaf->convert.target = model_target;
+    vmaf->convert.n_models_with_target++;
+    return 0;
+
+mismatch:
+    vmaf_log(VMAF_LOG_LEVEL_ERROR,
+             "model \"%s\" has a different conversion target than the models "
+             "already in use; all models in a run must share one\n",
+             model->name);
+    return -EINVAL;
 }
 
 static int validate_pic_params(VmafContext *vmaf, VmafPicture *ref,
@@ -836,7 +963,8 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     if (!ref != !dist) return -EINVAL;
     if (!ref && !dist) return flush_context(vmaf);
 
-    int err = 0;
+    int err = convert_pictures(vmaf, ref, dist);
+    if (err) return err;
 
     vmaf->pic_cnt++;
     err = validate_pic_params(vmaf, ref, dist);

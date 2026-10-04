@@ -609,6 +609,7 @@ libvmaf_sources = [
     src_dir + 'framesync.c',
     src_dir + 'metadata_handler.c',
     src_dir + 'picture_pool.c',
+    src_dir + 'conversion_policy.c',
 ]
 
 if is_cuda_enabled
