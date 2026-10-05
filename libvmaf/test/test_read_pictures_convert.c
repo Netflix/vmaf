@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "test.h"
 #include "libvmaf/libvmaf.h"
@@ -94,13 +93,13 @@ static int load_model(VmafModel **model, const char *target_block)
     }
     at += strlen(key);
 
-    char path[] = "/tmp/vmaf_convert_model_XXXXXX";
-    int fd = mkstemp(path);
-    if (fd < 0) {
+    /* plain stdio keeps this portable (no mkstemp/unistd.h on MSVC) */
+    const char *path = "vmaf_convert_model.json";
+    FILE *out = fopen(path, "wb");
+    if (!out) {
         free(buf);
         return -EIO;
     }
-    FILE *out = fdopen(fd, "wb");
     fwrite(buf, 1, at - buf, out);
     if (target_block)
         fputs(target_block, out);
@@ -110,7 +109,7 @@ static int load_model(VmafModel **model, const char *target_block)
 
     VmafModelConfig cfg = { 0 };
     int err = vmaf_model_load_from_path(model, &cfg, path);
-    unlink(path);
+    remove(path);
     return err;
 }
 
