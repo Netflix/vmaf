@@ -421,12 +421,13 @@ int vmaf_picture_convert_context_init(VmafPictureConvertContext **ctx,
     c->src.color = src->color;
 
     zimg_graph_builder_params params;
-    const zimg_graph_builder_params *params_ptr = NULL;
-    if (target->resample_filter != VMAF_RESAMPLE_DEFAULT) {
-        zimg_graph_builder_params_default(&params, ZIMG_API_VERSION);
+    const zimg_graph_builder_params *params_ptr = &params;
+    zimg_graph_builder_params_default(&params, ZIMG_API_VERSION);
+    /* Match FFmpeg's zscale (agamma=1): exact transfer functions are ~20x
+     * slower for PQ and change scores negligibly. */
+    params.allow_approximate_gamma = 1;
+    if (target->resample_filter != VMAF_RESAMPLE_DEFAULT)
         params.resample_filter = resample_filter_to_zimg(target->resample_filter);
-        params_ptr = &params;
-    }
 
     c->graph = zimg_filter_graph_build(&src_fmt, &dst_fmt, params_ptr);
     if (!c->graph) {
