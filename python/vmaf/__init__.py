@@ -215,7 +215,8 @@ class ExternalProgramCaller(object):
                     float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
                     no_prediction, models, subsample, n_threads, disable_avx, output, exe, logger,
                     vif_enhn_gain_limit=None, adm_enhn_gain_limit=None, motion_force_zero=False,
-                    enc_width=None, enc_height=None, enc_bitdepth=None):
+                    enc_width=None, enc_height=None, enc_bitdepth=None,
+                    color_ref=None, color_dist=None):
 
         if exe is None:
             exe = required(ExternalProgram.vmafexec)
@@ -231,6 +232,16 @@ class ExternalProgramCaller(object):
             pixel_format=pixel_format,
             bitdepth=bitdepth,
             output=output)
+
+        # per-input source colorimetry, e.g. {'range': 'limited', 'primaries': 'bt2020',
+        # 'trc': 'smpte2084', 'matrix': 'bt2020nc'}; all four keys are required
+        for suffix, color in (('ref', color_ref), ('dist', color_dist)):
+            if color is None:
+                continue
+            assert set(color) == {'range', 'primaries', 'trc', 'matrix'}, \
+                'color_{} needs exactly range, primaries, trc and matrix'.format(suffix)
+            for attribute, value in color.items():
+                vmafexec_cmd += ' --color_{}_{} {}'.format(attribute, suffix, value)
 
         if float_psnr:
             vmafexec_cmd += ' --feature float_psnr'
