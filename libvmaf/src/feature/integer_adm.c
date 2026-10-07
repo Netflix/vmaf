@@ -47,6 +47,7 @@ typedef struct AdmState {
     double adm_dlm_weight;
     double adm_enhn_gain_limit;
     double adm_norm_view_dist;
+    double adm_norm_view_dist_extra;
     double adm_noise_weight;
     double adm_min_val;
     int adm_ref_display_height;
@@ -98,6 +99,11 @@ typedef struct AdmState {
                        double adm_csf_diag_scale, double adm_noise_weight,
                        bool measure_aim);
     VmafDictionary *feature_name_dict;
+    // secondary feature-name dictionary, rendered as if adm_norm_view_dist ==
+    // adm_norm_view_dist_extra; used to register the secondary viewing-distance
+    // scores under the exact names a second model (at that viewing distance)
+    // looks up. Only allocated when adm_norm_view_dist_extra > 0.
+    VmafDictionary *feature_name_dict_extra;
 } AdmState;
 
 static const VmafOption options[] = {
@@ -163,6 +169,19 @@ static const VmafOption options[] = {
         .min = 0.75,
         .max = 24.0,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "adm_norm_view_dist_extra",
+        .alias = "nvde",
+        .help = "extra normalized viewing distance; when > 0, ADM is also "
+                "evaluated at this viewing distance reusing the shared "
+                "DWT/decouple stages, exposed under the same feature names "
+                "carrying this distance's nvd suffix",
+        .offset = offsetof(AdmState, adm_norm_view_dist_extra),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = 0.0,
+        .min = 0.0,
+        .max = 24.0,
     },
     {
         .name = "adm_ref_display_height",
@@ -2836,13 +2855,30 @@ void adm_dwt2_s123_combined(const int32_t *i4_ref_scale, const int32_t *i4_curr_
     }
 }
 
+typedef struct {
+    double score, num, den, aim;  // adm2, adm_num, adm_den, aim
+    double scores[8];             // per-scale num/den pairs (scale0..3)
+} AdmScore;
+
 void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic,
-                         double *score, double *score_num, double *score_den, double *scores, AdmBuffer *buf,
-                         double adm_enhn_gain_limit,
-                         double adm_norm_view_dist, int adm_ref_display_height, double *score_aim, int adm_csf_mode,
-                         double adm_csf_scale, double adm_csf_diag_scale, double adm_noise_weight, bool adm_skip_aim, 
-                         bool adm_skip_scale0)
+                         AdmBuffer *buf, AdmScore out[2])
 {
+    // Evaluate ADM at one or two viewing distances (the second is used only
+    // when adm_norm_view_dist_extra > 0). The DWT + decouple stages are
+    // view-distance-independent, so they run once per scale; only the CSF
+    // weighting + pooling is repeated per distance, reusing the shared buffers.
+    // Everything below is derived from s; named locals keep the inner loop terse.
+    const double nvd[2] = { s->adm_norm_view_dist, s->adm_norm_view_dist_extra };
+    const int n_vd = (s->adm_norm_view_dist_extra > 0.0) ? 2 : 1;
+    const double adm_enhn_gain_limit = s->adm_enhn_gain_limit;
+    const double adm_csf_scale = s->adm_csf_scale;
+    const double adm_csf_diag_scale = s->adm_csf_diag_scale;
+    const double adm_noise_weight = s->adm_noise_weight;
+    const int adm_ref_display_height = s->adm_ref_display_height;
+    const int adm_csf_mode = s->adm_csf_mode;
+    const bool adm_skip_aim = s->adm_skip_aim;
+    const bool adm_skip_scale0 = s->adm_skip_scale0;
+
     int w = ref_pic->w[0];
     int h = ref_pic->h[0];
 
@@ -2864,16 +2900,15 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
         curr_dis_stride = dis_pic->stride[0] >> 1;
     }
 
-    double num = 0;
-    double den = 0;
-    double aim_num = 0;
-	for (unsigned scale = 0; scale < 4; ++scale) {
-		float num_scale = 0.0;
-		float den_scale = 0.0;
-		float aim_num_scale = 0.0;
+    double num[2] = { 0, 0 };
+    double den[2] = { 0, 0 };
+    double aim_num[2] = { 0, 0 };
 
+    for (unsigned scale = 0; scale < 4; ++scale) {
         dwt2_src_indices_filt(buf->ind_y, buf->ind_x, w, h);
-		if(scale==0) {
+
+        // DWT (and decouple) once per scale -- view-distance-independent.
+        if (scale == 0) {
             if (adm_skip_scale0) {
                 // skip scale 0 by downsampling by 2 using low-pass filters in DWT2
                 if (ref_pic->bpc == 8) {
@@ -2894,7 +2929,6 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
 
                 w = (w + 1) / 2;
                 h = (h + 1) / 2;
-                den_scale = 1e-10;  // avoid divide by zero
             }
             else {
                 if (ref_pic->bpc == 8) {
@@ -2917,99 +2951,113 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
                 h = (h + 1) / 2;
 
                 s->adm_decouple(buf, w, h, buf_stride, adm_enhn_gain_limit, div_lookup);
+            }
+        }
+        else {
+            s->adm_dwt2_s123_combined(i4_curr_ref_scale, i4_curr_dis_scale, buf, w, h, curr_ref_stride,
+                                   curr_dis_stride, buf_stride, scale);
 
+            w = (w + 1) / 2;
+            h = (h + 1) / 2;
+
+            s->adm_decouple_s123(buf, w, h, buf_stride, adm_enhn_gain_limit, div_lookup);
+        }
+
+        // CSF weighting + pooling, once per viewing distance. Running the passes
+        // back-to-back is safe: CSF only writes csf_a/csf_f and leaves the
+        // decouple buffers it reads unchanged, so the passes are independent.
+        for (int v = 0; v < n_vd; v++) {
+            float num_scale = 0.0;
+            float den_scale = 0.0;
+            float aim_num_scale = 0.0;
+
+            if (scale == 0 && adm_skip_scale0) {
+                den_scale = 1e-10;  // avoid divide by zero
+            }
+            else if (scale == 0) {
                 den_scale = s->adm_csf_den_scale(&buf->ref_dwt2, w, h, buf_stride,
-                                    adm_norm_view_dist, adm_ref_display_height,
+                                    nvd[v], adm_ref_display_height,
                                     adm_csf_mode, adm_csf_scale,
                                     adm_csf_diag_scale, adm_noise_weight);
 
-                s->adm_csf(buf, w, h, buf_stride, adm_norm_view_dist,
+                s->adm_csf(buf, w, h, buf_stride, nvd[v],
                            adm_ref_display_height, adm_csf_mode, adm_csf_scale,
                            adm_csf_diag_scale, false);
 
                 num_scale = s->adm_cm(buf, w, h, buf_stride, buf_stride,
-                                adm_norm_view_dist, adm_ref_display_height,
+                                nvd[v], adm_ref_display_height,
                                 adm_csf_mode, adm_csf_scale,
                                 adm_csf_diag_scale, adm_noise_weight, false);
 
                 if (!adm_skip_aim) {
-                    s->adm_csf(buf, w, h, buf_stride, adm_norm_view_dist,
+                    s->adm_csf(buf, w, h, buf_stride, nvd[v],
                                adm_ref_display_height, adm_csf_mode,
                                adm_csf_scale, adm_csf_diag_scale, true);
 
                     aim_num_scale = s->adm_cm(buf, w, h, buf_stride, buf_stride,
-                                    adm_norm_view_dist, adm_ref_display_height,
+                                    nvd[v], adm_ref_display_height,
                                     adm_csf_mode, adm_csf_scale,
                                     adm_csf_diag_scale, 0.0, true);
                 }
             }
-		}
-		else {
-            s->adm_dwt2_s123_combined(i4_curr_ref_scale, i4_curr_dis_scale, buf, w, h, curr_ref_stride,
-                                   curr_dis_stride, buf_stride, scale);
+            else {
+                den_scale = s->adm_csf_den_s123(
+                        &buf->i4_ref_dwt2, scale, w, h, buf_stride,
+                        nvd[v], adm_ref_display_height,
+                        adm_csf_mode, adm_csf_scale, adm_csf_diag_scale,
+                        adm_noise_weight);
 
-			w = (w + 1) / 2;
-			h = (h + 1) / 2;
+                s->i4_adm_csf(buf, scale, w, h, buf_stride, nvd[v],
+                              adm_ref_display_height, adm_csf_mode, adm_csf_scale,
+                              adm_csf_diag_scale, false);
 
-            s->adm_decouple_s123(buf, w, h, buf_stride, adm_enhn_gain_limit, div_lookup);
+                num_scale = s->i4_adm_cm(buf, w, h, buf_stride, buf_stride, scale,
+                                 nvd[v], adm_ref_display_height,
+                                 adm_csf_mode, adm_csf_scale, adm_csf_diag_scale,
+                                 adm_noise_weight, false);
 
-            den_scale = s->adm_csf_den_s123(
-                    &buf->i4_ref_dwt2, scale, w, h, buf_stride,
-                    adm_norm_view_dist, adm_ref_display_height,
-                    adm_csf_mode, adm_csf_scale, adm_csf_diag_scale,
-                    adm_noise_weight);
+                if (!adm_skip_aim) {
+                    s->i4_adm_csf(buf, scale, w, h, buf_stride,
+                                  nvd[v], adm_ref_display_height, adm_csf_mode,
+                                  adm_csf_scale, adm_csf_diag_scale, true);
 
-            s->i4_adm_csf(buf, scale, w, h, buf_stride, adm_norm_view_dist,
-                          adm_ref_display_height, adm_csf_mode, adm_csf_scale,
-                          adm_csf_diag_scale, false);
-
-            num_scale = s->i4_adm_cm(buf, w, h, buf_stride, buf_stride, scale,
-                             adm_norm_view_dist, adm_ref_display_height,
-                             adm_csf_mode, adm_csf_scale, adm_csf_diag_scale,
-                             adm_noise_weight, false);
-
-            if (!adm_skip_aim) {
-                s->i4_adm_csf(buf, scale, w, h, buf_stride,
-                              adm_norm_view_dist, adm_ref_display_height,
-                              adm_csf_mode, adm_csf_scale, adm_csf_diag_scale,
-                              true);
-
-                aim_num_scale = s->i4_adm_cm(buf, w, h, buf_stride, buf_stride,
-                             scale, adm_norm_view_dist, adm_ref_display_height,
-                             adm_csf_mode, adm_csf_scale, adm_csf_diag_scale,
-                             0.0, true);
+                    aim_num_scale = s->i4_adm_cm(buf, w, h, buf_stride, buf_stride,
+                                 scale, nvd[v], adm_ref_display_height,
+                                 adm_csf_mode, adm_csf_scale, adm_csf_diag_scale,
+                                 0.0, true);
+                }
             }
 
-		}
+            num[v] += num_scale;
+            den[v] += den_scale;
+            aim_num[v] += aim_num_scale;
 
-		num += num_scale;
-		den += den_scale;
-		aim_num += aim_num_scale;
+            out[v].scores[2 * scale + 0] = num_scale;
+            out[v].scores[2 * scale + 1] = den_scale;
+        }
 
-		i4_curr_ref_scale = buf->i4_ref_dwt2.band_a;
-		i4_curr_dis_scale = buf->i4_dis_dwt2.band_a;
+        i4_curr_ref_scale = buf->i4_ref_dwt2.band_a;
+        i4_curr_dis_scale = buf->i4_dis_dwt2.band_a;
 
-		curr_ref_stride = buf_stride;
-		curr_dis_stride = buf_stride;
+        curr_ref_stride = buf_stride;
+        curr_dis_stride = buf_stride;
+    }
 
-		scores[2 * scale + 0] = num_scale;
-		scores[2 * scale + 1] = den_scale;
-	}
+    for (int v = 0; v < n_vd; v++) {
+        double num_v = num[v] < numden_limit ? 0 : num[v];
+        double den_v = den[v] < numden_limit ? 0 : den[v];
 
-	num = num < numden_limit ? 0 : num;
-	den = den < numden_limit ? 0 : den;
-
-	if (den == 0.0) {
-		*score = 1.0f;
-	}
-	else {
-		// normalize AIM score by the DLM denominator
-	    *score_aim = aim_num / den;
-		*score = num / den;
-	}
-    *score_num = num;
-    *score_den = den;
-
+        if (den_v == 0.0) {
+            out[v].score = 1.0f;
+        }
+        else {
+            // normalize AIM score by the DLM denominator
+            out[v].aim = aim_num[v] / den_v;
+            out[v].score = num_v / den_v;
+        }
+        out[v].num = num_v;
+        out[v].den = den_v;
+    }
 }
 
 static inline void *init_dwt_band(adm_dwt_band_t *band, char *data_top, size_t stride)
@@ -3181,11 +3229,27 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 fex->options, s);
     if (!s->feature_name_dict) goto fail;
 
+    // When a secondary viewing distance is requested, build a second
+    // feature-name dictionary rendered as if adm_norm_view_dist were
+    // adm_norm_view_dist_extra. The secondary scores are then registered under the
+    // same base feature names, so they carry the nvd suffix a second model at
+    // that viewing distance expects to look up.
+    if (s->adm_norm_view_dist_extra > 0.0) {
+        const double primary_nvd = s->adm_norm_view_dist;
+        s->adm_norm_view_dist = s->adm_norm_view_dist_extra;
+        s->feature_name_dict_extra =
+            vmaf_feature_name_dict_from_provided_features(fex->provided_features,
+                    fex->options, s);
+        s->adm_norm_view_dist = primary_nvd;
+        if (!s->feature_name_dict_extra) goto fail;
+    }
+
     return 0;
 
 fail:
     adm_buffer_free(&s->buf);
     vmaf_dictionary_free(&s->feature_name_dict);
+    vmaf_dictionary_free(&s->feature_name_dict_extra);
     return -ENOMEM;
 }
 
@@ -3200,84 +3264,89 @@ static int extract(VmafFeatureExtractor *fex,
     (void) ref_pic_90;
     (void) dist_pic_90;
 
-    double score, score_num, score_den, score_aim;
-    double scores[8];
+    // One or two viewing distances: nvd[0] primary, nvd[1] secondary (when set).
+    // Each registers under the same base feature names via its own dictionary;
+    // dict[1] renders the names with the adm_norm_view_dist_extra suffix that a
+    // second model at that distance looks up.
+    // One or two viewing distances. Each registers under the same base feature
+    // names via its own dictionary; dict[1] renders the names with the
+    // adm_norm_view_dist_extra suffix that a second model at that distance
+    // looks up. (n_vd / nvd here mirror what integer_compute_adm derives.)
+    const int n_vd = (s->adm_norm_view_dist_extra > 0.0) ? 2 : 1;
+    const double nvd[2] = { s->adm_norm_view_dist, s->adm_norm_view_dist_extra };
+    VmafDictionary *dict[2] = { s->feature_name_dict, s->feature_name_dict_extra };
+    AdmScore out[2] = {{ 0 }};
 
     // current implementation is limited by the 16-bit data pipeline, thus
     // cannot handle an angular frequency smaller than 1080p * 3H
-    if (s->adm_norm_view_dist * s->adm_ref_display_height <
-        DEFAULT_ADM_NORM_VIEW_DIST * DEFAULT_ADM_REF_DISPLAY_HEIGHT) {
-        return -EINVAL;
+    for (int v = 0; v < n_vd; v++) {
+        if (nvd[v] * s->adm_ref_display_height <
+            DEFAULT_ADM_NORM_VIEW_DIST * DEFAULT_ADM_REF_DISPLAY_HEIGHT)
+            return -EINVAL;
     }
 
-    integer_compute_adm(s, ref_pic, dist_pic, &score, &score_num, &score_den,
-                        scores, &s->buf,
-                        s->adm_enhn_gain_limit,
-                        s->adm_norm_view_dist, s->adm_ref_display_height, &score_aim, s->adm_csf_mode, s->adm_csf_scale,
-                        s->adm_csf_diag_scale, s->adm_noise_weight, s->adm_skip_aim, s->adm_skip_scale0);
+    integer_compute_adm(s, ref_pic, dist_pic, &s->buf, out);
 
-    err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "VMAF_integer_feature_adm2_score", score,
-            index);
+    for (int v = 0; v < n_vd; v++) {
+        err |= vmaf_feature_collector_append_with_dict(feature_collector,
+                dict[v], "VMAF_integer_feature_adm2_score", out[v].score, index);
 
-    err |= vmaf_feature_collector_append_with_dict(feature_collector,
-        s->feature_name_dict, "VMAF_integer_feature_aim_score", score_aim,
-        index);
+        err |= vmaf_feature_collector_append_with_dict(feature_collector,
+                dict[v], "VMAF_integer_feature_aim_score", out[v].aim, index);
 
-    err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "VMAF_integer_feature_adm3_score", MAX(score * s->adm_dlm_weight + (1 - score_aim) * (1 - s->adm_dlm_weight), s->adm_min_val),
-            index);
+        err |= vmaf_feature_collector_append_with_dict(feature_collector,
+                dict[v], "VMAF_integer_feature_adm3_score",
+                MAX(out[v].score * s->adm_dlm_weight + (1 - out[v].aim) * (1 - s->adm_dlm_weight), s->adm_min_val),
+                index);
 
-    err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_scale0", scores[0] / scores[1],
-            index);
+        err |= vmaf_feature_collector_append_with_dict(feature_collector,
+                dict[v], "integer_adm_scale0", out[v].scores[0] / out[v].scores[1], index);
 
-    err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_scale1", scores[2] / scores[3],
-            index);
+        err |= vmaf_feature_collector_append_with_dict(feature_collector,
+                dict[v], "integer_adm_scale1", out[v].scores[2] / out[v].scores[3], index);
 
-    err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_scale2", scores[4] / scores[5],
-            index);
+        err |= vmaf_feature_collector_append_with_dict(feature_collector,
+                dict[v], "integer_adm_scale2", out[v].scores[4] / out[v].scores[5], index);
 
-    err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_scale3", scores[6] / scores[7],
-            index);
+        err |= vmaf_feature_collector_append_with_dict(feature_collector,
+                dict[v], "integer_adm_scale3", out[v].scores[6] / out[v].scores[7], index);
+    }
 
     if (!s->debug) return err;
 
+    const AdmScore *p = &out[0];  // debug features: primary distance only
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm", score, index);
+            s->feature_name_dict, "integer_adm", p->score, index);
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_num", score_num, index);
+            s->feature_name_dict, "integer_adm_num", p->num, index);
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_den", score_den, index);
+            s->feature_name_dict, "integer_adm_den", p->den, index);
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_num_scale0", scores[0], index);
+            s->feature_name_dict, "integer_adm_num_scale0", p->scores[0], index);
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_den_scale0", scores[1], index);
+            s->feature_name_dict, "integer_adm_den_scale0", p->scores[1], index);
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_num_scale1", scores[2], index);
+            s->feature_name_dict, "integer_adm_num_scale1", p->scores[2], index);
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_den_scale1", scores[3], index);
+            s->feature_name_dict, "integer_adm_den_scale1", p->scores[3], index);
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_num_scale2", scores[4], index);
+            s->feature_name_dict, "integer_adm_num_scale2", p->scores[4], index);
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_den_scale2", scores[5], index);
+            s->feature_name_dict, "integer_adm_den_scale2", p->scores[5], index);
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_num_scale3", scores[6], index);
+            s->feature_name_dict, "integer_adm_num_scale3", p->scores[6], index);
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "integer_adm_den_scale3", scores[7], index);
+            s->feature_name_dict, "integer_adm_den_scale3", p->scores[7], index);
 
     return err;
 }
@@ -3288,6 +3357,7 @@ static int close(VmafFeatureExtractor *fex)
 
     adm_buffer_free(&s->buf);
     vmaf_dictionary_free(&s->feature_name_dict);
+    vmaf_dictionary_free(&s->feature_name_dict_extra);
 
     return 0;
 }
@@ -3302,10 +3372,67 @@ static const char *provided_features[] = {
     NULL
 };
 
+// Merge hook (see VmafFeatureExtractor.merge): fold a second adm extractor that
+// is identical except for adm_norm_view_dist into this one, so both viewing
+// distances are evaluated from a single shared DWT/decouple.
+static int adm_try_merge_view_dist(VmafFeatureExtractorContext *existing,
+                                   VmafFeatureExtractorContext *incoming)
+{
+    AdmState *e = existing->fex->priv;
+    AdmState *n = incoming->fex->priv;
+    if (!e || !n) return 0;
+
+    // At most two viewing distances per shared extractor, and the distances
+    // must differ (identical configs are handled by the registry's dedup).
+    if (e->adm_norm_view_dist_extra > 0.0 || n->adm_norm_view_dist_extra > 0.0)
+        return 0;
+    if (e->adm_norm_view_dist == n->adm_norm_view_dist) return 0;
+
+    // Mergeable only if the two configurations are identical apart from the
+    // viewing distance, since the fused extractor applies one parameter set to
+    // the shared DWT/decouple and CSF stages. Reuse the framework's option
+    // serialization -- the same basis the registry uses to dedup extractors --
+    // by rendering both names with the viewing distance neutralized and
+    // requiring a match. adm_skip_aim affects adm3 but is not a feature-param
+    // (absent from the rendered name), so compare it explicitly.
+    if (e->adm_skip_aim != n->adm_skip_aim) return 0;
+
+    const double se = e->adm_norm_view_dist, sn = n->adm_norm_view_dist;
+    e->adm_norm_view_dist = n->adm_norm_view_dist = DEFAULT_ADM_NORM_VIEW_DIST;
+    char *fa = vmaf_feature_name_from_options(existing->fex->name,
+                                              existing->fex->options, e);
+    char *fb = vmaf_feature_name_from_options(incoming->fex->name,
+                                              incoming->fex->options, n);
+    e->adm_norm_view_dist = se;
+    n->adm_norm_view_dist = sn;
+    const int same = fa && fb && !strcmp(fa, fb);
+    free(fa);
+    free(fb);
+    if (!same) return 0;
+
+    // Fold the incoming viewing distance into the existing context: the parsed
+    // private state for the synchronous path, and opts_dict so per-thread
+    // worker contexts -- cloned by re-parsing opts_dict, not by copying priv --
+    // inherit it. init() builds the secondary feature-name dictionary from it.
+    e->adm_norm_view_dist_extra = n->adm_norm_view_dist;
+
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%.17g", n->adm_norm_view_dist);
+    int err = vmaf_dictionary_set(&existing->opts_dict,
+                                  "adm_norm_view_dist_extra", buf, 0);
+    if (err) {
+        e->adm_norm_view_dist_extra = 0.0;
+        return err;
+    }
+
+    return 1;
+}
+
 VmafFeatureExtractor vmaf_fex_integer_adm = {
     .name = "adm",
     .init = init,
     .extract = extract,
+    .merge = adm_try_merge_view_dist,
     .options = options,
     .close = close,
     .priv_size = sizeof(AdmState),
