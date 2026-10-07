@@ -183,11 +183,74 @@ static char *test_feature_extractor_initialization_options()
     return NULL;
 }
 
+static char *adm_ctx_with_opts(VmafFeatureExtractor *fex,
+                               VmafFeatureExtractorContext **ctx,
+                               const char *nvd, const char *csf_mode)
+{
+    int err = 0;
+    VmafDictionary *opts_dict = NULL;
+    err = vmaf_dictionary_set(&opts_dict, "adm_norm_view_dist", nvd, 0);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+    if (csf_mode) {
+        err = vmaf_dictionary_set(&opts_dict, "adm_csf_mode", csf_mode, 0);
+        mu_assert("problem during vmaf_dictionary_set", !err);
+    }
+    err = vmaf_feature_extractor_context_create(ctx, fex, opts_dict);
+    mu_assert("problem during vmaf_feature_extractor_context_create", !err);
+    return NULL;
+}
+
+static char *test_adm_view_dist_merge()
+{
+    char *msg;
+    VmafFeatureExtractor *fex = vmaf_get_feature_extractor_by_feature_name(
+            "VMAF_integer_feature_adm3_score", 0);
+    mu_assert("could not find adm feature extractor",
+              fex && !strcmp(fex->name, "adm"));
+    mu_assert("adm extractor should expose a merge hook", fex->merge);
+
+    // identical except adm_norm_view_dist (3 vs 5) -> should merge
+    VmafFeatureExtractorContext *ctx_a, *ctx_b;
+    msg = adm_ctx_with_opts(fex, &ctx_a, "3.0", NULL); if (msg) return msg;
+    msg = adm_ctx_with_opts(fex, &ctx_b, "5.0", NULL); if (msg) return msg;
+    mu_assert("adm extractors differing only in nvd should merge",
+              ctx_a->fex->merge(ctx_a, ctx_b) == 1);
+
+    // ctx_a now carries a secondary view distance; a third must not merge
+    VmafFeatureExtractorContext *ctx_c;
+    msg = adm_ctx_with_opts(fex, &ctx_c, "7.0", NULL); if (msg) return msg;
+    mu_assert("a third view distance must not merge",
+              ctx_a->fex->merge(ctx_a, ctx_c) == 0);
+
+    // a fresh existing at nvd=3 (default csf) vs incoming differing in
+    // a non-nvd param (csf_mode) -> must not merge
+    VmafFeatureExtractorContext *ctx_e, *ctx_d, *ctx_f;
+    msg = adm_ctx_with_opts(fex, &ctx_e, "3.0", NULL);  if (msg) return msg;
+    msg = adm_ctx_with_opts(fex, &ctx_d, "5.0", "1");   if (msg) return msg;
+    mu_assert("differing csf_mode must not merge",
+              ctx_e->fex->merge(ctx_e, ctx_d) == 0);
+
+    // identical nvd -> must not merge (handled by the regular dedup path)
+    msg = adm_ctx_with_opts(fex, &ctx_f, "3.0", NULL); if (msg) return msg;
+    mu_assert("identical nvd must not merge",
+              ctx_e->fex->merge(ctx_e, ctx_f) == 0);
+
+    vmaf_feature_extractor_context_destroy(ctx_a);
+    vmaf_feature_extractor_context_destroy(ctx_b);
+    vmaf_feature_extractor_context_destroy(ctx_c);
+    vmaf_feature_extractor_context_destroy(ctx_d);
+    vmaf_feature_extractor_context_destroy(ctx_e);
+    vmaf_feature_extractor_context_destroy(ctx_f);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_get_feature_extractor_by_name_and_feature_name);
     mu_run_test(test_feature_extractor_context_pool);
     mu_run_test(test_feature_extractor_flush);
     mu_run_test(test_feature_extractor_initialization_options);
+    mu_run_test(test_adm_view_dist_merge);
     return NULL;
 }
