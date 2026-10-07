@@ -41,6 +41,8 @@ enum VmafFeatureExtractorFlags {
     VMAF_FEATURE_EXTRACTOR_PREV_REF = 1 << 3,
 };
 
+struct VmafFeatureExtractorContext;
+
 typedef struct VmafFeatureExtractor {
     const char *name; ///< Name of feature extractor.
     /**
@@ -87,6 +89,16 @@ typedef struct VmafFeatureExtractor {
      * @param               fex self.
      */
     int (*close)(struct VmafFeatureExtractor *fex);
+    /**
+     * Merge callback. Optional. During registration, when `incoming` would
+     * otherwise be registered as a distinct instance of this same extractor,
+     * the registry offers it to an already-registered instance through this
+     * callback. Return 1 if `existing` absorbed `incoming` (the registry then
+     * discards `incoming`, as with a dedup hit), 0 to decline, or a negative
+     * error code.
+     */
+    int (*merge)(struct VmafFeatureExtractorContext *existing,
+                 struct VmafFeatureExtractorContext *incoming);
     const VmafOption *options; ///< Optional initialization options.
     void *priv; ///< Custom data.
     size_t priv_size; ///< sizeof private data.
