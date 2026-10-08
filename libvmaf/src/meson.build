@@ -375,6 +375,8 @@ if is_cuda_enabled
         'adm_decouple' : [feature_src_dir + 'cuda/integer_adm/adm_decouple.cu'],
         'filter1d' : [feature_src_dir + 'cuda/integer_vif/filter1d.cu'],
         'motion_score' : [feature_src_dir + 'cuda/integer_motion/motion_score.cu'],
+        'psnr' : [feature_src_dir + 'cuda/integer_psnr/psnr.cu'],
+        'ssim' : [feature_src_dir + 'cuda/float_ssim/ssim.cu'],
     }
     message(cuda_cu_sources)
     cuda_sources = [
@@ -567,6 +569,8 @@ if is_cuda_enabled
         feature_src_dir + 'cuda/integer_adm_cuda.c',
         feature_src_dir + 'cuda/integer_vif_cuda.c',
         feature_src_dir + 'cuda/integer_motion_cuda.c',
+        feature_src_dir + 'cuda/integer_psnr_cuda.c',
+        feature_src_dir + 'cuda/float_ssim_cuda.c',
     ]
 endif
 
