@@ -748,7 +748,12 @@ static void decimate_generic_uint16_and_convert_to_10b(const VmafPicture *pic, V
     if (in_w == out_w && in_h == out_h) {
         if (pic->bpc == 10) {
             // memcpy is faster in case the original bitdepth is already 10
-            memcpy(out_data, data, stride * pic->h[0] * sizeof(uint16_t));
+            if (stride == out_stride) {
+                memcpy(out_data, data, stride * out_h * sizeof(uint16_t));
+            } else {
+                for (unsigned i = 0; i < out_h; i++)
+                    memcpy(out_data + i * out_stride, data + i * stride, out_w * sizeof(uint16_t));
+            }
         }
         else {
             for (unsigned i = 0; i < out_h; i++) {
