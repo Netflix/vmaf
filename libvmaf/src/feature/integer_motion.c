@@ -299,6 +299,134 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     return 0;
 }
 
+/* Frames are extracted concurrently and out of order, so a score this frame
+ * depends on may not have been written yet. Every score waited on here belongs
+ * to an *earlier* frame, whose job was dequeued from the FIFO thread pool
+ * before this one and is therefore already in flight, so the wait always makes
+ * progress. Waiting on a later frame would deadlock at --threads 1 and is left
+ * to the caller to defer instead. */
+static int motion_await(VmafFeatureCollector *feature_collector,
+                        const char *feature_name, double *score,
+                        unsigned index, bool wait)
+{
+    int err;
+    while ((err = vmaf_feature_collector_get_score(feature_collector,
+                                                   feature_name, score, index))
+           && wait)
+        ;
+    return err;
+}
+
+/* A frame is attempted again once its deferred scores become computable, and
+ * the feature collector refuses to overwrite an index. */
+static int motion_append(VmafFeatureCollector *feature_collector,
+                         const char *feature_name, double score, unsigned index)
+{
+    double written;
+    if (!vmaf_feature_collector_get_score(feature_collector, feature_name,
+                                          &written, index))
+        return 0;
+    return vmaf_feature_collector_append(feature_collector, feature_name,
+                                         score, index);
+}
+
+/* Writes the motion2/motion3 scores of frame i. stamp_value and prev_processed
+ * are derived from the scores held by the feature collector instead of being
+ * carried along in MotionState, so that they stay correct when frames are
+ * spread over the per-thread feature extractor contexts, and so that flush()
+ * can compute them on the registered context, which never runs extract().
+ *
+ * A missing successor sad means "not extracted yet" while reading pictures and
+ * "last frame of the sequence" at end of stream; eos tells the two apart.
+ * Returns -EAGAIN for a score that has to be deferred to a later attempt. */
+static int calculate_integer_motionx_features(VmafFeatureExtractor *fex,
+        VmafFeatureCollector *feature_collector, unsigned i, bool eos)
+{
+    MotionState *s = fex->priv;
+
+    const VmafDictionaryEntry *sad_entry = vmaf_dictionary_get(
+            &s->feature_name_dict, "VMAF_integer_feature_motion_sad_score", 0);
+    const VmafDictionaryEntry *motion2_entry = vmaf_dictionary_get(
+            &s->feature_name_dict, "VMAF_integer_feature_motion2_score", 0);
+    const VmafDictionaryEntry *motion3_entry = vmaf_dictionary_get(
+            &s->feature_name_dict, "VMAF_integer_feature_motion3_score", 0);
+    if (!sad_entry || !motion2_entry || !motion3_entry) return -EINVAL;
+    const char *sad_name = sad_entry->val;
+    const char *motion2_name = motion2_entry->val;
+
+    const unsigned stride = s->motion_five_frame_window ? 2 : 1;
+    const unsigned min_idx = s->motion_five_frame_window ? 2 : 1;
+
+    double stamp_value = 0.;
+    double sad_at_min_idx;
+    if (!motion_await(feature_collector, sad_name, &sad_at_min_idx, min_idx,
+                      !eos && i >= min_idx)) {
+        stamp_value = MIN(motion_blend(sad_at_min_idx,
+                                       s->motion_blend_factor,
+                                       s->motion_blend_offset),
+                          s->motion_max_val);
+    } else if (!eos) {
+        return -EAGAIN;
+    }
+
+    double sad_i;
+    if (motion_await(feature_collector, sad_name, &sad_i, i, !eos))
+        return -EAGAIN;
+
+    double motion2;
+
+    if (i < min_idx) {
+        motion2 = 0.;
+    } else {
+        const int lo_idx = (int)i - (int)(stride - 1);
+        const int hi_idx = (int)i + 1;
+        double hi;
+        const bool has_hi = !vmaf_feature_collector_get_score(
+                feature_collector, sad_name, &hi, hi_idx);
+        if (!has_hi) {
+            if (!eos) return -EAGAIN;
+            motion2 = sad_i;
+        } else if (lo_idx >= (int)min_idx) {
+            double lo;
+            if (motion_await(feature_collector, sad_name, &lo, lo_idx, !eos))
+                return -EAGAIN;
+            motion2 = lo < hi ? lo : hi;
+        } else {
+            motion2 = hi;
+        }
+    }
+
+    int err = motion_append(feature_collector, motion2_name, motion2, i);
+    if (err) return err;
+
+    double prev_processed = stamp_value;
+    if (s->motion_moving_average && i > min_idx) {
+        double motion2_prev;
+        if (motion_await(feature_collector, motion2_name, &motion2_prev, i - 1,
+                         !eos))
+            return -EAGAIN;
+        prev_processed = MIN(motion_blend(motion2_prev,
+                                          s->motion_blend_factor,
+                                          s->motion_blend_offset),
+                             s->motion_max_val);
+    }
+
+    double motion3;
+    if (i < min_idx) {
+        motion3 = stamp_value;
+    } else {
+        double processed = MIN(motion_blend(motion2,
+                                            s->motion_blend_factor,
+                                            s->motion_blend_offset),
+                               s->motion_max_val);
+        motion3 = s->motion_moving_average
+                ? (processed + prev_processed) / 2.0
+                : processed;
+    }
+
+    return motion_append(feature_collector, motion3_entry->val, motion3, i);
+}
+
 static int extract(VmafFeatureExtractor *fex,
                    VmafPicture *ref_pic, VmafPicture *ref_pic_90,
                    VmafPicture *dist_pic, VmafPicture *dist_pic_90,
@@ -342,6 +470,18 @@ write_score:
             "VMAF_integer_feature_motion_sad_score", score, index);
     if (err) return err;
 
+    /* frame index - 1 gains its successor sad with this frame, and the frames
+     * before the frame window is full gain their stamp at index == min_idx */
+    if (index > 0) {
+        const unsigned window_min_idx = s->motion_five_frame_window ? 2 : 1;
+        const unsigned first = index == window_min_idx ? 0 : index - 1;
+        for (unsigned i = first; i < index; i++) {
+            err = calculate_integer_motionx_features(fex, feature_collector, i,
+                                                    false);
+            if (err && err != -EAGAIN) return err;
+        }
+    }
+
     if (s->debug) {
         return vmaf_feature_collector_append_with_dict(feature_collector,
                 s->feature_name_dict,
@@ -378,74 +518,19 @@ static int flush(VmafFeatureExtractor *fex,
     double score;
     while (!vmaf_feature_collector_get_score(feature_collector, sad_name, &score, n))
         n++;
-    const unsigned stride = s->motion_five_frame_window ? 2 : 1;
-    const unsigned min_idx = s->motion_five_frame_window ? 2 : 1;
     if (!n) {
         vmaf_dictionary_free(&s->feature_name_dict);
         return 1;
     }
 
-    double stamp_value = 0.;
-    if (n > min_idx) {
-        double sad_at_min_idx;
-        if (!vmaf_feature_collector_get_score(feature_collector, sad_name,
-                                              &sad_at_min_idx, min_idx)) {
-            stamp_value = MIN(motion_blend(sad_at_min_idx,
-                                           s->motion_blend_factor,
-                                           s->motion_blend_offset),
-                              s->motion_max_val);
-        }
-    }
-
-    double prev_processed = 0.;
+    /* fill in whatever the runtime attempts had to defer */
     for (unsigned i = 0; i < n; i++) {
-        double sad_i;
-        vmaf_feature_collector_get_score(feature_collector, sad_name, &sad_i, i);
-
-        double motion2;
-
-        if (i < min_idx) {
-            motion2 = 0.;
-        } else {
-            const int lo_idx = (int)i - (int)(stride - 1);
-            const int hi_idx = (int)i + 1;
-            double hi;
-            const bool has_hi = !vmaf_feature_collector_get_score(
-                    feature_collector, sad_name, &hi, hi_idx);
-            if (!has_hi) {
-                motion2 = sad_i;
-            } else if (lo_idx >= (int)min_idx) {
-                double lo;
-                vmaf_feature_collector_get_score(
-                        feature_collector, sad_name, &lo, lo_idx);
-                motion2 = lo < hi ? lo : hi;
-            } else {
-                motion2 = hi;
-            }
+        int err = calculate_integer_motionx_features(fex, feature_collector, i,
+                                                    true);
+        if (err && err != -EAGAIN) {
+            vmaf_dictionary_free(&s->feature_name_dict);
+            return err;
         }
-
-        vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict,
-            "VMAF_integer_feature_motion2_score", motion2, i);
-
-        double motion3;
-        if (i < min_idx) {
-            motion3 = stamp_value;
-            prev_processed = stamp_value;
-        } else {
-            double processed = MIN(motion_blend(motion2,
-                                                s->motion_blend_factor,
-                                                s->motion_blend_offset),
-                                   s->motion_max_val);
-            motion3 = s->motion_moving_average
-                    ? (processed + prev_processed) / 2.0
-                    : processed;
-            prev_processed = processed;
-        }
-
-        vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict,
-            "VMAF_integer_feature_motion3_score", motion3, i);
     }
 
     vmaf_dictionary_free(&s->feature_name_dict);
