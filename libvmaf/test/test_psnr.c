@@ -93,9 +93,55 @@ static char *test_16b_large_diff()
 }
 
 
+static char *test_apsnr_cap_overflow()
+{
+    const struct {
+        unsigned frames;
+        uint64_t sse;
+        double y, uv;
+    } cases[] = {
+        { 258, 0, 193.0, 187.0 },
+        { 259, 0, 193.0, 187.0 },
+        { 260, 0, 193.0, 187.0 },
+        { 260, 1, 189.6670493101978, 183.6464493969182 },
+    };
+    const char *names[] = { "apsnr_y", "apsnr_cb", "apsnr_cr" };
+
+    for (unsigned i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        /* The old cap overflowed after 258 frames of 16-bit 4K YUV420P. */
+        const uint64_t pixels = (uint64_t)3840 * 2160 * cases[i].frames;
+        PsnrState s = {
+            .enable_chroma = true,
+            .enable_apsnr = true,
+            .peak = 65535,
+            .apsnr = {
+                .n_pixels = { pixels, pixels / 4, pixels / 4 },
+                .sse = { cases[i].sse, cases[i].sse, cases[i].sse },
+            },
+        };
+        VmafFeatureExtractor fex = { .priv = &s };
+        VmafFeatureCollector *fc;
+        int err = vmaf_feature_collector_init(&fc);
+        mu_assert("vmaf_feature_collector_init failed", !err);
+        mu_assert("APSNR flush failed", flush(&fex, fc) == 1);
+
+        const double expected[] = { cases[i].y, cases[i].uv, cases[i].uv };
+        for (unsigned p = 0; p < 3; p++) {
+            double score;
+            err = vmaf_feature_collector_get_aggregate(fc, names[p], &score);
+            mu_assert("APSNR aggregate missing", !err);
+            mu_assert("wrong APSNR", almost_equal(score, expected[p]));
+        }
+        vmaf_feature_collector_destroy(fc);
+    }
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_16b_large_diff);
+    mu_run_test(test_apsnr_cap_overflow);
 
     return NULL;
 }
