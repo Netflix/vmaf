@@ -197,6 +197,15 @@ if float_enabled
 endif
 
 if get_option('enable_cuda')
+test_cuda_motion = executable('test_cuda_motion',
+    ['test.c', 'test_cuda_motion.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: [math_lib, cuda_dependency],
+    c_args: ['-DHAVE_CUDA=1']
+)
+test('test_cuda_motion', test_cuda_motion)
+
 test_ring_buffer = executable('test_ring_buffer',
     ['test.c', 'test_ring_buffer.c', '../src/cuda/ring_buffer.c', '../src/cuda/picture_cuda.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
