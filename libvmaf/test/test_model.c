@@ -93,6 +93,20 @@ static char *test_json_model()
     return NULL;
 }
 
+static char *test_json_model_failed_read_leaves_no_model()
+{
+    VmafModel *model = NULL;
+    VmafModelConfig cfg = { 0 };
+    // a model collection is not a model: the vmaf tool tries this read first
+    const char *path = JSON_MODEL_PATH"vmaf_b_v0.6.3.json";
+
+    int err = vmaf_read_json_model_from_path(&model, &cfg, path);
+    mu_assert("a model collection was read as a single model", err);
+    mu_assert("a failed read handed back a partially built model", !model);
+
+    return NULL;
+}
+
 #if VMAF_BUILT_IN_MODELS
 static char *test_built_in_model()
 {
@@ -535,6 +549,7 @@ static char *test_model_conversion_target_rejects_bad_format_and_depth()
 char *run_tests()
 {
     mu_run_test(test_json_model);
+    mu_run_test(test_json_model_failed_read_leaves_no_model);
 #if VMAF_BUILT_IN_MODELS
     mu_run_test(test_built_in_model);
 #endif
