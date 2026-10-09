@@ -29,7 +29,13 @@
 
 #include "assert.h"
 #include "stdio.h"
+#ifdef DEVICE_CODE
+// dynlink_loader.h pulls in nvEncodeAPI.h and with it <windows.h>, which does
+// not compile in a clang device pass; device code only needs the types.
+#include <ffnvcodec/dynlink_cuda.h>
+#else
 #include <ffnvcodec/dynlink_loader.h>
+#endif
 
 #define DIV_ROUND_UP(x, y) (((x) + (y)-1) / (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
