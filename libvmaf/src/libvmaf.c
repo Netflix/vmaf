@@ -30,6 +30,15 @@
 #endif
 #include <string.h>
 #include <time.h>
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 #include "libvmaf/libvmaf.h"
 #include "libvmaf/feature.h"
@@ -1258,10 +1267,31 @@ const char *vmaf_version(void)
     return VMAF_VERSION;
 }
 
+#ifdef _WIN32
+/* The narrow CRT fopen() decodes the path with the active ANSI code page, so a
+ * UTF-8 path (what FFmpeg's log_path carries) names the wrong file. Convert to
+ * UTF-16 first; a path that is not valid UTF-8 keeps the old behaviour. */
+static FILE *open_output_file(const char *path)
+{
+    const int n = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1,
+                                      NULL, 0);
+    if (n <= 0) return fopen(path, "w");
+    wchar_t *wpath = malloc((size_t)n * sizeof(*wpath));
+    if (!wpath) return NULL;
+    FILE *f = NULL;
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, wpath, n))
+        f = _wfopen(wpath, L"w");
+    free(wpath);
+    return f;
+}
+#else
+#define open_output_file(path) fopen((path), "w")
+#endif
+
 int vmaf_write_output(VmafContext *vmaf, const char *output_path,
                       enum VmafOutputFormat fmt)
 {
-    FILE *outfile = fopen(output_path, "w");
+    FILE *outfile = open_output_file(output_path);
     if (!outfile) {
         fprintf(stderr, "could not open file: %s\n", output_path);
         return -EINVAL;
