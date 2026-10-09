@@ -433,6 +433,81 @@ static char *test_calculate_c_values()
     return NULL;
 }
 
+/* A frame with fewer rows than half the window, as the coarsest scale of a
+ * wide, short input produces. The frame is a view into a taller picture, so a
+ * row read or written outside it stays inside the buffers and shows up as a
+ * changed sentinel instead of undefined behaviour. */
+static char *check_c_values_short_frame(VmafCalcCValues calc_c_values_fn)
+{
+    enum { W = 16, H = 3, PIC_H = 8, OFFSET = 1 };
+    const uint16_t window_size = 9; // pad_size 4 is larger than H - 1
+    const uint16_t num_diffs = 4;
+    uint16_t tvi_for_diff[4] = {178, 305, 432, 559};
+    uint16_t histograms[W * 1032];
+    float c_buf[W * PIC_H];
+    uint16_t *diffs_to_consider = NULL;
+    int *diff_weights = NULL;
+    int *all_diffs = NULL;
+    VmafPicture pic, mask_pic;
+
+    int err = set_contrast_arrays(num_diffs, &diffs_to_consider, &diff_weights,
+                                  &all_diffs);
+    mu_assert("short frame: set_contrast_arrays error", !err);
+    err = vmaf_picture_alloc(&pic, VMAF_PIX_FMT_YUV400P, 10, W, PIC_H);
+    mu_assert("short frame: alloc #1 error", !err);
+    err = vmaf_picture_alloc(&mask_pic, VMAF_PIX_FMT_YUV400P, 10, W, PIC_H);
+    mu_assert("short frame: alloc #2 error", !err);
+
+    uint16_t *image = pic.data[0];
+    uint16_t *mask = mask_pic.data[0];
+    ptrdiff_t stride = pic.stride[0] >> 1;
+    for (unsigned i = 0; i < PIC_H; i++) {
+        for (unsigned j = 0; j < W; j++) {
+            image[i * stride + j] = (i * W + j) * 7 % 1024;
+            mask[i * stride + j] = 1;
+        }
+    }
+    for (unsigned i = 0; i < W * PIC_H; i++)
+        c_buf[i] = -1.0f;
+
+    VmafPicture view = pic, mask_view = mask_pic;
+    view.data[0] = image + OFFSET * stride;
+    mask_view.data[0] = mask + OFFSET * stride;
+    calc_c_values_fn(&view, &mask_view, c_buf + OFFSET * W, histograms,
+                     window_size, num_diffs, tvi_for_diff, 0, diff_weights,
+                     all_diffs, W, H);
+
+    bool outside_untouched = true, inside_written = true;
+    for (unsigned i = 0; i < W * PIC_H; i++) {
+        bool inside = i >= OFFSET * W && i < (OFFSET + H) * W;
+        if (!inside && c_buf[i] != -1.0f) outside_untouched = false;
+        if (inside && c_buf[i] == -1.0f) inside_written = false;
+    }
+
+    vmaf_picture_unref(&pic);
+    vmaf_picture_unref(&mask_pic);
+    aligned_free(diffs_to_consider);
+    aligned_free(diff_weights);
+    aligned_free(all_diffs);
+
+    mu_assert("calculate_c_values wrote rows outside a short frame",
+              outside_untouched);
+    mu_assert("calculate_c_values skipped rows of a short frame",
+              inside_written);
+    return NULL;
+}
+
+static char *test_calculate_c_values_short_frame()
+{
+    char *message = check_c_values_short_frame(calculate_c_values);
+    if (message) return message;
+#if ARCH_X86
+    if (vmaf_get_cpu_flags() & VMAF_X86_CPU_FLAG_AVX2)
+        return check_c_values_short_frame(calculate_c_values_avx2);
+#endif
+    return NULL;
+}
+
 static char *test_c_value_pixel()
 {
     uint16_t histogram[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -758,6 +833,7 @@ char *run_tests()
     mu_run_test(test_get_spatial_mask_for_index);
 
     mu_run_test(test_calculate_c_values);
+    mu_run_test(test_calculate_c_values_short_frame);
     mu_run_test(test_c_value_pixel);
     mu_run_test(test_update_range);
 
