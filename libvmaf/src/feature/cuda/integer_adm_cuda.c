@@ -398,9 +398,15 @@ void adm_csf_den_scale_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h,
 
     const int BLOCKX = VMAF_CUDA_THREADS_PER_WARP * warps_per_cta;
 
+    // The CPU's shift (adm_csf_den_scale()), from the same double expression that
+    // conclude_adm_csf_den() uses; __log2f() on the device rounds some areas up
+    // to the next integer.
+    const int32_t shift_area = (int32_t)ceil(log2((bottom - top) * (right - left)) - 20);
+    uint32_t shift_accum = shift_area > 0 ? (uint32_t)shift_area : 0;
+
     void* args[] = {
         &buf->ref_dwt2, &h, &top, &bottom, &left, &right, &src_stride,
-        &buf->adm_csf_den[scale]};
+        &shift_accum, &buf->adm_csf_den[scale]};
     CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_csf_den_scale_line_kernel,
                 DIV_ROUND_UP(buffer_stride, BLOCKX * val_per_thread), buffer_h, 3,
                 BLOCKX, 1, 1,
