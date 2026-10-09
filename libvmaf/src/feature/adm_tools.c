@@ -31,22 +31,7 @@
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-#ifdef __SSE2__
-#ifdef ADM_OPT_RECIP_DIVISION
-
-#include <emmintrin.h>
-
-static float rcp_s(float x)
-{
-    float xi = _mm_cvtss_f32(_mm_rcp_ss(_mm_load_ss(&x)));
-    return xi + xi * (1.0f - x * xi);
-}
-
-#define DIVS(n, d) ((n) * rcp_s(d))
-#endif //ADM_OPT_RECIP_DIVISION
-#else
 #define DIVS(n, d) ((n) / (d))
-#endif // __SSE2__
 
 static const float dwt2_db2_coeffs_lo_s[4] = { 0.482962913144690, 0.836516303737469, 0.224143868041857, -0.129409522550921 };
 static const float dwt2_db2_coeffs_hi_s[4] = { -0.129409522550921, -0.224143868041857, 0.836516303737469, -0.482962913144690 };
