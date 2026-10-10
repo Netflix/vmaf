@@ -711,3 +711,9 @@ pkg_mod.generate(libraries: libvmaf,
     subdirs: [ '.', 'libvmaf'],
     libraries_private: cc.get_id() == 'msvc' ? [thread_lib] : [],
 )
+
+libvmaf_dep = declare_dependency(
+    link_with: libvmaf,
+    include_directories: [libvmaf_inc]
+)
+meson.override_dependency('libvmaf', libvmaf_dep)
