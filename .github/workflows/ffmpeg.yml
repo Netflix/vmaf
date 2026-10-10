@@ -57,14 +57,14 @@ jobs:
       - name: Build vmaf (unix)
         if: matrix.os != 'windows-latest'
         run: |
-          meson setup libvmaf libvmaf/build --buildtype=release
-          sudo ninja -vC libvmaf/build install
+          meson setup builddir --buildtype=release
+          sudo ninja -vC builddir install
       - name: Build vmaf (windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          meson setup libvmaf libvmaf/build --buildtype=release -Denable_tests=false --default-library static --prefix "C:/install"
-          meson install -C libvmaf/build
+          meson setup builddir --buildtype=release -Denable_tests=false --default-library static --prefix "C:/install"
+          meson install -C builddir
       - name: Prepare MSVC install for FFmpeg
         if: matrix.os == 'windows-latest'
         shell: pwsh
