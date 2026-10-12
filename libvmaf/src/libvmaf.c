@@ -955,34 +955,69 @@ static unsigned rfe_hw_flags(RegisteredFeatureExtractors *rfe)
 
 #endif
 
+/**
+ * Drop the references a failed vmaf_read_pictures() call holds on the pair it
+ * was given. vmaf_picture_unref() clears the caller's struct, so a caller that
+ * unrefs afterwards gets -EINVAL and nothing is released twice.
+ */
+static void release_picture_pair(VmafPicture *ref, VmafPicture *dist)
+{
+    vmaf_picture_unref(ref);
+    vmaf_picture_unref(dist);
+}
+
 int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
                        unsigned index)
 {
     if (!vmaf) return -EINVAL;
-    if (vmaf->flushed) return -EINVAL;
     if (!ref != !dist) return -EINVAL;
-    if (!ref && !dist) return flush_context(vmaf);
+    if (!ref && !dist) return vmaf->flushed ? -EINVAL : flush_context(vmaf);
 
-    int err = convert_pictures(vmaf, ref, dist);
-    if (err) return err;
+    // from here on the context owns both pictures on every return
+    VmafPicture *const ref_in = ref;
+    VmafPicture *const dist_in = dist;
+    int err = 0;
+
+    if (vmaf->flushed) {
+        release_picture_pair(ref_in, dist_in);
+        return -EINVAL;
+    }
+
+    err = convert_pictures(vmaf, ref, dist);
+    if (err) {
+        release_picture_pair(ref_in, dist_in);
+        return err;
+    }
 
     vmaf->pic_cnt++;
     err = validate_pic_params(vmaf, ref, dist);
-    if (err) return err;
+    if (err) {
+        release_picture_pair(ref_in, dist_in);
+        return err;
+    }
 
     err = check_picture_pool(vmaf);
-    if (err) return err;
+    if (err) {
+        release_picture_pair(ref_in, dist_in);
+        return err;
+    }
 
 #ifdef HAVE_CUDA
     err = check_ring_buffer(vmaf);
-    if (err) return err;
+    if (err) {
+        release_picture_pair(ref_in, dist_in);
+        return err;
+    }
 
     const unsigned hw_flags =
         rfe_hw_flags(&vmaf->registered_feature_extractors);
 
     VmafPicture ref_host = { 0 }, ref_device = { 0 };
     err = translate_picture(vmaf, ref, &ref_host, &ref_device, hw_flags);
-    if (err) return err;
+    if (err) {
+        release_picture_pair(ref_in, dist_in);
+        return err;
+    }
 
     VmafPicture dist_host = { 0 }, dist_device = { 0 };
     err = translate_picture(vmaf, dist, &dist_host, &dist_device, hw_flags);
@@ -1026,7 +1061,10 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
             fex_ctx->fex->prev_prev_ref = (VmafPicture){0};
         }
 
-        if (err) return err;
+        if (err) {
+            release_picture_pair(ref_in, dist_in);
+            return err;
+        }
     }
 
 #ifdef HAVE_CUDA
@@ -1037,7 +1075,9 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     //multithreading for GPU does not yield performance benefits
     //disabled for now
     if (vmaf->thread_pool){
-        return threaded_read_pictures_batch(vmaf, ref, dist, index);
+        err = threaded_read_pictures_batch(vmaf, ref, dist, index);
+        if (err) release_picture_pair(ref_in, dist_in);
+        return err;
     }
 
     if (vmaf->prev_prev_ref.ref)
