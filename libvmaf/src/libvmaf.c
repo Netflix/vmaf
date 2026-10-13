@@ -99,6 +99,11 @@ typedef struct VmafContext {
         bool have_target;
         VmafPictureConvertTarget target;
         unsigned display_resolution;
+        /* the colorimetry assumed for pictures with none, and whether that
+         * has been warned about */
+        bool has_assumed_color;
+        VmafColor assumed_color;
+        bool warned_assumed;
         unsigned n_models_with_target;
         unsigned n_models_without_target;
     } convert;
@@ -666,12 +671,33 @@ static int convert_picture(VmafPictureConvertContext **ctx,
  * Convert ref and dist to the target (colorspace, and pixel format, bit
  * depth and display resolution where pinned) the registered model(s) declare. Pass-through (no-op) when the model declares
  * none; an error when it declares one and the source colorimetry is not
- * fully specified. On success the originals are released and replaced in
- * place by the converted pictures; on failure they are left untouched.
+ * fully specified and the model declares no fallback for it. On success the
+ * originals are released and replaced in place by the converted pictures; on
+ * failure they are left untouched, except that pictures with no colorimetry
+ * may have been given the model's assumed one.
  */
+static void warn_assumed_color(void)
+{
+    vmaf_log(VMAF_LOG_LEVEL_WARNING,
+             "the reference and distorted pictures have no colorimetry set; "
+             "assuming the one the model declares for untagged input "
+             "(assumed_color_if_untagged)\n");
+}
+
 static int convert_pictures(VmafContext *vmaf, VmafPicture *ref,
                             VmafPicture *dist)
 {
+    if (vmaf->convert.has_assumed_color) {
+        bool assumed = false;
+        int assume_err = vmaf_conversion_policy_assume_color(
+            ref, dist, &vmaf->convert.assumed_color, &assumed);
+        if (assume_err) return assume_err;
+        if (assumed && !vmaf->convert.warned_assumed) {
+            warn_assumed_color();
+            vmaf->convert.warned_assumed = true;
+        }
+    }
+
     bool needs_conversion = false;
     VmafPictureConvertTarget ref_target = { 0 };
     int err = vmaf_conversion_policy_target(
@@ -734,7 +760,13 @@ static int register_conversion_target(VmafContext *vmaf,
         (!vmaf_conversion_policy_target_equal(&vmaf->convert.target,
                                               &model_target) ||
          vmaf->convert.display_resolution !=
-             model->conversion_target.display_resolution))
+             model->conversion_target.display_resolution ||
+         vmaf->convert.has_assumed_color !=
+             model->conversion_target.has_assumed_color ||
+         (model->conversion_target.has_assumed_color &&
+          !vmaf_conversion_policy_color_equal(
+              &vmaf->convert.assumed_color,
+              &model->conversion_target.assumed_color))))
     {
         goto mismatch;
     }
@@ -742,6 +774,9 @@ static int register_conversion_target(VmafContext *vmaf,
     vmaf->convert.target = model_target;
     vmaf->convert.display_resolution =
         model->conversion_target.display_resolution;
+    vmaf->convert.has_assumed_color =
+        model->conversion_target.has_assumed_color;
+    vmaf->convert.assumed_color = model->conversion_target.assumed_color;
     vmaf->convert.n_models_with_target++;
     return 0;
 

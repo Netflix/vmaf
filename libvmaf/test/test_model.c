@@ -584,6 +584,66 @@ static char *test_model_conversion_target_rejects_bad_resolution()
     return NULL;
 }
 
+static char *test_model_conversion_target_assumed_color()
+{
+    VmafModel *model;
+    int err = load_model_with_block(&model,
+        "\"conversion_target\": {\"colorspace\": {\"range\": \"limited\", "
+        "\"primaries\": \"bt709\", \"trc\": \"bt709\", "
+        "\"matrix\": \"bt709\"}, \"assumed_color_if_untagged\": "
+        "{\"range\": \"full\", \"primaries\": \"smpte432\", "
+        "\"trc\": \"bt709\", \"matrix\": \"bt709\"}}, ");
+    mu_assert("problem loading model with an assumed color", !err);
+    mu_assert("the assumed color should be recorded",
+              model->conversion_target.has_assumed_color);
+    mu_assert("the assumed color should be parsed",
+              model->conversion_target.assumed_color.range ==
+                  VMAF_COLOR_RANGE_FULL &&
+              model->conversion_target.assumed_color.primaries ==
+                  VMAF_COLOR_PRIMARIES_SMPTE432);
+    vmaf_model_destroy(model);
+
+    err = load_model_with_block(&model,
+        "\"conversion_target\": {\"colorspace\": {\"range\": \"limited\", "
+        "\"primaries\": \"bt709\", \"trc\": \"bt709\", "
+        "\"matrix\": \"bt709\"}}, ");
+    mu_assert("problem loading model without an assumed color", !err);
+    mu_assert("an absent assumed color should mean none",
+              !model->conversion_target.has_assumed_color);
+    vmaf_model_destroy(model);
+
+    return NULL;
+}
+
+static char *test_model_conversion_target_rejects_bad_assumed_color()
+{
+    const char *colorspace =
+        "\"colorspace\": {\"range\": \"limited\", \"primaries\": \"bt709\", "
+        "\"trc\": \"bt709\", \"matrix\": \"bt709\"}";
+    const char *extra[] = {
+        /* all four attributes are required */
+        "\"assumed_color_if_untagged\": {\"range\": \"limited\", "
+            "\"primaries\": \"bt709\", \"trc\": \"bt709\"}",
+        "\"assumed_color_if_untagged\": {}",
+        "\"assumed_color_if_untagged\": \"bt709\"",
+        "\"assumed_color_if_untagged\": {\"range\": \"limited\", "
+            "\"primaries\": \"nope\", \"trc\": \"bt709\", "
+            "\"matrix\": \"bt709\"}",
+    };
+
+    for (unsigned i = 0; i < sizeof(extra) / sizeof(*extra); i++) {
+        char block[512];
+        snprintf(block, sizeof(block), "\"conversion_target\": {%s, %s}, ",
+                 colorspace, extra[i]);
+        VmafModel *model = NULL;
+        int err = load_model_with_block(&model, block);
+        if (model) vmaf_model_destroy(model);
+        mu_assert("a bad assumed color should be rejected", err);
+    }
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_json_model);
@@ -602,5 +662,7 @@ char *run_tests()
     mu_run_test(test_model_conversion_target_rejects_bad_format_and_depth);
     mu_run_test(test_model_conversion_target_resolution);
     mu_run_test(test_model_conversion_target_rejects_bad_resolution);
+    mu_run_test(test_model_conversion_target_assumed_color);
+    mu_run_test(test_model_conversion_target_rejects_bad_assumed_color);
     return NULL;
 }

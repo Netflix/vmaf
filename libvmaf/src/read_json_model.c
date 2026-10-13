@@ -414,6 +414,18 @@ static int parse_conversion_target(json_stream *s, VmafModel *model)
             continue;
         }
 
+        if (!strcmp(key, "assumed_color_if_untagged")) {
+            if (json_next(s) != JSON_OBJECT)
+                return -EINVAL;
+            VmafColor color = { 0 };
+            int err = parse_colorspace(s, &color);
+            if (err) return err;
+            json_skip_until(s, JSON_OBJECT_END);
+            model->conversion_target.assumed_color = color;
+            model->conversion_target.has_assumed_color = true;
+            continue;
+        }
+
         if (!strcmp(key, "pixel_format")) {
             if (json_next(s) != JSON_STRING)
                 return -EINVAL;

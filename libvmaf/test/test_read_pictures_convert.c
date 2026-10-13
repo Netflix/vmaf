@@ -369,6 +369,64 @@ static char *test_untagged_source_with_target_is_rejected()
     return NULL;
 }
 
+/* the target colorspace, with the same colorspace assumed for untagged input */
+static const char *target_assumed_ictcp =
+    "\"conversion_target\": {" COLORSPACE_ICTCP ", "
+    "\"assumed_color_if_untagged\": {\"range\": \"limited\", "
+    "\"primaries\": \"bt2020\", \"trc\": \"smpte2084\", "
+    "\"matrix\": \"ictcp\"}}, ";
+
+static char *test_untagged_source_uses_the_assumed_color()
+{
+    double assumed, tagged;
+    mu_assert("an untagged source should be accepted when the model assumes a "
+              "color",
+              !run(target_assumed_ictcp, NULL, NULL, &assumed));
+    mu_assert("the tagged run failed",
+              !run(target_assumed_ictcp, &pq_ictcp_color, &pq_ictcp_color,
+                   &tagged));
+    mu_assert("an untagged source should score as if tagged with the assumed "
+              "color", assumed == tagged);
+
+    VmafColor partial = pq_bt2020nc_color;
+    partial.matrix = VMAF_COLOR_MATRIX_UNKNOWN;
+    double score;
+    mu_assert("a partly tagged source should still be rejected",
+              run(target_assumed_ictcp, &partial, &partial, &score) == -EINVAL);
+    mu_assert("a tagged reference with an untagged distorted picture should "
+              "be rejected",
+              run(target_assumed_ictcp, &pq_ictcp_color, NULL, &score) ==
+                  -EINVAL);
+    mu_assert("an untagged reference with a tagged distorted picture should "
+              "be rejected",
+              run(target_assumed_ictcp, NULL, &pq_ictcp_color, &score) ==
+                  -EINVAL);
+
+    return NULL;
+}
+
+static char *test_models_with_different_assumed_colors_cannot_share_a_run()
+{
+    VmafContext *vmaf;
+    VmafConfiguration cfg = { .log_level = VMAF_LOG_LEVEL_NONE };
+    int err = vmaf_init(&vmaf, cfg);
+    mu_assert("problem during vmaf_init", !err);
+
+    VmafModel *plain, *assumed;
+    mu_assert("load plain model", !load_model(&plain, target_color_only));
+    mu_assert("load assuming model", !load_model(&assumed, target_assumed_ictcp));
+    mu_assert("first model should register",
+              !vmaf_use_features_from_model(vmaf, plain));
+    mu_assert("a model that assumes a color cannot share a run with one that "
+              "does not",
+              vmaf_use_features_from_model(vmaf, assumed) == -EINVAL);
+
+    vmaf_model_destroy(plain);
+    vmaf_model_destroy(assumed);
+    vmaf_close(vmaf);
+    return NULL;
+}
+
 static char *test_models_must_share_a_conversion_target()
 {
     VmafContext *vmaf;
@@ -496,6 +554,8 @@ char *run_tests()
 #endif
     mu_run_test(test_untagged_source_with_target_is_rejected);
     mu_run_test(test_models_must_share_a_conversion_target);
+    mu_run_test(test_untagged_source_uses_the_assumed_color);
+    mu_run_test(test_models_with_different_assumed_colors_cannot_share_a_run);
 #ifdef HAVE_ZIMG
     mu_run_test(test_target_display_scales_source);
     mu_run_test(test_target_display_scales_different_sized_inputs);
