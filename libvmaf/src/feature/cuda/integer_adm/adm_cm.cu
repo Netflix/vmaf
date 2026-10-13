@@ -115,15 +115,6 @@ __constant__ const int fixed_shift[3] = {4, 4, 3};
 __constant__ const int32_t shift_xsq[3] = {29, 29, 30};
 __constant__ const int32_t add_shift_xsq[3] = {268435456, 268435456, 536870912};
 
-// HACK: the 256 byte alignment is required to ensure that the struct is not moved to lmem
-struct WarpShift
-{
-    uint32_t shift_cub[3];
-    uint32_t add_shift_cub[3];
-    uint32_t shift_sq[3];
-    uint32_t add_shift_sq[3];
-};
-
 template <int rows_per_thread>
 __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int w, int top,
         int bottom, int left, int right,
@@ -131,15 +122,7 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
         int end_col, int src_stride,
         int csf_a_stride, int buffer_h,
         int buffer_stride, int32_t *accum_per_block,
-        AdmFixedParametersCuda params,
-        // reduce
-        int scale, int64_t* accum_global,
-
-        // shift warp
-        WarpShift ws,
-        // shift global
-        const uint32_t shift_inner_accum, const uint32_t add_shift_inner_accum
-        ) {
+        AdmFixedParametersCuda params) {
     const cuda_adm_dwt_band_t *src = &buf.decouple_r;
     const cuda_adm_dwt_band_t *csf_f = &buf.csf_f;
     const cuda_adm_dwt_band_t *csf_a = &buf.csf_a;
@@ -220,36 +203,23 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
         accum_thread_reg[row] = max(0, sb);
     }
 
-    const int band2 = blockIdx.z;
-    int64_t accum = 0;
-
-    // the compiler does not assume that parameters are constant, move them to local variables to give the compiler
-    // a hint that those values have to be loaded only once from constant memory.
-    int32_t add_shift_cub = ws.add_shift_cub[band2];
-    int32_t shift_cub = ws.shift_cub[band2];
-    int32_t add_shift_sq = ws.add_shift_sq[band2];
-    int32_t shift_sq = ws.shift_sq[band2];
-
-    // accumulate per thread
-    for (int row = 0;row < rows_per_thread;++row) {
-        int32_t accum_thread = accum_thread_reg[row];
-        const int32_t x_sq = (int32_t)((((int64_t)accum_thread * accum_thread) + add_shift_sq >> shift_sq));
-        accum += (((int64_t)x_sq * accum_thread) + add_shift_cub) >> shift_cub;
-    }
-
-    // accumulate warp
-    accum = warp_reduce(accum);
-
-    if (threadIdx.x % 32 == 0)
-    {
-        accum = (accum + add_shift_inner_accum) >> shift_inner_accum;
-        atomicAdd_int64(&accum_global[band2],
-                accum);
+    // Store the masked values. adm_cm_reduce_line_kernel cubes and sums them and
+    // applies the shift_inner_accum rounding once per row, as the CPU adm_cm does.
+    // Rounding the partial sum of every warp tile instead is not the same value.
+    if (cta_x < buffer_stride) {
+        for (int row = 0; row < rows_per_thread; ++row) {
+            const int buffer_row = cta_y + row;
+            if (buffer_row < buffer_h)
+                accum_per_block[(blockIdx.z * buffer_h + buffer_row) * buffer_stride + cta_x] =
+                    accum_thread_reg[row];
+        }
     }
 }
 
-template <int val_per_thread>
-__device__ __forceinline__ void adm_cm_reduce_line_kernel(int h, int w, int scale, int buffer_h,
+// One block per (band, row). The CPU sums a whole row before it applies the
+// rounded shift_inner_accum shift, so the row is reduced within one block and
+// thread 0 applies the shift once.
+extern "C" __global__ void adm_cm_reduce_line_kernel(int h, int w, int scale, int buffer_h,
         int buffer_stride,
         const int32_t *buffer,
         int64_t *accum) {
@@ -259,44 +229,37 @@ __device__ __forceinline__ void adm_cm_reduce_line_kernel(int h, int w, int scal
     const int b_off = off + line * buffer_stride;
 
     uint32_t shift_cub = __float2uint_ru(__log2f(w));
-    uint32_t add_shift_cub = 1 << (shift_cub - 1);
+    uint32_t add_shift_cub = shift_cub ? 1u << (shift_cub - 1) : 0;
     int32_t shift_sq = 30;
     int32_t add_shift_sq = 536870912; // 2^29
     if (scale == 0) {
         shift_cub = __float2uint_ru(__log2f(w) - fixed_shift[band]);
-        add_shift_cub = 1 << (shift_cub - 1);
+        add_shift_cub = shift_cub ? 1u << (shift_cub - 1) : 0;
         shift_sq = shift_xsq[band];
         add_shift_sq = add_shift_xsq[band];
     }
 
     int64_t temp_value = 0;
-    const int buffer_col = (blockDim.x * blockIdx.x + threadIdx.x) * val_per_thread;
-    const int32_t *buffer_loc = buffer + b_off + buffer_col;
-    for (int i = 0; i < val_per_thread; ++i) {
-        if ((buffer_col + i) < buffer_stride) {
-            const int32_t x = buffer_loc[i];
-            const int32_t x_sq =
-                (int32_t)((((int64_t)x * x) + add_shift_sq) >> shift_sq);
-            temp_value += (((int64_t)x_sq * x) + add_shift_cub) >> shift_cub;
-        }
+    for (int col = threadIdx.x; col < buffer_stride; col += blockDim.x) {
+        const int32_t x = buffer[b_off + col];
+        const int32_t x_sq = (int32_t)((((int64_t)x * x) + add_shift_sq) >> shift_sq);
+        temp_value += (((int64_t)x_sq * x) + add_shift_cub) >> shift_cub;
     }
     temp_value = warp_reduce(temp_value);
 
-    if ((threadIdx.x % VMAF_CUDA_THREADS_PER_WARP) == 0) {
+    __shared__ int64_t warp_sums[32]; // at most 1024 threads of 32 lanes
+    if ((threadIdx.x % VMAF_CUDA_THREADS_PER_WARP) == 0)
+        warp_sums[threadIdx.x / VMAF_CUDA_THREADS_PER_WARP] = temp_value;
+    __syncthreads();
+
+    if (threadIdx.x == 0) {
+        int64_t row_sum = 0;
+        for (int i = 0; i < blockDim.x / VMAF_CUDA_THREADS_PER_WARP; ++i)
+            row_sum += warp_sums[i];
         const uint32_t shift_inner_accum = __float2uint_ru(__log2f(h));
         const uint32_t add_shift_inner_accum = 1 << (shift_inner_accum - 1);
-        atomicAdd_int64(&accum[band],
-                (temp_value + add_shift_inner_accum) >> shift_inner_accum);
+        atomicAdd_int64(&accum[band], (row_sum + add_shift_inner_accum) >> shift_inner_accum);
     }
-}
-
-#define ADM_CM_REDUCE_LINE(val_per_thread)                           \
-    __global__ void adm_cm_reduce_line_kernel_##val_per_thread (  \
-            int h, int w, int scale, int buffer_h,                             \
-            int buffer_stride, const int32_t *buffer, int64_t *accum)          \
-{                                                                              \
-    adm_cm_reduce_line_kernel<val_per_thread>(                       \
-            h, w, scale, buffer_h, buffer_stride,  buffer, accum);             \
 }
 
 #define ADM_CM_LINE(rows_per_thread)                                  \
@@ -304,21 +267,16 @@ __device__ __forceinline__ void adm_cm_reduce_line_kernel(int h, int w, int scal
             AdmBufferCuda buf, int h, int w, int top,                                    \
             int bottom, int left, int right, int start_row, int end_row, int start_col,  \
             int end_col, int src_stride, int csf_a_stride, int buffer_h,                 \
-            int buffer_stride, int32_t *accum_per_block, AdmFixedParametersCuda params,  \
-            int scale, int64_t* accum_global, WarpShift ws,                              \
-            const uint32_t shift_inner_accum, const uint32_t add_shift_inner_accum)      \
+            int buffer_stride, int32_t *accum_per_block, AdmFixedParametersCuda params)  \
 {                                                                                        \
     adm_cm_line_kernel<rows_per_thread>(                              \
             buf, h, w, top, bottom, left, right, start_row, end_row, start_col,          \
             end_col, src_stride, csf_a_stride, buffer_h, buffer_stride,                  \
-            accum_per_block, params,scale, accum_global,                                 \
-            ws, shift_inner_accum, add_shift_inner_accum);                               \
+            accum_per_block, params);                                                    \
 }
 
 
 
 extern "C" {
-    // 128 = warps_per_thread * val_per_thread = 32 * 4 -- assuming 32 threads per warp, this might change in the future
-    ADM_CM_REDUCE_LINE(4);   // adm_cm_reduce_line_kernel_4
     ADM_CM_LINE(8);            // adm_cm_line_kernel_8
 }
