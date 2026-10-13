@@ -33,6 +33,10 @@ enum {
     ARG_FRAME_CNT,
     ARG_FRAME_SKIP_REF,
     ARG_FRAME_SKIP_DIST,
+    ARG_WIDTH_REF,
+    ARG_WIDTH_DIST,
+    ARG_HEIGHT_REF,
+    ARG_HEIGHT_DIST,
     ARG_COLOR_RANGE_REF,
     ARG_COLOR_RANGE_DIST,
     ARG_COLOR_PRIMARIES_REF,
@@ -48,6 +52,10 @@ static const struct option long_opts[] = {
     { "distorted",        1, NULL, 'd' },
     { "width",            1, NULL, 'w' },
     { "height",           1, NULL, 'h' },
+    { "width_ref",        1, NULL, ARG_WIDTH_REF },
+    { "width_dist",       1, NULL, ARG_WIDTH_DIST },
+    { "height_ref",       1, NULL, ARG_HEIGHT_REF },
+    { "height_dist",      1, NULL, ARG_HEIGHT_DIST },
     { "pixel_format",     1, NULL, 'p' },
     { "bitdepth",         1, NULL, 'b' },
     { "model",            1, NULL, 'm' },
@@ -94,6 +102,11 @@ static void usage(const char *const app, const char *const reason, ...) {
             " --distorted/-d $path:        path to distorted .y4m or .yuv\n"
             " --width/-w $unsigned:        width\n"
             " --height/-h $unsigned:       height\n"
+            " --width_ref/--width_dist/--height_ref/--height_dist $unsigned:\n"
+            "                              reference or distorted size, if it\n"
+            "                              differs from --width/--height. Only\n"
+            "                              models that scale their inputs\n"
+            "                              accept different sizes\n"
             " --pixel_format/-p: $string   pixel format (420/422/444)\n"
             " --bitdepth/-b $unsigned:     bitdepth (8/10/12/16)\n"
             " --model/-m $params:          model parameters, colon \":\" delimited\n"
@@ -673,6 +686,22 @@ void cli_parse(const int argc, char *const *const argv,
         case ARG_FRAME_SKIP_REF:
             settings->frame_skip_ref = parse_unsigned(optarg, ARG_FRAME_SKIP_REF, argv[0]);
             break;
+        case ARG_WIDTH_REF:
+            settings->width_ref = parse_unsigned(optarg, ARG_WIDTH_REF, argv[0]);
+            settings->use_yuv = true;
+            break;
+        case ARG_WIDTH_DIST:
+            settings->width_dist = parse_unsigned(optarg, ARG_WIDTH_DIST, argv[0]);
+            settings->use_yuv = true;
+            break;
+        case ARG_HEIGHT_REF:
+            settings->height_ref = parse_unsigned(optarg, ARG_HEIGHT_REF, argv[0]);
+            settings->use_yuv = true;
+            break;
+        case ARG_HEIGHT_DIST:
+            settings->height_dist = parse_unsigned(optarg, ARG_HEIGHT_DIST, argv[0]);
+            settings->use_yuv = true;
+            break;
         case ARG_FRAME_SKIP_DIST:
             settings->frame_skip_dist = parse_unsigned(optarg, ARG_FRAME_SKIP_DIST, argv[0]);
             break;
@@ -700,12 +729,18 @@ void cli_parse(const int argc, char *const *const argv,
         usage(argv[0], "Reference .y4m or .yuv (-r/--reference) is required");
     if (!settings->path_dist)
         usage(argv[0], "Distorted .y4m or .yuv (-d/--distorted) is required");
-    if (settings->use_yuv && !(settings->width && settings->height &&
-        settings->pix_fmt && settings->bitdepth))
+    if (!settings->width_ref) settings->width_ref = settings->width;
+    if (!settings->height_ref) settings->height_ref = settings->height;
+    if (!settings->width_dist) settings->width_dist = settings->width;
+    if (!settings->height_dist) settings->height_dist = settings->height;
+    if (settings->use_yuv &&
+        !(settings->width_ref && settings->height_ref &&
+          settings->width_dist && settings->height_dist &&
+          settings->pix_fmt && settings->bitdepth))
     {
         usage(argv[0], "The following options are required for .yuv input:\n"
-                       "  --width/-w\n"
-                       "  --height/-h\n"
+                       "  --width/-w, or --width_ref and --width_dist\n"
+                       "  --height/-h, or --height_ref and --height_dist\n"
                        "  --pixel_format/-p\n"
                        "  --bitdepth/-b\n");
     }

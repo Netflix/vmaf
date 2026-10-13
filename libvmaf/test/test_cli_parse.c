@@ -150,6 +150,64 @@ static char *test_nflx_ctc_v1_0()
     return NULL;
 }
 
+static char *test_input_sizes_default_to_width_and_height()
+{
+    char *argv[13] = {"vmaf", "-r", "ref.yuv", "-d", "dis.yuv",
+                      "-w", "16", "-h", "8", "-p", "420", "-b", "8"};
+    int argc = 13;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: the reference size should default to -w/-h",
+              settings.width_ref == 16 && settings.height_ref == 8);
+    mu_assert("cli_parse: the distorted size should default to -w/-h",
+              settings.width_dist == 16 && settings.height_dist == 8);
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+
+    return NULL;
+}
+
+static char *test_input_sizes_can_differ()
+{
+    char *argv[17] = {"vmaf", "-r", "ref.yuv", "-d", "dis.yuv",
+                      "--width_ref", "32", "--height_ref", "16",
+                      "--width_dist", "16", "--height_dist", "8",
+                      "-p", "420", "-b", "8"};
+    int argc = 17;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: the reference size should be parsed",
+              settings.width_ref == 32 && settings.height_ref == 16);
+    mu_assert("cli_parse: the distorted size should be parsed",
+              settings.width_dist == 16 && settings.height_dist == 8);
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+
+    return NULL;
+}
+
+static char *test_input_size_overrides_one_input()
+{
+    char *argv[17] = {"vmaf", "-r", "ref.yuv", "-d", "dis.yuv",
+                      "-w", "32", "-h", "16",
+                      "--width_dist", "16", "--height_dist", "8",
+                      "-p", "420", "-b", "8"};
+    int argc = 17;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: the reference should keep -w/-h",
+              settings.width_ref == 32 && settings.height_ref == 16);
+    mu_assert("cli_parse: the distorted size should override -w/-h",
+              settings.width_dist == 16 && settings.height_dist == 8);
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+
+    return NULL;
+}
+
 static char *test_color_metadata_defaults_to_unknown()
 {
     char *argv[13] = {"vmaf", "-r", "ref.yuv", "-d", "dis.yuv",
@@ -379,6 +437,9 @@ char *run_tests()
     mu_run_test(test_color_trc_and_matrix_aliases_parse);
     mu_run_test(test_per_side_color_flags_differ);
     mu_run_test(test_one_input_can_be_left_unspecified);
+    mu_run_test(test_input_sizes_default_to_width_and_height);
+    mu_run_test(test_input_sizes_can_differ);
+    mu_run_test(test_input_size_overrides_one_input);
 #if VMAF_BUILT_IN_MODELS
     mu_run_test(test_default_model_is_sdr_without_color_metadata);
     mu_run_test(test_default_model_is_sdr_for_bt709_source);
