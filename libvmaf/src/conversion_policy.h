@@ -45,12 +45,9 @@
  * "keep each picture's own"). `*needs_conversion` is true unless both `ref`
  * and `dist` already match the target. `ref` and `dist` are allowed to
  * differ from each other: each is converted to the same target. The caller
- * is responsible for `target->w`/`h`/`resample_filter`.
- *
- * NOTE: a resolution-mismatch policy (deciding `target->w`/`h` when
- * reference and distorted differ) is expected to land here too once
- * that's in scope, rather than in a separate module - hence
- * `conversion_policy` rather than `colorspace_policy`.
+ * is responsible for `target->w`/`h`/`resample_filter`, which
+ * vmaf_conversion_policy_scale() fills in when the model declares a
+ * display resolution.
  */
 int vmaf_conversion_policy_target(const VmafPicture *ref,
                                   const VmafPicture *dist,
@@ -58,12 +55,32 @@ int vmaf_conversion_policy_target(const VmafPicture *ref,
                                   bool *needs_conversion,
                                   VmafPictureConvertTarget *target);
 
+/**
+ * Fill in `target->w`/`h`/`resample_filter` for a model that declares a
+ * display resolution, after vmaf_conversion_policy_target().
+ *
+ * `display_resolution` is the short side both pictures are scaled to (1080 or
+ * 2160). The orientation follows the source, so portrait video scores at e.g.
+ * 1080x1920, and the long side keeps the source's aspect ratio, rounded to
+ * an even number. Upscaling uses bicubic, downscaling lanczos.
+ *
+ * Only `ref` and `dist` of the same size are supported for now; different
+ * sizes return -EINVAL, as does an aspect ratio that would scale the long
+ * side beyond 4x `display_resolution`. `*needs_conversion` is set to true when either
+ * picture is not at the target size, and left as is otherwise.
+ */
+int vmaf_conversion_policy_scale(const VmafPicture *ref,
+                                 const VmafPicture *dist,
+                                 unsigned display_resolution,
+                                 bool *needs_conversion,
+                                 VmafPictureConvertTarget *target);
+
 /** True when all of `a`'s color attributes equal `b`'s. */
 bool vmaf_conversion_policy_color_equal(const VmafColor *a, const VmafColor *b);
 
 /**
  * True when `pic` already matches `target`: same color, and the same pixel
- * format and bit depth wherever `target` pins them.
+ * format, bit depth and size wherever `target` pins them.
  */
 bool vmaf_conversion_policy_picture_matches(const VmafPicture *pic,
                                             const VmafPictureConvertTarget *target);

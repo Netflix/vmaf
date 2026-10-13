@@ -532,6 +532,58 @@ static char *test_model_conversion_target_rejects_bad_format_and_depth()
     return NULL;
 }
 
+static char *test_model_conversion_target_resolution()
+{
+    VmafModel *model;
+    int err = load_model_with_block(&model,
+        "\"conversion_target\": {\"colorspace\": {\"range\": \"limited\", "
+        "\"primaries\": \"bt2020\", \"trc\": \"smpte2084\", "
+        "\"matrix\": \"ictcp\"}, \"resolution\": {\"display\": 2160}}, ");
+    mu_assert("problem loading model with a resolution", !err);
+    mu_assert("display should be parsed",
+              model->conversion_target.display_resolution == 2160);
+    vmaf_model_destroy(model);
+
+    err = load_model_with_block(&model,
+        "\"conversion_target\": {\"colorspace\": {\"range\": \"limited\", "
+        "\"primaries\": \"bt2020\", \"trc\": \"smpte2084\", "
+        "\"matrix\": \"ictcp\"}}, ");
+    mu_assert("problem loading model without a resolution", !err);
+    mu_assert("an absent resolution should mean keep the source's size",
+              model->conversion_target.display_resolution == 0);
+    vmaf_model_destroy(model);
+
+    return NULL;
+}
+
+static char *test_model_conversion_target_rejects_bad_resolution()
+{
+    const char *colorspace =
+        "\"colorspace\": {\"range\": \"limited\", \"primaries\": \"bt2020\", "
+        "\"trc\": \"smpte2084\", \"matrix\": \"ictcp\"}";
+    const char *extra[] = {
+        "\"resolution\": {\"display\": 720}",
+        "\"resolution\": {\"display\": \"1080\"}",
+        "\"resolution\": {\"display\": 1080.5}",
+        "\"resolution\": {}",
+        "\"resolution\": 1080",
+        "\"resolution\": {\"display\": 1080, "
+            "\"filter\": {\"upscale\": \"bicubic\"}}",
+    };
+
+    for (unsigned i = 0; i < sizeof(extra) / sizeof(*extra); i++) {
+        char block[512];
+        snprintf(block, sizeof(block), "\"conversion_target\": {%s, %s}, ",
+                 colorspace, extra[i]);
+        VmafModel *model = NULL;
+        int err = load_model_with_block(&model, block);
+        if (model) vmaf_model_destroy(model);
+        mu_assert("a bad resolution should be rejected", err);
+    }
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_json_model);
@@ -548,5 +600,7 @@ char *run_tests()
     mu_run_test(test_model_conversion_target_rejects_bad_input);
     mu_run_test(test_model_conversion_target_format_and_depth);
     mu_run_test(test_model_conversion_target_rejects_bad_format_and_depth);
+    mu_run_test(test_model_conversion_target_resolution);
+    mu_run_test(test_model_conversion_target_rejects_bad_resolution);
     return NULL;
 }

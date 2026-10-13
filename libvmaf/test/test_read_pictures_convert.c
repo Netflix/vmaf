@@ -65,6 +65,11 @@ static const char *target_420_16bit =
     "\"conversion_target\": {" COLORSPACE_ICTCP ", \"pixel_format\": \"420\", "
     "\"bit_depth\": 16}, ";
 
+/* the target colorspace, scaled to a 1080-line display */
+static const char *target_1080 =
+    "\"conversion_target\": {" COLORSPACE_ICTCP ", "
+    "\"resolution\": {\"display\": 1080}}, ";
+
 /*
  * vmaf_v0.6.1, optionally with a conversion_target spliced into its
  * model_dict. This keeps the test on integer features so it does not depend
@@ -387,6 +392,45 @@ static char *test_models_must_share_a_conversion_target()
     return NULL;
 }
 
+#ifdef HAVE_ZIMG
+static char *test_target_display_scales_source()
+{
+    /* the synthetic frames are 256x144, already in the target colorspace */
+    double unscaled, scaled;
+    mu_assert("unscaled run failed",
+              !run(target_color_only, &pq_ictcp_color, &pq_ictcp_color,
+                   &unscaled));
+    mu_assert("scaled run failed",
+              !run(target_1080, &pq_ictcp_color, &pq_ictcp_color, &scaled));
+    mu_assert("a source below the display size should be upscaled, but the "
+              "score matches the unscaled pictures", unscaled != scaled);
+
+    return NULL;
+}
+
+static char *test_models_with_different_displays_cannot_share_a_run()
+{
+    VmafContext *vmaf;
+    VmafConfiguration cfg = { .log_level = VMAF_LOG_LEVEL_NONE };
+    int err = vmaf_init(&vmaf, cfg);
+    mu_assert("problem during vmaf_init", !err);
+
+    VmafModel *unscaled, *scaled;
+    mu_assert("load unscaled model", !load_model(&unscaled, target_color_only));
+    mu_assert("load scaled model", !load_model(&scaled, target_1080));
+
+    mu_assert("first model should register",
+              !vmaf_use_features_from_model(vmaf, unscaled));
+    mu_assert("a model with a different display cannot share a run",
+              vmaf_use_features_from_model(vmaf, scaled) == -EINVAL);
+
+    vmaf_model_destroy(unscaled);
+    vmaf_model_destroy(scaled);
+    vmaf_close(vmaf);
+    return NULL;
+}
+#endif
+
 char *run_tests()
 {
     mu_run_test(test_no_model_target_never_converts);
@@ -405,5 +449,9 @@ char *run_tests()
 #endif
     mu_run_test(test_untagged_source_with_target_is_rejected);
     mu_run_test(test_models_must_share_a_conversion_target);
+#ifdef HAVE_ZIMG
+    mu_run_test(test_target_display_scales_source);
+    mu_run_test(test_models_with_different_displays_cannot_share_a_run);
+#endif
     return NULL;
 }

@@ -367,6 +367,33 @@ static int parse_colorspace(json_stream *s, VmafColor *color)
     return 0;
 }
 
+/* "resolution": {"display": 1080 | 2160} */
+static int parse_resolution(json_stream *s, VmafModel *model)
+{
+    unsigned display_resolution = 0;
+    while (json_peek(s) != JSON_OBJECT_END && !json_get_error(s)) {
+        if (json_next(s) != JSON_STRING)
+            return -EINVAL;
+        const char *key = json_get_string(s, NULL);
+        if (strcmp(key, "display"))
+            return -EINVAL;
+        if (json_next(s) != JSON_NUMBER)
+            return -EINVAL;
+        const double value = json_get_number(s);
+        if (value == 1080)
+            display_resolution = 1080;
+        else if (value == 2160)
+            display_resolution = 2160;
+        else
+            return -EINVAL;
+    }
+
+    if (!display_resolution)
+        return -EINVAL;
+    model->conversion_target.display_resolution = display_resolution;
+    return 0;
+}
+
 static int parse_conversion_target(json_stream *s, VmafModel *model)
 {
     bool have_colorspace = false;
@@ -412,6 +439,15 @@ static int parse_conversion_target(json_stream *s, VmafModel *model)
                 return -EINVAL;
             }
             model->conversion_target.bpc = (unsigned) bit_depth;
+            continue;
+        }
+
+        if (!strcmp(key, "resolution")) {
+            if (json_next(s) != JSON_OBJECT)
+                return -EINVAL;
+            int err = parse_resolution(s, model);
+            if (err) return err;
+            json_skip_until(s, JSON_OBJECT_END);
             continue;
         }
 
