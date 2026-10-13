@@ -673,25 +673,27 @@ static int convert_pictures(VmafContext *vmaf, VmafPicture *ref,
                             VmafPicture *dist)
 {
     bool needs_conversion = false;
-    VmafPictureConvertTarget target = { 0 };
+    VmafPictureConvertTarget ref_target = { 0 };
     int err = vmaf_conversion_policy_target(
         ref, dist,
         vmaf->convert.have_target ? &vmaf->convert.target : NULL,
-        &needs_conversion, &target);
+        &needs_conversion, &ref_target);
     if (err) return err;
+    VmafPictureConvertTarget dist_target = ref_target;
     if (vmaf->convert.display_resolution) {
         err = vmaf_conversion_policy_scale(ref, dist,
                                            vmaf->convert.display_resolution,
-                                           &needs_conversion, &target);
+                                           &needs_conversion, &ref_target,
+                                           &dist_target);
         if (err) return err;
     }
     if (!needs_conversion) return 0;
 
     VmafPicture ref_converted = { 0 }, dist_converted = { 0 };
-    err = convert_picture(&vmaf->convert.ref, ref, &target,
+    err = convert_picture(&vmaf->convert.ref, ref, &ref_target,
                           &ref_converted);
     if (err) return err;
-    err = convert_picture(&vmaf->convert.dist, dist, &target,
+    err = convert_picture(&vmaf->convert.dist, dist, &dist_target,
                           &dist_converted);
     if (err) {
         if (ref_converted.priv) vmaf_picture_unref(&ref_converted);
@@ -765,10 +767,23 @@ static int validate_pic_params(VmafContext *vmaf, VmafPicture *ref,
     }
     vmaf->pic_params.buf_type = ref_priv->buf_type;
 
-    if ((ref->w[0] != dist->w[0]) || (ref->w[0] != vmaf->pic_params.w))
+    if ((ref->w[0] != dist->w[0]) || (ref->h[0] != dist->h[0])) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "when no scaling is set in the models, the reference "
+                 "(%ux%u) and distorted (%ux%u) pictures must be the same "
+                 "size\n",
+                 ref->w[0], ref->h[0], dist->w[0], dist->h[0]);
         return -EINVAL;
-    if ((ref->h[0] != dist->h[0]) || (ref->h[0] != vmaf->pic_params.h))
+    }
+    if ((ref->w[0] != vmaf->pic_params.w) ||
+        (ref->h[0] != vmaf->pic_params.h))
+    {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "the picture size changed from %ux%u to %ux%u; every picture "
+                 "must be the size of the first\n",
+                 vmaf->pic_params.w, vmaf->pic_params.h, ref->w[0], ref->h[0]);
         return -EINVAL;
+    }
     if ((ref->pix_fmt != dist->pix_fmt) ||
         (ref->pix_fmt != vmaf->pic_params.pix_fmt))
     {

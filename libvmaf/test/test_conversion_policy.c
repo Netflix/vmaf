@@ -300,17 +300,33 @@ static char *test_null_arguments_are_rejected()
     return NULL;
 }
 
-/* scale a w x h pair to `display`, returning the policy's error */
+/* scale a ref and a dist of different sizes to `display_resolution` */
+static int scale_pair(unsigned ref_w, unsigned ref_h, unsigned dist_w,
+                      unsigned dist_h, unsigned display_resolution,
+                      bool *needs_conversion, VmafPictureConvertTarget *target,
+                      VmafPictureConvertTarget *dist_target)
+{
+    VmafPicture ref = make_pic(&pq_ictcp_color, VMAF_PIX_FMT_YUV420P, 10);
+    VmafPicture dist = ref;
+    ref.w[0] = ref_w;
+    ref.h[0] = ref_h;
+    dist.w[0] = dist_w;
+    dist.h[0] = dist_h;
+    *target = color_target(&pq_ictcp_color);
+    *dist_target = (VmafPictureConvertTarget) { 0 };
+    *needs_conversion = false;
+    return vmaf_conversion_policy_scale(&ref, &dist, display_resolution,
+                                        needs_conversion, target,
+                                        dist_target);
+}
+
+/* scale a w x h pair to `display_resolution`, returning the policy's error */
 static int scale(unsigned w, unsigned h, unsigned display_resolution,
                  bool *needs_conversion, VmafPictureConvertTarget *target)
 {
-    VmafPicture pic = make_pic(&pq_ictcp_color, VMAF_PIX_FMT_YUV420P, 10);
-    pic.w[0] = w;
-    pic.h[0] = h;
-    *target = color_target(&pq_ictcp_color);
-    *needs_conversion = false;
-    return vmaf_conversion_policy_scale(&pic, &pic, display_resolution,
-                                        needs_conversion, target);
+    VmafPictureConvertTarget dist_target;
+    return scale_pair(w, h, w, h, display_resolution, needs_conversion, target,
+                      &dist_target);
 }
 
 static char *test_scale_upscales_short_side_to_display()
@@ -415,23 +431,126 @@ static char *test_scale_rejects_extreme_aspect_ratios()
     return NULL;
 }
 
-static char *test_scale_rejects_different_sizes()
+static char *test_scale_different_sizes_go_to_a_common_size()
 {
-    VmafPicture ref = make_pic(&pq_ictcp_color, VMAF_PIX_FMT_YUV420P, 10);
-    VmafPicture dist = ref;
-    ref.w[0] = 1920;
-    ref.h[0] = 1080;
-    dist.w[0] = 1280;
-    dist.h[0] = 720;
-    bool needs_conversion = false;
-    VmafPictureConvertTarget target = color_target(&pq_ictcp_color);
-    mu_assert("different reference and distorted sizes are not supported yet",
-              vmaf_conversion_policy_scale(&ref, &dist, 1080,
-                                           &needs_conversion, &target) ==
-                  -EINVAL);
-    mu_assert("no display should be rejected",
-              vmaf_conversion_policy_scale(&ref, &ref, 0, &needs_conversion,
-                                           &target) == -EINVAL);
+    bool needs_conversion;
+    VmafPictureConvertTarget target, dist_target;
+    mu_assert("2160p ref with a 720p dist should be accepted",
+              !scale_pair(3840, 2160, 1280, 720, 1080, &needs_conversion,
+                          &target, &dist_target));
+    mu_assert("both pictures should scale to the size the reference scales to",
+              target.w == 1920 && target.h == 1080 &&
+              dist_target.w == 1920 && dist_target.h == 1080);
+    mu_assert("the reference should downscale with lanczos",
+              target.resample_filter == VMAF_RESAMPLE_LANCZOS);
+    mu_assert("the distorted picture should upscale with bicubic",
+              dist_target.resample_filter == VMAF_RESAMPLE_BICUBIC);
+    mu_assert("the distorted target should carry the reference target's color",
+              vmaf_conversion_policy_color_equal(&dist_target.color,
+                                                 &target.color));
+    mu_assert("a resize should need conversion", needs_conversion);
+
+    return NULL;
+}
+
+static char *test_scale_different_sizes_with_ref_at_display()
+{
+    bool needs_conversion;
+    VmafPictureConvertTarget target, dist_target;
+    mu_assert("a ref at the display size should be accepted",
+              !scale_pair(1920, 1080, 1280, 720, 1080, &needs_conversion,
+                          &target, &dist_target));
+    mu_assert("the reference should keep its size",
+              target.w == 1920 && target.h == 1080 &&
+              target.resample_filter == VMAF_RESAMPLE_DEFAULT);
+    mu_assert("the distorted picture should still need converting",
+              needs_conversion && dist_target.w == 1920 &&
+              dist_target.resample_filter == VMAF_RESAMPLE_BICUBIC);
+
+    return NULL;
+}
+
+static char *test_scale_filter_follows_the_final_size()
+{
+    bool needs_conversion;
+    VmafPictureConvertTarget target, dist_target;
+    /* the reference scales to 1922x1080, so the distorted picture, already at
+     * the display size, is still stretched 1920 to 1922 */
+    mu_assert("854x480 with a 1080p distorted picture should be accepted",
+              !scale_pair(854, 480, 1920, 1080, 1080, &needs_conversion,
+                          &target, &dist_target));
+    mu_assert("the distorted picture should be resized to 1922x1080",
+              dist_target.w == 1922 && dist_target.h == 1080);
+    mu_assert("a distorted picture that is stretched should use bicubic",
+              dist_target.resample_filter == VMAF_RESAMPLE_BICUBIC);
+    mu_assert("the reference should upscale with bicubic",
+              target.resample_filter == VMAF_RESAMPLE_BICUBIC);
+
+    /* the reverse: the reference is the one at the display size */
+    mu_assert("a 1080p reference with 854x480 should be accepted",
+              !scale_pair(1920, 1080, 854, 480, 1080, &needs_conversion,
+                          &target, &dist_target));
+    mu_assert("a reference that keeps its size should use the default filter",
+              target.resample_filter == VMAF_RESAMPLE_DEFAULT);
+    mu_assert("the distorted picture should upscale with bicubic",
+              dist_target.resample_filter == VMAF_RESAMPLE_BICUBIC);
+
+    /* the same, with the reference at the display size already 1922 wide */
+    mu_assert("a 1922x1080 reference with a 1920x1080 distorted picture "
+              "should be accepted",
+              !scale_pair(1922, 1080, 1920, 1080, 1080, &needs_conversion,
+                          &target, &dist_target));
+    mu_assert("a stretch from 1920 to 1922 should upscale with bicubic",
+              dist_target.resample_filter == VMAF_RESAMPLE_BICUBIC);
+    mu_assert("a distorted picture bigger than the target should use lanczos",
+              !scale_pair(1920, 1080, 1922, 1080, 1080, &needs_conversion,
+                          &target, &dist_target) &&
+              dist_target.resample_filter == VMAF_RESAMPLE_LANCZOS);
+
+    return NULL;
+}
+
+static char *test_scale_allows_even_rounding_in_the_aspect_ratio()
+{
+    bool needs_conversion;
+    VmafPictureConvertTarget target, dist_target;
+    /* 854x480 scales to 1922x1080, 1280x720 to 1920x1080 */
+    mu_assert("rounding differences in the long side should be accepted",
+              !scale_pair(854, 480, 1280, 720, 1080, &needs_conversion,
+                          &target, &dist_target));
+    mu_assert("both should scale to the size the reference scales to",
+              target.w == 1922 && dist_target.w == 1922);
+
+    return NULL;
+}
+
+static char *test_scale_rejects_different_aspect_ratios()
+{
+    bool needs_conversion;
+    VmafPictureConvertTarget target, dist_target;
+    mu_assert("16:9 against 4:3 should be rejected",
+              scale_pair(1920, 1080, 1440, 1080, 1080, &needs_conversion,
+                         &target, &dist_target) == -EINVAL);
+    mu_assert("landscape against portrait should be rejected",
+              scale_pair(1920, 1080, 1080, 1920, 1080, &needs_conversion,
+                         &target, &dist_target) == -EINVAL);
+    mu_assert("near-square landscape against portrait should be rejected",
+              scale_pair(1081, 1080, 1080, 1081, 1080, &needs_conversion,
+                         &target, &dist_target) == -EINVAL);
+    mu_assert("a square should match a square of another size",
+              !scale_pair(1080, 1080, 720, 720, 1080, &needs_conversion,
+                          &target, &dist_target));
+    mu_assert("a portrait pair of another size should be accepted",
+              !scale_pair(1080, 1920, 720, 1280, 1080, &needs_conversion,
+                          &target, &dist_target) &&
+              dist_target.w == 1080 && dist_target.h == 1920);
+    mu_assert("an extreme aspect ratio on the distorted side should be "
+              "rejected",
+              scale_pair(1920, 1080, 8, 2000, 1080, &needs_conversion, &target,
+                         &dist_target) == -EINVAL);
+    mu_assert("no display resolution should be rejected",
+              scale_pair(1920, 1080, 1920, 1080, 0, &needs_conversion, &target,
+                         &dist_target) == -EINVAL);
 
     return NULL;
 }
@@ -470,7 +589,11 @@ char *run_tests()
     mu_run_test(test_scale_keeps_aspect_ratio_rounded_to_even);
     mu_run_test(test_scale_at_display_keeps_source_size);
     mu_run_test(test_scale_rejects_extreme_aspect_ratios);
-    mu_run_test(test_scale_rejects_different_sizes);
+    mu_run_test(test_scale_different_sizes_go_to_a_common_size);
+    mu_run_test(test_scale_different_sizes_with_ref_at_display);
+    mu_run_test(test_scale_filter_follows_the_final_size);
+    mu_run_test(test_scale_allows_even_rounding_in_the_aspect_ratio);
+    mu_run_test(test_scale_rejects_different_aspect_ratios);
     mu_run_test(test_picture_matches_compares_pinned_size);
     return NULL;
 }

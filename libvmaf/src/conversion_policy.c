@@ -97,23 +97,16 @@ int vmaf_conversion_policy_target(const VmafPicture *ref,
     return 0;
 }
 
-int vmaf_conversion_policy_scale(const VmafPicture *ref,
-                                 const VmafPicture *dist,
-                                 unsigned display_resolution,
-                                 bool *needs_conversion,
-                                 VmafPictureConvertTarget *target)
-{
-    if (!ref || !dist || !needs_conversion || !target || !display_resolution)
-        return -EINVAL;
+/* the long sides of two pictures scaled to the same short side may differ
+ * by this much from rounding to even (854x480 vs 1280x720 gives 1922 vs 1920) */
+#define SCALE_ASPECT_TOLERANCE 2
 
-    const unsigned w = ref->w[0], h = ref->h[0];
-    if (dist->w[0] != w || dist->h[0] != h) {
-        vmaf_log(VMAF_LOG_LEVEL_ERROR,
-                 "the model scales its inputs, which requires the reference "
-                 "(%ux%u) and distorted (%ux%u) pictures to be the same size\n",
-                 w, h, dist->w[0], dist->h[0]);
-        return -EINVAL;
-    }
+/**
+ * Size `w`x`h` scales to for `display_resolution`.
+ */
+static int scaled_size(unsigned w, unsigned h, unsigned display_resolution,
+                       unsigned *scaled_w, unsigned *scaled_h)
+{
     if (!w || !h) return -EINVAL;
 
     const bool portrait = h > w;
@@ -122,9 +115,8 @@ int vmaf_conversion_policy_scale(const VmafPicture *ref,
 
     /* already at the display size: keep the source's dimensions exactly */
     if (short_side == display_resolution) {
-        target->w = w;
-        target->h = h;
-        target->resample_filter = VMAF_RESAMPLE_DEFAULT;
+        *scaled_w = w;
+        *scaled_h = h;
         return 0;
     }
 
@@ -142,10 +134,81 @@ int vmaf_conversion_policy_scale(const VmafPicture *ref,
         return -EINVAL;
     }
 
-    target->w = portrait ? display_resolution : (unsigned) scaled;
-    target->h = portrait ? (unsigned) scaled : display_resolution;
-    target->resample_filter = short_side < display_resolution ?
+    *scaled_w = portrait ? display_resolution : (unsigned) scaled;
+    *scaled_h = portrait ? (unsigned) scaled : display_resolution;
+    return 0;
+}
+
+/**
+ * Filter to resize `w`x`h` to `final_w`x`final_h`: none to pick when the size
+ * is kept, bicubic to upscale and lanczos to downscale. This looks at the
+ * final size, which can differ by a few pixels from `scaled_size()` for a
+ * picture that is already at the display size.
+ */
+static enum VmafResampleFilter resample_filter(unsigned w, unsigned h,
+                                               unsigned final_w,
+                                               unsigned final_h)
+{
+    if (w == final_w && h == final_h) return VMAF_RESAMPLE_DEFAULT;
+    return (unsigned long long) w * h < (unsigned long long) final_w * final_h ?
         VMAF_RESAMPLE_BICUBIC : VMAF_RESAMPLE_LANCZOS;
-    *needs_conversion = true;
+}
+
+static bool within_tolerance(unsigned a, unsigned b)
+{
+    return (a > b ? a - b : b - a) <= SCALE_ASPECT_TOLERANCE;
+}
+
+int vmaf_conversion_policy_scale(const VmafPicture *ref,
+                                 const VmafPicture *dist,
+                                 unsigned display_resolution,
+                                 bool *needs_conversion,
+                                 VmafPictureConvertTarget *ref_target,
+                                 VmafPictureConvertTarget *dist_target)
+{
+    if (!ref || !dist || !needs_conversion || !ref_target || !dist_target ||
+        !display_resolution)
+    {
+        return -EINVAL;
+    }
+
+    unsigned ref_w, ref_h, dist_w, dist_h;
+    int err = scaled_size(ref->w[0], ref->h[0], display_resolution,
+                          &ref_w, &ref_h);
+    if (err) return err;
+    err = scaled_size(dist->w[0], dist->h[0], display_resolution,
+                      &dist_w, &dist_h);
+    if (err) return err;
+
+    /* a landscape and a portrait picture never match, however close their
+     * scaled sizes are (1081x1080 against 1080x1081); a square matches both */
+    const bool mixed_orientation =
+        (ref->w[0] > ref->h[0] && dist->h[0] > dist->w[0]) ||
+        (ref->h[0] > ref->w[0] && dist->w[0] > dist->h[0]);
+    if (mixed_orientation ||
+        !within_tolerance(ref_w, dist_w) || !within_tolerance(ref_h, dist_h))
+    {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "the reference (%ux%u) and distorted (%ux%u) pictures do not "
+                 "have the same orientation and aspect ratio, so they cannot "
+                 "be scaled to a common size\n",
+                 ref->w[0], ref->h[0], dist->w[0], dist->h[0]);
+        return -EINVAL;
+    }
+
+    /* both pictures are scaled to the size the reference scales to */
+    *dist_target = *ref_target;
+    ref_target->w = dist_target->w = ref_w;
+    ref_target->h = dist_target->h = ref_h;
+    ref_target->resample_filter =
+        resample_filter(ref->w[0], ref->h[0], ref_w, ref_h);
+    dist_target->resample_filter =
+        resample_filter(dist->w[0], dist->h[0], ref_w, ref_h);
+
+    if (ref->w[0] != ref_w || ref->h[0] != ref_h ||
+        dist->w[0] != ref_w || dist->h[0] != ref_h)
+    {
+        *needs_conversion = true;
+    }
     return 0;
 }
