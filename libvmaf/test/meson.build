@@ -173,7 +173,7 @@ test_motion_mirror = executable('test_motion_mirror',
     ['test.c', 'test_motion_mirror.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
-    dependencies : [math_lib, stdatomic_dependency],
+    dependencies : [math_lib, stdatomic_dependency, thread_lib],
 )
 
 test_speed_filter = executable('test_speed_filter',
