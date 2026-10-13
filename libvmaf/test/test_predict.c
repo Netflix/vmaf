@@ -300,7 +300,12 @@ static char *test_post_process_feature_from_another()
     err = post_process_feature_from_another(model, node, 120.0, 0.0, "adm2", "motion");
     mu_assert("problem during post_process_feature_from_another", !err);
 
-    if (node[1].value != (60.0 * model->feature[1].slope) + model->feature[1].intercept)
+    // Round the expected value to double before comparing. Where FLT_EVAL_METHOD
+    // is 2 (x87), the bare expression is evaluated in extended precision and
+    // need not equal the double that normalize() stored.
+    const double expected =
+        (60.0 * model->feature[1].slope) + model->feature[1].intercept;
+    if (node[1].value != expected)
         err = -EINVAL;
     mu_assert("wrong value after post_process_feature_from_another", !err);
 
