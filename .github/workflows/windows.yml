@@ -50,9 +50,9 @@ jobs:
         shell: msys2 {0}
         run: |
           echo "name=CCACHE_DIR::$PWD/.ccache" >> $GITHUB_ENV
-          meson setup libvmaf libvmaf/build --buildtype release --default-library static --prefix "$MINGW_PREFIX"
-          meson install -C libvmaf/build
-          meson test -C libvmaf/build --num-processes $(nproc)
+          meson setup builddir --buildtype release --default-library static --prefix "$MINGW_PREFIX"
+          meson install -C builddir
+          meson test -C builddir --num-processes $(nproc)
 
           # Export MINGW_PREFIX to the global environment
           echo "MINGW_PREFIX=$(cygpath -m "$MINGW_PREFIX")" >> $GITHUB_ENV
@@ -82,9 +82,9 @@ jobs:
         if: matrix.build.type == 'msvc' && matrix.build.bundled_winpthreads == true
         shell: cmd
         run: |
-          meson setup libvmaf libvmaf/build-msvc-bundled --buildtype release --default-library static --prefix C:/vmaf-install-msvc-bundled -Dbundled_winpthreads=true
-          meson install -C libvmaf/build-msvc-bundled
-          meson test -C libvmaf/build-msvc-bundled
+          meson setup builddir --buildtype release --default-library static --prefix C:/vmaf-install-msvc-bundled -Dbundled_winpthreads=true
+          meson install -C builddir
+          meson test -C builddir
 
       - name: Upload MSVC build (bundled)
         if: matrix.build.type == 'msvc' && matrix.build.bundled_winpthreads == true
@@ -108,9 +108,9 @@ jobs:
           set INCLUDE=C:\vcpkg\installed\x64-windows\include;%INCLUDE%
           set LIB=C:\vcpkg\installed\x64-windows\lib;%LIB%
 
-          meson setup libvmaf libvmaf/build-msvc-external --buildtype release --default-library static --prefix C:/vmaf-install-msvc-external -Dbundled_winpthreads=false
-          meson install -C libvmaf/build-msvc-external
-          meson test -C libvmaf/build-msvc-external
+          meson setup builddir --buildtype release --default-library static --prefix C:/vmaf-install-msvc-external -Dbundled_winpthreads=false
+          meson install -C builddir
+          meson test -C builddir
 
       - name: Upload MSVC build (external)
         if: matrix.build.type == 'msvc' && matrix.build.bundled_winpthreads == false

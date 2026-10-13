@@ -1,0 +1,17 @@
+project('libvmaf', ['c', 'cpp'],
+    version : '3.2.0',
+    default_options : ['c_std=c11',
+                       'cpp_std=c++11',
+                       'warning_level=2',
+                       'buildtype=release',
+                       'default_library=both',
+                      ],
+    meson_version: '>= 0.56.1')
+
+source_root = meson.project_source_root()
+
+subdir('libvmaf/include')
+subdir('libvmaf/src')
+subdir('libvmaf/tools')
+subdir('libvmaf/doc')
+subdir('libvmaf/test')
