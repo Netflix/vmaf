@@ -33,8 +33,12 @@
 #include "picture.h"
 #include "picture_copy.h"
 #include "vif_tools.h"
+#include "speed.h"
 
 #include "cpu.h"
+#if ARCH_AARCH64
+#include "arm64/speed_neon.h"
+#endif
 #if ARCH_X86
 #include "x86/cpu.h"
 #include "x86/speed_avx2.h"
@@ -684,10 +688,10 @@ static float compute_mean(SpeedDimensions dim, const float *data,
 
 // Scalar reference implementation of the covariance-sum kernel.
 // Returns the un-normalized sum; the /N division happens in compute_covariance.
-static double compute_cov_kernel_scalar(const float *data_x, const float *data_y,
-                                        size_t stride_px, size_t height,
-                                        size_t width, double mean_x,
-                                        double mean_y)
+double compute_cov_kernel_scalar(const float *data_x, const float *data_y,
+                                 size_t stride_px, size_t height,
+                                 size_t width, double mean_x,
+                                 double mean_y)
 {
     double result = 0;
     for (size_t i = 0; i < height; i++) {
@@ -982,15 +986,15 @@ static void filter_and_downscale(SpeedDimensions dim, SpeedOptions *opt,
     float filter_antialias[128];
     speed_get_antialias_filter(filter_antialias, NUM_SCALES,
                                opt->speed_kernelscale);
-    vif_filter1d_s(filter_antialias, frame_buffer, curr_scale, tmpbuf,
-                   dim.scaled_width, dim.scaled_height, float_stride,
-                   float_stride, filter_width_antialias);
-
-    vif_dec16_s(curr_scale, frame_buffer, dim.scaled_width, dim.scaled_height,
-                float_stride, float_stride);
-
     size_t downscaled_w = dim.scaled_width >> NUM_SCALES;
     size_t downscaled_h = dim.scaled_height >> NUM_SCALES;
+
+    vif_filter1d_dec16_s(filter_antialias, frame_buffer, curr_scale, tmpbuf,
+                        dim.scaled_width, dim.scaled_height, float_stride,
+                        float_stride, filter_width_antialias);
+    for (size_t i = 0; i < downscaled_h; i++)
+        memcpy(frame_buffer + i * stride_px, curr_scale + i * stride_px,
+               downscaled_w * sizeof(float));
 
     int filter_width = vif_get_filter_size(NUM_SCALES, opt->speed_kernelscale);
     float filter[128];
@@ -1141,6 +1145,10 @@ int speed_init(SpeedState *s, SpeedOptions *opt, int w, int h)
         return -ENOMEM;
 
     s->compute_cov_kernel = compute_cov_kernel_scalar;
+#if ARCH_AARCH64
+    if (vmaf_get_cpu_flags() & VMAF_ARM_CPU_FLAG_NEON)
+        s->compute_cov_kernel = compute_cov_kernel_neon;
+#endif
 #if ARCH_X86
     unsigned flags = vmaf_get_cpu_flags();
     if (flags & VMAF_X86_CPU_FLAG_AVX2) {

@@ -17,7 +17,7 @@ else
     vmaf_cflags_common = [
       '-wd4028', # parameter different from declaration
       '-wd4996', # use of POSIX functions
-      '-DOC_NEW_STYLE_INCLUDES',
+	  '-DOC_NEW_STYLE_INCLUDES',
     ]
 endif
 
@@ -34,12 +34,20 @@ is_asm_enabled = get_option('enable_asm') == true
 is_cuda_enabled = get_option('enable_cuda') == true
 is_avx512_enabled = get_option('enable_avx512') == true
 is_nvtx_enabled = get_option('enable_nvtx') == true
+is_zimg_enabled = get_option('enable_zimg') == true
 
-if is_nvtx_enabled    
+if is_nvtx_enabled
     cdata.set10('HAVE_NVTX', is_nvtx_enabled)
 endif
 if is_cuda_enabled
     cdata.set10('HAVE_CUDA', is_cuda_enabled)
+endif
+
+zimg_dependency = []
+if is_zimg_enabled
+    # ZIMG_MATRIX_ICTCP, used for ICtCp conversion, first appeared in zimg 2.7
+    zimg_dependency = dependency('zimg', version: '>=2.7', required: true)
+    cdata.set10('HAVE_ZIMG', is_zimg_enabled)
 endif
 
 if is_asm_enabled
@@ -264,6 +272,7 @@ libvmaf_cpu_static_lib = static_library(
     'libvmaf_cpu',
     libvmaf_cpu_sources,
     include_directories : [libvmaf_include],
+    dependencies: [thread_lib],
 )
 
 platform_specific_cpu_objects = []
@@ -274,6 +283,7 @@ if is_asm_enabled
           feature_src_dir + 'arm64/vif_neon.c',
           feature_src_dir + 'arm64/adm_neon.c',
           feature_src_dir + 'arm64/motion_neon.c',
+          feature_src_dir + 'arm64/speed_neon.c',
         ]
 
           arm64_static_lib = static_library(
@@ -296,11 +306,17 @@ if is_asm_enabled
           feature_src_dir + 'x86/speed_avx2.c',
       ]
 
+      if cc.get_id() == 'msvc'
+          avx2_cflags = ['/arch:AVX2']
+      else
+          avx2_cflags = ['-mavx2', '-mavx', '-mfma']
+      endif
       x86_avx2_static_lib = static_library(
           'x86_avx2',
           x86_avx2_sources,
           include_directories : vmaf_base_include,
-          c_args : ['-mavx', '-mavx2', '-mfma'] + vmaf_cflags_common,
+          c_args : avx2_cflags + vmaf_cflags_common,
+          dependencies: [builtin_clz_dependency],
       )
 
       platform_specific_cpu_objects += x86_avx2_static_lib.extract_all_objects(recursive: true)
@@ -313,12 +329,17 @@ if is_asm_enabled
             feature_src_dir + 'x86/speed_avx512.c',
         ]
 
+        if cc.get_id() == 'msvc'
+            avx512_cflags = ['/arch:AVX512']
+        else
+            avx512_cflags = ['-mavx512f', '-mavx512dq', '-mavx512bw', '-mavx512cd', '-mavx512vl']
+        endif
         x86_avx512_static_lib = static_library(
             'x86_avx512',
             x86_avx512_sources,
             include_directories : vmaf_base_include,
-            c_args : ['-mavx512f', '-mavx512dq', '-mavx512bw', '-mavx512cd', '-mavx512vl'] +
-                     vmaf_cflags_common,
+            c_args : avx512_cflags + vmaf_cflags_common,
+            dependencies: [builtin_clz_dependency],
         )
 
         platform_specific_cpu_objects += x86_avx512_static_lib.extract_all_objects(recursive: true)
@@ -431,7 +452,12 @@ if is_cuda_enabled
                 '-I', '../src/feature',
                 '-I', '../src/' + cuda_dir,
                 '-DDEVICE_CODE',
-            ] + cuda_flags
+                '-D_USE_MATH_DEFINES',
+            ] + cuda_flags + (
+                cc.get_id() == 'msvc' and get_option('bundled_winpthreads')
+                ? ['-I', meson.project_source_root() / 'subprojects' / 'pthread-win32']
+                : []
+            )
         )
         ptx_files += {name : [t]}
     endforeach
@@ -466,6 +492,7 @@ if is_cuda_enabled
             include_directories('../src/cuda/'),
             cuda_inc,
         ],
+        dependencies : [thread_lib, stdatomic_dependency],
         c_args : vmaf_cflags_common,
         cuda_args: cuda_flags # + ['-gencode', 'arch=compute_86,code=sm_86' ] #, '--use_fast_math']
     )
@@ -473,7 +500,6 @@ if is_cuda_enabled
     common_cuda_objects += cuda_static_lib.extract_all_objects()
 endif
 
-thread_lib = dependency('threads')
 math_lib = cc.find_library('m', required : false)
 
 vmaf_include = include_directories(
@@ -548,7 +574,7 @@ libvmaf_feature_static_lib = static_library(
     'libvmaf_feature',
     libvmaf_feature_sources,
     include_directories : [libvmaf_include, vmaf_include, cuda_dir],
-    dependencies: [stdatomic_dependency, cuda_dependency],
+    dependencies: [thread_lib, stdatomic_dependency, cuda_dependency, builtin_clz_dependency],
     objects: common_cuda_objects
 )
 
@@ -583,6 +609,7 @@ libvmaf_sources = [
     src_dir + 'framesync.c',
     src_dir + 'metadata_handler.c',
     src_dir + 'picture_pool.c',
+    src_dir + 'conversion_policy.c',
 ]
 
 if is_cuda_enabled
@@ -591,6 +618,9 @@ endif
 if is_nvtx_enabled
     vmaf_cflags_common += '-DHAVE_NVTX'
 endif
+if is_zimg_enabled
+    vmaf_cflags_common += '-DHAVE_ZIMG'
+endif
 
 if host_machine.system() == 'windows'
     vmaf_soversion = ''
@@ -598,28 +628,79 @@ else
     vmaf_soversion = vmaf_api_version_major
 endif
 
-libvmaf = library(
-    'vmaf',
-    [libvmaf_sources, rev_target, json_model_c_sources],
-    include_directories : [libvmaf_inc, vmaf_include],
-    c_args : vmaf_cflags_common,
-    dependencies : [
-      thread_lib,
-      math_lib,
-      stdatomic_dependency,
-      cuda_dependency,
-	  rev_dep
-    ],
-    objects : [
-        platform_specific_cpu_objects,
-        libvmaf_feature_static_lib.extract_all_objects(recursive: true),
-        libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
-        libsvm_static_lib.extract_all_objects(recursive: true),
-    ],
-    version : vmaf_soname_version,
-    soversion : vmaf_soversion,
-    install: true,
-)
+_vmaf_src = [libvmaf_sources, rev_target, json_model_c_sources]
+_vmaf_inc = [libvmaf_inc, vmaf_include]
+_vmaf_deps = [
+    thread_lib,
+    math_lib,
+    stdatomic_dependency,
+    cuda_dependency,
+    builtin_clz_dependency,
+    rev_dep,
+    zimg_dependency,
+]
+_vmaf_objs = [
+    platform_specific_cpu_objects,
+    libvmaf_feature_static_lib.extract_all_objects(recursive: true),
+    libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
+    libsvm_static_lib.extract_all_objects(recursive: true),
+]
+
+if cc.get_id() == 'msvc'
+    # MSVC: import lib and static lib cannot both be vmaf.lib.
+    # static-only → vmaf.lib
+    # shared-only / both → vmaf.dll + vmaf.lib (import); static (if both) → vmaf-static.lib
+    _default_library = get_option('default_library')
+    _vmaf_for_pc = []
+
+    if _default_library != 'static'
+        libvmaf_shared = shared_library(
+            'vmaf',
+            _vmaf_src,
+            include_directories: _vmaf_inc,
+            c_args: vmaf_cflags_common,
+            dependencies: _vmaf_deps,
+            objects: _vmaf_objs,
+            version: vmaf_soname_version,
+            soversion: vmaf_soversion,
+            name_prefix: '',
+            install: true,
+        )
+        _vmaf_for_pc += libvmaf_shared
+    endif
+
+    if _default_library != 'shared'
+        _static_name = _default_library == 'both' ? 'vmaf-static' : 'vmaf'
+        libvmaf_static = static_library(
+            _static_name,
+            _vmaf_src,
+            include_directories: _vmaf_inc,
+            c_args: vmaf_cflags_common,
+            dependencies: _vmaf_deps,
+            objects: _vmaf_objs,
+            name_prefix: '',
+            name_suffix: 'lib',
+            install: true,
+        )
+        if _default_library == 'static'
+            _vmaf_for_pc += libvmaf_static
+        endif
+    endif
+
+    libvmaf = _vmaf_for_pc[0]
+else
+    libvmaf = library(
+        'vmaf',
+        _vmaf_src,
+        include_directories: _vmaf_inc,
+        c_args: vmaf_cflags_common,
+        dependencies: _vmaf_deps,
+        objects: _vmaf_objs,
+        version: vmaf_soname_version,
+        soversion: vmaf_soversion,
+        install: true,
+    )
+endif
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries: libvmaf,
@@ -627,5 +708,6 @@ pkg_mod.generate(libraries: libvmaf,
     name: 'libvmaf',
     filebase: 'libvmaf',
     description: 'VMAF, Video Multimethod Assessment Fusion',
-    subdirs: [ '.', 'libvmaf']
+    subdirs: [ '.', 'libvmaf'],
+    libraries_private: cc.get_id() == 'msvc' ? [thread_lib] : [],
 )

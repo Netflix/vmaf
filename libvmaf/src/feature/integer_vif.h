@@ -24,6 +24,10 @@
 #include <assert.h>
 #include "cpu.h"
 
+#ifdef HAVE_BUILTIN_CLZ_COMPAT
+#include "builtin_clz.h"
+#endif
+
 /* Enhancement gain imposed on vif, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #ifndef DEFAULT_VIF_ENHN_GAIN_LIMIT
 #define DEFAULT_VIF_ENHN_GAIN_LIMIT (100.0)
@@ -119,6 +123,12 @@ static inline void PADDING_SQ_DATA_2(VifBuffer buf, int w, unsigned fwidth_half)
 void vif_statistic_8(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h);
 void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned w, unsigned h, int bpc, int scale);
 
+int vif_buffer_alloc(VifBuffer *buf, unsigned w, unsigned h, unsigned bpc);
+void vif_buffer_free(VifBuffer *buf);
+void log_generate(uint16_t *log2_table);
+void subsample_rd_8(VifBuffer buf, unsigned w, unsigned h);
+void subsample_rd_16(VifBuffer buf, unsigned w, unsigned h, int scale, int bpc);
+
 /*
  * Compute vif residuals on a vertically filtered line 
  * This is a support method for block based vip_statistic_xxx method and is typically called
@@ -126,20 +136,6 @@ void vif_statistic_16(struct VifPublicState *s, float *num, float *den, unsigned
  */
 VifResiduals vif_compute_line_residuals(VifPublicState *s, unsigned from,
                                         unsigned to, int scale);
-
-
-#ifdef _MSC_VER
-#include <intrin.h>
-
-static inline int __builtin_clz(unsigned x) {
-    return (int)__lzcnt(x);
-}
-
-static inline int __builtin_clzll(unsigned long long x) {
-    return (int)__lzcnt64(x);
-}
-
-#endif
 
 static inline int32_t log2_32(const uint16_t *log2_table, uint32_t temp)
 {

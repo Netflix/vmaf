@@ -1,0 +1,58 @@
+name: checkasm
+
+on:
+  push:
+  pull_request:
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  checkasm:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: ubuntu-latest
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup python
+        uses: actions/setup-python@v7
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo -E apt-get -yq install ninja-build gcc g++
+          if [ "${{ runner.arch }}" = "X64" ]; then
+            sudo -E apt-get -yq install nasm
+          fi
+          python -m pip install --upgrade pip
+          pip install meson
+
+      - name: Configure
+        run: |
+          meson setup libvmaf libvmaf/build --buildtype release -Denable_checkasm=true
+
+      - name: Build
+        run: |
+          ninja -vC libvmaf/build test/checkasm/checkasm
+
+      - name: Run correctness checks
+        run: |
+          ./libvmaf/build/test/checkasm/checkasm --verbose
+
+      - name: Run benchmarks
+        run: |
+          {
+            echo "### checkasm benchmark results (${{ matrix.name }})"
+            echo '```'
+            ./libvmaf/build/test/checkasm/checkasm --bench
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"

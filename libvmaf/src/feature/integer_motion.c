@@ -146,7 +146,7 @@ static const VmafOption options[] = {
     { 0 }
 };
 
-static uint64_t
+uint64_t
 motion_score_pipeline_8(const uint8_t *prev, ptrdiff_t prev_stride,
                         const uint8_t *cur, ptrdiff_t cur_stride,
                         int32_t *y_row, unsigned w, unsigned h,
@@ -193,7 +193,7 @@ motion_score_pipeline_8(const uint8_t *prev, ptrdiff_t prev_stride,
     return sad;
 }
 
-static inline uint64_t
+uint64_t
 motion_score_pipeline_16(const uint8_t *prev_u8, ptrdiff_t prev_stride,
                          const uint8_t *cur_u8, ptrdiff_t cur_stride,
                          int32_t *y_row, unsigned w, unsigned h,

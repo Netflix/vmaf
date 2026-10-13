@@ -47,3 +47,20 @@ option('enable_nvcc',
     type: 'boolean',
     value: true,
     description: 'Use clang to compile CUDA code.')
+
+option('enable_checkasm',
+    type: 'boolean',
+    value: false,
+    description: 'Build the checkasm SIMD correctness/benchmark test suite ' +
+                 '(fetches the checkasm subproject)')
+
+option('bundled_winpthreads',
+    type: 'boolean',
+    value: true,
+    description: 'Use the bundled pthread-win32 implementation (MSVC only). Set to false to use an external pthreads library.')
+
+option('enable_zimg',
+    type: 'boolean',
+    value: false,
+    description: 'Enable zimg-based picture colorspace conversion ' +
+                 '(requires zimg to be installed, e.g. via pkg-config)')

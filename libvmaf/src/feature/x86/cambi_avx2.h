@@ -26,6 +26,12 @@ struct VmafPicture;
 void decimate_avx2(struct VmafPicture *image, unsigned width, unsigned height);
 void filter_mode_avx2(const struct VmafPicture *image, int width, int height, uint16_t *buffer);
 
+void compute_dp_row_avx2(uint32_t *dp_curr, const uint32_t *dp_prev,
+                         const uint16_t *deriv, int width, int pad_size, bool deriv_valid);
+
+void compute_mask_row_avx2(uint16_t *mask_row, const uint32_t *dp_bottom, const uint32_t *dp_top,
+                           int width, int pad_size, uint32_t mask_index);
+
 void cambi_increment_range_avx2(uint16_t *arr, int left, int right);
 
 void cambi_decrement_range_avx2(uint16_t *arr, int left, int right);

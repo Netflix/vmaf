@@ -23,6 +23,7 @@
 
 #include "dict.h"
 #include "libvmaf/model.h"
+#include "libvmaf/picture.h"
 
 enum VmafModelType {
     VMAF_MODEL_TYPE_UNKNOWN = 0,
@@ -77,6 +78,13 @@ typedef struct VmafModel {
         } knots;
         bool out_lte_in, out_gte_in;
     } score_transform;
+    struct {
+        bool enabled;
+        VmafColor color;
+        /* UNKNOWN / 0 mean "keep the source picture's" */
+        enum VmafPixelFormat pix_fmt;
+        unsigned bpc;
+    } conversion_target;
     struct svm_model *svm;
 } VmafModel;
 

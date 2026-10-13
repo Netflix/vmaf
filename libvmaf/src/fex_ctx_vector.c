@@ -60,9 +60,19 @@ int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,
         free(feature_a);
         free(feature_b);
 
-        if (ret) continue;
+        if (!ret)  // identical configuration: deduplicate
+            return vmaf_feature_extractor_context_destroy(fex_ctx);
 
-        return vmaf_feature_extractor_context_destroy(fex_ctx);
+        // Same extractor kind, different configuration: offer the already
+        // registered instance a chance to absorb this one (e.g. ADM folding a
+        // second viewing distance into the shared DWT/decouple). An identical
+        // merge pointer implies the same extractor template.
+        if (fex_ctx->fex->merge &&
+            rfe->fex_ctx[i]->fex->merge == fex_ctx->fex->merge) {
+            int merged = fex_ctx->fex->merge(rfe->fex_ctx[i], fex_ctx);
+            if (merged < 0) return merged;
+            if (merged) return vmaf_feature_extractor_context_destroy(fex_ctx);
+        }
     }
 
     if (rfe->cnt >= rfe->capacity) {

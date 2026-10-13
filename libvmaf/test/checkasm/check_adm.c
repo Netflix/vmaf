@@ -1,0 +1,1290 @@
+/**
+ *
+ *  Copyright 2016-2026 Netflix, Inc.
+ *
+ *     Licensed under the BSD+Patent License (the "License");
+ *     you may not use this file except in compliance with the License.
+ *     You may obtain a copy of the License at
+ *
+ *         https://opensource.org/licenses/BSDplusPatent
+ *
+ *     Unless required by applicable law or agreed to in writing, software
+ *     distributed under the License is distributed on an "AS IS" BASIS,
+ *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *     See the License for the specific language governing permissions and
+ *     limitations under the License.
+ *
+ */
+
+#include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <checkasm/checkasm.h>
+#include <checkasm/test.h>
+#include <checkasm/utils.h>
+
+#include "config.h"
+#include "cpu.h"
+#include "feature/integer_adm.h"
+
+#if ARCH_X86
+#include "feature/x86/adm_avx2.h"
+#if HAVE_AVX512
+#include "feature/x86/adm_avx512.h"
+#endif
+#elif ARCH_AARCH64
+#include "feature/arm64/adm_neon.h"
+#endif
+
+typedef void (*adm_dwt2_8_fn)(const uint8_t *src, const adm_dwt_band_t *dst,
+                               AdmBuffer *buf, int w, int h, int src_stride,
+                               int dst_stride);
+typedef void (*adm_dwt2_16_fn)(const uint16_t *src, const adm_dwt_band_t *dst,
+                                AdmBuffer *buf, int w, int h, int src_stride,
+                                int dst_stride, int inp_size_bits);
+typedef void (*adm_decouple_fn)(AdmBuffer *buf, int w, int h, int stride,
+                                 double adm_enhn_gain_limit,
+                                 int32_t *adm_div_lookup);
+typedef void (*adm_csf_fn)(AdmBuffer *buf, int w, int h, int stride,
+                            double adm_norm_view_dist,
+                            int adm_ref_display_height, int adm_csf_mode,
+                            double adm_csf_scale, double adm_csf_diag_scale,
+                            bool measure_aim);
+typedef float (*adm_cm_fn)(AdmBuffer *buf, int w, int h, int src_stride,
+                            int csf_a_stride, double adm_norm_view_dist,
+                            int adm_ref_display_height, int adm_csf_mode,
+                            double adm_csf_scale, double adm_csf_diag_scale,
+                            double adm_noise_weight, bool measure_aim);
+typedef void (*adm_dwt2_s123_fn)(const int32_t *i4_ref_scale,
+                                  const int32_t *i4_curr_dis, AdmBuffer *buf,
+                                  int w, int h, int ref_stride,
+                                  int dis_stride, int dst_stride, int scale);
+typedef float (*adm_csf_den_scale_fn)(const adm_dwt_band_t *src, int w,
+                                       int h, int src_stride,
+                                       double adm_norm_view_dist,
+                                       int adm_ref_display_height,
+                                       int adm_csf_mode, double adm_csf_scale,
+                                       double adm_csf_diag_scale,
+                                       double adm_noise_weight);
+typedef float (*adm_csf_den_s123_fn)(const i4_adm_dwt_band_t *src, int scale,
+                                      int w, int h, int src_stride,
+                                      double adm_norm_view_dist,
+                                      int adm_ref_display_height,
+                                      int adm_csf_mode, double adm_csf_scale,
+                                      double adm_csf_diag_scale,
+                                      double adm_noise_weight);
+typedef void (*i4_adm_csf_fn)(AdmBuffer *buf, int scale, int w, int h,
+                               int stride, double adm_norm_view_dist,
+                               int adm_ref_display_height, int adm_csf_mode,
+                               double adm_csf_scale, double adm_csf_diag_scale,
+                               bool measure_aim);
+typedef float (*i4_adm_cm_fn)(AdmBuffer *buf, int w, int h, int src_stride,
+                               int csf_a_stride, int scale,
+                               double adm_norm_view_dist,
+                               int adm_ref_display_height, int adm_csf_mode,
+                               double adm_csf_scale, double adm_csf_diag_scale,
+                               double adm_noise_weight, bool measure_aim);
+
+static adm_dwt2_8_fn get_dwt2_8(unsigned cpu_flags, int w)
+{
+    adm_dwt2_8_fn fn = adm_dwt2_8;
+#if ARCH_X86
+    if ((cpu_flags & VMAF_X86_CPU_FLAG_AVX2) && !(w % 8))
+        fn = adm_dwt2_8_avx2;
+#if HAVE_AVX512
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
+        fn = adm_dwt2_8_avx512;
+#endif
+#elif ARCH_AARCH64
+    if ((cpu_flags & VMAF_ARM_CPU_FLAG_NEON) && !(w % 8))
+        fn = adm_dwt2_8_neon;
+#endif
+    return fn;
+}
+
+static adm_dwt2_16_fn get_dwt2_16(unsigned cpu_flags)
+{
+#if ARCH_X86
+    adm_dwt2_16_fn fn = adm_dwt2_16;
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = adm_dwt2_16_avx2;
+#if HAVE_AVX512
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
+        fn = adm_dwt2_16_avx512;
+#endif
+    return fn;
+#else
+    (void) cpu_flags;
+    return 0;
+#endif
+}
+
+static adm_decouple_fn get_decouple(unsigned cpu_flags)
+{
+    adm_decouple_fn fn = adm_decouple;
+#if ARCH_X86
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = adm_decouple_avx2;
+#if HAVE_AVX512
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
+        fn = adm_decouple_avx512;
+#endif
+#elif ARCH_AARCH64
+    if (cpu_flags & VMAF_ARM_CPU_FLAG_NEON) fn = adm_decouple_neon;
+#else
+    (void) cpu_flags;
+#endif
+    return fn;
+}
+
+static adm_csf_fn get_csf(unsigned cpu_flags)
+{
+#if ARCH_X86
+    adm_csf_fn fn = adm_csf;
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = adm_csf_avx2;
+#if HAVE_AVX512
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
+        fn = adm_csf_avx512;
+#endif
+    return fn;
+#else
+    (void) cpu_flags;
+    return 0;
+#endif
+}
+
+static adm_cm_fn get_cm(unsigned cpu_flags)
+{
+#if ARCH_X86
+    adm_cm_fn fn = adm_cm;
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = adm_cm_avx2;
+#if HAVE_AVX512
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
+        fn = adm_cm_avx512;
+#endif
+    return fn;
+#elif ARCH_AARCH64
+    return (cpu_flags & VMAF_ARM_CPU_FLAG_NEON) ? adm_cm_neon : adm_cm;
+#else
+    (void) cpu_flags;
+    return 0;
+#endif
+}
+
+static adm_decouple_fn get_decouple_s123(unsigned cpu_flags)
+{
+#if ARCH_X86
+    adm_decouple_fn fn = adm_decouple_s123;
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = adm_decouple_s123_avx2;
+#if HAVE_AVX512
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
+        fn = adm_decouple_s123_avx512;
+#endif
+    return fn;
+#elif ARCH_AARCH64
+    return (cpu_flags & VMAF_ARM_CPU_FLAG_NEON) ? adm_decouple_s123_neon : adm_decouple_s123;
+#else
+    (void) cpu_flags;
+    return 0;
+#endif
+}
+
+static adm_dwt2_s123_fn get_dwt2_s123_combined(unsigned cpu_flags)
+{
+#if ARCH_X86
+    adm_dwt2_s123_fn fn = adm_dwt2_s123_combined;
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = adm_dwt2_s123_combined_avx2;
+#if HAVE_AVX512
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
+        fn = adm_dwt2_s123_combined_avx512;
+#endif
+    return fn;
+#elif ARCH_AARCH64
+    return (cpu_flags & VMAF_ARM_CPU_FLAG_NEON) ?
+        adm_dwt2_s123_combined_neon : adm_dwt2_s123_combined;
+#else
+    (void) cpu_flags;
+    return 0;
+#endif
+}
+
+static adm_csf_den_scale_fn get_csf_den_scale(unsigned cpu_flags)
+{
+#if ARCH_X86
+    adm_csf_den_scale_fn fn = adm_csf_den_scale;
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = adm_csf_den_scale_avx2;
+#if HAVE_AVX512
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
+        fn = adm_csf_den_scale_avx512;
+#endif
+    return fn;
+#else
+    (void) cpu_flags;
+    return 0;
+#endif
+}
+
+static adm_csf_den_s123_fn get_csf_den_s123(unsigned cpu_flags)
+{
+#if ARCH_X86
+    adm_csf_den_s123_fn fn = adm_csf_den_s123;
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = adm_csf_den_s123_avx2;
+#if HAVE_AVX512
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
+        fn = adm_csf_den_s123_avx512;
+#endif
+    return fn;
+#else
+    (void) cpu_flags;
+    return 0;
+#endif
+}
+
+static i4_adm_csf_fn get_i4_csf(unsigned cpu_flags)
+{
+#if ARCH_X86
+    i4_adm_csf_fn fn = i4_adm_csf;
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = i4_adm_csf_avx2;
+#if HAVE_AVX512
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
+        fn = i4_adm_csf_avx512;
+#endif
+    return fn;
+#else
+    (void) cpu_flags;
+    return 0;
+#endif
+}
+
+static i4_adm_cm_fn get_i4_cm(unsigned cpu_flags)
+{
+#if ARCH_X86
+    i4_adm_cm_fn fn = i4_adm_cm;
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX2)
+        fn = i4_adm_cm_avx2;
+#if HAVE_AVX512
+    if (cpu_flags & VMAF_X86_CPU_FLAG_AVX512)
+        fn = i4_adm_cm_avx512;
+#endif
+    return fn;
+#elif ARCH_AARCH64
+    return (cpu_flags & VMAF_ARM_CPU_FLAG_NEON) ? i4_adm_cm_neon : i4_adm_cm;
+#else
+    (void) cpu_flags;
+    return 0;
+#endif
+}
+
+static void fill_band(int16_t *band, int rows, int stride)
+{
+    if (!band) return;
+    for (int i = 0; i < rows; i++)
+        for (int j = 0; j < stride; j++)
+            band[i * stride + j] =
+                (int16_t) ((checkasm_rand_uint32() % 16001) - 8000);
+}
+
+static void copy_band(int16_t *dst, const int16_t *src, int rows, int stride)
+{
+    if (!dst || !src) return;
+    memcpy(dst, src, (size_t) rows * stride * sizeof(int16_t));
+}
+
+static void check2d_band(const int16_t *a, const int16_t *b, int cols,
+                          int rows, int stride, const char *name)
+{
+    if (!a || !b) return;
+    checkasm_check2d(int16_t, a, stride, b, stride, cols, rows, name);
+}
+
+static void fill_band_i32(int32_t *band, int rows, int stride)
+{
+    if (!band) return;
+    for (int i = 0; i < rows; i++)
+        for (int j = 0; j < stride; j++)
+            band[i * stride + j] =
+                (int32_t) ((checkasm_rand_uint32() % 16001) - 8000);
+}
+
+static void copy_band_i32(int32_t *dst, const int32_t *src, int rows,
+                           int stride)
+{
+    if (!dst || !src) return;
+    memcpy(dst, src, (size_t) rows * stride * sizeof(int32_t));
+}
+
+static void check2d_band_i32(const int32_t *a, const int32_t *b, int cols,
+                              int rows, int stride, const char *name)
+{
+    if (!a || !b) return;
+    checkasm_check2d(int32_t, a, stride, b, stride, cols, rows, name);
+}
+
+static const struct { int w, h; } dwt2_sizes[] = {
+    { 16, 16 },
+    { 32, 24 },
+    { 64, 48 },
+    { 20, 18 },
+};
+
+static void check_adm_dwt2(void)
+{
+    for (size_t i = 0; i < sizeof(dwt2_sizes) / sizeof(*dwt2_sizes); i++) {
+        const int w = dwt2_sizes[i].w, h = dwt2_sizes[i].h;
+        const int w_half = (w + 1) / 2, h_half = (h + 1) / 2;
+
+        AdmBuffer buf;
+        if (adm_buffer_alloc(&buf, w, h)) continue;
+        dwt2_src_indices_filt(buf.ind_y, buf.ind_x, w, h);
+        const int dst_stride = (int) (buf.ind_size_x >> 2);
+
+        {
+            checkasm_declare(void, const uint8_t *, const adm_dwt_band_t *,
+                              AdmBuffer *, int, int, int, int);
+            uint8_t *src = malloc((size_t) h * w);
+            for (int i2 = 0; i2 < h * w; i2++)
+                src[i2] = (uint8_t) checkasm_rand_uint32();
+
+            if (checkasm_check_func(get_dwt2_8(checkasm_get_cpu_flags(), w),
+                                     "adm_dwt2_8_%dx%d", w, h))
+            {
+                checkasm_call_ref(src, &buf.ref_dwt2, &buf, w, h, w,
+                                   dst_stride);
+                checkasm_call_new(src, &buf.dis_dwt2, &buf, w, h, w,
+                                   dst_stride);
+
+                check2d_band(buf.ref_dwt2.band_a, buf.dis_dwt2.band_a,
+                             w_half, h_half, dst_stride, "band_a");
+                check2d_band(buf.ref_dwt2.band_h, buf.dis_dwt2.band_h,
+                             w_half, h_half, dst_stride, "band_h");
+                check2d_band(buf.ref_dwt2.band_v, buf.dis_dwt2.band_v,
+                             w_half, h_half, dst_stride, "band_v");
+                check2d_band(buf.ref_dwt2.band_d, buf.dis_dwt2.band_d,
+                             w_half, h_half, dst_stride, "band_d");
+
+                checkasm_bench_new(src, &buf.dis_dwt2, &buf, w, h, w,
+                                    dst_stride);
+            }
+            free(src);
+        }
+
+        {
+            checkasm_declare(void, const uint8_t *, const adm_dwt_band_t *,
+                              AdmBuffer *, int, int, int, int, int);
+            uint16_t *src = malloc((size_t) h * w * sizeof(uint16_t));
+            for (int i2 = 0; i2 < h * w; i2++)
+                src[i2] = (uint16_t) checkasm_rand_uint32() & 0x3ff;
+
+            if (checkasm_check_func(get_dwt2_16(checkasm_get_cpu_flags()),
+                                     "adm_dwt2_16_%dx%d", w, h))
+            {
+                checkasm_call_ref((const uint8_t *) src, &buf.ref_dwt2, &buf,
+                                   w, h, w * (int) sizeof(uint16_t),
+                                   dst_stride, 10);
+                checkasm_call_new((const uint8_t *) src, &buf.dis_dwt2, &buf,
+                                   w, h, w * (int) sizeof(uint16_t),
+                                   dst_stride, 10);
+
+                check2d_band(buf.ref_dwt2.band_a, buf.dis_dwt2.band_a,
+                             w_half, h_half, dst_stride, "band_a");
+                check2d_band(buf.ref_dwt2.band_h, buf.dis_dwt2.band_h,
+                             w_half, h_half, dst_stride, "band_h");
+                check2d_band(buf.ref_dwt2.band_v, buf.dis_dwt2.band_v,
+                             w_half, h_half, dst_stride, "band_v");
+                check2d_band(buf.ref_dwt2.band_d, buf.dis_dwt2.band_d,
+                             w_half, h_half, dst_stride, "band_d");
+
+                checkasm_bench_new((const uint8_t *) src, &buf.dis_dwt2, &buf,
+                                    w, h, w * (int) sizeof(uint16_t),
+                                    dst_stride, 10);
+            }
+            free(src);
+        }
+
+        adm_buffer_free(&buf);
+    }
+}
+
+static const struct adm_test_size { int w, h; } post_dwt_sizes[] = {
+    { 16, 16 },
+    { 33, 21 },
+    { 65, 49 },
+    { 32, 20 },
+    { 64, 48 },
+};
+
+static void check_adm_decouple(void)
+{
+    static const struct { int w, h; } sizes[] = {
+#if ARCH_AARCH64
+        { 4, 4 }, { 6, 6 }, { 8, 8 }, { 10, 8 }, { 12, 8 }, { 14, 8 }, { 257, 193 },
+#endif
+        { 16, 16 },
+        { 33, 21 }, { 65, 49 }, { 32, 20 }, { 64, 48 },
+    };
+#if ARCH_AARCH64
+    const int patterns = 5;
+    static const double gains[] = {
+        1.0, 1.1, 1.5, 2.0, 3.0, DEFAULT_ADM_ENHN_GAIN_LIMIT,
+    };
+#else
+    const int patterns = 1;
+    static const double gains[] = { DEFAULT_ADM_ENHN_GAIN_LIMIT };
+#endif
+    for (int pattern = 0; pattern < patterns; pattern++)
+    for (size_t i = 0; i < sizeof(sizes) / sizeof(*sizes);
+         i++)
+    {
+        const int w = sizes[i].w, h = sizes[i].h;
+
+        AdmBuffer buf_c, buf_a;
+        if (adm_buffer_alloc(&buf_c, w, h)) continue;
+        if (adm_buffer_alloc(&buf_a, w, h)) {
+            adm_buffer_free(&buf_c);
+            continue;
+        }
+        const int stride = (int) (buf_c.ind_size_x >> 2);
+        const int w_half = (w + 1) / 2, h_half = (h + 1) / 2;
+#if ARCH_AARCH64
+        const int columns = stride;
+#else
+        const int columns = w_half;
+#endif
+
+        fill_band(buf_c.ref_dwt2.band_a, h_half, stride);
+        fill_band(buf_c.ref_dwt2.band_h, h_half, stride);
+        fill_band(buf_c.ref_dwt2.band_v, h_half, stride);
+        fill_band(buf_c.ref_dwt2.band_d, h_half, stride);
+        fill_band(buf_c.dis_dwt2.band_a, h_half, stride);
+        fill_band(buf_c.dis_dwt2.band_h, h_half, stride);
+        fill_band(buf_c.dis_dwt2.band_v, h_half, stride);
+        fill_band(buf_c.dis_dwt2.band_d, h_half, stride);
+
+        if (pattern) {
+            static const int16_t values[] = {
+                0, 1, -1, 2, -2, 32767, -32768, 16384, -16384, 4095, -4095
+            };
+            int16_t *ref[] = { buf_c.ref_dwt2.band_h, buf_c.ref_dwt2.band_v,
+                               buf_c.ref_dwt2.band_d };
+            int16_t *dis[] = { buf_c.dis_dwt2.band_h, buf_c.dis_dwt2.band_v,
+                               buf_c.dis_dwt2.band_d };
+            for (int row = 0; row < h_half; row++)
+                for (int col = 0; col < stride; col++)
+                    for (int band = 0; band < 3; band++) {
+                        const int off = row * stride + col;
+                        if (pattern == 1) {
+                            ref[band][off] = (int16_t) checkasm_rand_uint32();
+                            dis[band][off] = ref[band][off] / 2;
+                        } else if (pattern == 4) {
+                            ref[band][off] = band == 0 ? 8192 : band == 1 ? 0 : 7;
+                            dis[band][off] = band == 0 ? 8192 :
+                                            band == 1 ? 142 + col % 3 : 21;
+                        } else if (pattern == 3) {
+                            const int value = (checkasm_rand_uint32() % 32001) - 16000;
+                            ref[band][off] = value;
+                            dis[band][off] = value * 3 / 2;
+                        } else {
+                            ref[band][off] = values[(col + band) % 11];
+                            dis[band][off] = values[(row + col + band) % 11];
+                        }
+                    }
+        }
+
+        copy_band(buf_a.ref_dwt2.band_a, buf_c.ref_dwt2.band_a, h_half, stride);
+        copy_band(buf_a.ref_dwt2.band_h, buf_c.ref_dwt2.band_h, h_half, stride);
+        copy_band(buf_a.ref_dwt2.band_v, buf_c.ref_dwt2.band_v, h_half, stride);
+        copy_band(buf_a.ref_dwt2.band_d, buf_c.ref_dwt2.band_d, h_half, stride);
+        copy_band(buf_a.dis_dwt2.band_a, buf_c.dis_dwt2.band_a, h_half, stride);
+        copy_band(buf_a.dis_dwt2.band_h, buf_c.dis_dwt2.band_h, h_half, stride);
+        copy_band(buf_a.dis_dwt2.band_v, buf_c.dis_dwt2.band_v, h_half, stride);
+        copy_band(buf_a.dis_dwt2.band_d, buf_c.dis_dwt2.band_d, h_half, stride);
+
+        checkasm_declare(void, AdmBuffer *, int, int, int, double, int32_t *);
+
+        for (size_t g = 0; g < sizeof(gains) / sizeof(*gains); g++)
+        if (checkasm_check_func(get_decouple(checkasm_get_cpu_flags()),
+                                 "adm_decouple_%dx%d_pattern%d_gain%g",
+                                 w, h, pattern, gains[g]))
+        {
+            const size_t bytes = (size_t) h_half * stride * sizeof(int16_t);
+            memset(buf_c.decouple_r.band_h, 0xa5, bytes);
+            memset(buf_c.decouple_r.band_v, 0xa5, bytes);
+            memset(buf_c.decouple_r.band_d, 0xa5, bytes);
+            memset(buf_c.decouple_a.band_h, 0xa5, bytes);
+            memset(buf_c.decouple_a.band_v, 0xa5, bytes);
+            memset(buf_c.decouple_a.band_d, 0xa5, bytes);
+            memset(buf_a.decouple_r.band_h, 0xa5, bytes);
+            memset(buf_a.decouple_r.band_v, 0xa5, bytes);
+            memset(buf_a.decouple_r.band_d, 0xa5, bytes);
+            memset(buf_a.decouple_a.band_h, 0xa5, bytes);
+            memset(buf_a.decouple_a.band_v, 0xa5, bytes);
+            memset(buf_a.decouple_a.band_d, 0xa5, bytes);
+            checkasm_call_ref(&buf_c, w_half, h_half, stride,
+                               gains[g], div_lookup);
+            checkasm_call_new(&buf_a, w_half, h_half, stride,
+                               gains[g], div_lookup);
+
+            check2d_band(buf_c.decouple_r.band_h, buf_a.decouple_r.band_h,
+                         columns, h_half, stride, "decouple_r.band_h");
+            check2d_band(buf_c.decouple_r.band_v, buf_a.decouple_r.band_v,
+                         columns, h_half, stride, "decouple_r.band_v");
+            check2d_band(buf_c.decouple_r.band_d, buf_a.decouple_r.band_d,
+                         columns, h_half, stride, "decouple_r.band_d");
+            check2d_band(buf_c.decouple_a.band_h, buf_a.decouple_a.band_h,
+                         columns, h_half, stride, "decouple_a.band_h");
+            check2d_band(buf_c.decouple_a.band_v, buf_a.decouple_a.band_v,
+                         columns, h_half, stride, "decouple_a.band_v");
+            check2d_band(buf_c.decouple_a.band_d, buf_a.decouple_a.band_d,
+                         columns, h_half, stride, "decouple_a.band_d");
+
+            checkasm_bench_new(&buf_a, w_half, h_half, stride,
+                                gains[g], div_lookup);
+        }
+
+        adm_buffer_free(&buf_c);
+        adm_buffer_free(&buf_a);
+    }
+}
+
+static void check_adm_csf(void)
+{
+    for (size_t i = 0; i < sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+         i++)
+    {
+        const int w = post_dwt_sizes[i].w, h = post_dwt_sizes[i].h;
+
+        AdmBuffer buf_c, buf_a;
+        if (adm_buffer_alloc(&buf_c, w, h)) continue;
+        if (adm_buffer_alloc(&buf_a, w, h)) {
+            adm_buffer_free(&buf_c);
+            continue;
+        }
+        const int stride = (int) (buf_c.ind_size_x >> 2);
+        const int w_half = (w + 1) / 2, h_half = (h + 1) / 2;
+
+        fill_band(buf_c.decouple_r.band_h, h_half, stride);
+        fill_band(buf_c.decouple_r.band_v, h_half, stride);
+        fill_band(buf_c.decouple_r.band_d, h_half, stride);
+        fill_band(buf_c.decouple_a.band_h, h_half, stride);
+        fill_band(buf_c.decouple_a.band_v, h_half, stride);
+        fill_band(buf_c.decouple_a.band_d, h_half, stride);
+
+        copy_band(buf_a.decouple_r.band_h, buf_c.decouple_r.band_h, h_half, stride);
+        copy_band(buf_a.decouple_r.band_v, buf_c.decouple_r.band_v, h_half, stride);
+        copy_band(buf_a.decouple_r.band_d, buf_c.decouple_r.band_d, h_half, stride);
+        copy_band(buf_a.decouple_a.band_h, buf_c.decouple_a.band_h, h_half, stride);
+        copy_band(buf_a.decouple_a.band_v, buf_c.decouple_a.band_v, h_half, stride);
+        copy_band(buf_a.decouple_a.band_d, buf_c.decouple_a.band_d, h_half, stride);
+
+        checkasm_declare(void, AdmBuffer *, int, int, int, double, int,
+                          int, double, double, bool);
+
+        for (int aim = 0; aim <= 1; aim++) {
+            if (checkasm_check_func(get_csf(checkasm_get_cpu_flags()),
+                                     "adm_csf_%dx%d_aim%d", w, h, aim))
+            {
+                checkasm_call_ref(&buf_c, w_half, h_half, stride,
+                                   DEFAULT_ADM_NORM_VIEW_DIST,
+                                   DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                                   DEFAULT_ADM_CSF_MODE, DEFAULT_ADM_CSF_SCALE,
+                                   DEFAULT_ADM_CSF_DIAG_SCALE, (bool) aim);
+                checkasm_call_new(&buf_a, w_half, h_half, stride,
+                                   DEFAULT_ADM_NORM_VIEW_DIST,
+                                   DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                                   DEFAULT_ADM_CSF_MODE, DEFAULT_ADM_CSF_SCALE,
+                                   DEFAULT_ADM_CSF_DIAG_SCALE, (bool) aim);
+
+                check2d_band(buf_c.csf_a.band_h, buf_a.csf_a.band_h, w_half,
+                             h_half, stride, "csf_a.band_h");
+                check2d_band(buf_c.csf_a.band_v, buf_a.csf_a.band_v, w_half,
+                             h_half, stride, "csf_a.band_v");
+                check2d_band(buf_c.csf_a.band_d, buf_a.csf_a.band_d, w_half,
+                             h_half, stride, "csf_a.band_d");
+                check2d_band(buf_c.csf_f.band_h, buf_a.csf_f.band_h, w_half,
+                             h_half, stride, "csf_f.band_h");
+                check2d_band(buf_c.csf_f.band_v, buf_a.csf_f.band_v, w_half,
+                             h_half, stride, "csf_f.band_v");
+                check2d_band(buf_c.csf_f.band_d, buf_a.csf_f.band_d, w_half,
+                             h_half, stride, "csf_f.band_d");
+
+                checkasm_bench_new(&buf_a, w_half, h_half, stride,
+                                    DEFAULT_ADM_NORM_VIEW_DIST,
+                                    DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                                    DEFAULT_ADM_CSF_MODE,
+                                    DEFAULT_ADM_CSF_SCALE,
+                                    DEFAULT_ADM_CSF_DIAG_SCALE, (bool) aim);
+            }
+        }
+
+        adm_buffer_free(&buf_c);
+        adm_buffer_free(&buf_a);
+    }
+}
+
+static void check_adm_cm(void)
+{
+#if ARCH_AARCH64
+    const struct adm_test_size cm_sizes[] = {
+        { 33, 21 }, { 64, 20 }, { 61, 33 }, { 63, 31 }, { 64, 32 }, { 65, 33 }, { 66, 34 },
+        { 67, 35 }, { 68, 36 }, { 69, 37 },
+        { 127, 93 }, { 257, 193 }, { 514, 386 },
+    };
+    const size_t nb_sizes = sizeof(cm_sizes) / sizeof(*cm_sizes);
+    const struct adm_test_size *sizes = cm_sizes;
+    const int modes[] = { ADM_CSF_MODE_WATSON97, ADM_CSF_MODE_BARTEN,
+        ADM_CSF_MODE_BARTEN_WATSON_BLEND, ADM_CSF_MODE_BARTEN_WATSON_BLEND_MAE };
+#else
+    const size_t nb_sizes = sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+    const struct adm_test_size *sizes = post_dwt_sizes;
+    const int modes[] = { DEFAULT_ADM_CSF_MODE };
+#endif
+    for (size_t i = 0; i < nb_sizes; i++) {
+        const int w = sizes[i].w, h = sizes[i].h;
+
+        AdmBuffer buf_c, buf_a;
+        if (adm_buffer_alloc(&buf_c, w, h)) continue;
+        if (adm_buffer_alloc(&buf_a, w, h)) {
+            adm_buffer_free(&buf_c);
+            continue;
+        }
+        const int stride = (int) (buf_c.ind_size_x >> 2);
+        const int h_half = (h + 1) / 2;
+        const int w_half = (w + 1) / 2;
+
+        adm_dwt_band_t *c_bands[4] = { &buf_c.decouple_r, &buf_c.decouple_a,
+                                        &buf_c.csf_f, &buf_c.csf_a };
+        adm_dwt_band_t *a_bands[4] = { &buf_a.decouple_r, &buf_a.decouple_a,
+                                        &buf_a.csf_f, &buf_a.csf_a };
+        for (int b = 0; b < 4; b++) {
+            fill_band(c_bands[b]->band_h, h_half, stride);
+            fill_band(c_bands[b]->band_v, h_half, stride);
+            fill_band(c_bands[b]->band_d, h_half, stride);
+#if ARCH_AARCH64
+            if (b >= 2) {
+                for (int k = 0; k < h_half * stride; k++) {
+                    c_bands[b]->band_h[k] &= 1023;
+                    c_bands[b]->band_v[k] &= 1023;
+                    c_bands[b]->band_d[k] &= 1023;
+                }
+            }
+#endif
+            copy_band(a_bands[b]->band_h, c_bands[b]->band_h, h_half, stride);
+            copy_band(a_bands[b]->band_v, c_bands[b]->band_v, h_half, stride);
+            copy_band(a_bands[b]->band_d, c_bands[b]->band_d, h_half, stride);
+        }
+
+        checkasm_declare(float, AdmBuffer *, int, int, int, int, double, int,
+                          int, double, double, double, bool);
+
+        for (size_t m = 0; m < sizeof(modes) / sizeof(*modes); m++) {
+            const int mode = modes[m];
+            const double csf_scale = mode == ADM_CSF_MODE_BARTEN ?
+                0.001 : DEFAULT_ADM_CSF_SCALE;
+            const double csf_diag_scale = mode == ADM_CSF_MODE_BARTEN ?
+                0.001 : DEFAULT_ADM_CSF_DIAG_SCALE;
+#if ARCH_AARCH64
+            const int src_stride = stride - (stride > w_half);
+            const int csf_stride = w_half;
+            const double view_dist = (i & 1) ? 5.0 : DEFAULT_ADM_NORM_VIEW_DIST;
+            const int display_height = (i % 3) ? DEFAULT_ADM_REF_DISPLAY_HEIGHT : 2160;
+#else
+            const int src_stride = stride, csf_stride = stride;
+            const double view_dist = DEFAULT_ADM_NORM_VIEW_DIST;
+            const int display_height = DEFAULT_ADM_REF_DISPLAY_HEIGHT;
+#endif
+            for (int aim = 0; aim <= 1; aim++) {
+                if (checkasm_check_func(get_cm(checkasm_get_cpu_flags()),
+                                         "adm_cm_%dx%d_aim%d_csf%d", w, h, aim, mode))
+                {
+                    const float ref = checkasm_call_ref(
+                        &buf_c, w_half, h_half, src_stride, csf_stride,
+                        view_dist, display_height, mode,
+                        csf_scale, csf_diag_scale,
+                        DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
+                    const float new = checkasm_call_new(
+                        &buf_a, w_half, h_half, src_stride, csf_stride,
+                        view_dist, display_height, mode,
+                        csf_scale, csf_diag_scale,
+                        DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
+
+#if ARCH_AARCH64
+                    const bool different = memcmp(&ref, &new, sizeof(ref)) != 0;
+#else
+                    const float tol = 1e-4f * (fabsf(ref) + 1.0f);
+                    const bool different = fabsf(ref - new) > tol;
+#endif
+                    if (different) {
+                        if (checkasm_fail())
+                            fprintf(stderr, "expected %f, got %f\n", ref, new);
+                    }
+
+                    checkasm_bench_new(&buf_a, w_half, h_half, src_stride, csf_stride,
+                                        view_dist, display_height,
+                                        mode,
+                                        csf_scale,
+                                        csf_diag_scale,
+                                        DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
+                }
+            }
+        }
+
+        adm_buffer_free(&buf_c);
+        adm_buffer_free(&buf_a);
+    }
+}
+
+static void check_adm_dwt2_s123(void)
+{
+#if ARCH_AARCH64
+    const struct adm_test_size sizes[] = {
+        { 5, 5 }, { 5, 7 }, { 8, 8 }, { 9, 11 }, { 16, 16 },
+        { 33, 21 }, { 65, 49 }, { 127, 93 }, { 257, 193 },
+    };
+    const size_t nb_sizes = sizeof(sizes) / sizeof(*sizes);
+#else
+    const struct adm_test_size *sizes = post_dwt_sizes;
+    const size_t nb_sizes = sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+#endif
+    for (size_t i = 0; i < nb_sizes; i++) {
+        const int w = sizes[i].w, h = sizes[i].h;
+
+        AdmBuffer buf_c, buf_a;
+        if (adm_buffer_alloc(&buf_c, w, h)) continue;
+        if (adm_buffer_alloc(&buf_a, w, h)) {
+            adm_buffer_free(&buf_c);
+            continue;
+        }
+        dwt2_src_indices_filt(buf_c.ind_y, buf_c.ind_x, w, h);
+        dwt2_src_indices_filt(buf_a.ind_y, buf_a.ind_x, w, h);
+        const int stride = (int) (buf_c.ind_size_x >> 2);
+        const int h_half = (h + 1) / 2;
+
+#if ARCH_AARCH64
+        const int input_stride = w + 3;
+#else
+        const int input_stride = stride;
+#endif
+        int32_t *i4_ref = malloc((size_t) h * input_stride * sizeof(int32_t));
+        int32_t *i4_dis = malloc((size_t) h * input_stride * sizeof(int32_t));
+        for (int r = 0; r < h; r++) {
+            for (int c = 0; c < input_stride; c++) {
+                i4_ref[r * input_stride + c] =
+                    (int32_t) ((checkasm_rand_uint32() % 16001) - 8000);
+                i4_dis[r * input_stride + c] =
+                    (int32_t) ((checkasm_rand_uint32() % 16001) - 8000);
+            }
+        }
+
+#if ARCH_AARCH64
+        const int check_cols = stride;
+#else
+        const int check_cols = (w + 1) / 2;
+#endif
+
+        checkasm_declare(void, const int32_t *, const int32_t *, AdmBuffer *,
+                          int, int, int, int, int, int);
+
+        for (int scale = 1; scale <= 3; scale++) {
+#if ARCH_AARCH64
+            const int ref_stride = w + 1;
+            const int dis_stride = w + 3;
+            for (int k = 0; k < h * input_stride; k++) {
+                i4_ref[k] = scale == 1 ? (int16_t)checkasm_rand_uint32() : (int32_t)checkasm_rand_uint32();
+                i4_dis[k] = scale == 1 ? (int16_t)checkasm_rand_uint32() : (int32_t)checkasm_rand_uint32();
+            }
+#else
+            const int ref_stride = stride, dis_stride = stride;
+#endif
+            if (checkasm_check_func(
+                    get_dwt2_s123_combined(checkasm_get_cpu_flags()),
+                    "adm_dwt2_s123_%dx%d_scale%d", w, h, scale))
+            {
+                checkasm_call_ref(i4_ref, i4_dis, &buf_c, w, h, ref_stride,
+                                   dis_stride, stride, scale);
+                checkasm_call_new(i4_ref, i4_dis, &buf_a, w, h, ref_stride,
+                                   dis_stride, stride, scale);
+
+                check2d_band_i32(buf_c.i4_ref_dwt2.band_a,
+                                 buf_a.i4_ref_dwt2.band_a, check_cols, h_half,
+                                 stride, "i4_ref_dwt2.band_a");
+                check2d_band_i32(buf_c.i4_ref_dwt2.band_h,
+                                 buf_a.i4_ref_dwt2.band_h, check_cols, h_half,
+                                 stride, "i4_ref_dwt2.band_h");
+                check2d_band_i32(buf_c.i4_ref_dwt2.band_v,
+                                 buf_a.i4_ref_dwt2.band_v, check_cols, h_half,
+                                 stride, "i4_ref_dwt2.band_v");
+                check2d_band_i32(buf_c.i4_ref_dwt2.band_d,
+                                 buf_a.i4_ref_dwt2.band_d, check_cols, h_half,
+                                 stride, "i4_ref_dwt2.band_d");
+                check2d_band_i32(buf_c.i4_dis_dwt2.band_a,
+                                 buf_a.i4_dis_dwt2.band_a, check_cols, h_half,
+                                 stride, "i4_dis_dwt2.band_a");
+                check2d_band_i32(buf_c.i4_dis_dwt2.band_h,
+                                 buf_a.i4_dis_dwt2.band_h, check_cols, h_half,
+                                 stride, "i4_dis_dwt2.band_h");
+                check2d_band_i32(buf_c.i4_dis_dwt2.band_v,
+                                 buf_a.i4_dis_dwt2.band_v, check_cols, h_half,
+                                 stride, "i4_dis_dwt2.band_v");
+                check2d_band_i32(buf_c.i4_dis_dwt2.band_d,
+                                 buf_a.i4_dis_dwt2.band_d, check_cols, h_half,
+                                 stride, "i4_dis_dwt2.band_d");
+
+                checkasm_bench_new(i4_ref, i4_dis, &buf_a, w, h, ref_stride,
+                                    dis_stride, stride, scale);
+            }
+        }
+
+        free(i4_ref);
+        free(i4_dis);
+        adm_buffer_free(&buf_c);
+        adm_buffer_free(&buf_a);
+    }
+}
+
+static void check_adm_decouple_s123(void)
+{
+#if ARCH_AARCH64
+    const struct adm_test_size sizes[] = {
+        { 4, 4 }, { 8, 8 }, { 10, 12 }, { 12, 14 }, { 14, 16 },
+        { 33, 21 }, { 65, 49 }, { 127, 93 }, { 257, 193 },
+    };
+    const size_t nb_sizes = sizeof(sizes) / sizeof(*sizes);
+#else
+    const struct adm_test_size *sizes = post_dwt_sizes;
+    const size_t nb_sizes = sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+#endif
+    for (size_t i = 0; i < nb_sizes; i++) {
+        const int w = sizes[i].w, h = sizes[i].h;
+
+        AdmBuffer buf_c, buf_a;
+        if (adm_buffer_alloc(&buf_c, w, h)) continue;
+        if (adm_buffer_alloc(&buf_a, w, h)) {
+            adm_buffer_free(&buf_c);
+            continue;
+        }
+        const int stride = (int) (buf_c.ind_size_x >> 2);
+        const int w_half = (w + 1) / 2, h_half = (h + 1) / 2;
+
+#if ARCH_AARCH64
+        const int check_cols = stride;
+#else
+        const int check_cols = w_half;
+#endif
+
+        checkasm_declare(void, AdmBuffer *, int, int, int, double, int32_t *);
+
+#if ARCH_AARCH64
+        const double gains[] = { 1.0, 1.1, 100.0 };
+        const int patterns = 5;
+#else
+        const double gains[] = { DEFAULT_ADM_ENHN_GAIN_LIMIT };
+        const int patterns = 1;
+#endif
+        for (int pattern = 0; pattern < patterns; pattern++) {
+            int32_t *refs[] = { buf_c.i4_ref_dwt2.band_h,
+                buf_c.i4_ref_dwt2.band_v, buf_c.i4_ref_dwt2.band_d };
+            int32_t *dist[] = { buf_c.i4_dis_dwt2.band_h,
+                buf_c.i4_dis_dwt2.band_v, buf_c.i4_dis_dwt2.band_d };
+            int32_t *refs_a[] = { buf_a.i4_ref_dwt2.band_h,
+                buf_a.i4_ref_dwt2.band_v, buf_a.i4_ref_dwt2.band_d };
+            int32_t *dist_a[] = { buf_a.i4_dis_dwt2.band_h,
+                buf_a.i4_dis_dwt2.band_v, buf_a.i4_dis_dwt2.band_d };
+            for (int k = 0; k < h_half * stride; k++) {
+                for (int band = 0; band < 3; band++) {
+                    int32_t o = (int32_t)(checkasm_rand_uint32() % 16001) - 8000;
+                    int32_t d = (int32_t)(checkasm_rand_uint32() % 16001) - 8000;
+#if ARCH_AARCH64
+                    if (pattern == 1) {
+                        o = (int32_t)(checkasm_rand_uint32() & 0x1ffffff) - 0x1000000;
+                        d = o / 3;
+                    } else if (pattern == 2) {
+                        o = (int32_t)checkasm_rand_uint32();
+                        if (o == INT32_MIN) o++;
+                        d = o / 4 * 3;
+                    } else if (pattern == 3) {
+                        static const int32_t values[] = { 0, 1, -1, 32767, 32768, 32769,
+                            -32768, -32769, (1 << 26) - 1, 1 << 26, (1 << 26) + 1,
+                            (1 << 30) - 1, -(1 << 30) + 1, INT32_MAX, -INT32_MAX };
+                        o = values[(k + band) % (sizeof(values) / sizeof(*values))];
+                        d = o / 3;
+                    }
+                    if (pattern == 4) {
+                        const int32_t base = (1 << (25 + (k % 5))) + 1;
+                        o = band == 1 ? 0 : base;
+                        d = band == 1 ? (int32_t)((base / 3) * tan(M_PI / 180.0)) +
+                            (k % 5) - 2 : base / 3;
+                    }
+#endif
+                    refs_a[band][k] = refs[band][k] = o;
+                    dist_a[band][k] = dist[band][k] = d;
+                }
+            }
+            for (size_t g = 0; g < sizeof(gains) / sizeof(*gains); g++) {
+                if (pattern >= 2 && g) continue;
+                const double gain = gains[g];
+                if (checkasm_check_func(get_decouple_s123(checkasm_get_cpu_flags()),
+                                         "adm_decouple_s123_%dx%d_gain%g_pattern%d", w, h, gain, pattern))
+                {
+                    checkasm_call_ref(&buf_c, w_half, h_half, stride,
+                                       gain, div_lookup);
+                    checkasm_call_new(&buf_a, w_half, h_half, stride,
+                                       gain, div_lookup);
+
+                    check2d_band_i32(buf_c.i4_decouple_r.band_h,
+                                     buf_a.i4_decouple_r.band_h, check_cols, h_half,
+                                     stride, "i4_decouple_r.band_h");
+                    check2d_band_i32(buf_c.i4_decouple_r.band_v,
+                                     buf_a.i4_decouple_r.band_v, check_cols, h_half,
+                                     stride, "i4_decouple_r.band_v");
+                    check2d_band_i32(buf_c.i4_decouple_r.band_d,
+                                     buf_a.i4_decouple_r.band_d, check_cols, h_half,
+                                     stride, "i4_decouple_r.band_d");
+                    check2d_band_i32(buf_c.i4_decouple_a.band_h,
+                                     buf_a.i4_decouple_a.band_h, check_cols, h_half,
+                                     stride, "i4_decouple_a.band_h");
+                    check2d_band_i32(buf_c.i4_decouple_a.band_v,
+                                     buf_a.i4_decouple_a.band_v, check_cols, h_half,
+                                     stride, "i4_decouple_a.band_v");
+                    check2d_band_i32(buf_c.i4_decouple_a.band_d,
+                                     buf_a.i4_decouple_a.band_d, check_cols, h_half,
+                                     stride, "i4_decouple_a.band_d");
+
+                    checkasm_bench_new(&buf_a, w_half, h_half, stride,
+                                        gain, div_lookup);
+                }
+
+            }
+        }
+        adm_buffer_free(&buf_c);
+        adm_buffer_free(&buf_a);
+    }
+}
+
+static void check_adm_csf_den(void)
+{
+    for (size_t i = 0; i < sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+         i++)
+    {
+        const int w = post_dwt_sizes[i].w, h = post_dwt_sizes[i].h;
+
+        AdmBuffer buf;
+        if (adm_buffer_alloc(&buf, w, h)) continue;
+        const int stride = (int) (buf.ind_size_x >> 2);
+        const int h_half = (h + 1) / 2;
+
+        fill_band(buf.ref_dwt2.band_h, h_half, stride);
+        fill_band(buf.ref_dwt2.band_v, h_half, stride);
+        fill_band(buf.ref_dwt2.band_d, h_half, stride);
+        fill_band_i32(buf.i4_ref_dwt2.band_h, h_half, stride);
+        fill_band_i32(buf.i4_ref_dwt2.band_v, h_half, stride);
+        fill_band_i32(buf.i4_ref_dwt2.band_d, h_half, stride);
+
+        {
+            checkasm_declare(float, const adm_dwt_band_t *, int, int, int,
+                              double, int, int, double, double, double);
+
+            if (checkasm_check_func(
+                    get_csf_den_scale(checkasm_get_cpu_flags()),
+                    "adm_csf_den_scale_%dx%d", w, h))
+            {
+                const float ref = checkasm_call_ref(
+                    &buf.ref_dwt2, w, h, stride, DEFAULT_ADM_NORM_VIEW_DIST,
+                    DEFAULT_ADM_REF_DISPLAY_HEIGHT, DEFAULT_ADM_CSF_MODE,
+                    DEFAULT_ADM_CSF_SCALE, DEFAULT_ADM_CSF_DIAG_SCALE,
+                    DEFAULT_ADM_NOISE_WEIGHT);
+                const float new = checkasm_call_new(
+                    &buf.ref_dwt2, w, h, stride, DEFAULT_ADM_NORM_VIEW_DIST,
+                    DEFAULT_ADM_REF_DISPLAY_HEIGHT, DEFAULT_ADM_CSF_MODE,
+                    DEFAULT_ADM_CSF_SCALE, DEFAULT_ADM_CSF_DIAG_SCALE,
+                    DEFAULT_ADM_NOISE_WEIGHT);
+
+                const float tol = 1e-4f * (fabsf(ref) + 1.0f);
+                if (fabsf(ref - new) > tol) {
+                    if (checkasm_fail())
+                        fprintf(stderr, "expected %f, got %f\n", ref, new);
+                }
+
+                checkasm_bench_new(&buf.ref_dwt2, w, h, stride,
+                                    DEFAULT_ADM_NORM_VIEW_DIST,
+                                    DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                                    DEFAULT_ADM_CSF_MODE,
+                                    DEFAULT_ADM_CSF_SCALE,
+                                    DEFAULT_ADM_CSF_DIAG_SCALE,
+                                    DEFAULT_ADM_NOISE_WEIGHT);
+            }
+        }
+
+        checkasm_declare(float, const i4_adm_dwt_band_t *, int, int, int,
+                          int, double, int, int, double, double, double);
+
+        for (int scale = 1; scale <= 3; scale++) {
+            if (checkasm_check_func(
+                    get_csf_den_s123(checkasm_get_cpu_flags()),
+                    "adm_csf_den_s123_%dx%d_scale%d", w, h, scale))
+            {
+                const float ref = checkasm_call_ref(
+                    &buf.i4_ref_dwt2, scale, w, h, stride,
+                    DEFAULT_ADM_NORM_VIEW_DIST,
+                    DEFAULT_ADM_REF_DISPLAY_HEIGHT, DEFAULT_ADM_CSF_MODE,
+                    DEFAULT_ADM_CSF_SCALE, DEFAULT_ADM_CSF_DIAG_SCALE,
+                    DEFAULT_ADM_NOISE_WEIGHT);
+                const float new = checkasm_call_new(
+                    &buf.i4_ref_dwt2, scale, w, h, stride,
+                    DEFAULT_ADM_NORM_VIEW_DIST,
+                    DEFAULT_ADM_REF_DISPLAY_HEIGHT, DEFAULT_ADM_CSF_MODE,
+                    DEFAULT_ADM_CSF_SCALE, DEFAULT_ADM_CSF_DIAG_SCALE,
+                    DEFAULT_ADM_NOISE_WEIGHT);
+
+                const float tol = 1e-4f * (fabsf(ref) + 1.0f);
+                if (fabsf(ref - new) > tol) {
+                    if (checkasm_fail())
+                        fprintf(stderr, "expected %f, got %f\n", ref, new);
+                }
+
+                checkasm_bench_new(&buf.i4_ref_dwt2, scale, w, h, stride,
+                                    DEFAULT_ADM_NORM_VIEW_DIST,
+                                    DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                                    DEFAULT_ADM_CSF_MODE,
+                                    DEFAULT_ADM_CSF_SCALE,
+                                    DEFAULT_ADM_CSF_DIAG_SCALE,
+                                    DEFAULT_ADM_NOISE_WEIGHT);
+            }
+        }
+
+        adm_buffer_free(&buf);
+    }
+}
+
+static void check_adm_i4_csf(void)
+{
+    for (size_t i = 0; i < sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+         i++)
+    {
+        const int w = post_dwt_sizes[i].w, h = post_dwt_sizes[i].h;
+
+        AdmBuffer buf_c, buf_a;
+        if (adm_buffer_alloc(&buf_c, w, h)) continue;
+        if (adm_buffer_alloc(&buf_a, w, h)) {
+            adm_buffer_free(&buf_c);
+            continue;
+        }
+        const int stride = (int) (buf_c.ind_size_x >> 2);
+        const int w_half = (w + 1) / 2, h_half = (h + 1) / 2;
+
+        fill_band_i32(buf_c.i4_decouple_r.band_h, h_half, stride);
+        fill_band_i32(buf_c.i4_decouple_r.band_v, h_half, stride);
+        fill_band_i32(buf_c.i4_decouple_r.band_d, h_half, stride);
+        fill_band_i32(buf_c.i4_decouple_a.band_h, h_half, stride);
+        fill_band_i32(buf_c.i4_decouple_a.band_v, h_half, stride);
+        fill_band_i32(buf_c.i4_decouple_a.band_d, h_half, stride);
+
+        copy_band_i32(buf_a.i4_decouple_r.band_h, buf_c.i4_decouple_r.band_h,
+                      h_half, stride);
+        copy_band_i32(buf_a.i4_decouple_r.band_v, buf_c.i4_decouple_r.band_v,
+                      h_half, stride);
+        copy_band_i32(buf_a.i4_decouple_r.band_d, buf_c.i4_decouple_r.band_d,
+                      h_half, stride);
+        copy_band_i32(buf_a.i4_decouple_a.band_h, buf_c.i4_decouple_a.band_h,
+                      h_half, stride);
+        copy_band_i32(buf_a.i4_decouple_a.band_v, buf_c.i4_decouple_a.band_v,
+                      h_half, stride);
+        copy_band_i32(buf_a.i4_decouple_a.band_d, buf_c.i4_decouple_a.band_d,
+                      h_half, stride);
+
+        checkasm_declare(void, AdmBuffer *, int, int, int, int, double, int,
+                          int, double, double, bool);
+
+        for (int scale = 1; scale <= 3; scale++) {
+            for (int aim = 0; aim <= 1; aim++) {
+                if (checkasm_check_func(
+                        get_i4_csf(checkasm_get_cpu_flags()),
+                        "i4_adm_csf_%dx%d_scale%d_aim%d", w, h, scale, aim))
+                {
+                    checkasm_call_ref(&buf_c, scale, w_half, h_half, stride,
+                                       DEFAULT_ADM_NORM_VIEW_DIST,
+                                       DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                                       DEFAULT_ADM_CSF_MODE,
+                                       DEFAULT_ADM_CSF_SCALE,
+                                       DEFAULT_ADM_CSF_DIAG_SCALE, (bool) aim);
+                    checkasm_call_new(&buf_a, scale, w_half, h_half, stride,
+                                       DEFAULT_ADM_NORM_VIEW_DIST,
+                                       DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                                       DEFAULT_ADM_CSF_MODE,
+                                       DEFAULT_ADM_CSF_SCALE,
+                                       DEFAULT_ADM_CSF_DIAG_SCALE, (bool) aim);
+
+                    check2d_band_i32(buf_c.i4_csf_a.band_h,
+                                     buf_a.i4_csf_a.band_h, w_half, h_half,
+                                     stride, "i4_csf_a.band_h");
+                    check2d_band_i32(buf_c.i4_csf_a.band_v,
+                                     buf_a.i4_csf_a.band_v, w_half, h_half,
+                                     stride, "i4_csf_a.band_v");
+                    check2d_band_i32(buf_c.i4_csf_a.band_d,
+                                     buf_a.i4_csf_a.band_d, w_half, h_half,
+                                     stride, "i4_csf_a.band_d");
+                    check2d_band_i32(buf_c.i4_csf_f.band_h,
+                                     buf_a.i4_csf_f.band_h, w_half, h_half,
+                                     stride, "i4_csf_f.band_h");
+                    check2d_band_i32(buf_c.i4_csf_f.band_v,
+                                     buf_a.i4_csf_f.band_v, w_half, h_half,
+                                     stride, "i4_csf_f.band_v");
+                    check2d_band_i32(buf_c.i4_csf_f.band_d,
+                                     buf_a.i4_csf_f.band_d, w_half, h_half,
+                                     stride, "i4_csf_f.band_d");
+
+                    checkasm_bench_new(&buf_a, scale, w_half, h_half, stride,
+                                        DEFAULT_ADM_NORM_VIEW_DIST,
+                                        DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                                        DEFAULT_ADM_CSF_MODE,
+                                        DEFAULT_ADM_CSF_SCALE,
+                                        DEFAULT_ADM_CSF_DIAG_SCALE,
+                                        (bool) aim);
+                }
+            }
+        }
+
+        adm_buffer_free(&buf_c);
+        adm_buffer_free(&buf_a);
+    }
+}
+
+static void check_adm_i4_cm(void)
+{
+#if ARCH_AARCH64
+    const struct adm_test_size sizes[] = {
+        { 33, 21 }, { 61, 33 }, { 63, 31 }, { 65, 33 }, { 67, 35 }, { 69, 37 },
+        { 127, 93 }, { 257, 193 }, { 514, 386 },
+    };
+    const size_t nb_sizes = sizeof(sizes) / sizeof(*sizes);
+#else
+    const struct adm_test_size *sizes = post_dwt_sizes;
+    const size_t nb_sizes = sizeof(post_dwt_sizes) / sizeof(*post_dwt_sizes);
+#endif
+    for (size_t i = 0; i < nb_sizes; i++) {
+        const int w = sizes[i].w, h = sizes[i].h;
+
+        AdmBuffer buf_c, buf_a;
+        if (adm_buffer_alloc(&buf_c, w, h)) continue;
+        if (adm_buffer_alloc(&buf_a, w, h)) {
+            adm_buffer_free(&buf_c);
+            continue;
+        }
+        const int stride = (int) (buf_c.ind_size_x >> 2);
+        const int h_half = (h + 1) / 2;
+        const int w_half = (w + 1) / 2;
+
+        i4_adm_dwt_band_t *c_bands[4] = { &buf_c.i4_decouple_r,
+                                           &buf_c.i4_decouple_a,
+                                           &buf_c.i4_csf_f, &buf_c.i4_csf_a };
+        i4_adm_dwt_band_t *a_bands[4] = { &buf_a.i4_decouple_r,
+                                           &buf_a.i4_decouple_a,
+                                           &buf_a.i4_csf_f, &buf_a.i4_csf_a };
+        for (int b = 0; b < 4; b++) {
+            fill_band_i32(c_bands[b]->band_h, h_half, stride);
+            fill_band_i32(c_bands[b]->band_v, h_half, stride);
+            fill_band_i32(c_bands[b]->band_d, h_half, stride);
+#if ARCH_AARCH64
+            for (int k = 0; k < h_half * stride; k++) {
+                int32_t *bands[] = { c_bands[b]->band_h, c_bands[b]->band_v, c_bands[b]->band_d };
+                for (int band = 0; band < 3; band++)
+                    bands[band][k] = b >= 2 ? checkasm_rand_uint32() & 4095 :
+                        (int32_t)(checkasm_rand_uint32() & 0x1ffffff) - 0x1000000;
+            }
+#endif
+            copy_band_i32(a_bands[b]->band_h, c_bands[b]->band_h, h_half,
+                          stride);
+            copy_band_i32(a_bands[b]->band_v, c_bands[b]->band_v, h_half,
+                          stride);
+            copy_band_i32(a_bands[b]->band_d, c_bands[b]->band_d, h_half,
+                          stride);
+        }
+
+        checkasm_declare(float, AdmBuffer *, int, int, int, int, int, double,
+                          int, int, double, double, double, bool);
+
+        for (int scale = 1; scale <= 3; scale++) {
+            for (int aim = 0; aim <= 1; aim++) {
+                if (checkasm_check_func(
+                        get_i4_cm(checkasm_get_cpu_flags()),
+                        "i4_adm_cm_%dx%d_scale%d_aim%d", w, h, scale, aim))
+                {
+                    const float ref = checkasm_call_ref(
+                        &buf_c, w_half, h_half, stride, stride, scale,
+                        DEFAULT_ADM_NORM_VIEW_DIST,
+                        DEFAULT_ADM_REF_DISPLAY_HEIGHT, DEFAULT_ADM_CSF_MODE,
+                        DEFAULT_ADM_CSF_SCALE, DEFAULT_ADM_CSF_DIAG_SCALE,
+                        DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
+                    const float new = checkasm_call_new(
+                        &buf_a, w_half, h_half, stride, stride, scale,
+                        DEFAULT_ADM_NORM_VIEW_DIST,
+                        DEFAULT_ADM_REF_DISPLAY_HEIGHT, DEFAULT_ADM_CSF_MODE,
+                        DEFAULT_ADM_CSF_SCALE, DEFAULT_ADM_CSF_DIAG_SCALE,
+                        DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
+
+#if ARCH_AARCH64
+                    const bool different = memcmp(&ref, &new, sizeof(ref)) != 0;
+#else
+                    const float tol = 1e-4f * (fabsf(ref) + 1.0f);
+                    const bool different = fabsf(ref - new) > tol;
+#endif
+                    if (different) {
+                        if (checkasm_fail())
+                            fprintf(stderr, "expected %f, got %f\n", ref,
+                                    new);
+                    }
+
+                    checkasm_bench_new(&buf_a, w_half, h_half, stride, stride,
+                                        scale, DEFAULT_ADM_NORM_VIEW_DIST,
+                                        DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                                        DEFAULT_ADM_CSF_MODE,
+                                        DEFAULT_ADM_CSF_SCALE,
+                                        DEFAULT_ADM_CSF_DIAG_SCALE,
+                                        DEFAULT_ADM_NOISE_WEIGHT, (bool) aim);
+                }
+            }
+        }
+
+        adm_buffer_free(&buf_c);
+        adm_buffer_free(&buf_a);
+    }
+}
+
+void checkasm_check_adm(void)
+{
+    check_adm_dwt2();
+    checkasm_report("adm_dwt2");
+
+    check_adm_decouple();
+    checkasm_report("adm_decouple");
+
+    check_adm_csf();
+    checkasm_report("adm_csf");
+
+    check_adm_cm();
+    checkasm_report("adm_cm");
+
+    check_adm_dwt2_s123();
+    checkasm_report("adm_dwt2_s123");
+
+    check_adm_decouple_s123();
+    checkasm_report("adm_decouple_s123");
+
+    check_adm_csf_den();
+    checkasm_report("adm_csf_den");
+
+    check_adm_i4_csf();
+    checkasm_report("i4_adm_csf");
+
+    check_adm_i4_cm();
+    checkasm_report("i4_adm_cm");
+}

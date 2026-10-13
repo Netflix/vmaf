@@ -389,3 +389,59 @@ void calculate_c_values_avx2(VmafPicture *pic, const VmafPicture *mask_pic,
         calculate_c_values_row_avx2(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
     }
 }
+
+static inline __m256i inclusive_prefix_epi32(__m256i x) {
+    x = _mm256_add_epi32(x, _mm256_slli_si256(x, 4));
+    x = _mm256_add_epi32(x, _mm256_slli_si256(x, 8));
+    __m256i low_dup   = _mm256_permute2x128_si256(x, x, 0x00);
+    __m256i low_total = _mm256_shuffle_epi32(low_dup, _MM_SHUFFLE(3, 3, 3, 3));
+    __m256i add_hi    = _mm256_blend_epi32(_mm256_setzero_si256(), low_total, 0xF0);
+    return _mm256_add_epi32(x, add_hi);
+}
+
+void compute_dp_row_avx2(uint32_t *dp_curr, const uint32_t *dp_prev,
+                         const uint16_t *deriv, int width, int pad_size, bool deriv_valid) {
+    const int dp_offset = pad_size + 1;
+    const int actual_width = deriv_valid ? width : 0;
+    int j = 0;
+    __m256i carry = _mm256_setzero_si256();
+    for (; j + 8 <= actual_width; j += 8) {
+        __m256i d = _mm256_cvtepu16_epi32(_mm_loadu_si128((const __m128i *)&deriv[j]));
+        __m256i scan = _mm256_add_epi32(inclusive_prefix_epi32(d), carry);
+        __m256i prev = _mm256_loadu_si256((const __m256i *)&dp_prev[dp_offset + j]);
+        _mm256_storeu_si256((__m256i *)&dp_curr[dp_offset + j], _mm256_add_epi32(prev, scan));
+        carry = _mm256_permutevar8x32_epi32(scan, _mm256_set1_epi32(7));
+    }
+    uint32_t prefix = (uint32_t)_mm256_extract_epi32(carry, 0);
+    for (; j < actual_width; j++) {
+        prefix += deriv[j];
+        dp_curr[dp_offset + j] = dp_prev[dp_offset + j] + prefix;
+    }
+    int n = width + pad_size;
+    for (; j < n; j++) {
+        dp_curr[dp_offset + j] = dp_prev[dp_offset + j] + prefix;
+    }
+}
+
+void compute_mask_row_avx2(uint16_t *mask_row, const uint32_t *dp_bottom, const uint32_t *dp_top,
+                           int width, int pad_size, uint32_t mask_index) {
+    const int delta = 2 * pad_size + 1;
+    const __m256i midx = _mm256_set1_epi32((int)mask_index);
+    const __m256i one = _mm256_set1_epi32(1);
+    int j = 0;
+    for (; j + 8 <= width; j += 8) {
+        __m256i bd = _mm256_loadu_si256((const __m256i *)&dp_bottom[j + delta]);
+        __m256i t  = _mm256_loadu_si256((const __m256i *)&dp_top[j]);
+        __m256i b  = _mm256_loadu_si256((const __m256i *)&dp_bottom[j]);
+        __m256i td = _mm256_loadu_si256((const __m256i *)&dp_top[j + delta]);
+        __m256i result = _mm256_sub_epi32(_mm256_add_epi32(bd, t), _mm256_add_epi32(b, td));
+        __m256i v = _mm256_and_si256(_mm256_cmpgt_epi32(result, midx), one);
+        __m128i packed = _mm_packus_epi32(_mm256_castsi256_si128(v),
+                                          _mm256_extracti128_si256(v, 1));
+        _mm_storeu_si128((__m128i *)&mask_row[j], packed);
+    }
+    for (; j < width; j++) {
+        uint32_t result = dp_bottom[j + delta] + dp_top[j] - dp_bottom[j] - dp_top[j + delta];
+        mask_row[j] = (uint16_t)(result > mask_index);
+    }
+}

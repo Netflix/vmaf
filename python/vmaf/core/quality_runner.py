@@ -1361,12 +1361,16 @@ class VmafexecQualityRunner(QualityRunner, FeatureDiscoveryMixin):
         exe = self._get_exec()
         logger = self.logger
 
+        color_ref = self.optional_dict.get('color_ref') if self.optional_dict is not None else None
+        color_dist = self.optional_dict.get('color_dist') if self.optional_dict is not None else None
+
         ExternalProgramCaller.call_vmafexec(reference, distorted, width, height, pixel_format, bitdepth,
                                             float_psnr, psnr, float_ssim, ssim, float_ms_ssim, ms_ssim, float_moment,
                                             no_prediction, models, subsample, n_threads, disable_avx, output, exe,
                                             logger,
                                             vif_enhn_gain_limit, adm_enhn_gain_limit, motion_force_zero,
-                                            enc_width, enc_height, enc_bitdepth)
+                                            enc_width, enc_height, enc_bitdepth,
+                                            color_ref, color_dist)
 
     def _get_exec(self):
         return None  # signaling default

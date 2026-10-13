@@ -11,6 +11,10 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef _MSC_VER
+    /* On MSVC provide a minimal mode_t typedef */
+    typedef int mode_t;
+#endif
 
 /*
  * Recursively `mkdir(path, mode)`

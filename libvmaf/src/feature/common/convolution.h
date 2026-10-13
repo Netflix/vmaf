@@ -25,6 +25,16 @@ Filter widths above this one will not use the AVX path for convolutions.
 #define MAX_FWIDTH_AVX_CONV 17
 
 /*
+ * Keeps a product from being fused with the following add (FMA contraction),
+ * so results do not depend on -ffp-contract or -mfma.
+ */
+#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
+#define VMAF_NO_FUSE(v) __asm__("" : "+x"(v))
+#else
+#define VMAF_NO_FUSE(v) ((void) 0)
+#endif
+
+/*
  * All functions listed here expect a SYMMETRICAL filter.
  * All array arguments must be 32-byte aligned.
  *
@@ -41,6 +51,8 @@ Filter widths above this one will not use the AVX path for convolutions.
 void convolution_f32_c_s(const float *filter, int filter_width, const float *src, float *dst, float *tmp, int width, int height, int src_stride, int dst_stride);
 
 void convolution_f32_avx_s(const float *filter, int filter_width, const float *src, float *dst, float *tmp, int width, int height, int src_stride, int dst_stride);
+
+void convolution_f32_avx_dec16_s(const float *filter, int filter_width, const float *src, float *dst, float *tmp, int width, int height, int src_stride, int dst_stride);
 
 void convolution_f32_avx_sq_s(const float *filter, int filter_width, const float *src, float *dst, float *tmp, int width, int height, int src_stride, int dst_stride);
 

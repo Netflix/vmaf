@@ -59,6 +59,30 @@ def set_default_576_324_videos_for_testing():
     return ref_path, dis_path, asset, asset_original
 
 
+def set_default_576_324_hdr_videos_for_testing():
+    # First frame of a PQ / BT.2020nc / limited-range reference and a distorted
+    # encode of the same content, as raw yuv420p10le. The files carry no
+    # colorimetry: pass it through color_ref / color_dist in optional_dict.
+    ref_path = VmafConfig.test_resource_path("yuv",
+                                             "ref_dock-na-HDR_res2160_rate5p0_maxRate100000_bufSize200000_fps59p940_576x324_1frame.yuv")
+    dis_path = VmafConfig.test_resource_path("yuv",
+                                             "dis_dock-na-HDR_res1440_rate15p0_maxRate10000_bufSize20000_fps59p940_576x324_1frame.yuv")
+    asset_dict = {'width': 576, 'height': 324, 'yuv_type': 'yuv420p10le', 'workfile_yuv_type': 'yuv420p10le'}
+    asset = Asset(dataset="test", content_id=0, asset_id=0,
+                  workdir_root=VmafConfig.workdir_path(),
+                  ref_path=ref_path,
+                  dis_path=dis_path,
+                  asset_dict=dict(asset_dict))
+
+    asset_original = Asset(dataset="test", content_id=0, asset_id=1,
+                           workdir_root=VmafConfig.workdir_path(),
+                           ref_path=ref_path,
+                           dis_path=ref_path,
+                           asset_dict=dict(asset_dict))
+
+    return ref_path, dis_path, asset, asset_original
+
+
 def set_default_576_324_videos_for_testing_5frames():
     ref_path = VmafConfig.test_resource_path("yuv", "src01_hrc00_576x324_5frames.yuv")
     dis_path = VmafConfig.test_resource_path("yuv", "src01_hrc01_576x324_5frames.yuv")

@@ -37,10 +37,6 @@
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-#ifndef M_PI
-    #define M_PI 3.14159265358979323846
-#endif
-
 #ifdef VIF_OPT_FAST_LOG2 // option to replace log2 calculation with faster speed
 
 static const float log2_poly_s[9] = { -0.012671635276421, 0.064841182402670, -0.157048836463065, 0.257167726303123, -0.353800560300520, 0.480131410397451, -0.721314327952201, 1.442694803896991, 0 };
@@ -377,6 +373,56 @@ void vif_filter1d_s(const float *f, const float *src, float *dst, float *tmpbuf,
     }
 
     aligned_free(tmp);
+}
+
+/* src and dst must not overlap; tmp holds at least w floats. */
+void vif_filter1d_dec16_scalar_s(const float *f, const float *src, float *dst,
+                                 float *tmp, int w, int h, int src_stride,
+                                 int dst_stride, int fwidth)
+{
+    const int src_px_stride = src_stride / sizeof(float);
+    const int dst_px_stride = dst_stride / sizeof(float);
+
+    for (int i = 0; i < h / 16; i++) {
+        /* Vertical pass at retained rows. */
+        for (int j = 0; j < w; j++) {
+            float accum = 0;
+            for (int fi = 0; fi < fwidth; fi++) {
+                int ii = i * 16 - fwidth / 2 + fi;
+                ii = ii < 0 ? -ii : (ii >= h ? 2 * h - ii - 2 : ii);
+                accum += f[fi] * src[ii * src_px_stride + j];
+            }
+            tmp[j] = accum;
+        }
+
+        for (int j = 0; j < w / 16; j++) {
+            float accum = 0;
+            for (int fj = 0; fj < fwidth; fj++) {
+                int jj = j * 16 - fwidth / 2 + fj;
+                jj = jj < 0 ? -jj : (jj >= w ? 2 * w - jj - 2 : jj);
+                accum += f[fj] * tmp[jj];
+            }
+            dst[i * dst_px_stride + j] = accum;
+        }
+    }
+}
+
+void vif_filter1d_dec16_s(const float *f, const float *src, float *dst,
+                        float *tmp, int w, int h, int src_stride,
+                        int dst_stride, int fwidth)
+{
+#if ARCH_X86
+    const unsigned flags = vmaf_get_cpu_flags();
+    if ((flags & VMAF_X86_CPU_FLAG_AVX2) && fwidth <= MAX_FWIDTH_AVX_CONV) {
+        convolution_f32_avx_dec16_s(f, fwidth, src, dst, tmp, w, h,
+                                    src_stride / sizeof(float),
+                                    dst_stride / sizeof(float));
+        return;
+    }
+#endif
+
+    vif_filter1d_dec16_scalar_s(f, src, dst, tmp, w, h, src_stride, dst_stride,
+                                fwidth);
 }
 
 // Code optimized by adding intrinsic code for the functions,

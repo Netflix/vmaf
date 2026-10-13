@@ -5,8 +5,13 @@
 #include "stdio.h"
 #include <errno.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
+#ifdef HAVE_BUILTIN_CLZ_COMPAT
+#include "builtin_clz.h"
+#endif
 
 static int32_t div_lookup[65537];
 static const int32_t div_Q_factor = 1073741824; // 2^30
@@ -60,9 +65,61 @@ typedef struct AdmBuffer {
 #define NUM_BUFS_ADM 30
 #endif
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338327
-#endif // M_PI
+int adm_buffer_alloc(AdmBuffer *buf, int w, int h);
+void adm_buffer_free(AdmBuffer *buf);
+void dwt2_src_indices_filt(int **src_ind_y, int **src_ind_x, int w, int h);
+
+void adm_dwt2_8(const uint8_t *src, const adm_dwt_band_t *dst,
+                 AdmBuffer *buf, int w, int h, int src_stride, int dst_stride);
+
+void adm_dwt2_16(const uint16_t *src, const adm_dwt_band_t *dst,
+                  AdmBuffer *buf, int w, int h, int src_stride,
+                  int dst_stride, int inp_size_bits);
+
+void adm_decouple(AdmBuffer *buf, int w, int h, int stride,
+                   double adm_enhn_gain_limit, int32_t *adm_div_lookup);
+
+void adm_csf(AdmBuffer *buf, int w, int h, int stride,
+             double adm_norm_view_dist, int adm_ref_display_height,
+             int adm_csf_mode, double adm_csf_scale,
+             double adm_csf_diag_scale, bool measure_aim);
+
+float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
+             double adm_norm_view_dist, int adm_ref_display_height,
+             int adm_csf_mode, double adm_csf_scale,
+             double adm_csf_diag_scale, double adm_noise_weight,
+             bool measure_aim);
+
+void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
+                        double adm_enhn_gain_limit, int32_t *adm_div_lookup);
+
+void adm_dwt2_s123_combined(const int32_t *i4_ref_scale,
+                             const int32_t *i4_curr_dis, AdmBuffer *buf,
+                             int w, int h, int ref_stride, int dis_stride,
+                             int dst_stride, int scale);
+
+void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride,
+                 double adm_norm_view_dist, int adm_ref_display_height,
+                 int adm_csf_mode, double adm_csf_scale,
+                 double adm_csf_diag_scale, bool measure_aim);
+
+float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride,
+                 int csf_a_stride, int scale, double adm_norm_view_dist,
+                 int adm_ref_display_height, int adm_csf_mode,
+                 double adm_csf_scale, double adm_csf_diag_scale,
+                 double adm_noise_weight, bool measure_aim);
+
+float adm_csf_den_scale(const adm_dwt_band_t *src, int w, int h,
+                         int src_stride, double adm_norm_view_dist,
+                         int adm_ref_display_height, int adm_csf_mode,
+                         double adm_csf_scale, double adm_csf_diag_scale,
+                         double adm_noise_weight);
+
+float adm_csf_den_s123(const i4_adm_dwt_band_t *src, int scale, int w, int h,
+                        int src_stride, double adm_norm_view_dist,
+                        int adm_ref_display_height, int adm_csf_mode,
+                        double adm_csf_scale, double adm_csf_diag_scale,
+                        double adm_noise_weight);
 
 /* Enhancement gain imposed on adm, must be >= 1.0, where 1.0 means the gain is completely disabled */
 #ifndef DEFAULT_ADM_ENHN_GAIN_LIMIT
@@ -171,9 +228,10 @@ struct dwt_model_params {
 
 // 0 -> Y, 1 -> Cb, 2 -> Cr
 static const struct dwt_model_params dwt_7_9_YCbCr_threshold[3] = {
-    {.a = 0.495, .k = 0.466, .f0 = 0.401, .g = {1.501, 1.0, 0.534, 1.0}},
-    {.a = 1.633, .k = 0.353, .f0 = 0.209, .g = {1.520, 1.0, 0.502, 1.0}},
-    {.a = 0.944, .k = 0.521, .f0 = 0.404, .g = {1.868, 1.0, 0.516, 1.0}}};
+    {0.495f, 0.466f, 0.401f, {1.501f, 1.0f, 0.534f, 1.0f}},
+    {1.633f, 0.353f, 0.209f, {1.520f, 1.0f, 0.502f, 1.0f}},
+    {0.944f, 0.521f, 0.404f, {1.868f, 1.0f, 0.516f, 1.0f}}
+};
 
 /*
  * The following dwt basis function amplitudes, A(lambda,theta), are taken from
