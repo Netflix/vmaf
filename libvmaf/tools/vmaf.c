@@ -47,11 +47,10 @@ static int validate_videos(video_input *vid1, video_input *vid2, bool common_bit
     video_input_get_info(vid1, &info1);
     video_input_get_info(vid2, &info2);
 
-    if ((info1.frame_w != info2.frame_w) || (info1.frame_h != info2.frame_h)) {
-        fprintf(stderr, "dimensions do not match: %dx%d, %dx%d\n",
-                info1.frame_w, info1.frame_h, info2.frame_w, info2.frame_h);
-        err_cnt++;
-    }
+    /*
+     * Different sizes are not checked here: libvmaf rejects them unless the
+     * models scale their inputs, which it can only tell once they are loaded.
+     */
 
     if (info1.pixel_fmt != info2.pixel_fmt) {
         fprintf(stderr, "pixel formats do not match: %d, %d\n",
@@ -80,10 +79,22 @@ static int validate_videos(video_input *vid1, video_input *vid2, bool common_bit
     return err_cnt;
 }
 
+/*
+ * The picture pool holds pictures of the reference's size. A picture of any
+ * other size is allocated on its own.
+ */
 static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic,
-                         VmafColor color)
+                         VmafColor color, bool pooled, unsigned bitdepth)
 {
-    int ret = vmaf_fetch_preallocated_picture(vmaf, pic);
+    int ret;
+    if (pooled) {
+        ret = vmaf_fetch_preallocated_picture(vmaf, pic);
+    } else {
+        video_input_info info;
+        video_input_get_info(vid, &info);
+        ret = vmaf_picture_alloc(pic, pix_fmt_map(info.pixel_fmt), bitdepth,
+                                 info.pic_w, info.pic_h);
+    }
     if (ret) {
         fprintf(stderr, "problem fetching picture from pool.\n");
         return -1;
@@ -124,8 +135,8 @@ int main(int argc, char *argv[])
 
     video_input vid_ref;
     if (c.use_yuv) {
-        err = raw_input_open(&vid_ref, file_ref,
-                             c.width, c.height, c.pix_fmt, c.bitdepth);
+        err = raw_input_open(&vid_ref, file_ref, c.width_ref, c.height_ref,
+                             c.pix_fmt, c.bitdepth);
     } else {
         err = video_input_open(&vid_ref, file_ref);
     }
@@ -136,8 +147,8 @@ int main(int argc, char *argv[])
 
     video_input vid_dist;
     if (c.use_yuv) {
-        err = raw_input_open(&vid_dist, file_dist,
-                             c.width, c.height, c.pix_fmt, c.bitdepth);
+        err = raw_input_open(&vid_dist, file_dist, c.width_dist, c.height_dist,
+                             c.pix_fmt, c.bitdepth);
     } else {
         err = video_input_open(&vid_dist, file_dist);
     }
@@ -196,8 +207,11 @@ int main(int argc, char *argv[])
 #endif
 
     // Preallocate picture pool to avoid allocation overhead
-    video_input_info info;
+    video_input_info info, info_dist;
     video_input_get_info(&vid_ref, &info);
+    video_input_get_info(&vid_dist, &info_dist);
+    const bool dist_pooled = info_dist.pic_w == info.pic_w &&
+                             info_dist.pic_h == info.pic_h;
 
     VmafPictureConfiguration pic_cfg = {
         .pic_params = {
@@ -339,12 +353,14 @@ int main(int argc, char *argv[])
     VmafPicture pic_ref, pic_dist;
 
     for (unsigned i = 0; i < c.frame_skip_ref; i++) {
-        if (!fetch_picture(vmaf, &vid_ref, &pic_ref, c.color_ref))
+        if (!fetch_picture(vmaf, &vid_ref, &pic_ref, c.color_ref, true,
+                           common_bitdepth))
             vmaf_picture_unref(&pic_ref);
     }
 
     for (unsigned i = 0; i < c.frame_skip_dist; i++) {
-        if (!fetch_picture(vmaf, &vid_dist, &pic_dist, c.color_dist))
+        if (!fetch_picture(vmaf, &vid_dist, &pic_dist, c.color_dist,
+                           dist_pooled, common_bitdepth))
             vmaf_picture_unref(&pic_dist);
     }
 
@@ -357,8 +373,10 @@ int main(int argc, char *argv[])
             break;
 
         VmafPicture pic_ref, pic_dist;
-        int ret1 = fetch_picture(vmaf, &vid_ref, &pic_ref, c.color_ref);
-        int ret2 = fetch_picture(vmaf, &vid_dist, &pic_dist, c.color_dist);
+        int ret1 = fetch_picture(vmaf, &vid_ref, &pic_ref, c.color_ref, true,
+                                common_bitdepth);
+        int ret2 = fetch_picture(vmaf, &vid_dist, &pic_dist, c.color_dist,
+                                dist_pooled, common_bitdepth);
 
         if (ret1 && ret2) {
             break;
