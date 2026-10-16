@@ -98,6 +98,7 @@ typedef struct VmafContext {
         VmafPictureConvertContext *dist;
         bool have_target;
         VmafPictureConvertTarget target;
+        unsigned display_resolution;
         unsigned n_models_with_target;
         unsigned n_models_without_target;
     } convert;
@@ -642,9 +643,6 @@ static int convert_context_get(VmafPictureConvertContext **ctx,
     VmafPictureConvertTarget target = *model_target;
     if (!target.pix_fmt) target.pix_fmt = pic->pix_fmt;
     if (!target.bpc) target.bpc = pic->bpc;
-    target.w = pic->w[0];
-    target.h = pic->h[0];
-    target.resample_filter = VMAF_RESAMPLE_DEFAULT;
     return vmaf_picture_convert_context_init(ctx, pic, &target);
 }
 
@@ -665,8 +663,8 @@ static int convert_picture(VmafPictureConvertContext **ctx,
 }
 
 /**
- * Convert ref and dist to the target (colorspace, and pixel format and bit
- * depth where pinned) the registered model(s) declare. Pass-through (no-op) when the model declares
+ * Convert ref and dist to the target (colorspace, and pixel format, bit
+ * depth and display resolution where pinned) the registered model(s) declare. Pass-through (no-op) when the model declares
  * none; an error when it declares one and the source colorimetry is not
  * fully specified. On success the originals are released and replaced in
  * place by the converted pictures; on failure they are left untouched.
@@ -681,6 +679,12 @@ static int convert_pictures(VmafContext *vmaf, VmafPicture *ref,
         vmaf->convert.have_target ? &vmaf->convert.target : NULL,
         &needs_conversion, &target);
     if (err) return err;
+    if (vmaf->convert.display_resolution) {
+        err = vmaf_conversion_policy_scale(ref, dist,
+                                           vmaf->convert.display_resolution,
+                                           &needs_conversion, &target);
+        if (err) return err;
+    }
     if (!needs_conversion) return 0;
 
     VmafPicture ref_converted = { 0 }, dist_converted = { 0 };
@@ -725,13 +729,17 @@ static int register_conversion_target(VmafContext *vmaf,
         .color = model->conversion_target.color,
     };
     if (vmaf->convert.have_target &&
-        !vmaf_conversion_policy_target_equal(&vmaf->convert.target,
-                                             &model_target))
+        (!vmaf_conversion_policy_target_equal(&vmaf->convert.target,
+                                              &model_target) ||
+         vmaf->convert.display_resolution !=
+             model->conversion_target.display_resolution))
     {
         goto mismatch;
     }
     vmaf->convert.have_target = true;
     vmaf->convert.target = model_target;
+    vmaf->convert.display_resolution =
+        model->conversion_target.display_resolution;
     vmaf->convert.n_models_with_target++;
     return 0;
 
