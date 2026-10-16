@@ -408,6 +408,53 @@ static char *test_target_display_scales_source()
     return NULL;
 }
 
+/* score one frame whose distorted picture is dist_w x dist_h */
+static int run_dist_size(const char *target_block, unsigned dist_w,
+                         unsigned dist_h)
+{
+    VmafContext *vmaf;
+    VmafConfiguration cfg = { .log_level = VMAF_LOG_LEVEL_NONE };
+    int err = vmaf_init(&vmaf, cfg);
+    if (err) return err;
+    VmafModel *model;
+    err = load_model(&model, target_block);
+    if (err) return err;
+    err = vmaf_use_features_from_model(vmaf, model);
+    if (err) return err;
+
+    VmafPicture ref, dist;
+    err = vmaf_picture_alloc(&ref, VMAF_PIX_FMT_YUV420P, BPC, W, H);
+    if (err) return err;
+    err = vmaf_picture_alloc(&dist, VMAF_PIX_FMT_YUV420P, BPC, dist_w, dist_h);
+    if (err) return err;
+    fill_picture(&ref, 0, 0);
+    fill_picture(&dist, 0, 20);
+    ref.color = pq_ictcp_color;
+    dist.color = pq_ictcp_color;
+
+    err = vmaf_read_pictures(vmaf, &ref, &dist, 0);
+    if (err) {
+        vmaf_picture_unref(&ref);
+        vmaf_picture_unref(&dist);
+    }
+    vmaf_model_destroy(model);
+    vmaf_close(vmaf);
+    return err;
+}
+
+static char *test_target_display_scales_different_sized_inputs()
+{
+    /* the reference is 256x144; both are scaled to 1920x1080 */
+    mu_assert("a half-size distorted picture of the same aspect ratio should "
+              "be scaled to the size the reference scales to",
+              !run_dist_size(target_1080, W / 2, H / 2));
+    mu_assert("a distorted picture with a different aspect ratio should be "
+              "rejected",
+              run_dist_size(target_1080, W / 2, H) == -EINVAL);
+
+    return NULL;
+}
+
 static char *test_models_with_different_displays_cannot_share_a_run()
 {
     VmafContext *vmaf;
@@ -451,6 +498,7 @@ char *run_tests()
     mu_run_test(test_models_must_share_a_conversion_target);
 #ifdef HAVE_ZIMG
     mu_run_test(test_target_display_scales_source);
+    mu_run_test(test_target_display_scales_different_sized_inputs);
     mu_run_test(test_models_with_different_displays_cannot_share_a_run);
 #endif
     return NULL;
