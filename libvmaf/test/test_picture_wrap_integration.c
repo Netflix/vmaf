@@ -172,6 +172,8 @@ static char *test_picture_wrap_with_vmaf_zero_copy()
     err = vmaf_close(vmaf);
     mu_assert("problem during vmaf_close", !err);
 
+    vmaf_model_destroy(model);
+
     user_decoder_close(&ref_dec);
     user_decoder_close(&dist_dec);
 
