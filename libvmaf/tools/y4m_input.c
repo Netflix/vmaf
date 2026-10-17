@@ -830,7 +830,47 @@ static void y4m_input_close(y4m_input *_y4m){
   free(_y4m->aux_buf);
 }
 
+/* Reads a frame whose bit depth is lower than pic->bpc (e.g. an 8-bit
+   reference with a 10-bit distorted video under common_bitdepth), and
+   left-shifts the samples to pic->bpc. */
+static int y4m_fetch_into_vmaf_picture_upshift(y4m_input *_y4m, FILE *_fin,
+                                               VmafPicture *pic) {
+  if (_y4m->depth > (int)pic->bpc || pic->bpc <= 8) {
+    fprintf(stderr, "unsupported y4m bitdepth conversion: %d -> %u\n",
+            _y4m->depth, pic->bpc);
+    return -1;
+  }
+  video_input_ycbcr ycbcr;
+  int ret = y4m_input_fetch_frame(_y4m, _fin, ycbcr, NULL);
+  if (ret < 1) return ret;
+
+  const int shift = pic->bpc - _y4m->depth;
+  const int xstride = _y4m->depth > 8 ? 2 : 1;
+  for (unsigned i = 0; i < 3; i++) {
+    const int xdec = i ? _y4m->dst_c_dec_h >> 1 : 0;
+    const int ydec = i ? _y4m->dst_c_dec_v >> 1 : 0;
+    const unsigned char *src = ycbcr[i].data +
+        (_y4m->pic_y >> ydec) * ycbcr[i].stride +
+        (_y4m->pic_x >> xdec) * xstride;
+    uint8_t *dst = pic->data[i];
+    for (unsigned j = 0; j < pic->h[i]; j++) {
+      for (unsigned k = 0; k < pic->w[i]; k++) {
+        const uint16_t v =
+            xstride == 2 ? ((const uint16_t *)src)[k] : src[k];
+        ((uint16_t *)dst)[k] = v << shift;
+      }
+      src += ycbcr[i].stride;
+      dst += pic->stride[i];
+    }
+  }
+  return 1;
+}
+
 static int y4m_fetch_into_vmaf_picture(y4m_input *_y4m, FILE *_fin, VmafPicture *pic) {
+  if (_y4m->depth != (int)pic->bpc) {
+    return y4m_fetch_into_vmaf_picture_upshift(_y4m, _fin, pic);
+  }
+
   if (_y4m->convert != y4m_convert_null) {
     fprintf(stderr, "y4m format requires conversion; direct read not supported.\n");
     return -1;
