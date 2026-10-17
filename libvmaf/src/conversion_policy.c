@@ -39,9 +39,10 @@ static void log_missing_color(const char *which, const VmafColor *color)
 {
     vmaf_log(VMAF_LOG_LEVEL_ERROR,
              "the model requires source colorimetry, but the %s picture has "
-             "unspecified:%s%s%s%s. Set --color_range, --color_primaries, "
-             "--color_trc and --color_matrix (CLI) or VmafPicture.color "
-             "(library).\n", which,
+             "unspecified:%s%s%s%s. Set --color_range_ref, "
+             "--color_primaries_ref, --color_trc_ref and --color_matrix_ref "
+             "(--color_*_dist for the distorted input) on the CLI, or "
+             "VmafPicture.color in the library.\n", which,
              color->range == VMAF_COLOR_RANGE_UNKNOWN ? " range" : "",
              color->primaries == VMAF_COLOR_PRIMARIES_UNKNOWN ?
                  " primaries" : "",
