@@ -125,6 +125,7 @@ static char* test_propagate_metadata()
               !strcmp(e->val, "100.000000"));
 
     vmaf_feature_collector_destroy(feature_collector);
+    vmaf_dictionary_free(&dict);
 
     m.data = NULL;
     err = vmaf_feature_collector_init(&feature_collector);
