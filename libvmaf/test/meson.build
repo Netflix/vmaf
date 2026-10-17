@@ -169,6 +169,13 @@ test_motion_blend = executable('test_motion_blend',
 	dependencies : [stdatomic_dependency]
 )
 
+test_motion_mirror = executable('test_motion_mirror',
+    ['test.c', 'test_motion_mirror.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies : [math_lib, stdatomic_dependency, thread_lib],
+)
+
 test_speed_filter = executable('test_speed_filter',
     ['test.c', 'test_speed_filter.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
@@ -252,6 +259,7 @@ test('test_propagate_metadata', test_propagate_metadata)
 test('test_adm_csf', test_adm_csf)
 test('test_barten_csf', test_barten_csf)
 test('test_motion_blend', test_motion_blend)
+test('test_motion_mirror', test_motion_mirror)
 test('test_conversion_policy', test_conversion_policy)
 
 if is_asm_enabled and (host_machine.cpu_family().startswith('arm64') or host_machine.cpu_family().startswith('aarch64'))
