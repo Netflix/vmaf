@@ -29,6 +29,40 @@ static bool color_is_fully_specified(const VmafColor *color)
            color->matrix != VMAF_COLOR_MATRIX_UNKNOWN;
 }
 
+static bool color_is_untagged(const VmafColor *color)
+{
+    return color->range == VMAF_COLOR_RANGE_UNKNOWN &&
+           color->primaries == VMAF_COLOR_PRIMARIES_UNKNOWN &&
+           color->trc == VMAF_COLOR_TRC_UNKNOWN &&
+           color->matrix == VMAF_COLOR_MATRIX_UNKNOWN;
+}
+
+int vmaf_conversion_policy_assume_color(VmafPicture *ref, VmafPicture *dist,
+                                        const VmafColor *assumed,
+                                        bool *assumed_applied)
+{
+    if (!ref || !dist || !assumed || !assumed_applied) return -EINVAL;
+    *assumed_applied = false;
+
+    const bool ref_untagged = color_is_untagged(&ref->color);
+    const bool dist_untagged = color_is_untagged(&dist->color);
+    if (ref_untagged != dist_untagged) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "the %s picture has no colorimetry set but the %s picture "
+                 "has; the model assumes a colorimetry only when neither has "
+                 "one, so set both or neither\n",
+                 ref_untagged ? "reference" : "distorted",
+                 ref_untagged ? "distorted" : "reference");
+        return -EINVAL;
+    }
+    if (!ref_untagged) return 0;
+
+    ref->color = *assumed;
+    dist->color = *assumed;
+    *assumed_applied = true;
+    return 0;
+}
+
 bool vmaf_conversion_policy_color_equal(const VmafColor *a, const VmafColor *b)
 {
     return a->range == b->range && a->primaries == b->primaries &&

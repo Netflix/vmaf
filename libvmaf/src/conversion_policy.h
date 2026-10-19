@@ -84,6 +84,18 @@ int vmaf_conversion_policy_scale(const VmafPicture *ref,
                                  VmafPictureConvertTarget *ref_target,
                                  VmafPictureConvertTarget *dist_target);
 
+/**
+ * Give `ref` and `dist` the color `assumed` when neither has any of range,
+ * primaries, trc and matrix set, and set `*assumed_applied` to true. When both
+ * are tagged, nothing changes. When exactly one is fully untagged, return
+ * -EINVAL: both inputs come from the same pipeline, so one tagged and one not
+ * is a mistake. A picture with only some of the attributes set is left alone,
+ * so vmaf_conversion_policy_target() reports it as an error.
+ */
+int vmaf_conversion_policy_assume_color(VmafPicture *ref, VmafPicture *dist,
+                                        const VmafColor *assumed,
+                                        bool *assumed_applied);
+
 /** True when all of `a`'s color attributes equal `b`'s. */
 bool vmaf_conversion_policy_color_equal(const VmafColor *a, const VmafColor *b);
 

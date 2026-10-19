@@ -571,6 +571,60 @@ static char *test_picture_matches_compares_pinned_size()
     return NULL;
 }
 
+static char *test_assume_color_needs_both_pictures_untagged()
+{
+    VmafColor other = pq_ictcp_color;
+    other.range = VMAF_COLOR_RANGE_FULL;
+    bool applied;
+
+    VmafPicture ref = make_pic(&pq_ictcp_color, VMAF_PIX_FMT_YUV420P, 10);
+    VmafPicture dist = ref;
+    ref.color = (VmafColor) { 0 };
+    dist.color = (VmafColor) { 0 };
+    mu_assert("two untagged pictures should get the assumed color",
+              !vmaf_conversion_policy_assume_color(&ref, &dist, &other,
+                                                   &applied) &&
+              applied &&
+              vmaf_conversion_policy_color_equal(&ref.color, &other) &&
+              vmaf_conversion_policy_color_equal(&dist.color, &other));
+
+    VmafPicture tagged_ref = make_pic(&pq_ictcp_color, VMAF_PIX_FMT_YUV420P, 10);
+    VmafPicture tagged_dist = tagged_ref;
+    mu_assert("two tagged pictures should keep their colors",
+              !vmaf_conversion_policy_assume_color(&tagged_ref, &tagged_dist,
+                                                   &other, &applied) &&
+              !applied &&
+              vmaf_conversion_policy_color_equal(&tagged_ref.color,
+                                                 &pq_ictcp_color));
+
+    VmafPicture mixed_dist = tagged_ref;
+    mixed_dist.color = (VmafColor) { 0 };
+    mu_assert("a tagged reference with an untagged distorted picture should "
+              "be rejected",
+              vmaf_conversion_policy_assume_color(&tagged_ref, &mixed_dist,
+                                                  &other, &applied) == -EINVAL);
+    mu_assert("an untagged reference with a tagged distorted picture should "
+              "be rejected",
+              vmaf_conversion_policy_assume_color(&mixed_dist, &tagged_ref,
+                                                  &other, &applied) == -EINVAL);
+
+    VmafPicture partial = tagged_ref;
+    partial.color.matrix = VMAF_COLOR_MATRIX_UNKNOWN;
+    VmafPicture partial_dist = partial;
+    mu_assert("partly tagged pictures should be left alone",
+              !vmaf_conversion_policy_assume_color(&partial, &partial_dist,
+                                                   &other, &applied) &&
+              !applied && partial.color.matrix == VMAF_COLOR_MATRIX_UNKNOWN);
+
+    mu_assert("null arguments should be rejected",
+              vmaf_conversion_policy_assume_color(NULL, &ref, &other,
+                                                  &applied) == -EINVAL &&
+              vmaf_conversion_policy_assume_color(&ref, &dist, NULL,
+                                                  &applied) == -EINVAL);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_no_model_target_is_pass_through);
@@ -583,6 +637,7 @@ char *run_tests()
     mu_run_test(test_unspecified_source_with_target_is_an_error);
     mu_run_test(test_target_equal_compares_format_and_depth);
     mu_run_test(test_null_arguments_are_rejected);
+    mu_run_test(test_assume_color_needs_both_pictures_untagged);
     mu_run_test(test_scale_upscales_short_side_to_display);
     mu_run_test(test_scale_downscales_short_side_to_display);
     mu_run_test(test_scale_follows_source_orientation);
