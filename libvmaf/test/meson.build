@@ -127,6 +127,13 @@ test_cli_parse = executable('test_cli_parse',
     dependencies : getopt_dependency
 )
 
+test_y4m_input = executable('test_y4m_input',
+    ['test.c', 'test_y4m_input.c', '../tools/vidinput.c', '../tools/y4m_input.c', '../tools/yuv_input.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../tools/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+)
+test('test_y4m_input', test_y4m_input)
+
 test_psnr = executable('test_psnr',
     ['test.c', 'test_psnr.c', '../src/picture.c'],
     include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
