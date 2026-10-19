@@ -15,6 +15,7 @@ Also included in `libvmaf` are implementations of several other metrics: PSNR, P
 
 ## News
 
+- (2026-10-26) We are releasing an HDR version for VMAF-v1. Please refer to [models_v1.md](resource/doc/models_v1.md#hdr-models) for more information.
 - (2026-06) We are releasing a new set of VMAF models (**v1**). See [tech blog](https://medium.com/netflix-techblog/vmaf-v1-good-is-not-good-enough-60d7e4244ea8) for more information on v1. See [models_v1.md](resource/doc/models_v1.md) for details and model selection guidance. The previous generation of models (v0) remains documented in [models_v0.md](resource/doc/models_v0.md). We are open to user feedback on VMAF v1 and will continue to improve and update the models over time.
 - (2023-12-07) We are releasing `libvmaf v3.0.0`. It contains several optimizations and bug fixes, and a full removal of the APIs which were deprecated in `v2.0.0`.
 - (2021-12-15) We have added to CAMBI the `full_ref` input parameter to allow running CAMBI as a full-reference metric, taking into account the banding that was already present on the source. Check out the [usage](resource/doc/cambi.md) page.

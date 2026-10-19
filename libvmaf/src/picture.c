@@ -474,6 +474,9 @@ int vmaf_picture_convert_context_init(VmafPictureConvertContext **ctx,
     /* Match FFmpeg's zscale (agamma=1): exact transfer functions are ~20x
      * slower for PQ and change scores negligibly. */
     params.allow_approximate_gamma = 1;
+    /* Pin chroma to zimg's current default, so a change to that default
+     * cannot change scores. */
+    params.resample_filter_uv = ZIMG_RESIZE_BILINEAR;
     if (target->resample_filter != VMAF_RESAMPLE_DEFAULT)
         params.resample_filter = resample_filter_to_zimg(target->resample_filter);
 

@@ -56,6 +56,22 @@ extern const char src_vmaf_v1_0_16_hfr_5d0h_json[];
 extern const int src_vmaf_v1_0_16_hfr_5d0h_json_len;
 extern const char src_vmaf_v1_0_16_hfr_1d5h_2160_json[];
 extern const int src_vmaf_v1_0_16_hfr_1d5h_2160_json_len;
+extern const char src_hdr_vmaf_v1_1_8_3d0h_json[];
+extern const int src_hdr_vmaf_v1_1_8_3d0h_json_len;
+extern const char src_hdr_vmaf_v1_1_8_3d0h_2160_json[];
+extern const int src_hdr_vmaf_v1_1_8_3d0h_2160_json_len;
+extern const char src_hdr_vmaf_v1_1_8_5d0h_json[];
+extern const int src_hdr_vmaf_v1_1_8_5d0h_json_len;
+extern const char src_hdr_vmaf_v1_1_8_1d5h_2160_json[];
+extern const int src_hdr_vmaf_v1_1_8_1d5h_2160_json_len;
+extern const char src_hdr_vmaf_v1_1_8_hfr_3d0h_json[];
+extern const int src_hdr_vmaf_v1_1_8_hfr_3d0h_json_len;
+extern const char src_hdr_vmaf_v1_1_8_hfr_3d0h_2160_json[];
+extern const int src_hdr_vmaf_v1_1_8_hfr_3d0h_2160_json_len;
+extern const char src_hdr_vmaf_v1_1_8_hfr_5d0h_json[];
+extern const int src_hdr_vmaf_v1_1_8_hfr_5d0h_json_len;
+extern const char src_hdr_vmaf_v1_1_8_hfr_1d5h_2160_json[];
+extern const int src_hdr_vmaf_v1_1_8_hfr_1d5h_2160_json_len;
 #endif
 
 static const VmafBuiltInModel built_in_models[] = {
@@ -146,6 +162,49 @@ static const VmafBuiltInModel built_in_models[] = {
         .version = "vmaf_v1.0.16_hfr_1d5h_2160",
         .data = src_vmaf_v1_0_16_hfr_1d5h_2160_json,
         .data_len = &src_vmaf_v1_0_16_hfr_1d5h_2160_json_len,
+    },
+    /*
+     * HDR default (3H, matching vmaf_v0.6.1's 3H convention for SDR).
+     */
+    {
+        .version = "hdr_vmaf_v1.1.8_3d0h",
+        .data = src_hdr_vmaf_v1_1_8_3d0h_json,
+        .data_len = &src_hdr_vmaf_v1_1_8_3d0h_json_len,
+    },
+    {
+        .version = "hdr_vmaf_v1.1.8_3d0h_2160",
+        .data = src_hdr_vmaf_v1_1_8_3d0h_2160_json,
+        .data_len = &src_hdr_vmaf_v1_1_8_3d0h_2160_json_len,
+    },
+    {
+        .version = "hdr_vmaf_v1.1.8_5d0h",
+        .data = src_hdr_vmaf_v1_1_8_5d0h_json,
+        .data_len = &src_hdr_vmaf_v1_1_8_5d0h_json_len,
+    },
+    {
+        .version = "hdr_vmaf_v1.1.8_1d5h_2160",
+        .data = src_hdr_vmaf_v1_1_8_1d5h_2160_json,
+        .data_len = &src_hdr_vmaf_v1_1_8_1d5h_2160_json_len,
+    },
+    {
+        .version = "hdr_vmaf_v1.1.8_hfr_3d0h",
+        .data = src_hdr_vmaf_v1_1_8_hfr_3d0h_json,
+        .data_len = &src_hdr_vmaf_v1_1_8_hfr_3d0h_json_len,
+    },
+    {
+        .version = "hdr_vmaf_v1.1.8_hfr_3d0h_2160",
+        .data = src_hdr_vmaf_v1_1_8_hfr_3d0h_2160_json,
+        .data_len = &src_hdr_vmaf_v1_1_8_hfr_3d0h_2160_json_len,
+    },
+    {
+        .version = "hdr_vmaf_v1.1.8_hfr_5d0h",
+        .data = src_hdr_vmaf_v1_1_8_hfr_5d0h_json,
+        .data_len = &src_hdr_vmaf_v1_1_8_hfr_5d0h_json_len,
+    },
+    {
+        .version = "hdr_vmaf_v1.1.8_hfr_1d5h_2160",
+        .data = src_hdr_vmaf_v1_1_8_hfr_1d5h_2160_json,
+        .data_len = &src_hdr_vmaf_v1_1_8_hfr_1d5h_2160_json_len,
     },
 #endif
     { 0 }

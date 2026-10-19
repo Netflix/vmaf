@@ -51,6 +51,11 @@ static const VmafColor pq_ictcp_color = {
     "\"colorspace\": {\"range\": \"limited\", \"primaries\": \"bt2020\", "     \
     "\"trc\": \"smpte2084\", \"matrix\": \"ictcp\"}"
 
+/* the same colorspace as it appears in the shipped model files */
+#define COLORSPACE_ICTCP_JSON                                               \
+    "\"colorspace\": {\"range\": \"limited\", \"primaries\": \"bt2020\", " \
+    "\"trc\": \"smpte2084\", \"matrix\": \"ictcp\"}"
+
 /* the target's colorspace only: format and depth follow the source */
 static const char *target_color_only =
     "\"conversion_target\": {" COLORSPACE_ICTCP "}, ";
@@ -328,6 +333,117 @@ static char *test_target_bit_depth_converts_without_error()
     return NULL;
 }
 
+static bool file_contains(const char *path, const char *needle)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) return false;
+    fseek(f, 0, SEEK_END);
+    long n = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *buf = calloc(n + 1, 1);
+    bool found = buf && fread(buf, 1, n, f) == (size_t) n &&
+                 strstr(buf, needle);
+    fclose(f);
+    free(buf);
+    return found;
+}
+
+static const char *hdr_v118_models[] = {
+    "hdr_vmaf_v1.1.8/hdr_vmaf_v1.1.8_3d0h.json",
+    "hdr_vmaf_v1.1.8/hdr_vmaf_v1.1.8_3d0h_2160.json",
+    "hdr_vmaf_v1.1.8/hdr_vmaf_v1.1.8_5d0h.json",
+    "hdr_vmaf_v1.1.8/hdr_vmaf_v1.1.8_1d5h_2160.json",
+    "hdr_vmaf_v1.1.8_hfr/hdr_vmaf_v1.1.8_hfr_3d0h.json",
+    "hdr_vmaf_v1.1.8_hfr/hdr_vmaf_v1.1.8_hfr_3d0h_2160.json",
+    "hdr_vmaf_v1.1.8_hfr/hdr_vmaf_v1.1.8_hfr_5d0h.json",
+    "hdr_vmaf_v1.1.8_hfr/hdr_vmaf_v1.1.8_hfr_1d5h_2160.json",
+};
+
+/* convert `src` to the HDR-VMAF v1.1.8 target and check what comes out */
+static char *check_converts_to_v118_target(const VmafPicture *src)
+{
+    const VmafPictureConvertTarget target = {
+        .pix_fmt = VMAF_PIX_FMT_YUV420P,
+        .bpc = 16,
+        .color = pq_ictcp_color,
+    };
+    VmafPictureConvertContext *ctx = NULL;
+    VmafPicture out = { 0 };
+
+    mu_assert("convert context init failed",
+              !vmaf_picture_convert_context_init(&ctx, src, &target));
+    mu_assert("convert failed", !vmaf_picture_convert(ctx, &out, src));
+
+    mu_assert("output should be 4:2:0", out.pix_fmt == VMAF_PIX_FMT_YUV420P);
+    mu_assert("output should be 16-bit", out.bpc == 16);
+    mu_assert("output luma size should be unchanged",
+              out.w[0] == src->w[0] && out.h[0] == src->h[0]);
+    mu_assert("output chroma should be subsampled 2x2",
+              out.w[1] == (src->w[0] + 1) / 2 &&
+              out.h[1] == (src->h[0] + 1) / 2);
+    mu_assert("output should carry the target colorspace",
+              out.color.range == pq_ictcp_color.range &&
+              out.color.primaries == pq_ictcp_color.primaries &&
+              out.color.trc == pq_ictcp_color.trc &&
+              out.color.matrix == pq_ictcp_color.matrix);
+
+    /* 8- or 10-bit samples in a 16-bit container would stay below 1024 */
+    unsigned max_luma = 0;
+    for (unsigned y = 0; y < out.h[0]; y++) {
+        const uint16_t *row =
+            (const uint16_t *) ((const uint8_t *) out.data[0] +
+                                y * out.stride[0]);
+        for (unsigned x = 0; x < out.w[0]; x++)
+            if (row[x] > max_luma) max_luma = row[x];
+    }
+    mu_assert("output luma should use the 16-bit range", max_luma > 4095);
+
+    vmaf_picture_unref(&out);
+    vmaf_picture_convert_context_close(ctx);
+    return NULL;
+}
+
+static char *test_hdr_v118_target_is_yuv420p16le()
+{
+    /* every shipped v1.1.8 model declares the target converted to below */
+    for (unsigned i = 0; i < sizeof(hdr_v118_models) / sizeof(*hdr_v118_models);
+         i++)
+    {
+        char path[512];
+        snprintf(path, sizeof(path), "%s%s", JSON_MODEL_PATH,
+                 hdr_v118_models[i]);
+        mu_assert("v1.1.8 model should declare 4:2:0",
+                  file_contains(path, "\"pixel_format\": \"420\""));
+        mu_assert("v1.1.8 model should declare 16 bits",
+                  file_contains(path, "\"bit_depth\": 16"));
+        mu_assert("v1.1.8 model should declare PQ/BT.2020/ICtCp",
+                  file_contains(path, COLORSPACE_ICTCP_JSON));
+    }
+
+    const struct {
+        enum VmafPixelFormat pix_fmt;
+        unsigned bpc;
+        const VmafColor *color;
+    } sources[] = {
+        { VMAF_PIX_FMT_YUV420P, 10, &pq_bt2020nc_color }, /* depth, matrix */
+        { VMAF_PIX_FMT_YUV444P, 10, &pq_ictcp_color },    /* subsampling, depth */
+        { VMAF_PIX_FMT_YUV420P, 16, &pq_bt2020nc_color }, /* matrix only */
+    };
+    for (unsigned i = 0; i < sizeof(sources) / sizeof(*sources); i++) {
+        VmafPicture src;
+        mu_assert("alloc source picture failed",
+                  !vmaf_picture_alloc(&src, sources[i].pix_fmt, sources[i].bpc,
+                                      W, H));
+        fill_picture(&src, 0, 0);
+        src.color = *sources[i].color;
+        char *msg = check_converts_to_v118_target(&src);
+        vmaf_picture_unref(&src);
+        if (msg) return msg;
+    }
+
+    return NULL;
+}
+
 static char *test_models_with_different_formats_cannot_share_a_run()
 {
     VmafContext *vmaf;
@@ -550,6 +666,7 @@ char *run_tests()
 #ifdef HAVE_ZIMG
     mu_run_test(test_target_pixel_format_is_applied);
     mu_run_test(test_target_bit_depth_converts_without_error);
+    mu_run_test(test_hdr_v118_target_is_yuv420p16le);
     mu_run_test(test_models_with_different_formats_cannot_share_a_run);
 #endif
     mu_run_test(test_untagged_source_with_target_is_rejected);

@@ -395,6 +395,33 @@ static char *test_default_model_is_sdr_without_color_metadata()
     return NULL;
 }
 
+static char *test_default_model_is_hdr_for_pq_source()
+{
+    char *argv[29] = {"vmaf", "-r", "ref.yuv", "-d", "dis.yuv", "-w", "16", "-h", "16", "-p", "420", "-b", "10",
+                      "--color_range_ref", "limited",
+                      "--color_range_dist", "limited",
+                      "--color_primaries_ref", "bt2020",
+                      "--color_primaries_dist", "bt2020",
+                      "--color_trc_ref", "pq",
+                      "--color_trc_dist", "pq",
+                      "--color_matrix_ref", "bt2020nc",
+                      "--color_matrix_dist", "bt2020nc"};
+    int argc = 29;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: no model given should insert exactly one default",
+              settings.model_cnt == 1);
+    mu_assert("cli_parse: default model for a fully-specified PQ source "
+              "should be the HDR default",
+              !strcmp(settings.model_config[0].version,
+                      "hdr_vmaf_v1.1.8_3d0h"));
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+
+    return NULL;
+}
+
 static char *test_default_model_is_sdr_for_bt709_source()
 {
     char *argv[29] = {"vmaf", "-r", "ref.yuv", "-d", "dis.yuv", "-w", "16", "-h", "16", "-p", "420", "-b", "8",
@@ -419,6 +446,101 @@ static char *test_default_model_is_sdr_for_bt709_source()
     return NULL;
 }
 
+static char *test_explicit_model_overrides_hdr_default()
+{
+    char *argv[31] = {"vmaf", "-r", "ref.yuv", "-d", "dis.yuv", "-w", "16", "-h", "16", "-p", "420", "-b", "10",
+                      "--color_range_ref", "limited",
+                      "--color_range_dist", "limited",
+                      "--color_primaries_ref", "bt2020",
+                      "--color_primaries_dist", "bt2020",
+                      "--color_trc_ref", "pq",
+                      "--color_trc_dist", "pq",
+                      "--color_matrix_ref", "bt2020nc",
+                      "--color_matrix_dist", "bt2020nc",
+                      "-m", "version=vmaf_v0.6.1"};
+    int argc = 31;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: an explicitly given model should not be replaced "
+              "by the HDR default",
+              settings.model_cnt == 1 &&
+              !strcmp(settings.model_config[0].version, "vmaf_v0.6.1"));
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+
+    return NULL;
+}
+static char *test_default_model_is_hdr_for_per_side_pq_flags()
+{
+    char *argv[29] = {"vmaf", "-r", "ref.yuv", "-d", "dis.yuv",
+                      "-w", "16", "-h", "16", "-p", "420", "-b", "10",
+                      "--color_range_ref", "limited",
+                      "--color_primaries_ref", "bt2020",
+                      "--color_trc_ref", "pq",
+                      "--color_matrix_ref", "bt2020nc",
+                      "--color_range_dist", "limited",
+                      "--color_primaries_dist", "bt2020",
+                      "--color_trc_dist", "pq",
+                      "--color_matrix_dist", "bt2020nc"};
+    int argc = 29;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: PQ given through the per-input flags should "
+              "select the HDR default",
+              !strcmp(settings.model_config[0].version,
+                      "hdr_vmaf_v1.1.8_3d0h"));
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+
+    return NULL;
+}
+
+static char *test_default_model_is_sdr_when_inputs_differ()
+{
+    char *argv[29] = {"vmaf", "-r", "ref.yuv", "-d", "dis.yuv",
+                      "-w", "16", "-h", "16", "-p", "420", "-b", "10",
+                      "--color_range_ref", "limited",
+                      "--color_primaries_ref", "bt2020",
+                      "--color_trc_ref", "pq",
+                      "--color_matrix_ref", "bt2020nc",
+                      "--color_range_dist", "limited",
+                      "--color_primaries_dist", "bt709",
+                      "--color_trc_dist", "bt709",
+                      "--color_matrix_dist", "bt709"};
+    int argc = 29;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: a PQ reference with a non-PQ distorted input "
+              "should not select the HDR default",
+              !strcmp(settings.model_config[0].version, "vmaf_v0.6.1"));
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+
+    return NULL;
+}
+
+static char *test_default_model_is_sdr_when_one_input_unspecified()
+{
+    char *argv[21] = {"vmaf", "-r", "ref.yuv", "-d", "dis.yuv",
+                      "-w", "16", "-h", "16", "-p", "420", "-b", "10",
+                      "--color_range_ref", "limited",
+                      "--color_primaries_ref", "bt2020",
+                      "--color_trc_ref", "pq",
+                      "--color_matrix_ref", "bt2020nc"};
+    int argc = 21;
+    CLISettings settings;
+    optind = 1;
+    cli_parse(argc, argv, &settings);
+    mu_assert("cli_parse: HDR default needs both inputs to be specified",
+              !strcmp(settings.model_config[0].version, "vmaf_v0.6.1"));
+    cli_free(&settings);
+    cli_free_dicts(&settings);
+
+    return NULL;
+}
 #endif
 
 
@@ -442,7 +564,12 @@ char *run_tests()
     mu_run_test(test_input_size_overrides_one_input);
 #if VMAF_BUILT_IN_MODELS
     mu_run_test(test_default_model_is_sdr_without_color_metadata);
+    mu_run_test(test_default_model_is_hdr_for_pq_source);
     mu_run_test(test_default_model_is_sdr_for_bt709_source);
+    mu_run_test(test_explicit_model_overrides_hdr_default);
+    mu_run_test(test_default_model_is_hdr_for_per_side_pq_flags);
+    mu_run_test(test_default_model_is_sdr_when_inputs_differ);
+    mu_run_test(test_default_model_is_sdr_when_one_input_unspecified);
 #endif
     return NULL;
 }
