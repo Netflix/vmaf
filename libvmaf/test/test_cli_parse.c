@@ -17,7 +17,13 @@
  */
 
 #include <getopt.h>
+#include <stdio.h>
 #include <string.h>
+
+#ifndef _WIN32
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 #include "test.h"
 
@@ -375,6 +381,41 @@ static char *test_one_input_can_be_left_unspecified()
     return NULL;
 }
 
+#ifndef _WIN32
+/* Runs cli_parse() in a child process; returns its exit status, or -1 if it
+ * did not exit normally (for example, if it aborted). */
+static int cli_parse_exit_status(int argc, char **argv)
+{
+    fflush(stderr);
+    const pid_t pid = fork();
+    if (pid < 0) return -1;
+    if (pid == 0) {
+        if (!freopen("/dev/null", "w", stderr)) _exit(2);
+        CLISettings settings;
+        optind = 1;
+        cli_parse(argc, argv, &settings);
+        _exit(0);
+    }
+    int status;
+    if (waitpid(pid, &status, 0) != pid) return -1;
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+}
+
+static char *test_invalid_unsigned_option_prints_usage()
+{
+    const char *opts[] = { "--threads", "--subsample", "--cpumask" };
+    for (unsigned i = 0; i < sizeof(opts) / sizeof(opts[0]); i++) {
+        char *argv[7] = {"vmaf", "-r", "ref.y4m", "-d", "dis.y4m",
+                         (char *) opts[i], "abc"};
+        mu_assert("cli_parse: a non-integer value for --threads, --subsample "
+                  "or --cpumask should exit through usage()",
+                  cli_parse_exit_status(7, argv) == 1);
+    }
+
+    return NULL;
+}
+#endif
+
 #if VMAF_BUILT_IN_MODELS
 static char *test_default_model_is_sdr_without_color_metadata()
 {
@@ -440,6 +481,9 @@ char *run_tests()
     mu_run_test(test_input_sizes_default_to_width_and_height);
     mu_run_test(test_input_sizes_can_differ);
     mu_run_test(test_input_size_overrides_one_input);
+#ifndef _WIN32
+    mu_run_test(test_invalid_unsigned_option_prints_usage);
+#endif
 #if VMAF_BUILT_IN_MODELS
     mu_run_test(test_default_model_is_sdr_without_color_metadata);
     mu_run_test(test_default_model_is_sdr_for_bt709_source);
