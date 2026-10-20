@@ -90,13 +90,13 @@ jobs:
       - uses: actions/checkout@v7
       - name: Run meson
         run: |
-          meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install -Denable_float=true ${CROSS:+--cross-file $CROSS}
+          meson setup builddir --buildtype release --prefix $PWD/install -Denable_float=true ${CROSS:+--cross-file $CROSS}
       - name: Run ninja
         run: |
-          sudo ninja -vC libvmaf/build install
+          sudo ninja -vC builddir install
       - name: Run tests
         run: |
-          sudo ninja -vC libvmaf/build test
+          sudo ninja -vC builddir test
       - name: Set up tox
         run: |
           mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache

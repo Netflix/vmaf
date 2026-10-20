@@ -22,9 +22,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "libvmaf/model.h"
-#include "libvmaf/picture.h"
-#include "libvmaf/feature.h"
+#include <libvmaf/model.h>
+#include <libvmaf/picture.h>
+#include <libvmaf/feature.h>
 
 #ifdef __cplusplus
 extern "C" {
