@@ -17,7 +17,7 @@ jobs:
             CC: ccache gcc
             CXX: ccache g++
           - name: linux-x86_64-gcc-9
-            os: ubuntu-latest
+            os: ubuntu-22.04
             CC: ccache gcc-9
             CXX: ccache g++-9
           - name: linux-x86_64-clang
@@ -59,7 +59,7 @@ jobs:
           pip install meson
 
       - name: Install dependencies (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo -E apt-get -yq install ccache ninja-build libomp-dev
@@ -102,7 +102,7 @@ jobs:
           mkdir -p ~/.ccache && sudo chown -R $(whoami) ~/.ccache
           pip install tox
       - name: Run tox tests (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-22.04'
         run: |
           tox -c python
       - name: Run tox tests (mac)
