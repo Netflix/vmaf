@@ -16,6 +16,11 @@ jobs:
             os: ubuntu-latest
             CC: ccache gcc
             CXX: ccache g++
+          - name: linux-x86_64-gcc-zimg
+            os: ubuntu-latest
+            CC: ccache gcc
+            CXX: ccache g++
+            ZIMG: -Denable_zimg=true
           - name: linux-x86_64-gcc-9
             os: ubuntu-22.04
             CC: ccache gcc-9
@@ -48,6 +53,7 @@ jobs:
       CC: ${{ matrix.CC }}
       CXX: ${{ matrix.CXX }}
       CROSS: ${{ matrix.CROSS }}
+      ZIMG: ${{ matrix.ZIMG }}
     steps:
       - name: Setup python
         uses: actions/setup-python@v7
@@ -74,6 +80,9 @@ jobs:
           if [ -n "$CROSS" ]; then
             sudo -E apt-get -yq install gcc-multilib g++-multilib
           fi
+          if [ -n "$ZIMG" ]; then
+            sudo -E apt-get -yq install pkg-config libzimg-dev
+          fi
           $CC --version
           meson --version
           ccache --version
@@ -90,7 +99,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: Run meson
         run: |
-          meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install -Denable_float=true ${CROSS:+--cross-file $CROSS}
+          meson setup libvmaf libvmaf/build --buildtype release --prefix $PWD/install -Denable_float=true $ZIMG ${CROSS:+--cross-file $CROSS}
       - name: Run ninja
         run: |
           sudo ninja -vC libvmaf/build install
@@ -133,7 +142,7 @@ jobs:
           name: vmaf-${{ matrix.name }}
           path: ${{ steps.package.outputs.zip_path }}
       - name: Upload vmaf
-        if: steps.get_info.outputs.upload_url != 'null'
+        if: steps.get_info.outputs.upload_url != 'null' && !matrix.ZIMG
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
