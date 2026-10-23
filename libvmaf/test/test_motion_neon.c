@@ -74,9 +74,8 @@ static int compute_motion_sad(unsigned w, unsigned h,
 
 static char *test_motion_neon_matches_scalar()
 {
-    // w/h < 3 excluded: mirror()'s radius-2 reflection goes out of bounds there
-    // (same bug in scalar/AVX2), so those sizes compare garbage against garbage.
     static const struct { unsigned w, h; } sizes[] = {
+        {1, 1}, {2, 2}, {1, 8}, {8, 1}, {2, 8}, {8, 2},
         {3, 3}, {4, 4}, {5, 5}, {7, 7}, {9, 9},
         {15, 15}, {16, 16}, {17, 17}, {20, 4}, {33, 9}, {64, 48}, {65, 63},
     };
