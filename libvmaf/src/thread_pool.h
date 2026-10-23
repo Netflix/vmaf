@@ -28,6 +28,8 @@ typedef struct VmafThreadPoolConfig {
     void (*thread_data_free)(void *thread_data);
 } VmafThreadPoolConfig;
 
+/* On allocation or worker-creation failure, return a negative error and
+ * release any partially initialized pool; *tpool is NULL. */
 int vmaf_thread_pool_create(VmafThreadPool **tpool, VmafThreadPoolConfig cfg);
 
 int vmaf_thread_pool_enqueue(VmafThreadPool *pool,
