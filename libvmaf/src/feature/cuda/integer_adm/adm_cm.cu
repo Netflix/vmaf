@@ -125,13 +125,13 @@ struct WarpShift
 };
 
 template <int rows_per_thread>
-__device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int w, int top,
+__device__ __forceinline__ void adm_cm_line_kernel(const AdmBufferCuda &buf, int h, int w, int top,
         int bottom, int left, int right,
         int start_row, int end_row, int start_col,
         int end_col, int src_stride,
         int csf_a_stride, int buffer_h,
         int buffer_stride, int32_t *accum_per_block,
-        AdmFixedParametersCuda params,
+        const AdmFixedParametersCuda &params,
         // reduce
         int scale, int64_t* accum_global,
 
@@ -148,7 +148,7 @@ __device__ __forceinline__ void adm_cm_line_kernel(AdmBufferCuda buf, int h, int
     int16_t *const *angles = csf_a->bands + 1;
     int16_t *const *flt_angles = csf_f->bands + 1;
 
-    uint32_t *i_rfactor = params.i_rfactor;
+    const uint32_t *i_rfactor = params.i_rfactor;
 
     int cta_y = (blockDim.y * blockIdx.y + threadIdx.y) * rows_per_thread;
     int cta_x = blockDim.x * blockIdx.x + threadIdx.x;
