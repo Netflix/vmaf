@@ -1064,7 +1064,9 @@ static int speed_init_dimensions(SpeedDimensions *dim, int w, int h,
 int speed_init(SpeedState *s, SpeedOptions *opt, int w, int h)
 {
     SpeedDimensions *dim = &s->dimensions;
-    speed_init_dimensions(dim, w, h, opt->speed_prescale);
+    int err = speed_init_dimensions(dim, w, h, opt->speed_prescale);
+    if (err)
+        return err;
 
     // Check that the kernelscale is valid
     if (!vif_validate_kernelscale(opt->speed_kernelscale)) {
@@ -1330,7 +1332,9 @@ static int init_chroma(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         .speed_nn_floor = s->speed_chroma_nn_floor,
         .speed_weight_var_mode = s->speed_weight_var_mode,
     };
-    speed_init(&s->speed_state, &s->speed_options, w, h);
+    int err = speed_init(&s->speed_state, &s->speed_options, w, h);
+    if (err)
+        return err;
     SpeedDimensions dim = s->speed_state.dimensions;
 
     s->feature_name_dict =
@@ -1563,7 +1567,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         .speed_nn_floor = s->speed_temporal_nn_floor,
     };
 
-    speed_init(&s->speed_state, &s->speed_options, w, h);
+    int err = speed_init(&s->speed_state, &s->speed_options, w, h);
+    if (err)
+        return err;
 
     size_t float_stride = s->speed_state.float_stride;
     size_t frame_size = float_stride * h;
