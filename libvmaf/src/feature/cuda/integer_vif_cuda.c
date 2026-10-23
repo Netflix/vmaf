@@ -43,6 +43,7 @@
 typedef struct VifStateCuda {
     VifBufferCuda buf;
     CUevent event, finished;
+    CUmodule filter1d_module;
     CUstream str, host_stream;
     bool debug;
     double vif_enhn_gain_limit;
@@ -103,28 +104,27 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cu_f, cuEventCreate(&s->event, CU_EVENT_DEFAULT));
     CHECK_CUDA(cu_f, cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
     // make this static
-    CUmodule filter1d_module;
-    CHECK_CUDA(cu_f, cuModuleLoadData(&filter1d_module, filter1d_ptx));
+    CHECK_CUDA(cu_f, cuModuleLoadData(&s->filter1d_module, filter1d_ptx));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_filter1d_8_vertical_kernel_uint32_t_17_9,
-                filter1d_module, "filter1d_8_vertical_kernel_uint32_t_17_9"));
+                s->filter1d_module, "filter1d_8_vertical_kernel_uint32_t_17_9"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_filter1d_8_horizontal_kernel_2_17_9,
-                filter1d_module, "filter1d_8_horizontal_kernel_2_17_9"));
+                s->filter1d_module, "filter1d_8_horizontal_kernel_2_17_9"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_filter1d_16_vertical_kernel_uint2_17_9_0,
-                filter1d_module, "filter1d_16_vertical_kernel_uint2_17_9_0"));
+                s->filter1d_module, "filter1d_16_vertical_kernel_uint2_17_9_0"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_filter1d_16_vertical_kernel_uint2_9_5_1,
-                filter1d_module, "filter1d_16_vertical_kernel_uint2_9_5_1"));
+                s->filter1d_module, "filter1d_16_vertical_kernel_uint2_9_5_1"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_filter1d_16_vertical_kernel_uint2_5_3_2,
-                filter1d_module, "filter1d_16_vertical_kernel_uint2_5_3_2"));
+                s->filter1d_module, "filter1d_16_vertical_kernel_uint2_5_3_2"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_filter1d_16_vertical_kernel_uint2_3_0_3,
-                filter1d_module, "filter1d_16_vertical_kernel_uint2_3_0_3"));
+                s->filter1d_module, "filter1d_16_vertical_kernel_uint2_3_0_3"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_filter1d_16_horizontal_kernel_2_17_9_0,
-                filter1d_module, "filter1d_16_horizontal_kernel_2_17_9_0"));
+                s->filter1d_module, "filter1d_16_horizontal_kernel_2_17_9_0"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_filter1d_16_horizontal_kernel_2_9_5_1,
-                filter1d_module, "filter1d_16_horizontal_kernel_2_9_5_1"));
+                s->filter1d_module, "filter1d_16_horizontal_kernel_2_9_5_1"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_filter1d_16_horizontal_kernel_2_5_3_2,
-                filter1d_module, "filter1d_16_horizontal_kernel_2_5_3_2"));
+                s->filter1d_module, "filter1d_16_horizontal_kernel_2_5_3_2"));
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_filter1d_16_horizontal_kernel_2_3_0_3,
-                filter1d_module, "filter1d_16_horizontal_kernel_2_3_0_3"));
+                s->filter1d_module, "filter1d_16_horizontal_kernel_2_3_0_3"));
 
     CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
 
@@ -499,9 +499,16 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
 static int close_fex_cuda(VmafFeatureExtractor *fex)
 {
     VifStateCuda *s = fex->priv;
-    CHECK_CUDA(fex->cu_state->f, cuStreamSynchronize(s->str));
-    CHECK_CUDA(fex->cu_state->f, cuEventDestroy(s->event));
-    CHECK_CUDA(fex->cu_state->f, cuEventDestroy(s->finished));
+    CudaFunctions *cu_f = fex->cu_state->f;
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
+    CHECK_CUDA(cu_f, cuEventDestroy(s->event));
+    CHECK_CUDA(cu_f, cuEventDestroy(s->finished));
+    CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
+    CHECK_CUDA(cu_f, cuStreamDestroy(s->host_stream));
+    CHECK_CUDA(cu_f, cuStreamDestroy(s->str));
+    CHECK_CUDA(cu_f, cuModuleUnload(s->filter1d_module));
+    CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
 
     int ret = 0;
     if (s->buf.data) {
