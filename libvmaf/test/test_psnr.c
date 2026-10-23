@@ -92,10 +92,87 @@ static char *test_16b_large_diff()
     return NULL;
 }
 
+static int get_apsnr(VmafFeatureCollector *fc, const char *name, double *score)
+{
+    return vmaf_feature_collector_get_aggregate(fc, name, score);
+}
+
+/* Identical frames leave every sse at zero. The aggregate must report the
+ * same cap the per-frame psnr reports, not log10(0) clipped to a ceiling
+ * that psnr never reaches. */
+static char *test_apsnr_zero_sse()
+{
+    VmafFeatureCollector *fc;
+    int err = vmaf_feature_collector_init(&fc);
+    mu_assert("vmaf_feature_collector_init error", !err);
+
+    PsnrState psnr_state = {
+        .enable_chroma = true,
+        .enable_apsnr = true,
+        .peak = 255,
+        .psnr_max = { 60., 60., 60. },
+        .apsnr = {
+            .sse = { 0, 0, 0 },
+            .n_pixels = { 1920 * 1080, 960 * 540, 960 * 540 },
+        },
+    };
+    VmafFeatureExtractor fex = { .priv = &psnr_state };
+
+    err = flush(&fex, fc);
+    mu_assert("flush error", err >= 0);
+
+    double y, cb, cr;
+    err = get_apsnr(fc, "apsnr_y", &y);
+    err |= get_apsnr(fc, "apsnr_cb", &cb);
+    err |= get_apsnr(fc, "apsnr_cr", &cr);
+    mu_assert("apsnr aggregates missing", !err);
+    mu_assert("apsnr_y of identical frames should be the psnr cap", almost_equal(y, 60.));
+    mu_assert("apsnr_cb of identical frames should be the psnr cap", almost_equal(cb, 60.));
+    mu_assert("apsnr_cr of identical frames should be the psnr cap", almost_equal(cr, 60.));
+
+    vmaf_feature_collector_destroy(fc);
+    return NULL;
+}
+
+/* With enable_chroma=false only luma is accumulated; the chroma aggregates
+ * must be absent, not log10(0) = -inf. */
+static char *test_apsnr_luma_only()
+{
+    VmafFeatureCollector *fc;
+    int err = vmaf_feature_collector_init(&fc);
+    mu_assert("vmaf_feature_collector_init error", !err);
+
+    PsnrState psnr_state = {
+        .enable_chroma = false,
+        .enable_apsnr = true,
+        .peak = 255,
+        .psnr_max = { 60., 60., 60. },
+        .apsnr = {
+            .sse = { 1000000, 0, 0 },
+            .n_pixels = { 1920 * 1080, 0, 0 },
+        },
+    };
+    VmafFeatureExtractor fex = { .priv = &psnr_state };
+
+    err = flush(&fex, fc);
+    mu_assert("flush error", err >= 0);
+
+    double y, cb, cr;
+    err = get_apsnr(fc, "apsnr_y", &y);
+    mu_assert("apsnr_y missing", !err);
+    mu_assert("apsnr_y should be finite", isfinite(y));
+    mu_assert("apsnr_cb should not be published", get_apsnr(fc, "apsnr_cb", &cb) != 0);
+    mu_assert("apsnr_cr should not be published", get_apsnr(fc, "apsnr_cr", &cr) != 0);
+
+    vmaf_feature_collector_destroy(fc);
+    return NULL;
+}
 
 char *run_tests()
 {
     mu_run_test(test_16b_large_diff);
+    mu_run_test(test_apsnr_zero_sse);
+    mu_run_test(test_apsnr_luma_only);
 
     return NULL;
 }
