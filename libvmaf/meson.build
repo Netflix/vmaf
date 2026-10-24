@@ -28,9 +28,13 @@ elif host_machine.system() == 'darwin'
     add_project_arguments('-D_DARWIN_C_SOURCE', language: ['c', 'cpp'])
 endif
 
-# M_PI, M_E, etc are only defined in math.h if _USE_MATH_DEFINES is defined before including math.h
-if cc.get_id() == 'msvc'
+# M_PI and the other math.h constants exist in the Windows SDK only
+# when this is defined before the header. clang-cl uses those headers.
+# Meson reports that compiler as clang-cl, not msvc. The same SDK marks
+# strncpy and strcpy deprecated unless the CRT warning is disabled.
+if cc.get_id() == 'msvc' or cc.get_id() == 'clang-cl'
 	add_project_arguments('-D_USE_MATH_DEFINES', language: ['c', 'cpp'])
+	add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: ['c', 'cpp'])
 endif
 
 # Header checks

@@ -8,7 +8,7 @@ cuda_dir = './cuda/'
 
 vmaf_base_include = include_directories('./', './feature', './feature/common', '../include')
 
-if cc.get_id() != 'msvc'
+if cc.get_id() != 'msvc' and cc.get_id() != 'clang-cl'
     vmaf_cflags_common = [
         '-pedantic',
         '-DOC_NEW_STYLE_INCLUDES',
