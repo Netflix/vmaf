@@ -619,7 +619,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         for (int scale = 0; scale < NUM_SCALES; scale++) {
             snprintf(path, sizeof(path), "%s%ccambi_heatmap_scale_%d_%dx%d_16b.gray",
                      s->heatmaps_path, PATH_SEPARATOR, scale, scaled_w, scaled_h);
-            s->heatmaps_files[scale] = fopen(path, "w");
+            /* The heatmap is a raw uint16 stream; text mode would translate
+             * every 0x0A byte into 0x0D 0x0A on Windows and corrupt it. */
+            s->heatmaps_files[scale] = fopen(path, "wb");
             if (!s->heatmaps_files[scale]) {
                 vmaf_log(VMAF_LOG_LEVEL_ERROR,
                 "cambi: could not open heatmaps_path: %s\n", path);
