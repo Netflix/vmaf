@@ -939,7 +939,9 @@ static int translate_picture_host(VmafContext *vmaf, VmafPicture *pic,
         if (!vmaf->cuda.state.ctx)
             return -EINVAL;
         err |= vmaf_ring_buffer_fetch_next_picture(vmaf->cuda.ring_buffer, pic_device);
-        err |= vmaf_cuda_picture_upload_async(pic_device, pic, 0x1);
+        err |= vmaf_cuda_picture_upload_async(pic_device, pic,
+                vmaf_feature_extractor_upload_plane_mask(
+                    &vmaf->registered_feature_extractors));
         if (err) {
             vmaf_log(VMAF_LOG_LEVEL_ERROR,
                     "problem moving host pic into cuda device buffer\n");
