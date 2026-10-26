@@ -2,15 +2,34 @@ from __future__ import absolute_import
 
 import unittest
 
+import subprocess
+
+from vmaf import ExternalProgram
 from vmaf.config import VmafConfig
 from vmaf.core.asset import Asset
 from vmaf.core.quality_runner import VmafexecQualityRunner
 from vmaf.tools.misc import MyTestCase
 
-from test.testutil import set_default_576_324_videos_for_testing
+from test.testutil import set_default_576_324_videos_for_testing, set_default_576_324_hdr_videos_for_testing
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
+
+
+def hdr_conversion_available():
+    # The HDR model needs a vmaf built with zimg (picture conversion); a build
+    # without it exits non-zero naming it.
+    ref_path, _, _, _ = set_default_576_324_hdr_videos_for_testing()
+    cmd = [ExternalProgram.vmafexec, '--reference', ref_path, '--distorted', ref_path,
+           '--width', '576', '--height', '324', '--pixel_format', '420', '--bitdepth', '10',
+           '--model', 'path=' + VmafConfig.model_path('hdr_vmaf_v1.1.8', 'hdr_vmaf_v1.1.8_3d0h.json'),
+           '--output', '/dev/null', '--xml']
+    for suffix in ('ref', 'dist'):
+        cmd += ['--color_range_' + suffix, 'limited', '--color_primaries_' + suffix, 'bt2020',
+                '--color_trc_' + suffix, 'smpte2084', '--color_matrix_' + suffix, 'bt2020nc']
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    return not (proc.returncode != 0 and
+                ('built without zimg' in proc.stderr or 'could not initialize feature extractor' in proc.stderr))
 
 
 class VmafV1QualityRunnerTest(MyTestCase):
@@ -42,6 +61,43 @@ class VmafV1QualityRunnerTest(MyTestCase):
         self.assertAlmostEqual(results[0]['VMAFEXEC_speed_chroma_uv_mxv_45_nnf_0.1_snn_0.19_wvm_5_score'],
                                6.141235312500001, places=5)
         self.assertAlmostEqual(results[0]['VMAFEXEC_score'], 82.81605935416667, places=4)
+
+    def _run_hdr_exec(self, matrix):
+        if not hdr_conversion_available():
+            self.skipTest('vmaf was built without zimg support')
+        _, _, asset, _ = set_default_576_324_hdr_videos_for_testing()
+        color = {'range': 'limited', 'primaries': 'bt2020', 'trc': 'smpte2084', 'matrix': matrix}
+        self.runner = VmafexecQualityRunner(
+            [asset],
+            None, fifo_mode=True,
+            delete_workdir=True,
+            result_store=None,
+            optional_dict={'model_filepath': VmafConfig.model_path('hdr_vmaf_v1.1.8', 'hdr_vmaf_v1.1.8_3d0h.json'),
+                           'color_ref': color, 'color_dist': color}
+        )
+        self.runner.run()
+        return self.runner.results[0]
+
+    def test_hdr_v118_3d0h_converts_bt2020nc_to_ictcp_exec(self):
+        result = self._run_hdr_exec('bt2020nc')
+        # Regression values for the current conversion (zimg with approximate gamma, as
+        # zscale does by default), with the 576x324 fixture upscaled to the model's 1080
+        # display resolution. Not cross-checked against FFmpeg zscale at this size.
+        # The tolerance is loose on purpose: the colorspace conversion runs in zimg, and
+        # its float results depend on how zimg was compiled. The baseline build (and zimg
+        # 3.0.3) gives 96.981015 / 0.783166; Ubuntu 26.04's x86-64-v3 package (FMA) gives
+        # 96.979261 / 0.783669.
+        self.assertAlmostEqual(result['VMAFEXEC_score'], 96.981015, places=2)
+        self.assertAlmostEqual(result['VMAFEXEC_speed_chroma_uv_mxv_45_nnf_0.1_psm_bilinear_snn_0.19_wvm_5_score'],
+                               0.783166, places=2)
+
+    def test_hdr_v118_3d0h_ictcp_tag_skips_colorspace_conversion_exec(self):
+        # Same BT.2020nc samples mislabeled as ICtCp: only the bit depth is converted,
+        # (and the size scaled), so the values differ from the converted ones above.
+        result = self._run_hdr_exec('ictcp')
+        self.assertAlmostEqual(result['VMAFEXEC_score'], 97.201193, places=6)
+        self.assertAlmostEqual(result['VMAFEXEC_speed_chroma_uv_mxv_45_nnf_0.1_psm_bilinear_snn_0.19_wvm_5_score'],
+                               0.618508, places=6)
 
     def test_v1016_integer_hfr_1080_3d0H_exec(self):
         _, _, asset, asset_original = set_default_576_324_videos_for_testing()

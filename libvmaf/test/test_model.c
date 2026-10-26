@@ -556,6 +556,79 @@ static char *test_model_conversion_target_resolution()
     return NULL;
 }
 
+static const struct {
+    const char *version;
+    const char *path;
+    unsigned display;
+} hdr_v118_models[] = {
+    { "hdr_vmaf_v1.1.8_3d0h",
+      "hdr_vmaf_v1.1.8/hdr_vmaf_v1.1.8_3d0h.json", 1080 },
+    { "hdr_vmaf_v1.1.8_3d0h_2160",
+      "hdr_vmaf_v1.1.8/hdr_vmaf_v1.1.8_3d0h_2160.json", 2160 },
+    { "hdr_vmaf_v1.1.8_5d0h",
+      "hdr_vmaf_v1.1.8/hdr_vmaf_v1.1.8_5d0h.json", 1080 },
+    { "hdr_vmaf_v1.1.8_1d5h_2160",
+      "hdr_vmaf_v1.1.8/hdr_vmaf_v1.1.8_1d5h_2160.json", 2160 },
+    { "hdr_vmaf_v1.1.8_hfr_3d0h",
+      "hdr_vmaf_v1.1.8_hfr/hdr_vmaf_v1.1.8_hfr_3d0h.json", 1080 },
+    { "hdr_vmaf_v1.1.8_hfr_3d0h_2160",
+      "hdr_vmaf_v1.1.8_hfr/hdr_vmaf_v1.1.8_hfr_3d0h_2160.json", 2160 },
+    { "hdr_vmaf_v1.1.8_hfr_5d0h",
+      "hdr_vmaf_v1.1.8_hfr/hdr_vmaf_v1.1.8_hfr_5d0h.json", 1080 },
+    { "hdr_vmaf_v1.1.8_hfr_1d5h_2160",
+      "hdr_vmaf_v1.1.8_hfr/hdr_vmaf_v1.1.8_hfr_1d5h_2160.json", 2160 },
+};
+
+static char *check_hdr_v118_target(const VmafModel *model, unsigned display)
+{
+    mu_assert("v1.1.8 model should declare a conversion target",
+              model->conversion_target.enabled);
+    mu_assert("v1.1.8 target should be 4:2:0",
+              model->conversion_target.pix_fmt == VMAF_PIX_FMT_YUV420P);
+    mu_assert("v1.1.8 target should be 16-bit",
+              model->conversion_target.bpc == 16);
+    mu_assert("v1.1.8 target range",
+              model->conversion_target.color.range == VMAF_COLOR_RANGE_LIMITED);
+    mu_assert("v1.1.8 target primaries",
+              model->conversion_target.color.primaries ==
+              VMAF_COLOR_PRIMARIES_BT2020);
+    mu_assert("v1.1.8 target trc",
+              model->conversion_target.color.trc == VMAF_COLOR_TRC_SMPTE2084);
+    mu_assert("v1.1.8 target matrix",
+              model->conversion_target.color.matrix == VMAF_COLOR_MATRIX_ICTCP);
+    mu_assert("v1.1.8 target display resolution",
+              model->conversion_target.display_resolution == display);
+    return NULL;
+}
+
+static char *test_shipped_hdr_v118_models_declare_yuv420p16le_target()
+{
+    for (unsigned i = 0; i < sizeof(hdr_v118_models) / sizeof(*hdr_v118_models);
+         i++)
+    {
+        char path[512];
+        snprintf(path, sizeof(path), "%s%s", JSON_MODEL_PATH,
+                 hdr_v118_models[i].path);
+        VmafModel *model;
+        VmafModelConfig cfg = { 0 };
+        int err = vmaf_model_load_from_path(&model, &cfg, path);
+        mu_assert("problem loading shipped v1.1.8 model from path", !err);
+        char *msg = check_hdr_v118_target(model, hdr_v118_models[i].display);
+        vmaf_model_destroy(model);
+        if (msg) return msg;
+
+#if VMAF_BUILT_IN_MODELS
+        VmafModelConfig built_in_cfg = { 0 };
+        err = vmaf_model_load(&model, &built_in_cfg, hdr_v118_models[i].version);
+        mu_assert("problem loading built-in v1.1.8 model", !err);
+        msg = check_hdr_v118_target(model, hdr_v118_models[i].display);
+        vmaf_model_destroy(model);
+        if (msg) return msg;
+#endif
+    }
+    return NULL;
+}
+
 static char *test_model_conversion_target_rejects_bad_resolution()
 {
     const char *colorspace =
@@ -644,6 +717,62 @@ static char *test_model_conversion_target_rejects_bad_assumed_color()
     return NULL;
 }
 
+static char *test_model_conversion_target_rejects_unknown_key()
+{
+    const char *colorspace =
+        "\"colorspace\": {\"range\": \"limited\", \"primaries\": \"bt2020\", "
+        "\"trc\": \"smpte2084\", \"matrix\": \"ictcp\"}";
+    const char *extra[] = {
+        /* misspellings that would otherwise skip the conversion */
+        "\"bit-depth\": 16",
+        "\"pix_fmt\": \"420\"",
+        /* a field this libvmaf does not know */
+        "\"future_field\": {\"x\": \"y\"}",
+    };
+
+    for (unsigned i = 0; i < sizeof(extra) / sizeof(*extra); i++) {
+        char block[512];
+        snprintf(block, sizeof(block), "\"conversion_target\": {%s, %s}, ",
+                 colorspace, extra[i]);
+        VmafModel *model = NULL;
+        int err = load_model_with_block(&model, block);
+        if (model) vmaf_model_destroy(model);
+        mu_assert("an unknown conversion_target key should be rejected", err);
+    }
+
+    return NULL;
+}
+
+static char *test_model_conversion_target_rejects_unknown_colorspace_key()
+{
+    VmafModel *model = NULL;
+    int err = load_model_with_block(&model,
+        "\"conversion_target\": {\"colorspace\": {\"range\": \"limited\", "
+        "\"primaries\": \"bt2020\", \"trc\": \"smpte2084\", "
+        "\"matrix\": \"ictcp\", \"transfer\": \"pq\"}}, ");
+    if (model) vmaf_model_destroy(model);
+    mu_assert("an unknown colorspace key should be rejected", err);
+
+    return NULL;
+}
+
+static char *test_model_conversion_target_rejects_unknown_assumed_color_key()
+{
+    VmafModel *model = NULL;
+    int err = load_model_with_block(&model,
+        "\"conversion_target\": {\"colorspace\": {\"range\": \"limited\", "
+        "\"primaries\": \"bt709\", \"trc\": \"bt709\", "
+        "\"matrix\": \"bt709\"}, \"assumed_color_if_untagged\": "
+        "{\"range\": \"full\", \"primaries\": \"smpte432\", "
+        "\"trc\": \"bt709\", \"matrix\": \"bt709\", "
+        "\"transfer\": \"pq\"}}, ");
+    if (model) vmaf_model_destroy(model);
+    mu_assert("an unknown assumed_color_if_untagged key should be rejected",
+              err);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_json_model);
@@ -664,5 +793,9 @@ char *run_tests()
     mu_run_test(test_model_conversion_target_rejects_bad_resolution);
     mu_run_test(test_model_conversion_target_assumed_color);
     mu_run_test(test_model_conversion_target_rejects_bad_assumed_color);
+    mu_run_test(test_shipped_hdr_v118_models_declare_yuv420p16le_target);
+    mu_run_test(test_model_conversion_target_rejects_unknown_key);
+    mu_run_test(test_model_conversion_target_rejects_unknown_colorspace_key);
+    mu_run_test(test_model_conversion_target_rejects_unknown_assumed_color_key);
     return NULL;
 }

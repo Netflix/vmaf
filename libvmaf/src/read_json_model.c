@@ -17,6 +17,7 @@
  */
 
 #include "libvmaf/model.h"
+#include "log.h"
 #include "model.h"
 #include "pdjson.h"
 #include "svm.h"
@@ -338,7 +339,8 @@ static int parse_color_name(json_stream *s, const ColorName *names,
         continue;                                                           \
     }
 
-static int parse_colorspace(json_stream *s, VmafColor *color)
+static int parse_colorspace(json_stream *s, VmafColor *color,
+                            const char *context)
 {
     while (json_peek(s) != JSON_OBJECT_END && !json_get_error(s)) {
         if (json_next(s) != JSON_STRING)
@@ -353,7 +355,11 @@ static int parse_colorspace(json_stream *s, VmafColor *color)
         PARSE_COLOR_FIELD(matrix, color_matrix_names,
                           enum VmafColorMatrixCoefficients)
 
-        json_skip(s);
+        /* as in conversion_target, a key we do not know is an error */
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "unknown key \"%s\" in conversion_target %s\n", key,
+                 context);
+        return -EINVAL;
     }
 
     /* a conversion target must pin down all four attributes */
@@ -406,7 +412,7 @@ static int parse_conversion_target(json_stream *s, VmafModel *model)
             if (json_next(s) != JSON_OBJECT)
                 return -EINVAL;
             VmafColor color = { 0 };
-            int err = parse_colorspace(s, &color);
+            int err = parse_colorspace(s, &color, "colorspace");
             if (err) return err;
             json_skip_until(s, JSON_OBJECT_END);
             model->conversion_target.color = color;
@@ -418,7 +424,8 @@ static int parse_conversion_target(json_stream *s, VmafModel *model)
             if (json_next(s) != JSON_OBJECT)
                 return -EINVAL;
             VmafColor color = { 0 };
-            int err = parse_colorspace(s, &color);
+            int err = parse_colorspace(s, &color,
+                                     "assumed_color_if_untagged");
             if (err) return err;
             json_skip_until(s, JSON_OBJECT_END);
             model->conversion_target.assumed_color = color;
@@ -463,7 +470,14 @@ static int parse_conversion_target(json_stream *s, VmafModel *model)
             continue;
         }
 
-        json_skip(s);
+        /*
+         * An unknown key is an error rather than skipped: a misspelled
+         * pixel_format or bit_depth, or a field from a newer model, would
+         * otherwise silently drop part of the conversion and change scores.
+         */
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "unknown key \"%s\" in conversion_target\n", key);
+        return -EINVAL;
     }
 
     if (!have_colorspace)

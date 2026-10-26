@@ -762,8 +762,19 @@ void cli_parse(const int argc, char *const *const argv,
 
     if (settings->model_cnt == 0 && !settings->no_prediction) {
 #if VMAF_BUILT_IN_MODELS
+        /*
+         * If both inputs are described as HDR (via the raw yuv/y4m
+         * --color_* flags) and no model was given, default to the HDR
+         * model. An explicitly chosen model is used as is: an SDR model
+         * ignores the color flags, so pairing it with HDR inputs is the
+         * caller's responsibility.
+         */
+        const bool is_hdr =
+            ref_color_set && dist_color_set &&
+            settings->color_ref.trc == VMAF_COLOR_TRC_SMPTE2084 &&
+            settings->color_dist.trc == VMAF_COLOR_TRC_SMPTE2084;
         CLIModelConfig cfg = {
-            .version = "vmaf_v0.6.1",
+            .version = is_hdr ? "hdr_vmaf_v1.1.8_3d0h" : "vmaf_v0.6.1",
         };
         CHECKED_APPEND(settings->model_config, settings->model_cnt, cfg,
                        argv[0], "models");
