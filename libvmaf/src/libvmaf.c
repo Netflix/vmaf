@@ -104,6 +104,7 @@ typedef struct VmafContext {
         bool has_assumed_color;
         VmafColor assumed_color;
         bool warned_assumed;
+        bool logged_no_conversion;
         unsigned n_models_with_target;
         unsigned n_models_without_target;
     } convert;
@@ -713,7 +714,16 @@ static int convert_pictures(VmafContext *vmaf, VmafPicture *ref,
                                            &dist_target);
         if (err) return err;
     }
-    if (!needs_conversion) return 0;
+    if (!needs_conversion) {
+        if (!vmaf->convert.logged_no_conversion) {
+            vmaf_log(VMAF_LOG_LEVEL_DEBUG,
+                     "picture conversion: none needed (pictures already "
+                     "match the model's conversion target, or the model "
+                     "declares none)\n");
+            vmaf->convert.logged_no_conversion = true;
+        }
+        return 0;
+    }
 
     VmafPicture ref_converted = { 0 }, dist_converted = { 0 };
     err = convert_picture(&vmaf->convert.ref, ref, &ref_target,
