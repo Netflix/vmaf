@@ -83,9 +83,13 @@ class VmafV1QualityRunnerTest(MyTestCase):
         # Regression values for the current conversion (zimg with approximate gamma, as
         # zscale does by default), with the 576x324 fixture upscaled to the model's 1080
         # display resolution. Not cross-checked against FFmpeg zscale at this size.
-        self.assertAlmostEqual(result['VMAFEXEC_score'], 96.981015, places=6)
+        # The tolerance is loose on purpose: the colorspace conversion runs in zimg, and
+        # its float results depend on how zimg was compiled. The baseline build (and zimg
+        # 3.0.3) gives 96.981015 / 0.783166; Ubuntu 26.04's x86-64-v3 package (FMA) gives
+        # 96.979261 / 0.783669.
+        self.assertAlmostEqual(result['VMAFEXEC_score'], 96.981015, places=2)
         self.assertAlmostEqual(result['VMAFEXEC_speed_chroma_uv_mxv_45_nnf_0.1_psm_bilinear_snn_0.19_wvm_5_score'],
-                               0.783166, places=6)
+                               0.783166, places=2)
 
     def test_hdr_v118_3d0h_ictcp_tag_skips_colorspace_conversion_exec(self):
         # Same BT.2020nc samples mislabeled as ICtCp: only the bit depth is converted,
