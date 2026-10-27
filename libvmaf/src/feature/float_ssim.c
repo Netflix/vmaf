@@ -145,7 +145,7 @@ static int extract(VmafFeatureExtractor *fex,
     return err;
 }
 
-static int close(VmafFeatureExtractor *fex)
+static int close_fex(VmafFeatureExtractor *fex)
 {
     SsimState *s = fex->priv;
     if (s->ref) aligned_free(s->ref);
@@ -163,7 +163,7 @@ VmafFeatureExtractor vmaf_fex_float_ssim = {
     .init = init,
     .extract = extract,
     .options = options,
-    .close = close,
+    .close = close_fex,
     .priv_size = sizeof(SsimState),
     .provided_features = provided_features,
 };

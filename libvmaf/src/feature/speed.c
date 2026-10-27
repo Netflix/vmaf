@@ -1639,7 +1639,7 @@ static int extract(VmafFeatureExtractor *fex,
     return 0;
 }
 
-static int close(VmafFeatureExtractor *fex)
+static int close_temporal(VmafFeatureExtractor *fex)
 {
     SpeedTemporalState *s = fex->priv;
     speed_close(&s->speed_state);
@@ -1664,7 +1664,7 @@ VmafFeatureExtractor vmaf_fex_speed_temporal = {
     .init = init,
     .extract = extract,
     .options = options,
-    .close = close,
+    .close = close_temporal,
     .priv_size = sizeof(SpeedTemporalState),
     .provided_features = provided_features,
     .flags = VMAF_FEATURE_EXTRACTOR_TEMPORAL,
