@@ -172,6 +172,11 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     if (ret) goto free_ref;
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->blur[1], sizeof(uint16_t) * w * h);
     if (ret) goto free_ref;
+    /* The first kernel reads the previous blur even though its motion score
+     * is discarded. Initialize it before the first picture stream uses it. */
+    CHECK_CUDA(cu_f, cuMemsetD8Async(s->blur[1]->data, 0,
+                sizeof(uint16_t) * w * h, s->str));
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->sad, sizeof(uint64_t));
     if (ret) goto free_ref;
     ret |= vmaf_cuda_buffer_host_alloc(fex->cu_state, (void**)&s->sad_host, sizeof(uint64_t));
@@ -198,6 +203,8 @@ free_ref:
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->sad);
         free(s->sad);
     }
+    if (s->sad_host)
+        ret |= vmaf_cuda_buffer_host_free(fex->cu_state, s->sad_host);
     ret |= vmaf_dictionary_free(&s->feature_name_dict);
 
     return -ENOMEM;
@@ -323,6 +330,7 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     MotionStateCuda *s = fex->priv;
     CudaFunctions *cu_f = fex->cu_state->f;
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
     CHECK_CUDA(cu_f, cuEventDestroy(s->event));
     CHECK_CUDA(cu_f, cuEventDestroy(s->finished));
 
@@ -340,6 +348,8 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->sad);
         free(s->sad);
     }
+    if (s->sad_host)
+        ret |= vmaf_cuda_buffer_host_free(fex->cu_state, s->sad_host);
     ret |= vmaf_dictionary_free(&s->feature_name_dict);
 
     if(s->write_score_parameters) {
