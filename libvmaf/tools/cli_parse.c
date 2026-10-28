@@ -662,13 +662,13 @@ void cli_parse(const int argc, char *const *const argv,
                 parse_feature_config(optarg, argv[0]), argv[0], "features");
             break;
         case ARG_THREADS:
-            settings->thread_cnt = parse_unsigned(optarg, 't', argv[0]);
+            settings->thread_cnt = parse_unsigned(optarg, ARG_THREADS, argv[0]);
             break;
         case ARG_SUBSAMPLE:
-            settings->subsample = parse_unsigned(optarg, 's', argv[0]);
+            settings->subsample = parse_unsigned(optarg, ARG_SUBSAMPLE, argv[0]);
             break;
         case ARG_CPUMASK:
-            settings->cpumask = parse_unsigned(optarg, 'c', argv[0]);
+            settings->cpumask = parse_unsigned(optarg, ARG_CPUMASK, argv[0]);
             break;
         case ARG_GPUMASK:
             settings->gpumask = parse_unsigned(optarg, ARG_GPUMASK, argv[0]);
