@@ -3078,12 +3078,13 @@ static inline void *init_index(int32_t **index, char *data_top, size_t stride)
     return data_top;
 }
 
-static inline void *i4_init_dwt_band(i4_adm_dwt_band_t *band, char *data_top, size_t stride)
+static inline void *i4_init_dwt_band(i4_adm_dwt_band_t *band, char *data_top,
+                                     size_t stride_a, size_t stride_hvd)
 {
-    band->band_a = (int32_t *)data_top; data_top += stride;
-    band->band_h = (int32_t *)data_top; data_top += stride;
-    band->band_v = (int32_t *)data_top; data_top += stride;
-    band->band_d = (int32_t *)data_top; data_top += stride;
+    band->band_a = (int32_t *)data_top; data_top += stride_a;
+    band->band_h = (int32_t *)data_top; data_top += stride_hvd;
+    band->band_v = (int32_t *)data_top; data_top += stride_hvd;
+    band->band_d = (int32_t *)data_top; data_top += stride_hvd;
     return data_top;
 }
 
@@ -3113,9 +3114,13 @@ int adm_buffer_alloc(AdmBuffer *buf, int w, int h)
     buf->ind_size_y   = ALIGN_CEIL(((h + 1) / 2) * sizeof(int32_t));
     size_t buf_sz_one = buf->ind_size_x * ((h + 1) / 2);
 
-    buf->data_buf = aligned_malloc(buf_sz_one * NUM_BUFS_ADM, MAX_ALIGN);
+    const size_t rows_s1 = (size_t)(((h + 1) / 2 + 1) / 2) + 2;
+    const size_t buf_sz_s1 = buf->ind_size_x * rows_s1;
+    const size_t data_sz = 10 * buf_sz_one + 2 * buf_sz_one + 18 * buf_sz_s1;
+
+    buf->data_buf = aligned_malloc(data_sz, MAX_ALIGN);
     if (!buf->data_buf) goto fail;
-    memset(buf->data_buf, 0, buf_sz_one * NUM_BUFS_ADM);
+    memset(buf->data_buf, 0, data_sz);
     buf->tmp_ref = aligned_malloc(ALIGN_CEIL(w * sizeof(int32_t)) * 4, MAX_ALIGN);
     if (!buf->tmp_ref) goto fail;
     buf->buf_x_orig = aligned_malloc(buf->ind_size_x * 4, MAX_ALIGN);
@@ -3131,12 +3136,12 @@ int adm_buffer_alloc(AdmBuffer *buf, int w, int h)
     data_top = init_dwt_band_hvd(&buf->csf_a, data_top, buf_sz_one / 2);
     data_top = init_dwt_band_hvd(&buf->csf_f, data_top, buf_sz_one / 2);
 
-    data_top = i4_init_dwt_band(&buf->i4_ref_dwt2, data_top, buf_sz_one);
-    data_top = i4_init_dwt_band(&buf->i4_dis_dwt2, data_top, buf_sz_one);
-    data_top = i4_init_dwt_band_hvd(&buf->i4_decouple_r, data_top, buf_sz_one);
-    data_top = i4_init_dwt_band_hvd(&buf->i4_decouple_a, data_top, buf_sz_one);
-    data_top = i4_init_dwt_band_hvd(&buf->i4_csf_a, data_top, buf_sz_one);
-    data_top = i4_init_dwt_band_hvd(&buf->i4_csf_f, data_top, buf_sz_one);
+    data_top = i4_init_dwt_band(&buf->i4_ref_dwt2, data_top, buf_sz_one, buf_sz_s1);
+    data_top = i4_init_dwt_band(&buf->i4_dis_dwt2, data_top, buf_sz_one, buf_sz_s1);
+    data_top = i4_init_dwt_band_hvd(&buf->i4_decouple_r, data_top, buf_sz_s1);
+    data_top = i4_init_dwt_band_hvd(&buf->i4_decouple_a, data_top, buf_sz_s1);
+    data_top = i4_init_dwt_band_hvd(&buf->i4_csf_a, data_top, buf_sz_s1);
+    data_top = i4_init_dwt_band_hvd(&buf->i4_csf_f, data_top, buf_sz_s1);
 
     void *ind_buf_y = buf->buf_y_orig;
     init_index(buf->ind_y, ind_buf_y, buf->ind_size_y);
