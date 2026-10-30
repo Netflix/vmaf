@@ -759,8 +759,8 @@ static void check_adm_dwt2_s123(void)
         const int w = sizes[i].w, h = sizes[i].h;
 
         AdmBuffer buf_c, buf_a;
-        if (adm_buffer_alloc(&buf_c, w, h)) continue;
-        if (adm_buffer_alloc(&buf_a, w, h)) {
+        if (adm_buffer_alloc(&buf_c, 2 * w, 2 * h)) continue;
+        if (adm_buffer_alloc(&buf_a, 2 * w, 2 * h)) {
             adm_buffer_free(&buf_c);
             continue;
         }
@@ -867,8 +867,8 @@ static void check_adm_decouple_s123(void)
         const int w = sizes[i].w, h = sizes[i].h;
 
         AdmBuffer buf_c, buf_a;
-        if (adm_buffer_alloc(&buf_c, w, h)) continue;
-        if (adm_buffer_alloc(&buf_a, w, h)) {
+        if (adm_buffer_alloc(&buf_c, 2 * w, 2 * h)) continue;
+        if (adm_buffer_alloc(&buf_a, 2 * w, 2 * h)) {
             adm_buffer_free(&buf_c);
             continue;
         }
@@ -978,7 +978,7 @@ static void check_adm_csf_den(void)
         const int w = post_dwt_sizes[i].w, h = post_dwt_sizes[i].h;
 
         AdmBuffer buf;
-        if (adm_buffer_alloc(&buf, w, h)) continue;
+        if (adm_buffer_alloc(&buf, 2 * w, 2 * h)) continue;
         const int stride = (int) (buf.ind_size_x >> 2);
         const int h_half = (h + 1) / 2;
 
@@ -1073,8 +1073,8 @@ static void check_adm_i4_csf(void)
         const int w = post_dwt_sizes[i].w, h = post_dwt_sizes[i].h;
 
         AdmBuffer buf_c, buf_a;
-        if (adm_buffer_alloc(&buf_c, w, h)) continue;
-        if (adm_buffer_alloc(&buf_a, w, h)) {
+        if (adm_buffer_alloc(&buf_c, 2 * w, 2 * h)) continue;
+        if (adm_buffer_alloc(&buf_a, 2 * w, 2 * h)) {
             adm_buffer_free(&buf_c);
             continue;
         }
@@ -1174,8 +1174,8 @@ static void check_adm_i4_cm(void)
         const int w = sizes[i].w, h = sizes[i].h;
 
         AdmBuffer buf_c, buf_a;
-        if (adm_buffer_alloc(&buf_c, w, h)) continue;
-        if (adm_buffer_alloc(&buf_a, w, h)) {
+        if (adm_buffer_alloc(&buf_c, 2 * w, 2 * h)) continue;
+        if (adm_buffer_alloc(&buf_a, 2 * w, 2 * h)) {
             adm_buffer_free(&buf_c);
             continue;
         }
