@@ -23,6 +23,9 @@
 
 #define AVX_STEP (8)
 
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
 
 void convolution_f32_avx_s_1d_h_scanline(const float * RESTRICT filter, int filter_width, const float * RESTRICT src, float * RESTRICT dst, int j_end) {
     int radius = filter_width / 2;
@@ -133,8 +136,23 @@ void convolution_f32_avx_s(const float * RESTRICT filter, int filter_width, cons
     int i_vec_end = height - radius;
     int j_vec_end = vmaf_floorn(width - radius, AVX_STEP);
 
+    // Clamp edge-loop bounds so tiny width/height (< radius) cannot write outside
+    // the tmp/dst buffers. i_vec_end is safe to raise in place: its two uses are the
+    // vector loop's end bound and the trailing loop's start, and the raise only fires
+    // when the raised value is <= radius, which leaves the vector loop
+    // [radius, i_vec_end) empty. j_vec_end must NOT be raised
+    // in place: it is also passed unmodified to convolution_f32_avx_s_1d_h_scanline,
+    // whose j_end argument must stay <= vmaf_floorn(width - radius, AVX_STEP) or the
+    // scanline itself writes out of bounds (it stores dst[j + radius .. j + radius +
+    // AVX_STEP) for each j < j_end). So the horizontal trailing loop's clamped start
+    // goes in a SEPARATE variable, j_trailing_start.
+    int i_edge_end = MIN(radius, height);
+    i_vec_end = MAX(i_vec_end, i_edge_end);
+    int j_edge_end = MIN(radius, width);
+    int j_trailing_start = MAX(j_vec_end, j_edge_end);
+
     // Vertical pass.
-    for (int i = 0; i < radius; ++i) {
+    for (int i = 0; i < i_edge_end; ++i) {
         for (int j = 0; j < width; ++j) {
             tmp[i * tmp_stride + j] = convolution_edge_s(false, filter, filter_width, src, width, height, src_stride, i, j);
         }
@@ -154,13 +172,13 @@ void convolution_f32_avx_s(const float * RESTRICT filter, int filter_width, cons
 
     // Horizontal pass.
     for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < radius; ++j) {
+        for (int j = 0; j < j_edge_end; ++j) {
             dst[i * dst_stride + j] = convolution_edge_s(true, filter, filter_width, tmp, width, height, tmp_stride, i, j);
         }
 
         convolution_f32_avx_s_1d_h_scanline(filter, filter_width, tmp + i * tmp_stride, dst + i * dst_stride, j_vec_end);
 
-        for (int j = j_vec_end; j < width; ++j) {
+        for (int j = j_trailing_start; j < width; ++j) {
             dst[i * dst_stride + j] = convolution_edge_s(true, filter, filter_width, tmp, width, height, tmp_stride, i, j);
         }
     }
@@ -174,8 +192,23 @@ void convolution_f32_avx_sq_s(const float * RESTRICT filter, int filter_width, c
     int i_vec_end = height - radius;
     int j_vec_end = vmaf_floorn(width - radius, AVX_STEP);
 
+    // Clamp edge-loop bounds so tiny width/height (< radius) cannot write outside
+    // the tmp/dst buffers. i_vec_end is safe to raise in place: its two uses are the
+    // vector loop's end bound and the trailing loop's start, and the raise only fires
+    // when the raised value is <= radius, which leaves the vector loop
+    // [radius, i_vec_end) empty. j_vec_end must NOT be raised
+    // in place: it is also passed unmodified to convolution_f32_avx_s_1d_h_scanline,
+    // whose j_end argument must stay <= vmaf_floorn(width - radius, AVX_STEP) or the
+    // scanline itself writes out of bounds (it stores dst[j + radius .. j + radius +
+    // AVX_STEP) for each j < j_end). So the horizontal trailing loop's clamped start
+    // goes in a SEPARATE variable, j_trailing_start.
+    int i_edge_end = MIN(radius, height);
+    i_vec_end = MAX(i_vec_end, i_edge_end);
+    int j_edge_end = MIN(radius, width);
+    int j_trailing_start = MAX(j_vec_end, j_edge_end);
+
     // Vertical pass.
-    for (int i = 0; i < radius; ++i) {
+    for (int i = 0; i < i_edge_end; ++i) {
         for (int j = 0; j < width; ++j) {
             tmp[i * tmp_stride + j] = convolution_edge_sq_s(false, filter, filter_width, src, width, height, src_stride, i, j);
         }
@@ -195,13 +228,13 @@ void convolution_f32_avx_sq_s(const float * RESTRICT filter, int filter_width, c
 
     // Horizontal pass.
     for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < radius; ++j) {
+        for (int j = 0; j < j_edge_end; ++j) {
             dst[i * dst_stride + j] = convolution_edge_s(true, filter, filter_width, tmp, width, height, tmp_stride, i, j);
         }
 
         convolution_f32_avx_s_1d_h_scanline(filter, filter_width, tmp + i * tmp_stride, dst + i * dst_stride, j_vec_end);
 
-        for (int j = j_vec_end; j < width; ++j) {
+        for (int j = j_trailing_start; j < width; ++j) {
             dst[i * dst_stride + j] = convolution_edge_s(true, filter, filter_width, tmp, width, height, tmp_stride, i, j);
         }
     }
@@ -216,8 +249,23 @@ void convolution_f32_avx_xy_s(const float * RESTRICT filter, int filter_width, c
     int i_vec_end = height - radius;
     int j_vec_end = vmaf_floorn(width - radius, AVX_STEP);
 
+    // Clamp edge-loop bounds so tiny width/height (< radius) cannot write outside
+    // the tmp/dst buffers. i_vec_end is safe to raise in place: its two uses are the
+    // vector loop's end bound and the trailing loop's start, and the raise only fires
+    // when the raised value is <= radius, which leaves the vector loop
+    // [radius, i_vec_end) empty. j_vec_end must NOT be raised
+    // in place: it is also passed unmodified to convolution_f32_avx_s_1d_h_scanline,
+    // whose j_end argument must stay <= vmaf_floorn(width - radius, AVX_STEP) or the
+    // scanline itself writes out of bounds (it stores dst[j + radius .. j + radius +
+    // AVX_STEP) for each j < j_end). So the horizontal trailing loop's clamped start
+    // goes in a SEPARATE variable, j_trailing_start.
+    int i_edge_end = MIN(radius, height);
+    i_vec_end = MAX(i_vec_end, i_edge_end);
+    int j_edge_end = MIN(radius, width);
+    int j_trailing_start = MAX(j_vec_end, j_edge_end);
+
     // Vertical pass.
-    for (int i = 0; i < radius; ++i) {
+    for (int i = 0; i < i_edge_end; ++i) {
         for (int j = 0; j < width; ++j) {
             tmp[i * tmp_stride + j] = convolution_edge_xy_s(false, filter, filter_width, src1, src2, width, height, src1_stride, src2_stride, i, j);
         }
@@ -237,13 +285,13 @@ void convolution_f32_avx_xy_s(const float * RESTRICT filter, int filter_width, c
 
     // Horizontal pass.
     for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < radius; ++j) {
+        for (int j = 0; j < j_edge_end; ++j) {
             dst[i * dst_stride + j] = convolution_edge_s(true, filter, filter_width, tmp, width, height, tmp_stride, i, j);
         }
 
         convolution_f32_avx_s_1d_h_scanline(filter, filter_width, tmp + i * tmp_stride, dst + i * dst_stride, j_vec_end);
 
-        for (int j = j_vec_end; j < width; ++j) {
+        for (int j = j_trailing_start; j < width; ++j) {
             dst[i * dst_stride + j] = convolution_edge_s(true, filter, filter_width, tmp, width, height, tmp_stride, i, j);
         }
     }

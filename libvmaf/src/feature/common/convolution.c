@@ -25,11 +25,20 @@
 extern int vmaf_floorn(int, int);
 extern int vmaf_ceiln(int, int);
 
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
 void convolution_x_c_s(const float *filter, int filter_width, const float *src, float *dst, int width, int height, int src_stride, int dst_stride, int step)
 {
 	int radius = filter_width / 2;
 	int borders_left = vmaf_ceiln(radius, step);
 	int borders_right = vmaf_floorn(width - (filter_width - radius), step);
+
+	// Clamp so tiny widths (< filter_width) cannot produce negative loop bounds,
+	// which would make the trailing edge loop start at a negative index and write
+	// outside dst. No-op for width >= filter_width.
+	borders_left = MIN(borders_left, width);
+	borders_right = MAX(borders_right, borders_left);
 
 	for (int i = 0; i < height; ++i) {
 		for (int j = 0; j < borders_left; j += step) {
@@ -55,6 +64,12 @@ void convolution_y_c_s(const float *filter, int filter_width, const float *src, 
 	int radius = filter_width / 2;
 	int borders_top = vmaf_ceiln(radius, step);
 	int borders_bottom = vmaf_floorn(height - (filter_width - radius), step);
+
+	// Clamp so tiny heights (< filter_width) cannot produce negative loop bounds,
+	// which would make the trailing edge loop start at a negative index and write
+	// outside dst. No-op for height >= filter_width.
+	borders_top = MIN(borders_top, height);
+	borders_bottom = MAX(borders_bottom, borders_top);
 
 	for (int i = 0; i < borders_top; i += step) {
 		for (int j = 0; j < width; ++j) {
