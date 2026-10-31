@@ -55,6 +55,7 @@ typedef struct AdmStateCuda {
     CUstream str, host_stream;
     void* write_score_parameters;
     CUevent ref_event, dis_event, finished;
+    CUmodule adm_cm_module, adm_csf_den_module, adm_csf_module, adm_decouple_module, adm_dwt_module;
     VmafDictionary *feature_name_dict;
 
     // adm_dwt kernels
@@ -1007,39 +1008,38 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cu_f, cuEventCreate(&s->dis_event, CU_EVENT_DEFAULT));
 
 
-    CUmodule adm_cm_module, adm_csf_den_module, adm_csf_module, adm_decouple_module, adm_dwt_module;
 
 
-    CHECK_CUDA(cu_f, cuModuleLoadData(&adm_dwt_module, adm_dwt2_ptx));
-    CHECK_CUDA(cu_f, cuModuleLoadData(&adm_csf_module, adm_csf_ptx));
-    CHECK_CUDA(cu_f, cuModuleLoadData(&adm_decouple_module, adm_decouple_ptx));
-    CHECK_CUDA(cu_f, cuModuleLoadData(&adm_csf_den_module, adm_csf_den_ptx));
-    CHECK_CUDA(cu_f, cuModuleLoadData(&adm_cm_module, adm_cm_ptx));
+    CHECK_CUDA(cu_f, cuModuleLoadData(&s->adm_dwt_module, adm_dwt2_ptx));
+    CHECK_CUDA(cu_f, cuModuleLoadData(&s->adm_csf_module, adm_csf_ptx));
+    CHECK_CUDA(cu_f, cuModuleLoadData(&s->adm_decouple_module, adm_decouple_ptx));
+    CHECK_CUDA(cu_f, cuModuleLoadData(&s->adm_csf_den_module, adm_csf_den_ptx));
+    CHECK_CUDA(cu_f, cuModuleLoadData(&s->adm_cm_module, adm_cm_ptx));
 
     // Get DWT kernel function pointers check adm_dwt2.cu for __global__ templated kernels
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_dwt_s123_combined_vert_kernel_0_0_int32_t,  adm_dwt_module, "dwt_s123_combined_vert_kernel_0_0_int32_t"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_dwt_s123_combined_vert_kernel_32768_16_int32_t, adm_dwt_module, "dwt_s123_combined_vert_kernel_32768_16_int32_t"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_dwt_s123_combined_hori_kernel_16384_15, adm_dwt_module, "dwt_s123_combined_hori_kernel_16384_15"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_dwt_s123_combined_hori_kernel_32768_16, adm_dwt_module, "dwt_s123_combined_hori_kernel_32768_16"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint8_t, adm_dwt_module, "adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint8_t"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t, adm_dwt_module, "adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_dwt_s123_combined_vert_kernel_0_0_int32_t,  s->adm_dwt_module, "dwt_s123_combined_vert_kernel_0_0_int32_t"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_dwt_s123_combined_vert_kernel_32768_16_int32_t, s->adm_dwt_module, "dwt_s123_combined_vert_kernel_32768_16_int32_t"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_dwt_s123_combined_hori_kernel_16384_15, s->adm_dwt_module, "dwt_s123_combined_hori_kernel_16384_15"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_dwt_s123_combined_hori_kernel_32768_16, s->adm_dwt_module, "dwt_s123_combined_hori_kernel_32768_16"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint8_t, s->adm_dwt_module, "adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint8_t"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t, s->adm_dwt_module, "adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t"));
 
 
     // Get csf kernel function pointers check adm_csf.cu for __global__ templated kernels
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_kernel_1_4, adm_csf_module, "adm_csf_kernel_1_4"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_i4_adm_csf_kernel_1_4, adm_csf_module, "i4_adm_csf_kernel_1_4"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_kernel_1_4, s->adm_csf_module, "adm_csf_kernel_1_4"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_i4_adm_csf_kernel_1_4, s->adm_csf_module, "i4_adm_csf_kernel_1_4"));
 
 
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_decouple_kernel, adm_decouple_module, "adm_decouple_kernel"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_decouple_s123_kernel, adm_decouple_module, "adm_decouple_s123_kernel"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_decouple_kernel, s->adm_decouple_module, "adm_decouple_kernel"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_decouple_s123_kernel, s->adm_decouple_module, "adm_decouple_s123_kernel"));
 
 
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_den_scale_line_kernel, adm_csf_den_module, "adm_csf_den_scale_line_kernel_8_128"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_den_s123_line_kernel, adm_csf_den_module, "adm_csf_den_s123_line_kernel_8_128"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_den_scale_line_kernel, s->adm_csf_den_module, "adm_csf_den_scale_line_kernel_8_128"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_den_s123_line_kernel, s->adm_csf_den_module, "adm_csf_den_s123_line_kernel_8_128"));
 
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_cm_reduce_line_kernel_4, adm_cm_module, "adm_cm_reduce_line_kernel_4"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_cm_line_kernel_8, adm_cm_module, "adm_cm_line_kernel_8"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_i4_adm_cm_line_kernel, adm_cm_module, "i4_adm_cm_line_kernel"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_cm_reduce_line_kernel_4, s->adm_cm_module, "adm_cm_reduce_line_kernel_4"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_cm_line_kernel_8, s->adm_cm_module, "adm_cm_line_kernel_8"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_i4_adm_cm_line_kernel, s->adm_cm_module, "i4_adm_cm_line_kernel"));
 
 
     CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
@@ -1180,6 +1180,16 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     CHECK_CUDA(cu_f, cuEventDestroy(s->finished));
     CHECK_CUDA(cu_f, cuEventDestroy(s->ref_event));
     CHECK_CUDA(cu_f, cuEventDestroy(s->dis_event));
+    CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
+    CHECK_CUDA(cu_f, cuStreamDestroy(s->host_stream));
+    CHECK_CUDA(cu_f, cuStreamDestroy(s->str));
+    CHECK_CUDA(cu_f, cuModuleUnload(s->adm_cm_module));
+    CHECK_CUDA(cu_f, cuModuleUnload(s->adm_csf_den_module));
+    CHECK_CUDA(cu_f, cuModuleUnload(s->adm_csf_module));
+    CHECK_CUDA(cu_f, cuModuleUnload(s->adm_decouple_module));
+    CHECK_CUDA(cu_f, cuModuleUnload(s->adm_dwt_module));
+    CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
 
     int ret = 0;
 
