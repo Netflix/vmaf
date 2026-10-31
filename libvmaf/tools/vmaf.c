@@ -117,23 +117,32 @@ int main(int argc, char *argv[])
     CLISettings c;
     cli_parse(argc, argv, &c);
 
+    FILE *file_ref = NULL, *file_dist = NULL;
+    video_input vid_ref, vid_dist;
+    bool vid_ref_open = false, vid_dist_open = false;
+    VmafContext *vmaf = NULL;
+    VmafModel **model = NULL;
+    VmafModelCollection **model_collection = NULL;
+    unsigned model_collection_cnt = 0;
+
     if (istty && !c.quiet) {
         fprintf(stderr, "VMAF version %s\n", vmaf_version());
     }
 
-    FILE *file_ref = fopen(c.path_ref, "rb");
+    file_ref = fopen(c.path_ref, "rb");
     if (!file_ref) {
         fprintf(stderr, "could not open file: %s\n", c.path_ref);
-        return -1;
+        err = -1;
+        goto cleanup;
     }
 
-    FILE *file_dist = fopen(c.path_dist, "rb");
+    file_dist = fopen(c.path_dist, "rb");
     if (!file_dist) {
         fprintf(stderr, "could not open file: %s\n", c.path_dist);
-        return -1;
+        err = -1;
+        goto cleanup;
     }
 
-    video_input vid_ref;
     if (c.use_yuv) {
         err = raw_input_open(&vid_ref, file_ref, c.width_ref, c.height_ref,
                              c.pix_fmt, c.bitdepth);
@@ -142,10 +151,11 @@ int main(int argc, char *argv[])
     }
     if (err) {
         fprintf(stderr, "problem with reference file: %s\n", c.path_ref);
-        return -1;
+        err = -1;
+        goto cleanup;
     }
+    vid_ref_open = true;
 
-    video_input vid_dist;
     if (c.use_yuv) {
         err = raw_input_open(&vid_dist, file_dist, c.width_dist, c.height_dist,
                              c.pix_fmt, c.bitdepth);
@@ -154,14 +164,17 @@ int main(int argc, char *argv[])
     }
     if (err) {
         fprintf(stderr, "problem with distorted file: %s\n", c.path_dist);
-        return -1;
+        err = -1;
+        goto cleanup;
     }
+    vid_dist_open = true;
 
     err = validate_videos(&vid_ref, &vid_dist, c.common_bitdepth);
     if (err) {
         fprintf(stderr, "videos are incompatible, %d %s.\n",
                 err, err == 1 ? "problem" : "problems");
-        return -1;
+        err = -1;
+        goto cleanup;
     }
 
     int common_bitdepth;
@@ -182,11 +195,12 @@ int main(int argc, char *argv[])
         .gpumask = c.gpumask,
     };
 
-    VmafContext *vmaf;
     err = vmaf_init(&vmaf, cfg);
     if (err) {
         fprintf(stderr, "problem initializing VMAF context\n");
-        return -1;
+        vmaf = NULL;
+        err = -1;
+        goto cleanup;
     }
 
 #ifdef HAVE_CUDA
@@ -200,7 +214,8 @@ int main(int argc, char *argv[])
             err |= vmaf_cuda_import_state(vmaf, cu_state);
             if (err) {
                 fprintf(stderr, "problem during vmaf_cuda_import_state\n");
-                return -1;
+                err = -1;
+                goto cleanup;
             }
         }
     }
@@ -226,7 +241,8 @@ int main(int argc, char *argv[])
     err = vmaf_preallocate_pictures(vmaf, pic_cfg);
     if (err) {
         fprintf(stderr, "problem during vmaf_preallocate_pictures\n");
-        return -1;
+        err = -1;
+        goto cleanup;
     }
 
     if (istty && !c.quiet) {
@@ -234,19 +250,16 @@ int main(int argc, char *argv[])
                 pic_cfg.pic_cnt);
     }
 
-    VmafModel **model;
     const size_t model_sz = sizeof(*model) * c.model_cnt;
     model = malloc(model_sz);
     memset(model, 0, model_sz);
 
-    VmafModelCollection **model_collection;
     const size_t model_collection_sz =
         sizeof(*model_collection) * c.model_cnt;
     model_collection = malloc(model_collection_sz);
     memset(model_collection, 0, model_collection_sz);
 
     const char **model_collection_label = alloca(c.model_cnt * sizeof(*model_collection_label));
-    unsigned model_collection_cnt = 0;
 
     for (unsigned i = 0; i < c.model_cnt; i++) {
         if (c.model_config[i].version) {
@@ -277,7 +290,8 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "problem loading model: %s\n",
                         c.model_config[i].version ?
                             c.model_config[i].version : c.model_config[i].path);
-                return -1;
+                err = -1;
+                goto cleanup;
             }
 
             model_collection_label[model_collection_cnt] =
@@ -296,7 +310,8 @@ int main(int argc, char *argv[])
                             "model collection: %s\n",
                             c.model_config[i].version ?
                             c.model_config[i].version : c.model_config[i].path);
-                    return -1;
+                    err = -1;
+                    goto cleanup;
                 }
             }
 
@@ -308,7 +323,8 @@ int main(int argc, char *argv[])
                         "model collection: %s\n",
                         c.model_config[i].version ?
                             c.model_config[i].version : c.model_config[i].path);
-                return -1;
+                err = -1;
+                goto cleanup;
             }
 
             model_collection_cnt++;
@@ -325,7 +341,8 @@ int main(int argc, char *argv[])
                         "model: %s\n",
                         c.model_config[i].version ?
                             c.model_config[i].version : c.model_config[i].path);
-                return -1;
+                err = -1;
+                goto cleanup;
 
             }
         }
@@ -336,7 +353,8 @@ int main(int argc, char *argv[])
                     "problem loading feature extractors from model: %s\n",
                      c.model_config[i].version ?
                          c.model_config[i].version : c.model_config[i].path);
-            return -1;
+            err = -1;
+            goto cleanup;
         }
     }
 
@@ -346,7 +364,8 @@ int main(int argc, char *argv[])
         if (err) {
             fprintf(stderr, "problem loading feature extractor: %s\n",
                     c.feature_cfg[i].name);
-            return -1;
+            err = -1;
+            goto cleanup;
         }
     }
 
@@ -382,6 +401,8 @@ int main(int argc, char *argv[])
             break;
         } else if (ret1 < 0 || ret2 < 0) {
             fprintf(stderr, "\nproblem while reading pictures\n");
+            if (!ret1) vmaf_picture_unref(&pic_ref);
+            if (!ret2) vmaf_picture_unref(&pic_dist);
             break;
         } else if (ret1) {
             fprintf(stderr, "\n\"%s\" ended before \"%s\".\n",
@@ -414,6 +435,10 @@ int main(int argc, char *argv[])
         err = vmaf_read_pictures(vmaf, &pic_ref, &pic_dist, picture_index);
         if (err) {
             fprintf(stderr, "\nproblem reading pictures\n");
+            // the context may have left the pair with us; a picture it has
+            // already released is cleared and this unref returns -EINVAL
+            vmaf_picture_unref(&pic_ref);
+            vmaf_picture_unref(&pic_dist);
             break;
         }
     }
@@ -423,7 +448,7 @@ int main(int argc, char *argv[])
     err |= vmaf_read_pictures(vmaf, NULL, NULL, 0);
     if (err) {
         fprintf(stderr, "problem flushing context\n");
-        return err;
+        goto cleanup;
     }
 
     if (!c.no_prediction) {
@@ -433,7 +458,8 @@ int main(int argc, char *argv[])
                                     &vmaf_score, 0, picture_index - 1);
             if (err) {
                 fprintf(stderr, "problem generating pooled VMAF score\n");
-                return -1;
+                err = -1;
+                goto cleanup;
             }
 
             if (istty && (!c.quiet || !c.output_path)) {
@@ -451,7 +477,8 @@ int main(int argc, char *argv[])
                                                      0, picture_index - 1);
             if (err) {
                 fprintf(stderr, "problem generating pooled VMAF score\n");
-                return -1;
+                err = -1;
+                goto cleanup;
             }
 
             switch (score.type) {
@@ -473,17 +500,29 @@ int main(int argc, char *argv[])
     if (c.output_path)
         vmaf_write_output(vmaf, c.output_path, c.output_fmt);
 
-    for (unsigned i = 0; i < c.model_cnt; i++)
-        vmaf_model_destroy(model[i]);
+cleanup:
+    if (model) {
+        for (unsigned i = 0; i < c.model_cnt; i++)
+            vmaf_model_destroy(model[i]);
+    }
     free(model);
 
-    for (unsigned i = 0; i < model_collection_cnt; i++)
-        vmaf_model_collection_destroy(model_collection[i]);
+    if (model_collection) {
+        for (unsigned i = 0; i < model_collection_cnt; i++)
+            vmaf_model_collection_destroy(model_collection[i]);
+    }
     free(model_collection);
 
-    video_input_close(&vid_ref);
-    video_input_close(&vid_dist);
-    vmaf_close(vmaf);
+    if (vid_ref_open)
+        video_input_close(&vid_ref);
+    else if (file_ref)
+        fclose(file_ref);
+    if (vid_dist_open)
+        video_input_close(&vid_dist);
+    else if (file_dist)
+        fclose(file_dist);
+    if (vmaf)
+        vmaf_close(vmaf);
     cli_free(&c);
     return err;
 }
