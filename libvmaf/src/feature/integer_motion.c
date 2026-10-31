@@ -148,8 +148,18 @@ static const VmafOption options[] = {
 
 static inline int mirror(int idx, int size)
 {
-    if (idx < 0) return -idx;
-    if (idx >= size) return 2 * size - idx - 2;
+    // Reflect out of range indices back into [0, size) using the same
+    // reflect 101 boundary the five tap motion filter expects (the edge
+    // sample is never repeated). One reflection is not enough when size
+    // is below 3, so fold repeatedly until the index lands in range.
+    if (size == 1)
+        return 0;
+    while (idx < 0 || idx >= size) {
+        if (idx < 0)
+            idx = -idx;
+        if (idx >= size)
+            idx = 2 * size - idx - 2;
+    }
     return idx;
 }
 
