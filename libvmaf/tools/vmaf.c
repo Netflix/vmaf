@@ -103,7 +103,7 @@ static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic,
     ret = video_input_fetch_into_vmaf_picture(vid, pic);
     if (ret < 1) {
         vmaf_picture_unref(pic);
-        return !ret;
+        return ret < 0 ? -1 : 1;
     }
     pic->color = color;
     return 0;
