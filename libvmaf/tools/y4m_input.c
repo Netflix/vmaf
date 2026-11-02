@@ -854,11 +854,13 @@ static int y4m_fetch_into_vmaf_picture(y4m_input *_y4m, FILE *_fin, VmafPicture 
     }
   }
 
-  size_t bytes_per_sample = (pic->bpc + 7) / 8;
+  const int shift = (int)pic->bpc - _y4m->depth;
+  if (shift < 0) return -1;
+  size_t bytes_per_sample = (_y4m->depth + 7) / 8;
 
   for (unsigned i = 0; i < 3; i++) {
     size_t row_bytes = (size_t)pic->w[i] * bytes_per_sample;
-    if (pic->stride[i] == (ptrdiff_t)row_bytes) {
+    if (!shift && pic->stride[i] == (ptrdiff_t)row_bytes) {
       if (fread(pic->data[i], 1, row_bytes * pic->h[i], _fin) != row_bytes * pic->h[i]) {
         fprintf(stderr, "Error reading YUV frame data.\n");
         return -1;
@@ -870,6 +872,9 @@ static int y4m_fetch_into_vmaf_picture(y4m_input *_y4m, FILE *_fin, VmafPicture 
           fprintf(stderr, "Error reading YUV frame data.\n");
           return -1;
         }
+        for (unsigned k = pic->w[i]; shift && k--;)
+          ((uint16_t *)dst)[k] = (bytes_per_sample == 1 ? dst[k] :
+                                  ((uint16_t *)dst)[k]) << shift;
         dst += pic->stride[i];
       }
     }
