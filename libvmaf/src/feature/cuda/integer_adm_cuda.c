@@ -26,6 +26,7 @@
 #include "feature_collector.h"
 #include "feature_extractor.h"
 #include "feature_name.h"
+#include "log.h"
 
 #include "cpu.h"
 #include "cuda/integer_adm_cuda.h"
@@ -998,6 +999,14 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     (void) pix_fmt;
     (void) bpc;
     int ret = 0;
+
+    if (w < ADM_MIN_DIM || h < ADM_MIN_DIM) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+                 "%s: invalid size (%ux%u), width and height must be at least %u\n",
+                 fex->name, w, h, ADM_MIN_DIM);
+        return -EINVAL;
+    }
+
     CudaFunctions* cu_f = fex->cu_state->f;
     CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
     CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->str, CU_STREAM_NON_BLOCKING, 0));
