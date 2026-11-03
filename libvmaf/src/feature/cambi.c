@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -475,6 +476,66 @@ void get_derivative_data_for_row(const uint16_t *image_data, uint16_t *derivativ
     #define PATH_SEPARATOR '/'
 #endif
 
+/*
+ * With n_threads > 1, the feature extractor pool creates its cambi contexts
+ * lazily, after earlier contexts may already have written heatmap frames. All
+ * contexts with the same heatmaps_path share the heatmap files, so only the
+ * first one to open them truncates; the others open them for update.
+ */
+typedef struct HeatmapsPathRef {
+    char *path;
+    unsigned ref_cnt;
+    struct HeatmapsPathRef *next;
+} HeatmapsPathRef;
+
+static pthread_mutex_t heatmaps_lock = PTHREAD_MUTEX_INITIALIZER;
+static HeatmapsPathRef *heatmaps_paths = NULL;
+
+static int heatmaps_path_ref(const char *path, bool *first)
+{
+    int err = 0;
+    pthread_mutex_lock(&heatmaps_lock);
+    HeatmapsPathRef *ref = heatmaps_paths;
+    while (ref && strcmp(ref->path, path))
+        ref = ref->next;
+    *first = !ref;
+    if (!ref) {
+        ref = malloc(sizeof(*ref));
+        if (!ref) {
+            err = -ENOMEM;
+            goto unlock;
+        }
+        ref->path = strdup(path);
+        if (!ref->path) {
+            free(ref);
+            err = -ENOMEM;
+            goto unlock;
+        }
+        ref->ref_cnt = 0;
+        ref->next = heatmaps_paths;
+        heatmaps_paths = ref;
+    }
+    ref->ref_cnt++;
+unlock:
+    pthread_mutex_unlock(&heatmaps_lock);
+    return err;
+}
+
+static void heatmaps_path_unref(const char *path)
+{
+    pthread_mutex_lock(&heatmaps_lock);
+    HeatmapsPathRef **ref = &heatmaps_paths;
+    while (*ref && strcmp((*ref)->path, path))
+        ref = &(*ref)->next;
+    if (*ref && !--(*ref)->ref_cnt) {
+        HeatmapsPathRef *unused = *ref;
+        *ref = unused->next;
+        free(unused->path);
+        free(unused);
+    }
+    pthread_mutex_unlock(&heatmaps_lock);
+}
+
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h) {
     (void)pix_fmt;
@@ -613,16 +674,22 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     if (s->heatmaps_path) {
         int err = mkdirp(s->heatmaps_path, 0770);
         if (err) return -EINVAL;
+        bool first;
+        err = heatmaps_path_ref(s->heatmaps_path, &first);
+        if (err) return err;
         char path[1024] = { 0 };
         int scaled_w = s->enc_width;
         int scaled_h = s->enc_height;
         for (int scale = 0; scale < NUM_SCALES; scale++) {
             snprintf(path, sizeof(path), "%s%ccambi_heatmap_scale_%d_%dx%d_16b.gray",
                      s->heatmaps_path, PATH_SEPARATOR, scale, scaled_w, scaled_h);
-            s->heatmaps_files[scale] = fopen(path, "w");
+            s->heatmaps_files[scale] = fopen(path, first ? "wb" : "r+b");
             if (!s->heatmaps_files[scale]) {
                 vmaf_log(VMAF_LOG_LEVEL_ERROR,
                 "cambi: could not open heatmaps_path: %s\n", path);
+                while (scale--)
+                    fclose(s->heatmaps_files[scale]);
+                heatmaps_path_unref(s->heatmaps_path);
                 return -EINVAL;
             }
             scaled_w = (scaled_w + 1) >> 1;
@@ -1416,6 +1483,7 @@ static int close_cambi(VmafFeatureExtractor *fex) {
         for (int scale = 0; scale < NUM_SCALES; scale++) {
             fclose(s->heatmaps_files[scale]);
         }
+        heatmaps_path_unref(s->heatmaps_path);
     }
 
     if (s->feature_name_dict)

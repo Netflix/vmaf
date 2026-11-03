@@ -17,6 +17,7 @@
  */
 
 #include "test.h"
+#include "dict.h"
 #include "ref.h"
 #include "feature/cambi.c"
 
@@ -744,6 +745,105 @@ static char *test_get_vlt_luma()
     return NULL;
 }
 
+#define HEATMAP_TEST_W 256
+#define HEATMAP_TEST_H 256
+#define HEATMAP_TEST_FRAMES 4
+
+/* Runs cambi with heatmaps on a banded gradient, handing frame i to context
+ * i % n_ctx as the feature extractor pool does with n_threads > 1. */
+static char *run_cambi_heatmaps(const char *dir, unsigned n_ctx,
+                                uint8_t *heatmap, size_t heatmap_size)
+{
+    int err;
+    VmafFeatureCollector *fc;
+    err = vmaf_feature_collector_init(&fc);
+    mu_assert("problem during vmaf_feature_collector_init", !err);
+
+    VmafFeatureExtractorContext *fex_ctx[2];
+    for (unsigned i = 0; i < n_ctx; i++) {
+        VmafDictionary *d = NULL;
+        err = vmaf_dictionary_set(&d, "heatmaps_path", dir, 0);
+        mu_assert("problem during vmaf_dictionary_set", !err);
+        err = vmaf_feature_extractor_context_create(&fex_ctx[i],
+                                                    &vmaf_fex_cambi, d);
+        mu_assert("problem during vmaf_feature_extractor_context_create", !err);
+    }
+
+    for (unsigned index = 0; index < HEATMAP_TEST_FRAMES; index++) {
+        VmafPicture ref, dist;
+        err = vmaf_picture_alloc(&ref, VMAF_PIX_FMT_YUV420P, 8,
+                                 HEATMAP_TEST_W, HEATMAP_TEST_H);
+        err |= vmaf_picture_alloc(&dist, VMAF_PIX_FMT_YUV420P, 8,
+                                  HEATMAP_TEST_W, HEATMAP_TEST_H);
+        mu_assert("problem during vmaf_picture_alloc", !err);
+        for (unsigned i = 0; i < HEATMAP_TEST_H; i++) {
+            uint8_t *row = (uint8_t *)dist.data[0] + i * dist.stride[0];
+            for (unsigned j = 0; j < HEATMAP_TEST_W; j++)
+                row[j] = 64 + (j + 16 * index) / 32;
+        }
+        err = vmaf_feature_extractor_context_extract(fex_ctx[index % n_ctx],
+                                                     &ref, NULL, &dist, NULL,
+                                                     index, fc);
+        mu_assert("problem during vmaf_feature_extractor_context_extract", !err);
+        vmaf_picture_unref(&ref);
+        vmaf_picture_unref(&dist);
+    }
+
+    for (unsigned i = 0; i < n_ctx; i++) {
+        err = vmaf_feature_extractor_context_close(fex_ctx[i]);
+        mu_assert("problem during vmaf_feature_extractor_context_close", !err);
+        vmaf_feature_extractor_context_destroy(fex_ctx[i]);
+    }
+    vmaf_feature_collector_destroy(fc);
+
+    char path[1024];
+    snprintf(path, sizeof(path), "%s%ccambi_heatmap_scale_0_%dx%d_16b.gray",
+             dir, PATH_SEPARATOR, HEATMAP_TEST_W, HEATMAP_TEST_H);
+    FILE *f = fopen(path, "rb");
+    mu_assert("heatmap file should exist", f);
+    size_t read = fread(heatmap, 1, heatmap_size, f);
+    fclose(f);
+    mu_assert("heatmap file should hold every frame", read == heatmap_size);
+
+    for (int scale = 0, w = HEATMAP_TEST_W, h = HEATMAP_TEST_H;
+         scale < NUM_SCALES; scale++, w = (w + 1) >> 1, h = (h + 1) >> 1) {
+        snprintf(path, sizeof(path), "%s%ccambi_heatmap_scale_%d_%dx%d_16b.gray",
+                 dir, PATH_SEPARATOR, scale, w, h);
+        remove(path);
+    }
+    remove(dir);
+
+    return NULL;
+}
+
+static char *test_heatmaps_with_several_contexts()
+{
+    const size_t frame_size = HEATMAP_TEST_W * HEATMAP_TEST_H * sizeof(uint16_t);
+    const size_t heatmap_size = frame_size * HEATMAP_TEST_FRAMES;
+    uint8_t *expected = calloc(1, heatmap_size);
+    uint8_t *actual = calloc(1, heatmap_size);
+    mu_assert("problem during calloc", expected && actual);
+
+    char *msg = run_cambi_heatmaps("test_cambi_heatmaps_1", 1,
+                                   expected, heatmap_size);
+    if (!msg)
+        msg = run_cambi_heatmaps("test_cambi_heatmaps_2", 2,
+                                 actual, heatmap_size);
+
+    bool first_frame_set = false;
+    for (size_t i = 0; i < frame_size; i++)
+        first_frame_set |= expected[i] != 0;
+    const bool equal = !memcmp(expected, actual, heatmap_size);
+    free(expected);
+    free(actual);
+    if (msg) return msg;
+
+    mu_assert("the first heatmap frame should not be empty", first_frame_set);
+    mu_assert("heatmaps written by two contexts should match one context",
+              equal);
+    return NULL;
+}
+
 char *run_tests()
 {
     /* Preprocessing functions */
@@ -775,6 +875,9 @@ char *run_tests()
     mu_run_test(test_set_contrast_arrays);
     mu_run_test(test_tvi_hard_threshold_condition);
     mu_run_test(test_get_vlt_luma);
+
+    /* Heatmaps */
+    mu_run_test(test_heatmaps_with_several_contexts);
 
     return NULL;
 }
