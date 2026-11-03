@@ -1047,7 +1047,6 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
         return err;
     }
 
-    vmaf->pic_cnt++;
     err = validate_pic_params(vmaf, ref, dist);
     if (err) {
         release_picture_pair(ref_in, dist_in);
@@ -1059,6 +1058,8 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
         release_picture_pair(ref_in, dist_in);
         return err;
     }
+
+    vmaf->pic_cnt++;
 
 #ifdef HAVE_CUDA
     err = check_ring_buffer(vmaf);

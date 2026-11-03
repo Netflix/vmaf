@@ -308,3 +308,10 @@ test_read_pictures_convert = executable('test_read_pictures_convert',
     link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
 )
 test('test_read_pictures_convert', test_read_pictures_convert)
+
+test_read_pictures_output = executable('test_read_pictures_output',
+    ['test.c', 'test_read_pictures_output.c'],
+    include_directories : [libvmaf_inc, test_inc],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+)
+test('test_read_pictures_output', test_read_pictures_output)
