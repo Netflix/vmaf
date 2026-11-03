@@ -103,7 +103,7 @@ static int fetch_picture(VmafContext *vmaf, video_input *vid, VmafPicture *pic,
     ret = video_input_fetch_into_vmaf_picture(vid, pic);
     if (ret < 1) {
         vmaf_picture_unref(pic);
-        return !ret;
+        return ret < 0 ? -1 : 1;
     }
     pic->color = color;
     return 0;
@@ -382,6 +382,8 @@ int main(int argc, char *argv[])
             break;
         } else if (ret1 < 0 || ret2 < 0) {
             fprintf(stderr, "\nproblem while reading pictures\n");
+            if (!ret1) vmaf_picture_unref(&pic_ref);
+            if (!ret2) vmaf_picture_unref(&pic_dist);
             break;
         } else if (ret1) {
             fprintf(stderr, "\n\"%s\" ended before \"%s\".\n",
