@@ -96,14 +96,14 @@ meson test -C libvmaf\build
 
 1. **Install [MSYS2](https://www.msys2.org/)**
 
-2. **From an MSYS2 MinGW64 shell, install the required packages:**
+2. **From an MSYS2 UCRT64 shell (the `MINGW64` environment is deprecated), install the required packages:**
 
     ```sh
     pacman -S --noconfirm --needed \
-        mingw-w64-x86_64-nasm \
-        mingw-w64-x86_64-gcc \
-        mingw-w64-x86_64-meson \
-        mingw-w64-x86_64-ninja
+        mingw-w64-ucrt-x86_64-nasm \
+        mingw-w64-ucrt-x86_64-gcc \
+        mingw-w64-ucrt-x86_64-meson \
+        mingw-w64-ucrt-x86_64-ninja
     ```
 
 3. **Configure and build:**
