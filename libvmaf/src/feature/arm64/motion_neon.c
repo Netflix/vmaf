@@ -5,13 +5,6 @@
 
 #include "feature/integer_motion.h"
 
-static inline int mirror(int idx, int size)
-{
-    if (idx < 0) return -idx;
-    if (idx >= size) return 2 * size - idx - 2;
-    return idx;
-}
-
 // Phase 2: x_conv + abs + SAD for one row of int32 y_row.
 // Processes 4 int32 columns at a time via widening s32->s64 multiply-accumulate.
 static inline uint32_t
@@ -24,7 +17,7 @@ x_conv_row_sad_neon(const int32_t *y_row, unsigned w)
     for (j = 0; j < 2 && j < w; j++) {
         int64_t accum = 0;
         for (int k = 0; k < 5; k++) {
-            int col = mirror((int)j - 2 + k, (int)w);
+            int col = motion_mirror((int)j - 2 + k, (int)w);
             accum += (int64_t)filter[k] * y_row[col];
         }
         int32_t val = (int32_t)((accum + (1 << 15)) >> 16);
@@ -68,7 +61,7 @@ x_conv_row_sad_neon(const int32_t *y_row, unsigned w)
     for (; j < w; j++) {
         int64_t accum = 0;
         for (int k = 0; k < 5; k++) {
-            int col = mirror((int)j - 2 + k, (int)w);
+            int col = motion_mirror((int)j - 2 + k, (int)w);
             accum += (int64_t)filter[k] * y_row[col];
         }
         int32_t val = (int32_t)((accum + (1 << 15)) >> 16);
@@ -89,7 +82,7 @@ uint64_t motion_score_pipeline_8_neon(const uint8_t *prev, ptrdiff_t prev_stride
     for (unsigned i = 0; i < h; i++) {
         const uint8_t *p[5], *c[5];
         for (int k = 0; k < 5; k++) {
-            int r = mirror((int)i - 2 + k, (int)h);
+            int r = motion_mirror((int)i - 2 + k, (int)h);
             p[k] = prev + r * prev_stride;
             c[k] = cur + r * cur_stride;
         }
