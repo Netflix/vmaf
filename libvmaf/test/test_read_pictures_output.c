@@ -31,7 +31,8 @@
 
 static char *read_file(const char *path)
 {
-    FILE *f = fopen(path, "rb");
+    /* text mode: vmaf_write_output() writes in text mode, so CRLF folds */
+    FILE *f = fopen(path, "r");
     if (!f) return NULL;
     if (fseek(f, 0, SEEK_END)) {
         fclose(f);
@@ -43,11 +44,18 @@ static char *read_file(const char *path)
         return NULL;
     }
     char *buf = calloc((size_t) size + 1, 1);
-    if (!buf || fread(buf, 1, (size_t) size, f) != (size_t) size) {
+    if (!buf) {
+        fclose(f);
+        return NULL;
+    }
+    /* a text-mode read may return fewer bytes than ftell() reports */
+    size_t n = fread(buf, 1, (size_t) size, f);
+    if (ferror(f)) {
         fclose(f);
         free(buf);
         return NULL;
     }
+    buf[n] = '\0';
     fclose(f);
     return buf;
 }
