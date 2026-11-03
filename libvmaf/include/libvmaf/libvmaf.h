@@ -52,6 +52,11 @@ enum VmafPoolingMethod {
     VMAF_POOL_METHOD_MAX,
     VMAF_POOL_METHOD_MEAN,
     VMAF_POOL_METHOD_HARMONIC_MEAN,
+    /* Linear interpolation at (n - 1) * percentile / 100. */
+    VMAF_POOL_METHOD_MEDIAN,
+    VMAF_POOL_METHOD_PERC5,
+    VMAF_POOL_METHOD_PERC10,
+    VMAF_POOL_METHOD_PERC20,
     VMAF_POOL_METHOD_NB
 };
 
@@ -301,6 +306,12 @@ int vmaf_score_pooled_model_collection(VmafContext *vmaf,
 
 /**
  * Pooled feature score for a specific interval.
+ *
+ * MEDIAN/PERC5/PERC10/PERC20 sort the finite scores selected by the interval
+ * and n_subsample, then linearly interpolate between neighboring ranks.
+ * They require O(n) temporary memory and O(n log n) time. An interval with
+ * no selected samples or a non-finite sample returns -EINVAL; missing scores
+ * propagate the score lookup error. The output is unchanged on failure.
  *
  * @param vmaf          The VMAF context allocated with `vmaf_init()`.
  *
