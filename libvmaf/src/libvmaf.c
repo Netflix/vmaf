@@ -1059,8 +1059,6 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
         return err;
     }
 
-    vmaf->pic_cnt++;
-
 #ifdef HAVE_CUDA
     err = check_ring_buffer(vmaf);
     if (err) {
@@ -1081,6 +1079,7 @@ int vmaf_read_pictures(VmafContext *vmaf, VmafPicture *ref, VmafPicture *dist,
     VmafPicture dist_host = { 0 }, dist_device = { 0 };
     err = translate_picture(vmaf, dist, &dist_host, &dist_device, hw_flags);
 #endif
+    vmaf->pic_cnt++;
 
     for (unsigned i = 0; i < vmaf->registered_feature_extractors.cnt; i++) {
         VmafFeatureExtractorContext *fex_ctx =
