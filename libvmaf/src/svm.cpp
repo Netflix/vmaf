@@ -11,17 +11,17 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <utility>
+#include <algorithm>
 #include "svm.h"
 int libsvm_version = LIBSVM_VERSION;
 typedef float Qfloat;
 typedef signed char schar;
-#ifndef min
-template <class T> static inline T min(T x,T y) { return (x<y)?x:y; }
-#endif
-#ifndef max
-template <class T> static inline T max(T x,T y) { return (x>y)?x:y; }
-#endif
-template <class T> static inline void swap(T& x, T& y) { T t=x; x=y; y=t; }
+
+using std::min;
+using std::max;
+using std::swap;
+
 template <class S, class T> static inline void clone(T*& dst, S* src, int n)
 {
 	dst = new T[n];
