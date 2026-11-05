@@ -421,7 +421,7 @@ static int extract(VmafFeatureExtractor *fex,
     return 0;
 }
 
-static int close(VmafFeatureExtractor *fex)
+static int close_fex(VmafFeatureExtractor *fex)
 {
     MotionState *s = fex->priv;
 
@@ -458,7 +458,7 @@ VmafFeatureExtractor vmaf_fex_float_motion = {
     .extract = extract,
     .options = options,
     .flush = flush,
-    .close = close,
+    .close = close_fex,
     .priv_size = sizeof(MotionState),
     .provided_features = provided_features,
     .flags = VMAF_FEATURE_EXTRACTOR_TEMPORAL,
