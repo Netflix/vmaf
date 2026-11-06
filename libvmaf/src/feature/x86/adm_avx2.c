@@ -695,6 +695,11 @@ angle_flag = ((((float)ot_dp / 4096.0) >= 0.0f) && \
                     cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0))); \
 } \
 
+static inline __m256i blend(__m256i a, __m256i b, __m256i mask)
+{
+    return _mm256_blendv_epi8(b, a, mask);
+}
+
 void adm_decouple_avx2(AdmBuffer *buf, int w, int h, int stride,
                          double adm_enhn_gain_limit, int32_t* adm_div_lookup)
 {
@@ -781,22 +786,17 @@ void adm_decouple_avx2(AdmBuffer *buf, int w, int h, int stride,
             shift15_64b_signExt_256(od_div_td_lo, od_div_td_lo);
             shift15_64b_signExt_256(od_div_td_hi, od_div_td_hi);
 
-            __m256i tmp_kh = _mm256_or_si256(_mm256_and_si256(oh_div_th_lo, _mm256_set1_epi64x(0xFFFFFFFF)), _mm256_slli_epi64(oh_div_th_hi, 32));
-            __m256i tmp_kv = _mm256_or_si256(_mm256_and_si256(ov_div_tv_lo, _mm256_set1_epi64x(0xFFFFFFFF)), _mm256_slli_epi64(ov_div_tv_hi, 32));
-            __m256i tmp_kd = _mm256_or_si256(_mm256_and_si256(od_div_td_lo, _mm256_set1_epi64x(0xFFFFFFFF)), _mm256_slli_epi64(od_div_td_hi, 32));
+            __m256i tmp_kh = _mm256_blend_epi32(oh_div_th_lo, _mm256_slli_epi64(oh_div_th_hi, 32), 0xAA);
+            __m256i tmp_kv = _mm256_blend_epi32(ov_div_tv_lo, _mm256_slli_epi64(ov_div_tv_hi, 32), 0xAA);
+            __m256i tmp_kd = _mm256_blend_epi32(od_div_td_lo, _mm256_slli_epi64(od_div_td_hi, 32), 0xAA);
 
             __m256i eqz_oh = _mm256_cmpeq_epi32(oh, _mm256_setzero_si256());
             __m256i eqz_ov = _mm256_cmpeq_epi32(ov, _mm256_setzero_si256());
             __m256i eqz_od = _mm256_cmpeq_epi32(od, _mm256_setzero_si256());
 
-            tmp_kh = _mm256_andnot_si256(eqz_oh, tmp_kh);
-            tmp_kh = _mm256_or_si256(tmp_kh, _mm256_and_si256(const_32768_32b, eqz_oh));
-
-            tmp_kv = _mm256_andnot_si256(eqz_ov, tmp_kv);
-            tmp_kv = _mm256_or_si256(tmp_kv, _mm256_and_si256(const_32768_32b, eqz_ov));
-
-            tmp_kd = _mm256_andnot_si256(eqz_od, tmp_kd);
-            tmp_kd = _mm256_or_si256(tmp_kd, _mm256_and_si256(const_32768_32b, eqz_od));
+            tmp_kh = blend(const_32768_32b, tmp_kh, eqz_oh);
+            tmp_kv = blend(const_32768_32b, tmp_kv, eqz_ov);
+            tmp_kd = blend(const_32768_32b, tmp_kd, eqz_od);
 
             tmp_kh = _mm256_max_epi32(tmp_kh, _mm256_setzero_si256());
             tmp_kh = _mm256_min_epi32(tmp_kh, const_32768_32b);
@@ -874,17 +874,13 @@ void adm_decouple_avx2(AdmBuffer *buf, int w, int h, int stride,
             d_min = _mm256_and_si256(d_min, gt0_rst_d_f);
             d_max = _mm256_and_si256(d_max, lt0_rst_d_f);
 
-            __m256i h_min_max = _mm256_and_si256(_mm256_or_si256(h_min, h_max), mask_rst_h);
-            __m256i v_min_max = _mm256_and_si256(_mm256_or_si256(v_min, v_max), mask_rst_v);
-            __m256i d_min_max = _mm256_and_si256(_mm256_or_si256(d_min, d_max), mask_rst_d);
+            __m256i h_min_max = _mm256_or_si256(h_min, h_max);
+            __m256i v_min_max = _mm256_or_si256(v_min, v_max);
+            __m256i d_min_max = _mm256_or_si256(d_min, d_max);
 
-            rst_h = _mm256_andnot_si256(mask_rst_h, rst_h);
-            rst_v = _mm256_andnot_si256(mask_rst_v, rst_v);
-            rst_d = _mm256_andnot_si256(mask_rst_d, rst_d);
-
-            rst_h = _mm256_or_si256(h_min_max, rst_h);
-            rst_v = _mm256_or_si256(v_min_max, rst_v);
-            rst_d = _mm256_or_si256(d_min_max, rst_d);
+            rst_h = blend(h_min_max, rst_h, mask_rst_h);
+            rst_v = blend(v_min_max, rst_v, mask_rst_v);
+            rst_d = blend(d_min_max, rst_d, mask_rst_d);
 
             th = _mm256_sub_epi32(th, rst_h);
             tv = _mm256_sub_epi32(tv, rst_v);
@@ -1350,11 +1346,6 @@ static inline uint16_t get_best15_from32(uint32_t temp, int *x)
     temp = (temp + (1 << (k - 1))) >> k;
     *x = k;
     return temp;
-}
-
-static inline __m256i blend(__m256i a, __m256i b, __m256i mask)
-{
-    return _mm256_or_si256(_mm256_and_si256(mask, a), _mm256_andnot_si256(mask, b));
 }
 
 static inline __m256i sra_epi64(__m256i a, __m256i mask)
