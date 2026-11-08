@@ -38,6 +38,44 @@ static int cli_free_dicts(CLISettings *settings) {
     return 0;
 }
 
+static char *test_unsigned_long_options()
+{
+    const struct {
+        char *threads;
+        char *subsample;
+        char *cpumask;
+        unsigned thread_cnt;
+        unsigned subsample_cnt;
+        unsigned cpu_mask;
+    } cases[] = {
+        { "0", "0", "0", 0, 0, 0 },
+        { "2", "3", "15", 2, 3, 15 },
+        { "0x2", "0x3", "0xf", 2, 3, 15 },
+    };
+
+    for (unsigned i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        char *argv[] = {
+            "vmaf", "-r", "ref.y4m", "-d", "dis.y4m", "-n",
+            "--threads", cases[i].threads,
+            "--subsample", cases[i].subsample,
+            "--cpumask", cases[i].cpumask, NULL,
+        };
+        CLISettings settings;
+        optind = 1;
+        cli_parse(sizeof(argv) / sizeof(argv[0]) - 1, argv, &settings);
+        mu_assert("cli_parse: --threads should preserve its unsigned value",
+                  settings.thread_cnt == cases[i].thread_cnt);
+        mu_assert("cli_parse: --subsample should preserve its unsigned value",
+                  settings.subsample == cases[i].subsample_cnt);
+        mu_assert("cli_parse: --cpumask should preserve its unsigned value",
+                  settings.cpumask == cases[i].cpu_mask);
+        cli_free(&settings);
+        cli_free_dicts(&settings);
+    }
+
+    return NULL;
+}
+
 static char *test_aom_ctc_v1_0()
 {
     char *argv[7] = {"vmaf", "-r", "ref.y4m", "-d", "dis.y4m", "--aom_ctc", "v1.0"};
@@ -546,6 +584,7 @@ static char *test_default_model_is_sdr_when_one_input_unspecified()
 
 char *run_tests()
 {
+    mu_run_test(test_unsigned_long_options);
     mu_run_test(test_aom_ctc_v1_0);
     mu_run_test(test_aom_ctc_v2_0);
     mu_run_test(test_aom_ctc_v3_0);
