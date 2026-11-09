@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "cuda_helper.cuh"
 #include "mem.h"
@@ -33,25 +34,32 @@
 
 #include <assert.h>
 
-#define RES_BUFFER_SIZE 4 * 3 * 2
+#include "barten_csf_tools.h"
 
-typedef struct WarpShift {
-    uint32_t shift_cub[3];
-    uint32_t add_shift_cub[3];
-    uint32_t shift_sq[3];
-    uint32_t add_shift_sq[3];
-} WarpShift;
+/* 4 scales of adm_cm, adm_csf_den and aim_num, 3 bands each */
+#define RES_BUFFER_SIZE (4 * 3 * 3)
 
+/*
+ * The state of the CUDA implementation. Every option of the reference
+ * implementation is mirrored here, including its name, alias, type, default
+ * value and feature parameter flag, so that the generated feature names are
+ * identical.
+ */
 typedef struct AdmStateCuda {
     size_t integer_stride;
     AdmBufferCuda buf;
     bool debug;
+    double adm_csf_scale;
+    double adm_csf_diag_scale;
+    double adm_dlm_weight;
     double adm_enhn_gain_limit;
     double adm_norm_view_dist;
     int adm_ref_display_height;
-    void (*dwt2_8)(const uint8_t *src, const cuda_adm_dwt_band_t *dst, void* tmp_buf,
-            AdmBufferCuda *buf, int w, int h, int src_stride,
-            int dst_stride, CUstream c_stream);
+    int adm_csf_mode;
+    double adm_noise_weight;
+    bool adm_skip_aim;
+    bool adm_skip_scale0;
+    double adm_min_val;
     CUstream str, host_stream;
     void* write_score_parameters;
     CUevent ref_event, dis_event, finished;
@@ -63,20 +71,19 @@ typedef struct AdmStateCuda {
                func_dwt_s123_combined_hori_kernel_16384_15,
                func_dwt_s123_combined_hori_kernel_32768_16,
                func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint8_t,
-               func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t,          // untested
-                                                                                    // adm_decouple kernel
+               func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t,
+               // adm_decouple kernel
                func_adm_decouple_kernel,
                func_adm_decouple_s123_kernel,
                // adm_csf kernel
                func_i4_adm_csf_kernel_1_4,
                func_adm_csf_kernel_1_4,
                // adm_csf_den kernel
-               func_adm_csf_den_scale_line_kernel,
-               func_adm_csf_den_s123_line_kernel,
+               func_adm_csf_den_scale_row_kernel,
+               func_adm_csf_den_s123_row_kernel,
                // adm_cm kernel
-               func_adm_cm_reduce_line_kernel_4,
-               func_adm_cm_line_kernel_8,
-               func_i4_adm_cm_line_kernel;
+               func_adm_cm_row_kernel,
+               func_i4_adm_cm_row_kernel;
 
 } AdmStateCuda;
 
@@ -97,7 +104,121 @@ static inline float dwt_quant_step(const struct dwt_model_params *params,
     return Q;
 }
 
-void dwt2_8_device(AdmStateCuda *s, const uint8_t *d_picture, cuda_adm_dwt_band_t *d_dst, cuda_i4_adm_dwt_band_t i4_dwt_dst,
+/*
+ * Border of the decouple/csf kernels, identical to the reference
+ * implementation (-1 for the filter tap).
+ */
+static void adm_csf_borders(const int w, const int h, int *top, int *bottom,
+        int *left, int *right)
+{
+    int l = w * ADM_BORDER_FACTOR - 0.5 - 1; // -1 for filter tap
+    int t = h * ADM_BORDER_FACTOR - 0.5 - 1;
+    int r = w - l + 2; // +2 for filter tap
+    int b = h - t + 2;
+
+    if (l < 0) {
+        l = 0;
+    }
+    if (r > w) {
+        r = w;
+    }
+    if (t < 0) {
+        t = 0;
+    }
+    if (b > h) {
+        b = h;
+    }
+
+    *top = t;
+    *bottom = b;
+    *left = l;
+    *right = r;
+}
+
+/*
+ * Border of the csf_den/cm kernels, identical to the reference
+ * implementation.
+ */
+static void adm_cm_borders(const int w, const int h, int *top, int *bottom,
+        int *left, int *right)
+{
+    const int l = w * ADM_BORDER_FACTOR - 0.5;
+    const int t = h * ADM_BORDER_FACTOR - 0.5;
+
+    *top = t;
+    *bottom = h - t;
+    *left = l;
+    *right = w - l;
+}
+
+/*
+ * rfactor[3] = { factor1, factor1, factor2 }, identical to the reference
+ * implementation for the requested contrast sensitivity function.
+ */
+static void adm_csf_rfactor(const int scale, const int adm_csf_mode,
+        const double adm_norm_view_dist, const int adm_ref_display_height,
+        const double adm_csf_scale, const double adm_csf_diag_scale,
+        float rfactor[3])
+{
+    float factor1, factor2;
+    if (adm_csf_mode == ADM_CSF_MODE_BARTEN) {
+        factor1 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height,
+                DEFAULT_ADM_CSF_LUM, adm_csf_scale);
+        factor2 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height,
+                DEFAULT_ADM_CSF_LUM, adm_csf_diag_scale);
+    } else if (adm_csf_mode == ADM_CSF_MODE_BARTEN_WATSON_BLEND) {
+        factor1 = barten_watson_blend_csf(scale, 0, adm_norm_view_dist, adm_ref_display_height);
+        factor2 = barten_watson_blend_csf(scale, 1, adm_norm_view_dist, adm_ref_display_height);
+    } else if (adm_csf_mode == ADM_CSF_MODE_BARTEN_WATSON_BLEND_MAE) {
+        factor1 = barten_watson_blend_csf_mae(scale, 0, adm_norm_view_dist, adm_ref_display_height);
+        factor2 = barten_watson_blend_csf_mae(scale, 1, adm_norm_view_dist, adm_ref_display_height);
+    } else {
+        factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1,
+                adm_norm_view_dist, adm_ref_display_height);
+        factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2,
+                adm_norm_view_dist, adm_ref_display_height);
+    }
+    rfactor[0] = factor1;
+    rfactor[1] = factor1;
+    rfactor[2] = factor2;
+}
+
+/*
+ * The scale 0 fixed-point rfactor of the reference implementation: Q21 for
+ * the first two bands and Q23 for the last one.
+ */
+static void adm_i_rfactor_scale0(const float rfactor[3],
+        const double adm_norm_view_dist, const int adm_ref_display_height,
+        const int adm_csf_mode, uint16_t i_rfactor[3])
+{
+    if (fabs(adm_norm_view_dist * adm_ref_display_height -
+                DEFAULT_ADM_NORM_VIEW_DIST * DEFAULT_ADM_REF_DISPLAY_HEIGHT) < 1.0e-8 &&
+            adm_csf_mode == ADM_CSF_MODE_WATSON97) {
+        i_rfactor[0] = 36453;
+        i_rfactor[1] = 36453;
+        i_rfactor[2] = 49417;
+    } else {
+        const double pow2_21 = pow(2, 21);
+        const double pow2_23 = pow(2, 23);
+        i_rfactor[0] = (uint16_t)(rfactor[0] * pow2_21);
+        i_rfactor[1] = (uint16_t)(rfactor[1] * pow2_21);
+        i_rfactor[2] = (uint16_t)(rfactor[2] * pow2_23);
+    }
+}
+
+/*
+ * The scale 1..3 fixed-point rfactor of the reference implementation: Q32
+ * for all three bands.
+ */
+static void adm_i_rfactor_s123(const float rfactor[3], uint32_t i_rfactor[3])
+{
+    const double pow2_32 = pow(2, 32);
+    i_rfactor[0] = (uint32_t)(rfactor[0] * pow2_32);
+    i_rfactor[1] = (uint32_t)(rfactor[1] * pow2_32);
+    i_rfactor[2] = (uint32_t)(rfactor[2] * pow2_32);
+}
+
+static void dwt2_8_device(AdmStateCuda *s, const uint8_t *d_picture, cuda_adm_dwt_band_t *d_dst, cuda_i4_adm_dwt_band_t i4_dwt_dst,
         int w, int h, int src_stride, int dst_stride, AdmFixedParametersCuda *p,
         CudaFunctions* cu_f, CUstream c_stream) {
     int rows_per_thread = 4;
@@ -118,9 +239,30 @@ void dwt2_8_device(AdmStateCuda *s, const uint8_t *d_picture, cuda_adm_dwt_band_
                 0, c_stream, args, NULL));
 }
 
-void adm_dwt2_s123_combined_device(AdmStateCuda *s,const int32_t *d_i4_scale, int32_t *tmp_buf, cuda_i4_adm_dwt_band_t i4_dwt,
-                                   int w, int h, int img_stride, int dst_stride, int scale, AdmFixedParametersCuda *p,
-                                   CudaFunctions* cu_f, CUstream cu_stream) {
+static void dwt2_16_device(AdmStateCuda *s, const uint16_t *d_picture, cuda_adm_dwt_band_t *d_dst, cuda_i4_adm_dwt_band_t i4_dwt_dst,
+        int w, int h, int src_stride, int dst_stride, int inp_size_bits,
+        AdmFixedParametersCuda *p, CudaFunctions* cu_f, CUstream c_stream) {
+    int rows_per_thread = 4;
+
+    int vert_out_tile_rows = 8;
+    int vert_out_tile_cols = 128;
+
+    int horz_out_tile_rows = vert_out_tile_rows;
+    int horz_out_tile_cols = vert_out_tile_cols / 2 - 2;
+
+    int16_t v_shift = inp_size_bits;
+    int32_t v_add_shift = 1 << (inp_size_bits - 1);
+
+    void *args[] = {&d_picture, &*d_dst, &i4_dwt_dst, &w, &h, &src_stride, &dst_stride, &v_shift, &v_add_shift, &*p};
+    CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t,
+                DIV_ROUND_UP((w + 1) / 2, horz_out_tile_cols), DIV_ROUND_UP((h + 1) / 2, horz_out_tile_rows), 1,
+                vert_out_tile_cols, vert_out_tile_rows / rows_per_thread, 1,
+                0, c_stream, args, NULL));
+}
+
+static void adm_dwt2_s123_combined_device(AdmStateCuda *s, const int32_t *d_i4_scale, int32_t *tmp_buf,
+        cuda_i4_adm_dwt_band_t i4_dwt, int w, int h, int img_stride, int dst_stride, int scale,
+        AdmFixedParametersCuda *p, CudaFunctions* cu_f, CUstream cu_stream) {
     const int BLOCK_Y = (h + 1) / 2;
 
     void * args_vert[] = {&d_i4_scale, &tmp_buf, &w, &h, &img_stride, &*p};
@@ -168,425 +310,168 @@ void adm_dwt2_s123_combined_device(AdmStateCuda *s,const int32_t *d_i4_scale, in
     }
 }
 
-void adm_dwt2_16_device(AdmStateCuda *s, const uint16_t *d_picture, cuda_adm_dwt_band_t *d_dst, cuda_i4_adm_dwt_band_t i4_dwt_dst,
-                        int w, int h, int src_stride, int dst_stride, int inp_size_bits,
-                        AdmFixedParametersCuda *p, CudaFunctions* cu_f, CUstream c_stream) {
-    int rows_per_thread = 4;
-
-    int vert_out_tile_rows = 8;
-    int vert_out_tile_cols = 128;
-
-    int horz_out_tile_rows = vert_out_tile_rows;
-    int horz_out_tile_cols = vert_out_tile_cols / 2 - 2;
-
-    int16_t v_shift = inp_size_bits;
-    int32_t v_add_shift = 1 << (inp_size_bits - 1);
-
-    void *args[] = {&d_picture, &*d_dst, &i4_dwt_dst, &w, &h, &src_stride, &dst_stride, &v_shift, &v_add_shift, &*p};
-    CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_dwt2_8_vert_hori_kernel_4_16_32768_128_8_uint16_t,
-                   DIV_ROUND_UP((w + 1) / 2, horz_out_tile_cols), DIV_ROUND_UP((h + 1) / 2, horz_out_tile_rows), 1,
-                   vert_out_tile_cols, vert_out_tile_rows / rows_per_thread, 1,
-                   0, c_stream, args, NULL));
-}
-
-void adm_csf_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int stride,
-                    AdmFixedParametersCuda *p, CudaFunctions* cu_f, CUstream c_stream) {
-    // ensure that all pointers are aligned to 16 bytes for vectorized memory access
-    for (int band = 0;band < 3;++band) {
-        assert(((size_t)(buf->i4_decouple_a.bands[band]) & 15) == 0);
-        assert(((size_t)(buf->i4_csf_a.bands[band]) & 15) == 0);
-        assert(((size_t)(buf->i4_csf_f.bands[band]) & 15) == 0);
-    }
-
-    // ensure that the stride is a multiple of 4 so that each row starts 16 byte aligned.
-    assert(stride % 4 == 0);
-
-    /* The computation of the score is not required for the regions
-       which lie outside the frame borders */
-    int left = w * (float)(ADM_BORDER_FACTOR) - 0.5f - 1; // -1 for filter tap
-    int top = h * (float)(ADM_BORDER_FACTOR) - 0.5f - 1;
-    int right = w - left + 2; // +2 for filter tap
-    int bottom = h - top + 2;
-
-    if (left < 0) {
-        left = 0;
-    }
-    if (right > w) {
-        right = w;
-    }
-    if (top < 0) {
-        top = 0;
-    }
-    if (bottom > h) {
-        bottom = h;
-    }
-
-    // align left side to ensure that all memory accesses start at a multiple of 16 bytes.
-    // this will do a little bit more work than originally requested, though the result is unchanged.
-    left = left & ~3;
-
-    const int cols_per_thread = 4;
-    const int rows_per_thread = 1;
-    const int BLOCKX = 32, BLOCKY = 4;
-
-
-    void* args[] = {&*buf, &top, &bottom, &left, &right, &stride, &*p};
-    CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_csf_kernel_1_4,
-                DIV_ROUND_UP(right - left, BLOCKX * cols_per_thread), DIV_ROUND_UP(bottom - top, BLOCKY * rows_per_thread), 3,
-                BLOCKX, BLOCKY, 1,
-                0, c_stream, args, NULL));
-}
-
-void i4_adm_csf_device(AdmStateCuda *s, AdmBufferCuda *buf, int scale, int w, int h, int stride,
-        AdmFixedParametersCuda *p, CudaFunctions* cu_f, CUstream c_stream) {
-    // ensure that all pointers are aligned to 16 bytes for vectorized memory access
-    for (int band = 0;band < 3;++band) {
-        assert(((size_t)(buf->i4_decouple_a.bands[band]) & 15) == 0);
-        assert(((size_t)(buf->i4_csf_a.bands[band]) & 15) == 0);
-        assert(((size_t)(buf->i4_csf_f.bands[band]) & 15) == 0);
-    }
-
-    // ensure that the stride is a multiple of 4 so that each row starts 16 byte aligned.
-    assert(stride % 4 == 0);
-
-    /* The computation of the score is not required for the regions
-       which lie outside the frame borders */
-    int left = w * (float)(ADM_BORDER_FACTOR) - 0.5f - 1; // -1 for filter tap
-    int top = h * (float)(ADM_BORDER_FACTOR) - 0.5f - 1;
-    int right = w - left + 2; // +2 for filter tap
-    int bottom = h - top + 2;
-
-    if (left < 0) {
-        left = 0;
-    }
-    if (right > w) {
-        right = w;
-    }
-    if (top < 0) {
-        top = 0;
-    }
-    if (bottom > h) {
-        bottom = h;
-    }
-
-    // align left side to ensure that all memory accesses start at a multiple of 16 bytes.
-    // this will do a little bit more work than originally requested, though the result is unchanged.
-    left = left & ~3;
-
-    const int cols_per_thread = 4;
-    const int rows_per_thread = 1;
-    const int BLOCKX = 32, BLOCKY = 4;
-
-    void* args[] = {&*buf, &scale, &top, &bottom, &left, &right, &stride, &*p};
-    CHECK_CUDA(cu_f, cuLaunchKernel(s->func_i4_adm_csf_kernel_1_4,
-                DIV_ROUND_UP(right - left, BLOCKX * cols_per_thread), DIV_ROUND_UP(bottom - top, BLOCKY * rows_per_thread), 3,
-                BLOCKX, BLOCKY, 1,
-                0, c_stream, args, NULL));
-}
-
-void adm_decouple_s123_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int stride, AdmFixedParametersCuda* p,
-        CudaFunctions* cu_f, CUstream c_stream) {
-
-    /* The computation of the score is not required for the regions
-       which lie outside the frame borders */
-    int left = w * (float)(ADM_BORDER_FACTOR) - 0.5f - 1; // -1 for filter tap
-    int top = h * (float)(ADM_BORDER_FACTOR) - 0.5f - 1;
-    int right = w - left + 2; // +2 for filter tap
-    int bottom = h - top + 2;
-
-    if (left < 0) {
-        left = 0;
-    }
-    if (right > w) {
-        right = w;
-    }
-    if (top < 0) {
-        top = 0;
-    }
-    if (bottom > h) {
-        bottom = h;
-    }
-
-    const int BLOCKX = 8, BLOCKY = 8;
-    void* args[] = {&*buf, &top, &bottom, &left, &right, &stride, &p->adm_enhn_gain_limit};
-    CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_decouple_s123_kernel,
-                DIV_ROUND_UP(right - left, BLOCKX), DIV_ROUND_UP(bottom - top, BLOCKY), 1,
-                BLOCKX, BLOCKY, 1,
-                0, c_stream, args, NULL));
-}
-
-void adm_decouple_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int stride, AdmFixedParametersCuda* p,
-        CudaFunctions* cu_f, CUstream c_stream) {
-    /* The computation of the score is not required for the regions
-       which lie outside the frame borders */
-    int left = w * (float)(ADM_BORDER_FACTOR) - 0.5f - 1; // -1 for filter tap
-    int top = h * (float)(ADM_BORDER_FACTOR) - 0.5f - 1;
-    int right = w - left + 2; // +2 for filter tap
-    int bottom = h - top + 2;
-
-    if (left < 0) {
-        left = 0;
-    }
-    if (right > w) {
-        right = w;
-    }
-    if (top < 0) {
-        top = 0;
-    }
-    if (bottom > h) {
-        bottom = h;
-    }
+static void adm_decouple_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int stride,
+        double adm_enhn_gain_limit, float cos_1deg_sq, CudaFunctions* cu_f, CUstream c_stream) {
+    int top, bottom, left, right;
+    adm_csf_borders(w, h, &top, &bottom, &left, &right);
 
     const int BLOCKX = 16, BLOCKY = 8;
-    void* args[] = {&*buf, &top, &bottom, &left, &right, &stride, &p->adm_enhn_gain_limit};
+    void* args[] = {&*buf, &top, &bottom, &left, &right, &stride, &adm_enhn_gain_limit, &cos_1deg_sq};
     CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_decouple_kernel,
                 DIV_ROUND_UP(right - left, BLOCKX), DIV_ROUND_UP(bottom - top, BLOCKY), 1,
                 BLOCKX, BLOCKY, 1,
                 0, c_stream, args, NULL));
 }
 
-void adm_csf_den_s123_device(AdmStateCuda *s, AdmBufferCuda *buf, int scale, int w, int h,
-        int src_stride, double adm_norm_view_dist, int adm_ref_display_height,
-        CudaFunctions* cu_f, CUstream c_stream) {
-    /* The computation of the denominator scales is not required for the regions
-     * which lie outside the frame borders
-     */
+static void adm_decouple_s123_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int stride,
+        double adm_enhn_gain_limit, float cos_1deg_sq, CudaFunctions* cu_f, CUstream c_stream) {
+    int top, bottom, left, right;
+    adm_csf_borders(w, h, &top, &bottom, &left, &right);
 
-    int left = w * (float)(ADM_BORDER_FACTOR) - 0.5f;
-    int top = h * (float)(ADM_BORDER_FACTOR) - 0.5f;
-    int right = w - left;
-    int bottom = h - top;
-
-    int buffer_stride = right - left;
-    int buffer_h = bottom - top;
-
-    int val_per_thread = 8;
-    int warps_per_cta = 4;
-    int BLOCKX = VMAF_CUDA_THREADS_PER_WARP * warps_per_cta;
-
-    uint32_t shift_sq[3] = {31, 30, 31};
-    uint32_t add_shift_sq[3] = {1u << shift_sq[0], 1u << shift_sq[1],
-        1u << shift_sq[2]};
-
-    void* args[] = {
-        &buf->i4_ref_dwt2, &h, &top, &bottom, &left, &right, &src_stride,
-        &add_shift_sq[scale - 1], &shift_sq[scale - 1],
-        &buf->adm_csf_den[scale]};
-    CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_csf_den_s123_line_kernel,
-                DIV_ROUND_UP(buffer_stride, BLOCKX * val_per_thread), buffer_h, 3,
-                BLOCKX, 1, 1,
+    const int BLOCKX = 8, BLOCKY = 8;
+    void* args[] = {&*buf, &top, &bottom, &left, &right, &stride, &adm_enhn_gain_limit, &cos_1deg_sq};
+    CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_decouple_s123_kernel,
+                DIV_ROUND_UP(right - left, BLOCKX), DIV_ROUND_UP(bottom - top, BLOCKY), 1,
+                BLOCKX, BLOCKY, 1,
                 0, c_stream, args, NULL));
 }
 
-void adm_csf_den_scale_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src_stride,
-        double adm_norm_view_dist, int adm_ref_display_height,
-        CudaFunctions* cu_f, CUstream c_stream) {
-    /* The computation of the denominator scales is not required for the regions
-     * which lie outside the frame borders
-     */
-    int scale = 0;
-    int left = w * (float)(ADM_BORDER_FACTOR) - 0.5f;
-    int top = h * (float)(ADM_BORDER_FACTOR) - 0.5f;
-    int right = w - left;
-    int bottom = h - top;
+static void adm_csf_device(AdmStateCuda *s, AdmBufferCuda *buf, int scale, int w, int h, int stride,
+        AdmCsfKernelParamsCuda *params, int measure_aim, CudaFunctions* cu_f, CUstream c_stream) {
+    int top, bottom, left, right;
+    adm_csf_borders(w, h, &top, &bottom, &left, &right);
 
-    int buffer_stride = right - left;
-    int buffer_h = bottom - top;
+    params->measure_aim = measure_aim;
 
-    int val_per_thread = 8;
-    int warps_per_cta = 4;
+    const int cols_per_thread = 4;
+    const int rows_per_thread = 1;
+    const int BLOCKX = 32, BLOCKY = 4;
 
-    const int BLOCKX = VMAF_CUDA_THREADS_PER_WARP * warps_per_cta;
-
-    void* args[] = {
-        &buf->ref_dwt2, &h, &top, &bottom, &left, &right, &src_stride,
-        &buf->adm_csf_den[scale]};
-    CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_csf_den_scale_line_kernel,
-                DIV_ROUND_UP(buffer_stride, BLOCKX * val_per_thread), buffer_h, 3,
-                BLOCKX, 1, 1,
-                0, c_stream, args, NULL));
-}
-
-void i4_adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src_stride,
-        int csf_a_stride, int scale, AdmFixedParametersCuda *p, CudaFunctions* cu_f,
-        CUstream c_stream) {
-
-    int left = w * (float)(ADM_BORDER_FACTOR) - 0.5f;
-    int top = h * (float)(ADM_BORDER_FACTOR) - 0.5f;
-    int right = w - left;
-    int bottom = h - top;
-
-    int start_col = (left > 1) ? left : ((left <= 0) ? 0 : 1);
-    int end_col =
-        (right < (w - 1)) ? right : ((right > (w - 1)) ? w : w - 1);
-    int start_row = (top > 1) ? top : ((top <= 0) ? 0 : 1);
-    int end_row =
-        (bottom < (h - 1)) ? bottom : ((bottom > (h - 1)) ? h : h - 1);
-
-    int buffer_stride = end_col - start_col;
-    int buffer_h = end_row - start_row;
-
-    {
-        const int BLOCKX = 128;
-
-        void* args[] = {
-            &*buf, &h, &w, &top, &bottom, &left, &right, &start_row, &end_row, &start_col,
-            &end_col, &src_stride, &csf_a_stride, &scale, &buffer_h, &buffer_stride,
-            &buf->tmp_accum->data, &*p};
-        CHECK_CUDA(cu_f, cuLaunchKernel(s->func_i4_adm_cm_line_kernel,
-                    DIV_ROUND_UP(buffer_stride, BLOCKX), buffer_h, 3,
-                    BLOCKX, 1, 1,
+    if (scale == 0) {
+        void* args[] = {&*buf, &top, &bottom, &left, &right, &stride, params};
+        CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_csf_kernel_1_4,
+                    DIV_ROUND_UP(right - left, BLOCKX * cols_per_thread),
+                    DIV_ROUND_UP(bottom - top, BLOCKY * rows_per_thread), 3,
+                    BLOCKX, BLOCKY, 1,
                     0, c_stream, args, NULL));
-    }
-    {
-        const int val_per_thread = 4;
-        const int warps_per_cta = 4;
-        const int BLOCKX = VMAF_CUDA_THREADS_PER_WARP * warps_per_cta;
-
-        void* args[] = {
-            &h, &w, &scale, &buffer_h, &buffer_stride,
-            &buf->tmp_accum->data, &buf->adm_cm[scale]};
-        CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_cm_reduce_line_kernel_4,
-                    DIV_ROUND_UP(buffer_stride, BLOCKX * val_per_thread), buffer_h, 3,
-                    BLOCKX, 1, 1,
-                    0, c_stream, args, NULL));
-    }
-}
-
-void adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int w, int h, int src_stride,
-        int csf_a_stride, AdmFixedParametersCuda *p,
-        CudaFunctions* cu_f, CUstream c_stream) {
-
-    int scale = 0;
-    int left = w * (float)(ADM_BORDER_FACTOR) - 0.5f;
-    int top = h * (float)(ADM_BORDER_FACTOR) - 0.5f;
-    int right = w - left;
-    int bottom = h - top;
-
-    int start_col = MAX(0, left);
-    int end_col = MIN(right, w);
-    int start_row = MAX(0, top);
-    int end_row = MIN(bottom, h);
-
-    int buffer_stride = end_col - start_col;
-    int buffer_h = end_row - start_row;
-
-    // precompute warp shift per band
-    //const int32_t shift_sub[3] = {10, 10, 12};
-    const int fixed_shift[3] = {4, 4, 3};
-
-    // accumulation
-    const int32_t shift_xsq[3] = {29, 29, 30};
-    const int32_t add_shift_xsq[3] = {268435456, 268435456, 536870912};
-
-    const int NUM_BANDS = 3;
-    WarpShift ws;
-    for (int band = 0;band < NUM_BANDS;++band) {
-        ws.shift_cub[band] = (uint32_t)(ceil(log2f(w)));
-        if (scale == 0) {
-            ws.shift_cub[band] -= fixed_shift[band];
-            ws.shift_sq[band] = shift_xsq[band];
-            ws.add_shift_sq[band] = add_shift_xsq[band];
-        } else {
-            ws.shift_sq[band] = 30;
-            ws.add_shift_sq[band] = (1 << (ws.shift_sq[band]-1));
-        }
-        ws.add_shift_cub[band] = 1 << (ws.shift_cub[band] - 1);
-    }
-
-    // precompute global shift
-    uint32_t shift_inner_accum = (uint32_t)(ceil(log2f(h)));
-    uint32_t add_shift_inner_accum = 1 << (shift_inner_accum - 1);
-
-    // fused
-    {
-        const int rows_per_thread = 8;
-        const int BLOCKX = 32, BLOCKY = 4;
-
-        void* args[] = {
-            &*buf, &h, &w, &top, &bottom, &left, &right, &start_row, &end_row, &start_col,
-            &end_col, &src_stride, &csf_a_stride, &buffer_h, &buffer_stride,
-            &buf->tmp_accum->data, &*p,
-            &scale, &buf->adm_cm[scale], &ws,
-            &shift_inner_accum, &add_shift_inner_accum
-        };
-
-        CHECK_CUDA(cu_f, cuLaunchKernel(s->func_adm_cm_line_kernel_8,
-                    DIV_ROUND_UP(buffer_stride, BLOCKX), DIV_ROUND_UP(buffer_h, BLOCKY * rows_per_thread), 3,
+    } else {
+        void* args[] = {&*buf, &scale, &top, &bottom, &left, &right, &stride, params};
+        CHECK_CUDA(cu_f, cuLaunchKernel(s->func_i4_adm_csf_kernel_1_4,
+                    DIV_ROUND_UP(right - left, BLOCKX * cols_per_thread),
+                    DIV_ROUND_UP(bottom - top, BLOCKY * rows_per_thread), 3,
                     BLOCKX, BLOCKY, 1,
                     0, c_stream, args, NULL));
     }
 }
 
-static void conclude_adm_cm(int64_t *accum, int h,
-        int w, int scale, float *result) {
+static void adm_csf_den_device(AdmStateCuda *s, AdmBufferCuda *buf, int scale,
+        AdmCsfDenKernelParamsCuda *params, CudaFunctions* cu_f, CUstream c_stream) {
+    const int BLOCKX = VMAF_CUDA_THREADS_PER_WARP; /* one warp per row */
+    const int rows = params->bottom - params->top;
+
+    void* args[] = {&*buf, params, &buf->adm_csf_den[scale]};
+    CHECK_CUDA(cu_f, cuLaunchKernel(scale == 0 ? s->func_adm_csf_den_scale_row_kernel
+                                               : s->func_adm_csf_den_s123_row_kernel,
+                1, rows, 3,
+                BLOCKX, 1, 1,
+                0, c_stream, args, NULL));
+}
+
+static void adm_cm_device(AdmStateCuda *s, AdmBufferCuda *buf, int scale,
+        AdmCmKernelParamsCuda *params, int64_t *accum, int measure_aim,
+        CudaFunctions* cu_f, CUstream c_stream) {
+    const int BLOCKX = VMAF_CUDA_THREADS_PER_WARP; /* one warp per row */
+
+    params->measure_aim = measure_aim;
+
+    void* args[] = {&*buf, params, &accum};
+    CHECK_CUDA(cu_f, cuLaunchKernel(scale == 0 ? s->func_adm_cm_row_kernel
+                                               : s->func_i4_adm_cm_row_kernel,
+                1, params->h, 1,
+                BLOCKX, 1, 1,
+                0, c_stream, args, NULL));
+}
+
+/*
+ * Finalization of the adm_cm kernels, identical to the reference
+ * implementation.
+ */
+static void conclude_adm_cm(const int64_t *accum, int h, int w, int scale,
+        double adm_noise_weight, float *result) {
     int left = w * ADM_BORDER_FACTOR - 0.5;
     int top = h * ADM_BORDER_FACTOR - 0.5;
     int right = w - left;
     int bottom = h - top;
+
     const uint32_t shift_inner_accum = (uint32_t)ceil(log2(h));
 
-    // scale 0
-    const uint32_t shift_xcub[3] = {(uint32_t)ceil(log2(w) - 4),
-        (uint32_t)ceil(log2(w) - 4),
-        (uint32_t)ceil(log2(w) - 3)};
-    int constant_offset[3] = {52, 52, 57};
+    const uint32_t shift_xhcub = (uint32_t)ceil(log2(w) - 4);
+    const uint32_t shift_xvcub = (uint32_t)ceil(log2(w) - 4);
+    const uint32_t shift_xdcub = (uint32_t)ceil(log2(w) - 3);
 
-    // scale 123
-    uint32_t shift_cub = (uint32_t)ceil(log2(w));
-    float final_shift[3] = {powf(2, (45 - shift_cub - shift_inner_accum)),
-        powf(2, (39 - shift_cub - shift_inner_accum)),
-        powf(2, (36 - shift_cub - shift_inner_accum))};
-    float powf_add = powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
+    const uint32_t shift_xcub[3] = { shift_xhcub, shift_xvcub, shift_xdcub };
+    const uint32_t constant_offset[3] = { 52, 52, 57 };
 
-    float f_accum;
-    *result = 0;
+    const uint32_t shift_cub = (uint32_t)ceil(log2(w));
+    const float final_shift[3] = { pow(2, (45 - shift_cub - shift_inner_accum)),
+        pow(2, (39 - shift_cub - shift_inner_accum)),
+        pow(2, (36 - shift_cub - shift_inner_accum)) };
+
+    const float powf_add = powf((bottom - top) * (right - left) * adm_noise_weight,
+            1.0f / 3.0f);
+
+    float result_v = 0;
     for (int i = 0; i < 3; ++i) {
+        float f_accum;
         if (scale == 0) {
-            f_accum = (float)(accum[i] / pow(2, (constant_offset[i] - shift_xcub[i] -
-                            shift_inner_accum)));
+            f_accum = (float)(accum[i] / pow(2, (constant_offset[i] -
+                            shift_xcub[i] - shift_inner_accum)));
         } else {
             f_accum = (float)(accum[i] / final_shift[scale - 1]);
         }
-        *result += powf(f_accum, 1.0f / 3.0f) + powf_add;
+        result_v += powf(f_accum, 1.0f / 3.0f) + powf_add;
     }
+    *result = result_v;
 }
 
-static void conclude_adm_csf_den(uint64_t *accum, int h, int w, int scale, float *result,
-        float adm_norm_view_dist,
-        float adm_ref_display_height) {
+/*
+ * Finalization of the adm_csf_den kernels, identical to the reference
+ * implementation.
+ */
+static void conclude_adm_csf_den(const uint64_t *accum, int h, int w, int scale,
+        double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode,
+        double adm_csf_scale, double adm_csf_diag_scale, double adm_noise_weight,
+        float *result) {
+    float rfactor[3];
+    adm_csf_rfactor(scale, adm_csf_mode, adm_norm_view_dist, adm_ref_display_height,
+            adm_csf_scale, adm_csf_diag_scale, rfactor);
+
     const int left = w * ADM_BORDER_FACTOR - 0.5;
     const int top = h * ADM_BORDER_FACTOR - 0.5;
     const int right = w - left;
     const int bottom = h - top;
-    const float factor1 =
-        dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1, adm_norm_view_dist,
-                adm_ref_display_height);
-    const float factor2 =
-        dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2, adm_norm_view_dist,
-                adm_ref_display_height);
-    const float rfactor[3] = {1.0f / factor1, 1.0f / factor1, 1.0f / factor2};
-    const uint32_t accum_convert_float[4] = {18, 32, 27, 23};
 
-    int32_t shift_accum;
     double shift_csf;
     if (scale == 0) {
-        shift_accum = (int32_t)ceil(log2((bottom - top) * (right - left)) - 20);
+        int32_t shift_accum = (int32_t)ceil(log2((bottom - top) * (right - left)) - 20);
         shift_accum = shift_accum > 0 ? shift_accum : 0;
-        shift_csf = pow(2, (accum_convert_float[scale] - shift_accum));
+        shift_csf = pow(2, (18 - shift_accum));
     } else {
-        shift_accum = (int32_t)ceil(log2(bottom - top));
+        const uint32_t accum_convert_float[3] = { 32, 27, 23 };
         const uint32_t shift_cub = (uint32_t)ceil(log2(right - left));
-        shift_csf = pow(2, (accum_convert_float[scale] - shift_accum - shift_cub));
+        const uint32_t shift_accum = (uint32_t)ceil(log2(bottom - top));
+        shift_csf = pow(2, (accum_convert_float[scale - 1] - shift_accum - shift_cub));
     }
-    const float powf_add =
-        powf((bottom - top) * (right - left) / 32.0f, 1.0f / 3.0f);
 
-    *result = 0;
+    const float powf_add = powf((bottom - top) * (right - left) * adm_noise_weight,
+            1.0f / 3.0f);
+
+    float result_v = 0;
     for (int i = 0; i < 3; ++i) {
         const double csf = (double)(accum[i] / shift_csf) * pow(rfactor[i], 3);
-        *result += powf(csf, 1.0f / 3.0f) + powf_add;
+        result_v += powf(csf, 1.0f / 3.0f) + powf_add;
     }
+    *result = result_v;
 }
 
 static const VmafOption options_cuda[] = {
@@ -598,10 +483,43 @@ static const VmafOption options_cuda[] = {
         .default_val.b = false,
     },
     {
+        .name = "adm_csf_scale",
+        .alias = "scf",
+        .help = "scale coefficient for the horizontal & vertical direction terms of CSF",
+        .offset = offsetof(AdmStateCuda, adm_csf_scale),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_ADM_CSF_SCALE,
+        .min = 0.0,
+        .max = 50.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "adm_csf_diag_scale",
+        .alias = "scfd",
+        .help = "scale coefficient for the diagonal direction term of CSF",
+        .offset = offsetof(AdmStateCuda, adm_csf_diag_scale),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_ADM_CSF_DIAG_SCALE,
+        .min = 0.0,
+        .max = 50.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "adm_dlm_weight",
+        .alias = "dlmw",
+        .help = "linear weighting between DLM and AIM; 1 corresponds to DLM-only",
+        .offset = offsetof(AdmStateCuda, adm_dlm_weight),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = 0.5,
+        .min = 0.0,
+        .max = 1.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
         .name = "adm_enhn_gain_limit",
         .alias = "egl",
         .help = "enhancement gain imposed on adm, must be >= 1.0, "
-            "where 1.0 means the gain is completely disabled",
+                "where 1.0 means the gain is completely disabled",
         .offset = offsetof(AdmStateCuda, adm_enhn_gain_limit),
         .type = VMAF_OPT_TYPE_DOUBLE,
         .default_val.d = DEFAULT_ADM_ENHN_GAIN_LIMIT,
@@ -611,21 +529,74 @@ static const VmafOption options_cuda[] = {
     },
     {
         .name = "adm_norm_view_dist",
+        .alias = "nvd",
         .help = "normalized viewing distance = viewing distance / ref display's physical height",
         .offset = offsetof(AdmStateCuda, adm_norm_view_dist),
         .type = VMAF_OPT_TYPE_DOUBLE,
         .default_val.d = DEFAULT_ADM_NORM_VIEW_DIST,
         .min = 0.75,
         .max = 24.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     {
         .name = "adm_ref_display_height",
+        .alias = "rdh",
         .help = "reference display height in pixels",
         .offset = offsetof(AdmStateCuda, adm_ref_display_height),
         .type = VMAF_OPT_TYPE_INT,
         .default_val.i = DEFAULT_ADM_REF_DISPLAY_HEIGHT,
         .min = 1,
         .max = 4320,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "adm_csf_mode",
+        .alias = "csf",
+        .help = "contrast sensitivity function",
+        .offset = offsetof(AdmStateCuda, adm_csf_mode),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = DEFAULT_ADM_CSF_MODE,
+        .min = 0,
+        .max = 3,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "adm_noise_weight",
+        .alias = "nw",
+        .help = "noise weight",
+        .offset = offsetof(AdmStateCuda, adm_noise_weight),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_ADM_NOISE_WEIGHT,
+        .min = 0.0,
+        .max = 1500.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "adm_skip_aim",
+        .help = "skip the calculation of AIM",
+        .offset = offsetof(AdmStateCuda, adm_skip_aim),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+    },
+    {
+        .name = "adm_skip_scale0",
+        .alias = "ssz",
+        .help = "skip the calculation of scale 0",
+        .offset = offsetof(AdmStateCuda, adm_skip_scale0),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "adm_min_val",
+        .alias = "min",
+        .help = "minimum value allowed; lower values will be clipped to this value",
+        .offset = offsetof(AdmStateCuda, adm_min_val),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_ADM_MIN_VAL,
+        .min = 0.0,
+        .max = 1.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
     },
     { 0 }
 };
@@ -642,35 +613,53 @@ static void write_scores(write_score_parameters_adm* params)
     AdmStateCuda *s = params->s;
     unsigned index = params->index;
 
+    unsigned w = params->w;
+    unsigned h = params->h;
+    const double numden_limit = 1e-10 * (w * h) / (1920.0 * 1080.0);
+
+    int64_t *res_host = (int64_t*)s->buf.results_host;
+    int64_t *adm_cm = &res_host[0 * 3 * 4];
+    uint64_t *adm_csf_den = (uint64_t*)&res_host[1 * 3 * 4];
+    int64_t *aim_num = &res_host[2 * 3 * 4];
+
     double scores[8];
-    double score, score_num, score_den;
+    double score, score_num, score_den, score_aim = 0.0;
 
     double num = 0;
     double den = 0;
+    double aim_total = 0;
 
-    unsigned w = params->w;
-    unsigned h = params->h;
-
-    int64_t* adm_cm = (int64_t*)s->buf.results_host;
-    uint64_t* adm_csf = &((uint64_t*)s->buf.results_host)[RES_BUFFER_SIZE / 2];
-    float num_scale;
-    float den_scale;
     for (unsigned scale = 0; scale < 4; ++scale) {
+        float num_scale = 0.0f;
+        float den_scale = 0.0f;
+        float aim_num_scale = 0.0f;
 
         w = (w + 1) / 2;
         h = (h + 1) / 2;
 
-        conclude_adm_cm(&adm_cm[scale * 3], h, w, scale, &num_scale);
-        conclude_adm_csf_den(&adm_csf[scale * 3], h, w, scale, &den_scale, s->adm_norm_view_dist, s->adm_ref_display_height);
+        if (scale == 0 && s->adm_skip_scale0) {
+            den_scale = 1e-10f; // avoid divide by zero
+        } else {
+            conclude_adm_cm(&adm_cm[scale * 3], h, w, scale, s->adm_noise_weight,
+                    &num_scale);
+            conclude_adm_csf_den(&adm_csf_den[scale * 3], h, w, scale,
+                    s->adm_norm_view_dist, s->adm_ref_display_height,
+                    s->adm_csf_mode, s->adm_csf_scale, s->adm_csf_diag_scale,
+                    s->adm_noise_weight, &den_scale);
+
+            if (!s->adm_skip_aim) {
+                conclude_adm_cm(&aim_num[scale * 3], h, w, scale, 0.0,
+                        &aim_num_scale);
+            }
+        }
 
         num += num_scale;
         den += den_scale;
+        aim_total += aim_num_scale;
 
         scores[2 * scale + 0] = num_scale;
         scores[2 * scale + 1] = den_scale;
     }
-    const double numden_limit = 1e-10 * (w * h) / (1920.0 * 1080.0);
-
 
     num = num < numden_limit ? 0 : num;
     den = den < numden_limit ? 0 : den;
@@ -679,6 +668,8 @@ static void write_scores(write_score_parameters_adm* params)
         score = 1.0f;
     }
     else {
+        // normalize AIM score by the DLM denominator
+        score_aim = aim_total / den;
         score = num / den;
     }
     score_num = num;
@@ -687,6 +678,15 @@ static void write_scores(write_score_parameters_adm* params)
     int err = 0;
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
             s->feature_name_dict, "VMAF_integer_feature_adm2_score", score,
+            index);
+
+    err |= vmaf_feature_collector_append_with_dict(feature_collector,
+            s->feature_name_dict, "VMAF_integer_feature_aim_score", score_aim,
+            index);
+
+    err |= vmaf_feature_collector_append_with_dict(feature_collector,
+            s->feature_name_dict, "VMAF_integer_feature_adm3_score",
+            MAX(score * s->adm_dlm_weight + (1 - score_aim) * (1 - s->adm_dlm_weight), s->adm_min_val),
             index);
 
     err |= vmaf_feature_collector_append_with_dict(feature_collector,
@@ -743,64 +743,237 @@ static void write_scores(write_score_parameters_adm* params)
     return;
 }
 
+/*
+ * Scale 0 pipeline: decouple, csf_den, csf and cm of the DLM and of the AIM
+ * pass, in the exact order of the reference implementation.
+ */
+static void adm_compute_scale0_cuda(VmafFeatureExtractor *fex, AdmStateCuda *s,
+        AdmBufferCuda *buf, int w, int h, int stride, float cos_1deg_sq,
+        const uint16_t i_rfactor[3])
+{
+    CudaFunctions* cu_f = fex->cu_state->f;
+
+    AdmCsfKernelParamsCuda csf_p = { 0 };
+    AdmCsfDenKernelParamsCuda den_p = { 0 };
+    AdmCmKernelParamsCuda cm_p = { 0 };
+
+    /*
+     * Shifts pending from previous stage is 6, hence variables multiplied by
+     * i_rfactor[0,1] have to be shifted by 21+6=27 to convert into
+     * floating-point, but shifted by 15 to make it Q16; variables multiplied
+     * by i_rfactor[2] have to be shifted by 23+6=29, but shifted by 17 to
+     * make it Q16.
+     */
+    static const uint32_t i_shifts[3] = { 15, 15, 17 };
+    static const int64_t i_shiftsadd[3] = { 16384, 16384, 65535 };
+    for (int i = 0; i < 3; ++i) {
+        csf_p.i_rfactor[i] = i_rfactor[i];
+        csf_p.shift_dst[i] = i_shifts[i];
+        csf_p.add_dst[i] = i_shiftsadd[i];
+        csf_p.shift_flt[i] = 12;
+        csf_p.add_flt[i] = 2048;
+    }
+
+    int top, bottom, left, right;
+    adm_cm_borders(w, h, &top, &bottom, &left, &right);
+
+    /*
+     * max_value of h^3, v^3, d^3 is 1.205624776 * 10^13, accum_h can hold
+     * till 1.844674407 * 10^19; accum_h's maximum is reached when it is
+     * 2^20 * max(h^3), therefore the accum is shifted based on width and
+     * height subtracted by 20.
+     */
+    int32_t shift_accum = (int32_t)ceil(log2((bottom - top) * (right - left)) - 20);
+    shift_accum = shift_accum > 0 ? shift_accum : 0;
+    den_p.top = top;
+    den_p.bottom = bottom;
+    den_p.left = left;
+    den_p.right = right;
+    den_p.src_stride = stride;
+    den_p.shift_accum = shift_accum;
+    den_p.add_shift_accum = shift_accum > 0 ? (1 << (shift_accum - 1)) : 0;
+
+    cm_p.w = w;
+    cm_p.h = h;
+    cm_p.top = top;
+    cm_p.bottom = bottom;
+    cm_p.left = left;
+    cm_p.right = right;
+    cm_p.start_col = (left > 1) ? left : 1;
+    cm_p.end_col = (right < (w - 1)) ? right : (w - 1);
+    cm_p.start_row = (top > 1) ? top : 1;
+    cm_p.end_row = (bottom < (h - 1)) ? bottom : (h - 1);
+    cm_p.src_stride = stride;
+    for (int i = 0; i < 3; ++i) {
+        cm_p.i_rfactor[i] = i_rfactor[i];
+    }
+    cm_p.shift_sub[0] = 10;
+    cm_p.shift_sub[1] = 10;
+    cm_p.shift_sub[2] = 12;
+    cm_p.shift_sq[0] = 29;
+    cm_p.shift_sq[1] = 29;
+    cm_p.shift_sq[2] = 30;
+    cm_p.add_shift_sq[0] = 268435456;
+    cm_p.add_shift_sq[1] = 268435456;
+    cm_p.add_shift_sq[2] = 536870912;
+    cm_p.shift_cub[0] = (uint32_t)ceil(log2(w) - 4);
+    cm_p.shift_cub[1] = (uint32_t)ceil(log2(w) - 4);
+    cm_p.shift_cub[2] = (uint32_t)ceil(log2(w) - 3);
+    for (int i = 0; i < 3; ++i) {
+        cm_p.add_shift_cub[i] = (uint32_t)pow(2, (cm_p.shift_cub[i] - 1));
+    }
+    cm_p.shift_inner_accum = (uint32_t)ceil(log2(h));
+    cm_p.add_shift_inner_accum = (uint32_t)pow(2, (cm_p.shift_inner_accum - 1));
+
+    // consumes buf->ref_dwt2 , buf->dis_dwt2
+    // produces buf->decouple_r , buf->decouple_a
+    adm_decouple_device(s, buf, w, h, stride, s->adm_enhn_gain_limit,
+            cos_1deg_sq, cu_f, s->str);
+
+    // consumes buf->ref_dwt2
+    // produces buf->adm_csf_den[0]
+    adm_csf_den_device(s, buf, 0, &den_p, cu_f, s->str);
+
+    // consumes buf->decouple_a
+    // produces buf->csf_a , buf->csf_f
+    adm_csf_device(s, buf, 0, w, h, stride, &csf_p, 0, cu_f, s->str);
+
+    // consumes buf->decouple_r, buf->csf_a, buf->csf_f
+    // produces buf->adm_cm[0]
+    adm_cm_device(s, buf, 0, &cm_p, buf->adm_cm[0], 0, cu_f, s->str);
+
+    if (!s->adm_skip_aim) {
+        // consumes buf->decouple_r
+        // produces buf->csf_a , buf->csf_f
+        adm_csf_device(s, buf, 0, w, h, stride, &csf_p, 1, cu_f, s->str);
+
+        // consumes buf->decouple_a, buf->csf_a, buf->csf_f
+        // produces buf->aim_num[0]
+        adm_cm_device(s, buf, 0, &cm_p, buf->aim_num[0], 1, cu_f, s->str);
+    }
+}
+
+/*
+ * Scale 1..3 pipeline: dwt, decouple, csf_den, csf and cm of the DLM and of
+ * the AIM pass, in the exact order of the reference implementation.
+ */
+static void adm_compute_scale_s123_cuda(VmafFeatureExtractor *fex, AdmStateCuda *s,
+        AdmBufferCuda *buf, int scale, int w, int h, int stride,
+        float cos_1deg_sq, const float rfactor[3])
+{
+    CudaFunctions* cu_f = fex->cu_state->f;
+
+    AdmCsfKernelParamsCuda csf_p = { 0 };
+    AdmCsfDenKernelParamsCuda den_p = { 0 };
+    AdmCmKernelParamsCuda cm_p = { 0 };
+
+    uint32_t i_rfactor[3];
+    adm_i_rfactor_s123(rfactor, i_rfactor);
+
+    for (int i = 0; i < 3; ++i) {
+        csf_p.i_rfactor[i] = i_rfactor[i];
+        csf_p.shift_dst[i] = 28;
+        /* the reference implementation stores 1u << 27 / 1u << 31 in int32_t */
+        csf_p.add_dst[i] = (int64_t)(int32_t)(1u << 27);
+        csf_p.shift_flt[i] = 32;
+        csf_p.add_flt[i] = (int64_t)(int32_t)(1u << 31);
+    }
+
+    int top, bottom, left, right;
+    adm_cm_borders(w, h, &top, &bottom, &left, &right);
+
+    const uint32_t shift_cub = (uint32_t)ceil(log2(right - left));
+    const uint32_t shift_accum = (uint32_t)ceil(log2(bottom - top));
+    static const uint32_t shift_sq_tab[3] = { 31, 30, 31 };
+
+    den_p.top = top;
+    den_p.bottom = bottom;
+    den_p.left = left;
+    den_p.right = right;
+    den_p.src_stride = stride;
+    den_p.shift_accum = shift_accum;
+    den_p.add_shift_accum = (uint32_t)pow(2, (shift_accum - 1));
+    den_p.shift_sq = shift_sq_tab[scale - 1];
+    den_p.add_shift_sq = (uint32_t)1u << shift_sq_tab[scale - 1];
+    den_p.shift_cub = shift_cub;
+    den_p.add_shift_cub = (uint32_t)pow(2, (shift_cub - 1));
+
+    cm_p.w = w;
+    cm_p.h = h;
+    cm_p.top = top;
+    cm_p.bottom = bottom;
+    cm_p.left = left;
+    cm_p.right = right;
+    cm_p.start_col = (left > 1) ? left : 1;
+    cm_p.end_col = (right < (w - 1)) ? right : (w - 1);
+    cm_p.start_row = (top > 1) ? top : 1;
+    cm_p.end_row = (bottom < (h - 1)) ? bottom : (h - 1);
+    cm_p.src_stride = stride;
+    const uint32_t cm_shift_cub = (uint32_t)ceil(log2(w));
+    const uint32_t cm_shift_inner_accum = (uint32_t)ceil(log2(h));
+    for (int i = 0; i < 3; ++i) {
+        cm_p.i_rfactor[i] = i_rfactor[i];
+        cm_p.shift_sub[i] = 0;
+        cm_p.shift_sq[i] = 30;
+        cm_p.add_shift_sq[i] = 536870912; // 2^29
+        cm_p.shift_cub[i] = cm_shift_cub;
+        cm_p.add_shift_cub[i] = (uint32_t)pow(2, (cm_shift_cub - 1));
+    }
+    cm_p.shift_inner_accum = cm_shift_inner_accum;
+    cm_p.add_shift_inner_accum = (uint32_t)pow(2, (cm_shift_inner_accum - 1));
+
+    // consumes buf->i4_ref_dwt2 , buf->i4_dis_dwt2
+    // produces buf->i4_decouple_r , buf->i4_decouple_a
+    adm_decouple_s123_device(s, buf, w, h, stride, s->adm_enhn_gain_limit,
+            cos_1deg_sq, cu_f, s->str);
+
+    // consumes buf->i4_ref_dwt2
+    // produces buf->adm_csf_den[scale]
+    adm_csf_den_device(s, buf, scale, &den_p, cu_f, s->str);
+
+    // consumes buf->i4_decouple_a
+    // produces buf->i4_csf_a , buf->i4_csf_f
+    adm_csf_device(s, buf, scale, w, h, stride, &csf_p, 0, cu_f, s->str);
+
+    // consumes buf->i4_decouple_r, buf->i4_csf_a, buf->i4_csf_f
+    // produces buf->adm_cm[scale]
+    adm_cm_device(s, buf, scale, &cm_p, buf->adm_cm[scale], 0, cu_f, s->str);
+
+    if (!s->adm_skip_aim) {
+        // consumes buf->i4_decouple_r
+        // produces buf->i4_csf_a , buf->i4_csf_f
+        adm_csf_device(s, buf, scale, w, h, stride, &csf_p, 1, cu_f, s->str);
+
+        // consumes buf->i4_decouple_a, buf->i4_csf_a, buf->i4_csf_f
+        // produces buf->aim_num[scale]
+        adm_cm_device(s, buf, scale, &cm_p, buf->aim_num[scale], 1, cu_f, s->str);
+    }
+}
+
 static void integer_compute_adm_cuda(VmafFeatureExtractor *fex, AdmStateCuda *s,
-        VmafPicture *ref_pic, VmafPicture *dis_pic, AdmBufferCuda *buf,
-        double adm_enhn_gain_limit,
-        double adm_norm_view_dist,
-        int adm_ref_display_height)
+        VmafPicture *ref_pic, VmafPicture *dis_pic, AdmBufferCuda *buf)
 {
     CudaFunctions* cu_f = fex->cu_state->f;
     int w = ref_pic->w[0];
     int h = ref_pic->h[0];
 
+    /*
+     * the angle flag is evaluated in double precision by the reference
+     * implementation; the float constant is computed on the host with the
+     * exact same expression
+     */
+    const float cos_1deg_sq = cos(1.0 * M_PI / 180.0) * cos(1.0 * M_PI / 180.0);
+
     AdmFixedParametersCuda p = {
-        .dwt2_db2_coeffs_lo = {15826, 27411, 7345, -4240},
-        .dwt2_db2_coeffs_hi = {-4240, -7345, 27411, -15826},
-        .dwt2_db2_coeffs_lo_sum = 46342,
-        .dwt2_db2_coeffs_hi_sum = 0,
-        .log2_w = log2(w),
-        .log2_h = log2(h),
-        .adm_ref_display_height = adm_ref_display_height,
-        .adm_norm_view_dist = adm_norm_view_dist,
-        .adm_enhn_gain_limit = adm_enhn_gain_limit,
+        cos_1deg_sq,
+        {15826, 27411, 7345, -4240},
+        {-4240, -7345, 27411, -15826},
+        46342,
+        0,
     };
 
-    const double pow2_32 = pow(2, 32);
-    const double pow2_21 = pow(2, 21);
-    const double pow2_23 = pow(2, 23);
-    for (unsigned scale = 0; scale < 4; ++scale) {
-        float factor1 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1,
-                adm_norm_view_dist, adm_ref_display_height);
-        float factor2 = dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2,
-                adm_norm_view_dist, adm_ref_display_height);
-        p.factor1[scale] = factor1;
-        p.factor2[scale] = factor2;
-        p.rfactor[scale*3] = 1.0f / factor1;
-        p.rfactor[scale*3+1] = 1.0f / factor1;
-        p.rfactor[scale*3+2] = 1.0f / factor2;
-        if (scale == 0) {
-            if (fabs(p.adm_norm_view_dist * p.adm_ref_display_height -
-                        DEFAULT_ADM_NORM_VIEW_DIST * DEFAULT_ADM_REF_DISPLAY_HEIGHT) <
-                    1.0e-8) {
-                p.i_rfactor[scale * 3] = 36453;
-                p.i_rfactor[scale * 3 + 1] = 36453;
-                p.i_rfactor[scale * 3 + 2] = 49417;
-            } else {
-                p.i_rfactor[scale * 3] = (uint32_t)(p.rfactor[scale * 3] * pow2_21);
-                p.i_rfactor[scale * 3 + 1] =
-                    (uint32_t)(p.rfactor[scale * 3 + 1] * pow2_21);
-                p.i_rfactor[scale * 3 + 2] =
-                    (uint32_t)(p.rfactor[scale * 3 + 2] * pow2_23);
-            }
-        } else {
-            p.i_rfactor[scale * 3] = (uint32_t)(p.rfactor[scale * 3] * pow2_32);
-            p.i_rfactor[scale * 3 + 1] =
-                (uint32_t)(p.rfactor[scale * 3 + 1] * pow2_32);
-            p.i_rfactor[scale * 3 + 2] =
-                (uint32_t)(p.rfactor[scale * 3 + 2] * pow2_32);
-        }
-    }
-    CHECK_CUDA(cu_f, cuMemsetD8Async(buf->tmp_res->data, 0, sizeof(int64_t) * RES_BUFFER_SIZE, s->str));
+    CHECK_CUDA(cu_f, cuMemsetD8Async(buf->tmp_res->data, 0,
+                sizeof(int64_t) * RES_BUFFER_SIZE, s->str));
 
     size_t curr_ref_stride;
     size_t curr_dis_stride;
@@ -814,13 +987,18 @@ static void integer_compute_adm_cuda(VmafFeatureExtractor *fex, AdmStateCuda *s,
         curr_dis_stride = dis_pic->stride[0];
     }
     else {
-        curr_ref_stride = dis_pic->stride[0] >> 1;
-        curr_dis_stride = ref_pic->stride[0] >> 1;
+        curr_ref_stride = ref_pic->stride[0] >> 1;
+        curr_dis_stride = dis_pic->stride[0] >> 1;
     }
 
     for (unsigned scale = 0; scale < 4; ++scale) {
-        if(scale==0) {
-            // run these first dwt kernels on the input iamge stream to make sure it is consumed afterwards continue
+        float rfactor[3];
+        adm_csf_rfactor(scale, s->adm_csf_mode, s->adm_norm_view_dist,
+                s->adm_ref_display_height, s->adm_csf_scale,
+                s->adm_csf_diag_scale, rfactor);
+
+        if (scale == 0) {
+            // run these first dwt kernels on the input image stream to make sure it is consumed afterwards continue
             // consumes reference picture
             // produces buf->ref_dwt2, buf->dis_dwt2
             if (ref_pic->bpc == 8) {
@@ -829,10 +1007,9 @@ static void integer_compute_adm_cuda(VmafFeatureExtractor *fex, AdmStateCuda *s,
                 dwt2_8_device(s, (const uint8_t*)dis_pic->data[0], &buf->dis_dwt2, buf->i4_dis_dwt2, w, h, curr_dis_stride, buf_stride, &p, cu_f, vmaf_cuda_picture_get_stream(dis_pic));
             }
             else {
-                adm_dwt2_16_device(s,(uint16_t*)ref_pic->data[0], &buf->ref_dwt2, buf->i4_ref_dwt2, w, h, curr_ref_stride, buf_stride, ref_pic->bpc, &p, cu_f, vmaf_cuda_picture_get_stream(ref_pic));
+                dwt2_16_device(s, (const uint16_t*)ref_pic->data[0], &buf->ref_dwt2, buf->i4_ref_dwt2, w, h, curr_ref_stride, buf_stride, ref_pic->bpc, &p, cu_f, vmaf_cuda_picture_get_stream(ref_pic));
 
-                adm_dwt2_16_device(s,(uint16_t*)dis_pic->data[0], &buf->dis_dwt2, buf->i4_dis_dwt2, w, h, curr_dis_stride, buf_stride, dis_pic->bpc, &p, cu_f, vmaf_cuda_picture_get_stream(dis_pic));
-
+                dwt2_16_device(s, (const uint16_t*)dis_pic->data[0], &buf->dis_dwt2, buf->i4_dis_dwt2, w, h, curr_dis_stride, buf_stride, dis_pic->bpc, &p, cu_f, vmaf_cuda_picture_get_stream(dis_pic));
             }
             CHECK_CUDA(cu_f, cuEventRecord(s->ref_event,  vmaf_cuda_picture_get_stream(ref_pic)));
             CHECK_CUDA(cu_f, cuEventRecord(s->dis_event,  vmaf_cuda_picture_get_stream(dis_pic)));
@@ -847,22 +1024,20 @@ static void integer_compute_adm_cuda(VmafFeatureExtractor *fex, AdmStateCuda *s,
             CHECK_CUDA(cu_f, cuStreamWaitEvent(s->str, s->ref_event, CU_EVENT_WAIT_DEFAULT));
 
             CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
-            // consumes buf->ref_dwt2 , buf->dis_dwt2
-            // produces buf->decouple_r , buf->decouple_a
-            adm_decouple_device(s, buf, w, h, buf_stride, &p, cu_f, s->str);
 
-            // consumes buf->ref_dwt2
-            // produces buf->adm_csf_den[0]
-            adm_csf_den_scale_device(s, buf, w, h, buf_stride,
-                    adm_norm_view_dist, adm_ref_display_height, cu_f, s->str);
+            if (!s->adm_skip_scale0) {
+                /*
+                 * rfactor is converted to fixed-point for scale0 and stored
+                 * in i_rfactor multiplied by 2^21 for rfactor[0,1] and by
+                 * 2^23 for rfactor[2].
+                 */
+                uint16_t i_rfactor[3];
+                adm_i_rfactor_scale0(rfactor, s->adm_norm_view_dist,
+                        s->adm_ref_display_height, s->adm_csf_mode, i_rfactor);
 
-            // consumes buf->decouple_a
-            // produces buf->csf_a , buf->csf_f
-            adm_csf_device(s, buf, w, h, buf_stride, &p, cu_f, s->str);
-
-            // consumes buf->decouple_r, buf->csf_a, buf->csf_a
-            // produces buf->adm_cm[0]
-            adm_cm_device(s, buf, w, h, buf_stride, buf_stride, &p, cu_f, s->str);
+                adm_compute_scale0_cuda(fex, s, buf, w, h, buf_stride,
+                        cos_1deg_sq, i_rfactor);
+            }
         }
         else {
             // consumes buf->i4_ref_dwt2.band_a , buf->i4_dis_dwt2.band_a
@@ -876,23 +1051,8 @@ static void integer_compute_adm_cuda(VmafFeatureExtractor *fex, AdmStateCuda *s,
             w = (w + 1) / 2;
             h = (h + 1) / 2;
 
-            // consumes buf->i4_ref_dwt2 , buf->i4_dis_dwt2
-            // produces buf->i4_decouple_r , buf->i4_decouple_a
-            adm_decouple_s123_device(s, buf, w, h, buf_stride, &p, cu_f, s->str);
-
-            // consumes buf->i4_ref_dwt2
-            // produces buf->adm_csf_den[1,2,3]
-            adm_csf_den_s123_device(
-                    s, buf, scale, w, h, buf_stride,
-                    adm_norm_view_dist, adm_ref_display_height, cu_f, s->str);
-
-            // consumes buf->i4_decouple_a
-            // produces buf->i4_csf_a , buf->i4_csf_f
-            i4_adm_csf_device(s, buf, scale, w, h, buf_stride, &p, cu_f, s->str);
-
-            // consumes buf->i4_decouple_r, buf->i4_csf_a, buf->i4_csf_a
-            // produces buf->adm_cm[1,2,3]
-            i4_adm_cm_device(s, buf, w, h, buf_stride, buf_stride, scale, &p, cu_f ,s->str);
+            adm_compute_scale_s123_cuda(fex, s, buf, scale, w, h, buf_stride,
+                    cos_1deg_sq, rfactor);
         }
 
         i4_curr_ref_scale = buf->i4_ref_dwt2.band_a;
@@ -901,6 +1061,7 @@ static void integer_compute_adm_cuda(VmafFeatureExtractor *fex, AdmStateCuda *s,
         curr_ref_stride = buf_stride;
         curr_dis_stride = buf_stride;
     }
+
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
     CHECK_CUDA(cu_f, cuMemcpyDtoHAsync(buf->results_host, buf->tmp_res->data, sizeof(int64_t) * RES_BUFFER_SIZE, s->str));
     CHECK_CUDA(cu_f, cuEventRecord(s->finished, s->str));
@@ -953,40 +1114,34 @@ static CUdeviceptr i4_init_dwt_band_hvd_cuda(struct VmafCudaState *cu_state,
     return data_top;
 }
 
-static CUdeviceptr init_res_cm_cuda(struct VmafCudaState *cu_state,
-        int64_t *scale_pointer[],
-        CUdeviceptr data_top)
+/*
+ * adm_cm[4], adm_csf_den[4] and aim_num[4] of RES_BUFFER_SIZE int64_t, three
+ * bands each.
+ */
+static CUdeviceptr init_res_cm_cuda(AdmBufferCuda *buf, CUdeviceptr data_top)
 {
-    (void)cu_state;
-    const int stride = 3 * sizeof(int64_t);
-    scale_pointer[0] = (int64_t *)data_top; data_top += stride;
-    scale_pointer[1] = (int64_t *)data_top; data_top += stride;
-    scale_pointer[2] = (int64_t *)data_top; data_top += stride;
-    scale_pointer[3] = (int64_t *)data_top; data_top += stride;
+    for (int scale = 0; scale < 4; ++scale) {
+        buf->adm_cm[scale] = (int64_t *)data_top;
+        data_top += 3 * sizeof(int64_t);
+    }
     return data_top;
 }
 
-static CUdeviceptr init_res_csf_cuda(struct VmafCudaState *cu_state,
-        uint64_t *scale_pointer[],
-        CUdeviceptr data_top)
+static CUdeviceptr init_res_csf_cuda(AdmBufferCuda *buf, CUdeviceptr data_top)
 {
-    (void)cu_state;
-    const int stride = 3 * sizeof(uint64_t);
-    scale_pointer[0] = (uint64_t *)data_top; data_top += stride;
-    scale_pointer[1] = (uint64_t *)data_top; data_top += stride;
-    scale_pointer[2] = (uint64_t *)data_top; data_top += stride;
-    scale_pointer[3] = (uint64_t *)data_top; data_top += stride;
+    for (int scale = 0; scale < 4; ++scale) {
+        buf->adm_csf_den[scale] = (uint64_t *)data_top;
+        data_top += 3 * sizeof(uint64_t);
+    }
     return data_top;
 }
 
-
-static inline CUdeviceptr init_index_cuda(int32_t **index, CUdeviceptr data_top,
-        size_t stride)
+static CUdeviceptr init_res_aim_cuda(AdmBufferCuda *buf, CUdeviceptr data_top)
 {
-    index[0] = (int32_t *)data_top; data_top += stride;
-    index[1] = (int32_t *)data_top; data_top += stride;
-    index[2] = (int32_t *)data_top; data_top += stride;
-    index[3] = (int32_t *)data_top; data_top += stride;
+    for (int scale = 0; scale < 4; ++scale) {
+        buf->aim_num[scale] = (int64_t *)data_top;
+        data_top += 3 * sizeof(int64_t);
+    }
     return data_top;
 }
 
@@ -1034,17 +1189,14 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_decouple_s123_kernel, adm_decouple_module, "adm_decouple_s123_kernel"));
 
 
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_den_scale_line_kernel, adm_csf_den_module, "adm_csf_den_scale_line_kernel_8_128"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_den_s123_line_kernel, adm_csf_den_module, "adm_csf_den_s123_line_kernel_8_128"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_den_scale_row_kernel, adm_csf_den_module, "adm_csf_den_scale_row_kernel"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_csf_den_s123_row_kernel, adm_csf_den_module, "adm_csf_den_s123_row_kernel"));
 
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_cm_reduce_line_kernel_4, adm_cm_module, "adm_cm_reduce_line_kernel_4"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_cm_line_kernel_8, adm_cm_module, "adm_cm_line_kernel_8"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_i4_adm_cm_line_kernel, adm_cm_module, "i4_adm_cm_line_kernel"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_adm_cm_row_kernel, adm_cm_module, "adm_cm_row_kernel"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->func_i4_adm_cm_row_kernel, adm_cm_module, "i4_adm_cm_row_kernel"));
 
 
     CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
-
-    // s->dwt2_8 = dwt2_8_device;
 
     s->integer_stride   = ALIGN_CEIL(w * sizeof(int32_t));
     s->buf.ind_size_x   = ALIGN_CEIL(((w + 1) / 2) * sizeof(int32_t));
@@ -1057,21 +1209,18 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     if (ret) goto free_ref;
     ret = vmaf_cuda_buffer_alloc(fex->cu_state, &s->buf.tmp_dis, (s->integer_stride * 4 * ((h + 1) / 2)));
     if (ret) goto free_ref;
-    ret = vmaf_cuda_buffer_alloc(fex->cu_state, &s->buf.tmp_accum, sizeof(uint64_t) * 3 * w * h);
+    ret = vmaf_cuda_buffer_alloc(fex->cu_state, &s->buf.tmp_res, sizeof(int64_t) * RES_BUFFER_SIZE);
     if (ret) goto free_ref;
-    ret = vmaf_cuda_buffer_alloc(fex->cu_state, &s->buf.tmp_accum_h, sizeof(uint64_t) * 3 * h);
-    if (ret) goto free_ref;
-    ret = vmaf_cuda_buffer_alloc(fex->cu_state, &s->buf.tmp_res, sizeof(uint64_t) * RES_BUFFER_SIZE);
-    if (ret) goto free_ref;
-    ret = vmaf_cuda_buffer_host_alloc(fex->cu_state, &s->buf.results_host, sizeof(uint64_t) * RES_BUFFER_SIZE);
+    ret = vmaf_cuda_buffer_host_alloc(fex->cu_state, &s->buf.results_host, sizeof(int64_t) * RES_BUFFER_SIZE);
     if (ret) goto free_ref;
 
     CUdeviceptr cu_res_top;
     ret = vmaf_cuda_buffer_get_dptr(s->buf.tmp_res, &cu_res_top);
     if (ret) goto free_ref;
 
-    cu_res_top = init_res_cm_cuda(fex->cu_state, s->buf.adm_cm, cu_res_top);
-    cu_res_top = init_res_csf_cuda(fex->cu_state, s->buf.adm_csf_den, cu_res_top);
+    cu_res_top = init_res_cm_cuda(&s->buf, cu_res_top);
+    cu_res_top = init_res_csf_cuda(&s->buf, cu_res_top);
+    cu_res_top = init_res_aim_cuda(&s->buf, cu_res_top);
 
     CUdeviceptr cu_data_top;
     vmaf_cuda_buffer_get_dptr(s->buf.data_buf, &cu_data_top);
@@ -1114,14 +1263,6 @@ free_ref:
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_dis);
         free(s->buf.tmp_dis);
     }
-    if (s->buf.tmp_accum) {
-        ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_accum);
-        free(s->buf.tmp_accum);
-    }
-    if (s->buf.tmp_accum_h) {
-        ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_accum_h);
-        free(s->buf.tmp_accum_h);
-    }
     if (s->buf.tmp_res) {
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_res);
         free(s->buf.tmp_res);
@@ -1158,9 +1299,7 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
         return -EINVAL;
     }
 
-    integer_compute_adm_cuda(fex, s, ref_pic, dist_pic, &s->buf,
-            s->adm_enhn_gain_limit,
-            s->adm_norm_view_dist, s->adm_ref_display_height);
+    integer_compute_adm_cuda(fex, s, ref_pic, dist_pic, &s->buf);
 
     write_score_parameters_adm *data = s->write_score_parameters;
     data->feature_collector = feature_collector;
@@ -1195,14 +1334,6 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_dis);
         free(s->buf.tmp_dis);
     }
-    if (s->buf.tmp_accum) {
-        ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_accum);
-        free(s->buf.tmp_accum);
-    }
-    if (s->buf.tmp_accum_h) {
-        ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_accum_h);
-        free(s->buf.tmp_accum_h);
-    }
     if (s->buf.tmp_res) {
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->buf.tmp_res);
         free(s->buf.tmp_res);
@@ -1227,8 +1358,8 @@ static int flush_fex_cuda(VmafFeatureExtractor *fex,
 }
 
 static const char *provided_features[] = {
-    "VMAF_integer_feature_adm2_score", "integer_adm_scale0",
-    "integer_adm_scale1", "integer_adm_scale2", "integer_adm_scale3",
+    "VMAF_integer_feature_adm2_score", "VMAF_integer_feature_aim_score", "VMAF_integer_feature_adm3_score",
+    "integer_adm_scale0", "integer_adm_scale1", "integer_adm_scale2", "integer_adm_scale3",
     "integer_adm", "integer_adm_num", "integer_adm_den",
     "integer_adm_num_scale0", "integer_adm_den_scale0", "integer_adm_num_scale1",
     "integer_adm_den_scale1", "integer_adm_num_scale2", "integer_adm_den_scale2",

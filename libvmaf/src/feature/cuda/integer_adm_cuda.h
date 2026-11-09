@@ -48,23 +48,62 @@ typedef struct cuda_i4_adm_dwt_band_t {
     };
 } cuda_i4_adm_dwt_band_t;
 
+/*
+ * Parameters which are constant for all pipelines of a single frame.
+ * All non-integer values are either exact host-computed constants
+ * (cos_1deg_sq) or integer-valued options, so that the device never has to
+ * redo floating point computations the CPU reference implementation does on
+ * the host.
+ */
 typedef struct AdmFixedParametersCuda {
-    float rfactor[3*4];
-    uint32_t i_rfactor[3*4];
-    float factor1[4];
-    float factor2[4];
-    float log2_h;
-    float log2_w;
-
-    double adm_norm_view_dist;
-    double adm_enhn_gain_limit;
-    int32_t adm_ref_display_height;
+    float cos_1deg_sq;      /* cos(1degree)^2, computed in double on the host */
 
     int32_t dwt2_db2_coeffs_lo[10];
     int32_t dwt2_db2_coeffs_hi[10];
     int32_t dwt2_db2_coeffs_lo_sum;
     int32_t dwt2_db2_coeffs_hi_sum;
 } AdmFixedParametersCuda;
+
+/* per launch parameters of the csf kernels, indexed by band */
+typedef struct AdmCsfKernelParamsCuda {
+    uint32_t i_rfactor[3];
+    /* dst = (rfactor * src + add_dst) >> shift_dst */
+    uint32_t shift_dst[3];
+    int64_t add_dst[3];
+    /* flt = (FIX_ONE_BY_30 * abs(dst) + add_flt) >> shift_flt */
+    uint32_t shift_flt[3];
+    int64_t add_flt[3];
+    int32_t measure_aim;
+} AdmCsfKernelParamsCuda;
+
+/* per launch parameters of the csf_den kernels */
+typedef struct AdmCsfDenKernelParamsCuda {
+    int32_t top, bottom, left, right;
+    int32_t src_stride;
+    uint32_t shift_accum;
+    uint32_t add_shift_accum;
+    uint32_t shift_sq;
+    uint32_t add_shift_sq;
+    uint32_t shift_cub;
+    uint32_t add_shift_cub;
+} AdmCsfDenKernelParamsCuda;
+
+/* per launch parameters of the cm kernels, indexed by band */
+typedef struct AdmCmKernelParamsCuda {
+    int32_t w, h;
+    int32_t top, bottom, left, right;
+    int32_t start_row, end_row, start_col, end_col;
+    int32_t src_stride;
+    int32_t measure_aim;
+    uint32_t i_rfactor[3];
+    uint32_t shift_sub[3];
+    uint32_t shift_sq[3];
+    uint32_t add_shift_sq[3];
+    uint32_t shift_cub[3];
+    uint32_t add_shift_cub[3];
+    uint32_t shift_inner_accum;
+    uint32_t add_shift_inner_accum;
+} AdmCmKernelParamsCuda;
 
 typedef struct AdmBufferCuda {
     size_t ind_size_x, ind_size_y; // strides size for intermidate buffers
@@ -74,8 +113,6 @@ typedef struct AdmBufferCuda {
     struct VmafCudaBuffer* tmp_ref;
     struct VmafCudaBuffer* tmp_dis;
     struct VmafCudaBuffer* tmp_res;
-    struct VmafCudaBuffer* tmp_accum;
-    struct VmafCudaBuffer* tmp_accum_h;
 
     cuda_adm_dwt_band_t ref_dwt2;
     cuda_adm_dwt_band_t dis_dwt2;
@@ -93,6 +130,7 @@ typedef struct AdmBufferCuda {
 
     int64_t* adm_cm[4];
     uint64_t* adm_csf_den[4];
+    int64_t* aim_num[4];
     void* results_host;
 } AdmBufferCuda;
 
