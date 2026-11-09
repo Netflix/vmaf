@@ -85,7 +85,7 @@ __global__ void calculate_motion_score_kernel_16bpc(const VmafPicture src, VmafC
         ptrdiff_t src_stride, ptrdiff_t blurred_stride) {
 
     unsigned shift_var_y = src.bpc;
-    unsigned add_before_shift_y = pow(2, (src.bpc - 1));
+    unsigned add_before_shift_y = 1u << (src.bpc - 1);
     constexpr unsigned shift_var_x = 16u;
     constexpr unsigned add_before_shift_x = 32768u;
 
