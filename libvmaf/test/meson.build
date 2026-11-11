@@ -213,8 +213,19 @@ test_cuda_pic_preallocation = executable('test_cuda_pic_preallocation',
     c_args: ['-DHAVE_CUDA=1']
 )
 
+test_cuda_speed_chroma = executable('test_cuda_speed_chroma',
+    ['test.c', 'test_cuda_speed_chroma.c'],
+    include_directories : [libvmaf_inc, test_inc,
+                           include_directories('../src/'),
+                           include_directories('../src/cuda/')],
+    link_with : get_option('default_library') == 'both' ? libvmaf.get_static_lib() : libvmaf,
+    dependencies: [cuda_dependency, thread_lib, stdatomic_dependency],
+    c_args: ['-DHAVE_CUDA=1']
+)
+
 test('test_ring_buffer', test_ring_buffer)
 test('test_cuda_pic_preallocation', test_cuda_pic_preallocation)
+test('test_cuda_speed_chroma', test_cuda_speed_chroma)
 endif
 
 test_pic_preallocation = executable('test_pic_preallocation',
