@@ -8,7 +8,7 @@ This is an overview of the available documentation in the VMAF repository.
 
 ## Models and Features
 
-- [Models](models.md) – a summary of the available pre-trained models
+- [Models](models_v1.md) – a summary of the available pre-trained models
 - [Features](features.md) – VMAF's core features (metrics)
 - [Datasets](datasets.md) – an overview of the two publicly available datasets for training custom models
 - [Confidence Interval](conf_interval.md) – how to use bootstrapping to provide CI estimates for VMAF scores
