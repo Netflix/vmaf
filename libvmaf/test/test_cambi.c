@@ -397,7 +397,7 @@ static char *test_calculate_c_values()
     mu_assert("test_calculate_c_values alloc #2 error", !err);
 
     calculate_c_values(&input, &mask, combined_c_values, histograms, window_size,
-                       num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, width, height);
+                       num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut, width, height);
 
     for (unsigned i=0; i<16; i++) {
         mu_assert("calculate_c_values error ws=3",
@@ -413,7 +413,7 @@ static char *test_calculate_c_values()
     window_size = 9;
     uint16_t histograms_8x8[8*1032];
     calculate_c_values(&input_8x8, &mask_8x8, combined_c_values_8x8, histograms_8x8,
-                       window_size, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, 8, 8);
+                       window_size, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut, 8, 8);
 
     double sum = 0;
     for (unsigned i = 0; i < 64; i++) {
@@ -444,21 +444,21 @@ static char *test_c_value_pixel()
     uint16_t num_diffs = 2;
     float c_value;
 
-    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 10, 0, 1);
+    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 10, 0, 1, reciprocal_lut);
     mu_assert("c_value_all_diffs for value=2, weights=2,3", almost_equal(c_value, 2.6666667));
 
     diff_weights[0] = 4;
     diff_weights[1] = 5;
-    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 10, 0, 1);
+    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 10, 0, 1, reciprocal_lut);
     mu_assert("c_value_all_diffs for value=2, weights=4,5", almost_equal(c_value, 6.6666667));
 
     value = 4;
-    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 10, 0, 1);
+    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 10, 0, 1, reciprocal_lut);
     mu_assert("c_value_all_diffs for value=4, weights=4,5", almost_equal(c_value, 0));
 
     value = 2;
     vlt_luma = 5;
-    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 10, 0, 1);
+    c_value = c_value_pixel(histogram, value, diff_weights, diffs, num_diffs, tvi_thresholds, vlt_luma, 0, 10, 0, 1, reciprocal_lut);
     mu_assert("c_value_all_diffs for value=2, weights=4,5", almost_equal(c_value, 0));
     return NULL;
 }
@@ -593,6 +593,10 @@ static char *test_adjust_window_size()
     window_size = 63;
     adjust_window_size(&window_size, 6000, 4000, cambi_high_res_speedup);
     mu_assert("adjusted window size for input=(6000, 4000), ws=63", window_size==105);
+
+    window_size = 65;
+    adjust_window_size(&window_size, 7680, 4320, cambi_high_res_speedup);
+    mu_assert("adjusted window size for input=(7680, 4320), ws=65", window_size==131);
 
     window_size = 60;
     adjust_window_size(&window_size, 1920, 1080, cambi_high_res_speedup);
@@ -744,6 +748,70 @@ static char *test_get_vlt_luma()
     return NULL;
 }
 
+static char *test_set_reciprocal_lut()
+{
+    CambiBuffers buffers = { 0 };
+
+    int err = set_reciprocal_lut(&buffers, 65);
+    mu_assert("set_reciprocal_lut ws=65 error", !err);
+    mu_assert("ws=65 should use the static LUT",
+              buffers.reciprocal_lut == reciprocal_lut && !buffers.reciprocal_lut_alloc);
+
+    err = set_reciprocal_lut(&buffers, 131);
+    mu_assert("set_reciprocal_lut ws=131 error", !err);
+    mu_assert("ws=131 should allocate a LUT", buffers.reciprocal_lut_alloc &&
+              buffers.reciprocal_lut == buffers.reciprocal_lut_alloc);
+    mu_assert("ws=131 LUT should start with the static one",
+              !memcmp(buffers.reciprocal_lut, reciprocal_lut, sizeof(reciprocal_lut)));
+    mu_assert("ws=131 LUT should reach 131^2",
+              buffers.reciprocal_lut[131 * 131] == 1.0f / (float)(131 * 131));
+
+    // A second call replaces the table rather than leaking it.
+    err = set_reciprocal_lut(&buffers, 255);
+    mu_assert("set_reciprocal_lut ws=255 error", !err);
+    mu_assert("ws=255 LUT should reach 255^2",
+              buffers.reciprocal_lut[255 * 255] == 1.0f / (float)(255 * 255));
+
+    // A window's area must fit the uint16_t histogram counts.
+    err = set_reciprocal_lut(&buffers, 257);
+    mu_assert("set_reciprocal_lut ws=257 should fail", err == -EINVAL);
+
+    aligned_free(buffers.reciprocal_lut_alloc);
+    return NULL;
+}
+
+static char *test_init_window_size()
+{
+    VmafFeatureExtractor *fex = vmaf_get_feature_extractor_by_name("cambi");
+    mu_assert("no cambi feature extractor", fex);
+    VmafDictionary *opts = NULL;
+    int err = vmaf_dictionary_set(&opts, "window_size", "127", 0);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+    VmafFeatureExtractorContext *fex_ctx;
+    err = vmaf_feature_extractor_context_create(&fex_ctx, fex, opts);
+    mu_assert("problem during vmaf_feature_extractor_context_create", !err);
+    CambiState *s = fex_ctx->fex->priv;
+
+    // window_size 127 scales to 85 at 1440p, past the static LUT's 65.
+    // Init twice, as libvmaf does when a first init fails: the option
+    // must not be scaled in place, or the second one compounds it.
+    for (int i = 0; i < 2; i++) {
+        err = init(fex_ctx->fex, VMAF_PIX_FMT_YUV420P, 10, 2560, 1440);
+        mu_assert("cambi init at 1440p with window_size=127 failed", !err);
+        mu_assert("init scaled the window_size option in place", s->window_size == 127);
+        mu_assert("enc window should be 85", s->enc_window_size == 85);
+        mu_assert("src window should be 85", s->src_window_size == 85);
+        mu_assert("LUT should cover an 85x85 window",
+                  s->buffers.reciprocal_lut_alloc &&
+                  s->buffers.reciprocal_lut[85 * 85] == 1.0f / (float)(85 * 85));
+        err = close_cambi(fex_ctx->fex);
+        mu_assert("problem during close_cambi", !err);
+    }
+
+    vmaf_feature_extractor_context_destroy(fex_ctx);
+    return NULL;
+}
+
 char *run_tests()
 {
     /* Preprocessing functions */
@@ -768,6 +836,8 @@ char *run_tests()
     mu_run_test(test_get_pixels_in_window);
     mu_run_test(test_weight_scores_per_scale);
     mu_run_test(test_adjust_window_size);
+    mu_run_test(test_set_reciprocal_lut);
+    mu_run_test(test_init_window_size);
 
     /* Visibility threshold functions */
     mu_run_test(test_get_tvi_for_diff);
