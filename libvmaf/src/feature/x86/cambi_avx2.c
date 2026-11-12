@@ -325,7 +325,8 @@ void get_derivative_data_for_row_avx2(const uint16_t *image_data, uint16_t *deri
 void calculate_c_values_avx2(VmafPicture *pic, const VmafPicture *mask_pic,
                              float *c_values, uint16_t *histograms, uint16_t window_size,
                              const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
-                             const int *diff_weights, const int *all_diffs, int width, int height) {
+                             const int *diff_weights, const int *all_diffs,
+                             const float *reciprocal_lut, int width, int height) {
     uint16_t pad_size = window_size >> 1;
 
     int v_lo_signed = (int)vlt_luma - 3 * (int)num_diffs + 1;

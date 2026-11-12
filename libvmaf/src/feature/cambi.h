@@ -66,6 +66,7 @@ void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
                          uint16_t window_size, const uint16_t num_diffs,
                          const uint16_t *tvi_for_diff, uint16_t vlt_luma,
                          const int *diff_weights, const int *all_diffs,
+                         const float *reciprocal_lut,
                          int width, int height);
 
 int set_contrast_arrays(const uint16_t num_diffs, uint16_t **diffs_to_consider,
