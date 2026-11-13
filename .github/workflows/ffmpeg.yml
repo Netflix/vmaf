@@ -48,7 +48,8 @@ jobs:
       - name: Install dependencies (windows)
         if: matrix.os == 'windows-latest'
         run: |
-          choco install -y nasm pkgconfiglite
+          choco install -y nasm pkgconfiglite --allow-empty-checksums
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           pip install meson==1.10.0 ninja # Meson 1.11+ Bug: introduces /release flag which makes detection to fail
       - name: Setup MSVC
         if: matrix.os == 'windows-latest'
