@@ -48,13 +48,9 @@ jobs:
       - name: Install dependencies (windows)
         if: matrix.os == 'windows-latest'
         run: |
-          choco install -y nasm
+          choco install -y nasm pkgconfiglite --allow-empty-checksums
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          pip install meson==1.10.0 ninja pkgconf==3.0.7.post0 # Meson 1.11+ Bug: introduces /release flag which makes detection to fail
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $pkgconf = python -c "import pkgconf; print(pkgconf.get_executable())"
-          "PKG_CONFIG=$pkgconf" >> $env:GITHUB_ENV
-          & $pkgconf --version
+          pip install meson==1.10.0 ninja # Meson 1.11+ Bug: introduces /release flag which makes detection to fail
       - name: Setup MSVC
         if: matrix.os == 'windows-latest'
         uses: ilammy/msvc-dev-cmd@v1
