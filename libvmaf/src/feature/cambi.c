@@ -1142,7 +1142,7 @@ void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
     memset(histograms, 0, width * v_band_size * sizeof(uint16_t));
 
     // First pass: first pad_size rows
-    for (int i = 0; i < pad_size; i++) {
+    for (int i = 0; i < MIN(pad_size, height); i++) {
         for (int j = 0; j < pad_size; j++) {
             update_histogram_add_edge_first_pass(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, increment_range);
         }
@@ -1155,7 +1155,7 @@ void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
     }
 
     // Iterate over all rows, unrolled into 3 loops to avoid conditions
-    for (int i = 0; i < pad_size + 1; i++) {
+    for (int i = 0; i < MIN(pad_size + 1, height); i++) {
         if (i + pad_size < height) {
             for (int j = 0; j < pad_size; j++) {
                 update_histogram_add_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, increment_range);
@@ -1178,7 +1178,7 @@ void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
             uh_slide_edge(histograms, image, mask, i, j, width, stride, pad_size, v_band_base, v_band_size, increment_range, decrement_range);
         calculate_c_values_row(c_values, histograms, image, mask, i, width, stride, num_diffs, tvi_for_diff, vlt_luma, diff_weights, all_diffs, reciprocal_lut);
     }
-    for (int i = height - pad_size; i < height; i++) {
+    for (int i = MAX(height - pad_size, 0); i < height; i++) {
         if (i - pad_size - 1 >= 0) {
             for (int j = 0; j < pad_size; j++) {
                 update_histogram_subtract_edge(histograms, image, mask, i, j, width, stride, pad_size, num_diffs, v_band_base, v_band_size, decrement_range);
