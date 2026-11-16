@@ -25,8 +25,8 @@
 #include "vif_statistics.cuh"
 
 template <typename alignment_type = uint2, int fwidth_0 = 17, int fwidth_1 = 9>
-__device__ __forceinline__ void filter1d_8_vertical_kernel(VifBufferCuda buf, uint8_t* ref_in, uint8_t* dis_in,
-        int w, int h, filter_table_stuct vif_filt_s0) {
+__device__ __forceinline__ void filter1d_8_vertical_kernel(const VifBufferCuda &buf, uint8_t* ref_in, uint8_t* dis_in,
+        int w, int h, const filter_table_stuct &vif_filt_s0) {
     using writeback_type = uint4;
     constexpr int val_per_thread = sizeof(alignment_type);
     static_assert(val_per_thread % 4 == 0 && val_per_thread <= 16,
@@ -112,8 +112,8 @@ __device__ __forceinline__ void filter1d_8_vertical_kernel(VifBufferCuda buf, ui
 }
 
 template <int val_per_thread = 1, int fwidth_0 = 17, int fwidth_1 = 9>
-__device__ __forceinline__ void filter1d_8_horizontal_kernel(VifBufferCuda buf, int w, int h,
-        filter_table_stuct vif_filt_s0,
+__device__ __forceinline__ void filter1d_8_horizontal_kernel(const VifBufferCuda &buf, int w, int h,
+        const filter_table_stuct &vif_filt_s0,
         double vif_enhn_gain_limit,
         vif_accums *accum) {
     static_assert(val_per_thread % 2 == 0,
@@ -175,6 +175,7 @@ __device__ __forceinline__ void filter1d_8_horizontal_kernel(VifBufferCuda buf, 
                 }
             }
         }
+#pragma unroll
         for (int off = 0; off < val_per_thread; ++off) {
             const int x = x_start + off;
             if (x < w) {
@@ -188,12 +189,14 @@ __device__ __forceinline__ void filter1d_8_horizontal_kernel(VifBufferCuda buf, 
         }
 
         // reduce sums for each warp
+#pragma unroll
         for (int i = 0; i < 7; ++i) {
             thread_accum_i64[i] = warp_reduce(thread_accum_i64[i]);
         }
         const int warp_id = threadIdx.x % VMAF_CUDA_THREADS_PER_WARP;
         // each warp writes its sum to global mem
         if (warp_id == 0) {
+#pragma unroll
             for (int i = 0; i < 7; ++i) {
                 atomicAdd_int64(&reinterpret_cast<int64_t *>(accum)[i],
                         thread_accum_i64[i]);
@@ -202,6 +205,7 @@ __device__ __forceinline__ void filter1d_8_horizontal_kernel(VifBufferCuda buf, 
 
         uint16_t *ref = (uint16_t *)buf.ref;
         uint16_t *dis = (uint16_t *)buf.dis;
+#pragma unroll
         for (int off = 0; off < val_per_thread; ++off) {
             const int x = x_start + off;
             if (y < h && x < w) {
@@ -219,10 +223,10 @@ __device__ __forceinline__ void filter1d_8_horizontal_kernel(VifBufferCuda buf, 
 
 template <typename alignment_type = uint2, int fwidth, int fwidth_rd, int scale>
 __device__ __forceinline__ void
-filter1d_16_vertical_kernel(VifBufferCuda buf, uint16_t* ref_in, uint16_t* dis_in, int w, int h,
+filter1d_16_vertical_kernel(const VifBufferCuda &buf, uint16_t* ref_in, uint16_t* dis_in, int w, int h,
         int32_t add_shift_round_VP, int32_t shift_VP,
         int32_t add_shift_round_VP_sq, int32_t shift_VP_sq,
-        filter_table_stuct vif_filt) {
+        const filter_table_stuct &vif_filt) {
     using writeback_type = uint4;
     constexpr int val_per_thread = sizeof(alignment_type) / sizeof(uint16_t);
     static_assert(val_per_thread % 4 == 0 && val_per_thread <= 8,
@@ -330,9 +334,9 @@ filter1d_16_vertical_kernel(VifBufferCuda buf, uint16_t* ref_in, uint16_t* dis_i
 
 template <int val_per_thread = 2, int fwidth, int fwidth_rd, int scale>
 __device__ __forceinline__ void
-filter1d_16_horizontal_kernel(VifBufferCuda buf, int w, int h,
+filter1d_16_horizontal_kernel(const VifBufferCuda &buf, int w, int h,
         int32_t add_shift_round_HP, int32_t shift_HP,
-        filter_table_stuct vif_filt,
+        const filter_table_stuct &vif_filt,
         double vif_enhn_gain_limit, vif_accums *accum) {
     static_assert(val_per_thread % 2 == 0,
             "val_per_thread must be divisible by 2");
@@ -396,6 +400,7 @@ filter1d_16_horizontal_kernel(VifBufferCuda buf, int w, int h,
                 }
             }
         }
+#pragma unroll
         for (int off = 0; off < val_per_thread; ++off) {
             const int x = x_start + off;
             if (x < w) {
@@ -413,18 +418,21 @@ filter1d_16_horizontal_kernel(VifBufferCuda buf, int w, int h,
         }
 
         // reduce sums for each warp
+#pragma unroll
         for (int i = 0; i < 7; ++i) {
             thread_accum_i64[i] = warp_reduce(thread_accum_i64[i]);
         }
         const int warp_id = threadIdx.x % VMAF_CUDA_THREADS_PER_WARP;
         // each warp writes its sum to global mem
         if (warp_id == 0) {
+#pragma unroll
             for (int i = 0; i < 7; ++i) {
                 atomicAdd_int64(&reinterpret_cast<int64_t *>(accum)[i],
                         thread_accum_i64[i]);
             }
         }
 
+#pragma unroll
         for (int off = 0; off < val_per_thread; ++off) {
             const int x = x_start + off;
             if (y < h && x < w) {
