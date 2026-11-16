@@ -24,7 +24,26 @@
 
 #include "cuda_helper.cuh"
 
-__device__ __forceinline__ uint16_t get_best15_from32(uint32_t temp, int *x) {
+/*
+ * This is a 1:1 port of adm_decouple() / adm_decouple_s123() of the reference
+ * implementation. Only the division look up table is realized as an integer
+ * division instead of a table, both are equivalent for the entire range of
+ * int16 (scale 0) and int32 (scales 1..3) inputs:
+ *
+ *     div_lookup[32768 + i] =   (int32_t)(div_Q_factor / i);
+ *     div_lookup[32768 - i] = - (int32_t)(div_Q_factor / i);
+ */
+
+#define ADM_DIV_Q_FACTOR 1073741824 /* 2^30 */
+
+__device__ __forceinline__ int32_t adm_div_lookup(int32_t den)
+{
+    const int32_t recip = ADM_DIV_Q_FACTOR / (den < 0 ? -den : den);
+    return den < 0 ? -recip : recip;
+}
+
+__device__ __forceinline__ uint16_t get_best15_from32(uint32_t temp, int *x)
+{
     int k = __clz(temp); // built in for cuda
     k = 17 - k;
     temp = (temp + (1 << (k - 1))) >> k;
@@ -36,11 +55,8 @@ extern "C" {
 
 __global__ void adm_decouple_kernel(AdmBufferCuda buf, int top, int bottom,
         int left, int right, int stride,
-        double adm_enhn_gain_limit) {
-    const float cos_1deg_sq =
-        cosf(1.0f * float(M_PI) / 180.0f) * cosf(1.0f * float(M_PI) / 180.0f);
-    const float div_Q_factor = 1073741824; // 2^30
-
+        double adm_enhn_gain_limit, float cos_1deg_sq)
+{
     const cuda_adm_dwt_band_t *ref = &buf.ref_dwt2;
     const cuda_adm_dwt_band_t *dis = &buf.dis_dwt2;
     const cuda_adm_dwt_band_t *r = &buf.decouple_r;
@@ -49,7 +65,7 @@ __global__ void adm_decouple_kernel(AdmBufferCuda buf, int top, int bottom,
     int i = top + blockIdx.y * blockDim.y + threadIdx.y;
     int j = left + blockIdx.x * blockDim.x + threadIdx.x;
     if (i < bottom && j < right) {
-        int32_t ot_dp, o_mag_sq, t_mag_sq;
+        int64_t ot_dp, o_mag_sq, t_mag_sq;
 
         int16_t oh = ref->band_h[i * stride + j];
         int16_t ov = ref->band_v[i * stride + j];
@@ -57,81 +73,78 @@ __global__ void adm_decouple_kernel(AdmBufferCuda buf, int top, int bottom,
         int16_t th = dis->band_h[i * stride + j];
         int16_t tv = dis->band_v[i * stride + j];
         int16_t td = dis->band_d[i * stride + j];
-        int32_t rst_h, rst_v, rst_d;
+        int16_t rst_h, rst_v, rst_d;
 
-        // the result of 2*int16_t needs 31 bits.
-        // adding two 31 bit values results in 32 bits.
-        // thus there is no need for 64-bit math.
-        ot_dp = (int32_t)oh * th + (int32_t)ov * tv;
-        o_mag_sq = (int32_t)oh * oh + (int32_t)ov * ov;
-        t_mag_sq = (int32_t)th * th + (int32_t)tv * tv;
+        ot_dp = (int64_t)oh * th + (int64_t)ov * tv;
+        o_mag_sq = (int64_t)oh * oh + (int64_t)ov * ov;
+        t_mag_sq = (int64_t)th * th + (int64_t)tv * tv;
 
-        int angle_flag =
-            (ot_dp >= 0) &&
-            double(int64_t(ot_dp) * ot_dp) >=
-            double(int64_t(o_mag_sq) * t_mag_sq) * cos_1deg_sq;
+        /*
+         * the reference implementation evaluates this in double precision:
+         * (float)ot_dp / 4096.0 is a double division by a power of two, which
+         * is exact
+         */
+        const double d_ot = (double)(float)ot_dp / 4096.0;
+        const double d_o_mag_sq = (double)(float)o_mag_sq / 4096.0;
+        const double d_t_mag_sq = (double)(float)t_mag_sq / 4096.0;
 
-        int32_t tmp_kh =
-            (oh == 0)
-            ? 32768
-            : (((int64_t)int32_t(div_Q_factor / float(oh)) * th) + 16384) >> 15;
-        int32_t tmp_kv =
-            (ov == 0)
-            ? 32768
-            : (((int64_t)int32_t(div_Q_factor / float(ov)) * tv) + 16384) >> 15;
-        int32_t tmp_kd =
-            (od == 0)
-            ? 32768
-            : (((int64_t)int32_t(div_Q_factor / float(od)) * td) + 16384) >> 15;
+        int angle_flag = (d_ot >= 0.0) &&
+            (d_ot * d_ot >= (double)cos_1deg_sq * d_o_mag_sq * d_t_mag_sq);
 
-        int32_t kh = max(0, min(32768, tmp_kh));
-        int32_t kv = max(0, min(32768, tmp_kv));
-        int32_t kd = max(0, min(32768, tmp_kd));
+        int32_t tmp_kh = (oh == 0) ? 32768 :
+            (int32_t)((((int64_t)adm_div_lookup(oh) * th) + 16384) >> 15);
+        int32_t tmp_kv = (ov == 0) ? 32768 :
+            (int32_t)((((int64_t)adm_div_lookup(ov) * tv) + 16384) >> 15);
+        int32_t tmp_kd = (od == 0) ? 32768 :
+            (int32_t)((((int64_t)adm_div_lookup(od) * td) + 16384) >> 15);
 
-        if (!angle_flag)
-            adm_enhn_gain_limit = 1;
+        int32_t kh = tmp_kh < 0 ? 0 : (tmp_kh > 32768 ? 32768 : tmp_kh);
+        int32_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
+        int32_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
 
-        rst_h = (int32_t)(((kh * oh) + 16384) >> 15) * adm_enhn_gain_limit;
-        rst_v = (int32_t)(((kv * ov) + 16384) >> 15) * adm_enhn_gain_limit;
-        rst_d = (int32_t)(((kd * od) + 16384) >> 15) * adm_enhn_gain_limit;
+        rst_h = (int16_t)(((kh * oh) + 16384) >> 15);
+        rst_v = (int16_t)(((kv * ov) + 16384) >> 15);
+        rst_d = (int16_t)(((kd * od) + 16384) >> 15);
 
-        const int32_t rst_h_s = kh * oh;
-        const int32_t rst_v_s = kv * ov;
-        const int32_t rst_d_s = kd * od;
+        const float rst_h_f = ((float)kh / 32768) * ((float)oh / 64);
+        const float rst_v_f = ((float)kv / 32768) * ((float)ov / 64);
+        const float rst_d_f = ((float)kd / 32768) * ((float)od / 64);
 
-        if (angle_flag) {
-            if (rst_h_s > 0)
-                rst_h = min(rst_h, (int32_t)th);
-            if (rst_h_s < 0)
-                rst_h = max(rst_h, (int32_t)th);
+        if (angle_flag && (rst_h_f > 0.f))
+            rst_h = (int16_t)(((double)rst_h * adm_enhn_gain_limit) < (double)th ?
+                    ((double)rst_h * adm_enhn_gain_limit) : (double)th);
+        if (angle_flag && (rst_h_f < 0.f))
+            rst_h = (int16_t)(((double)rst_h * adm_enhn_gain_limit) > (double)th ?
+                    ((double)rst_h * adm_enhn_gain_limit) : (double)th);
 
-            if (rst_v_s > 0)
-                rst_v = min(rst_v, (int32_t)tv);
-            if (rst_v_s < 0)
-                rst_v = max(rst_v, (int32_t)tv);
+        if (angle_flag && (rst_v_f > 0.f))
+            rst_v = (int16_t)(((double)rst_v * adm_enhn_gain_limit) < (double)tv ?
+                    ((double)rst_v * adm_enhn_gain_limit) : (double)tv);
+        if (angle_flag && (rst_v_f < 0.f))
+            rst_v = (int16_t)(((double)rst_v * adm_enhn_gain_limit) > (double)tv ?
+                    ((double)rst_v * adm_enhn_gain_limit) : (double)tv);
 
-            if (rst_d_s > 0)
-                rst_d = min(rst_d, (int32_t)td);
-            if (rst_d_s < 0)
-                rst_d = max(rst_d, (int32_t)td);
-        }
+        if (angle_flag && (rst_d_f > 0.f))
+            rst_d = (int16_t)(((double)rst_d * adm_enhn_gain_limit) < (double)td ?
+                    ((double)rst_d * adm_enhn_gain_limit) : (double)td);
+        if (angle_flag && (rst_d_f < 0.f))
+            rst_d = (int16_t)(((double)rst_d * adm_enhn_gain_limit) > (double)td ?
+                    ((double)rst_d * adm_enhn_gain_limit) : (double)td);
 
         r->band_h[i * stride + j] = rst_h;
         r->band_v[i * stride + j] = rst_v;
         r->band_d[i * stride + j] = rst_d;
 
-        a->band_h[i * stride + j] = th - rst_h;
-        a->band_v[i * stride + j] = tv - rst_v;
-        a->band_d[i * stride + j] = td - rst_d;
+        a->band_h[i * stride + j] = (int16_t)(th - rst_h);
+        a->band_v[i * stride + j] = (int16_t)(tv - rst_v);
+        a->band_d[i * stride + j] = (int16_t)(td - rst_d);
     }
 }
 
 __global__ void adm_decouple_s123_kernel(AdmBufferCuda buf, int top, int bottom,
         int left, int right, int stride,
-        double adm_enhn_gain_limit) {
-    const float cos_1deg_sq = cosf(1.0f * float(M_PI) / 180.0f) * cosf(1.0f * float(M_PI) / 180.0f);
-    const int32_t div_Q_factor = 1073741824; // 2^30
-
+        double adm_enhn_gain_limit, float cos_1deg_sq)
+{
     const cuda_i4_adm_dwt_band_t *ref = &buf.i4_ref_dwt2;
     const cuda_i4_adm_dwt_band_t *dis = &buf.i4_dis_dwt2;
     const cuda_i4_adm_dwt_band_t *r = &buf.i4_decouple_r;
@@ -154,10 +167,12 @@ __global__ void adm_decouple_s123_kernel(AdmBufferCuda buf, int top, int bottom,
         o_mag_sq = (int64_t)oh * oh + (int64_t)ov * ov;
         t_mag_sq = (int64_t)th * th + (int64_t)tv * tv;
 
-        int angle_flag =
-            (((float)ot_dp / 4096.0) >= 0.0f) &&
-            (((float)ot_dp / 4096.0) * ((float)ot_dp / 4096.0) >=
-             cos_1deg_sq * ((float)o_mag_sq / 4096.0) * ((float)t_mag_sq / 4096.0));
+        const double d_ot = (double)(float)ot_dp / 4096.0;
+        const double d_o_mag_sq = (double)(float)o_mag_sq / 4096.0;
+        const double d_t_mag_sq = (double)(float)t_mag_sq / 4096.0;
+
+        int angle_flag = (d_ot >= 0.0) &&
+            (d_ot * d_ot >= (double)cos_1deg_sq * d_o_mag_sq * d_t_mag_sq);
 
         int32_t kh_shift = 0;
         int32_t kv_shift = 0;
@@ -171,59 +186,52 @@ __global__ void adm_decouple_s123_kernel(AdmBufferCuda buf, int top, int bottom,
         int8_t kv_sign = (ov < 0 ? -1 : 1);
         int8_t kd_sign = (od < 0 ? -1 : 1);
 
-        int32_t kh_msb =
-            (abs_oh < (32768) ? abs_oh : get_best15_from32(abs_oh, &kh_shift));
-        int32_t kv_msb =
-            (abs_ov < (32768) ? abs_ov : get_best15_from32(abs_ov, &kv_shift));
-        int32_t kd_msb =
-            (abs_od < (32768) ? abs_od : get_best15_from32(abs_od, &kd_shift));
+        uint16_t kh_msb = (abs_oh < 32768 ? (uint16_t)abs_oh : get_best15_from32(abs_oh, &kh_shift));
+        uint16_t kv_msb = (abs_ov < 32768 ? (uint16_t)abs_ov : get_best15_from32(abs_ov, &kv_shift));
+        uint16_t kd_msb = (abs_od < 32768 ? (uint16_t)abs_od : get_best15_from32(abs_od, &kd_shift));
 
-        // executing the division as float division does not work without altering results very slightly
-        int64_t tmp_kh =
-            (oh == 0) ? 32768
-            : (((int64_t)(div_Q_factor / kh_msb) * th) * (kh_sign) +
-                    (1 << (14 + kh_shift))) >>
-            (15 + kh_shift);
-        int64_t tmp_kv =
-            (ov == 0) ? 32768
-            : (((int64_t)(div_Q_factor / kv_msb) * tv) * (kv_sign) +
-                    (1 << (14 + kv_shift))) >>
-            (15 + kv_shift);
-        int64_t tmp_kd =
-            (od == 0) ? 32768
-            : (((int64_t)(div_Q_factor / kd_msb) * td) * (kd_sign) +
-                    (1 << (14 + kd_shift))) >>
-            (15 + kd_shift);
+        int64_t tmp_kh = (oh == 0) ? 32768 :
+            ((((int64_t)adm_div_lookup(kh_msb) * th) * kh_sign) +
+             (1 << (14 + kh_shift))) >> (15 + kh_shift);
+        int64_t tmp_kv = (ov == 0) ? 32768 :
+            ((((int64_t)adm_div_lookup(kv_msb) * tv) * kv_sign) +
+             (1 << (14 + kv_shift))) >> (15 + kv_shift);
+        int64_t tmp_kd = (od == 0) ? 32768 :
+            ((((int64_t)adm_div_lookup(kd_msb) * td) * kd_sign) +
+             (1 << (14 + kd_shift))) >> (15 + kd_shift);
 
         int64_t kh = tmp_kh < 0 ? 0 : (tmp_kh > 32768 ? 32768 : tmp_kh);
         int64_t kv = tmp_kv < 0 ? 0 : (tmp_kv > 32768 ? 32768 : tmp_kv);
         int64_t kd = tmp_kd < 0 ? 0 : (tmp_kd > 32768 ? 32768 : tmp_kd);
 
-        if (!angle_flag)
-            adm_enhn_gain_limit = 1;
-
-        rst_h = (int32_t)(((kh * oh) + 16384) >> 15) * adm_enhn_gain_limit;
-        rst_v = (int32_t)(((kv * ov) + 16384) >> 15) * adm_enhn_gain_limit;
-        rst_d = (int32_t)(((kd * od) + 16384) >> 15) * adm_enhn_gain_limit;
+        rst_h = (int32_t)(((kh * oh) + 16384) >> 15);
+        rst_v = (int32_t)(((kv * ov) + 16384) >> 15);
+        rst_d = (int32_t)(((kd * od) + 16384) >> 15);
 
         const float rst_h_f = ((float)kh / 32768) * ((float)oh / 64);
         const float rst_v_f = ((float)kv / 32768) * ((float)ov / 64);
         const float rst_d_f = ((float)kd / 32768) * ((float)od / 64);
 
         if (angle_flag && (rst_h_f > 0.f))
-            rst_h = min(rst_h, th);
+            rst_h = (int32_t)(((double)rst_h * adm_enhn_gain_limit) < (double)th ?
+                    ((double)rst_h * adm_enhn_gain_limit) : (double)th);
         if (angle_flag && (rst_h_f < 0.f))
-            rst_h = max(rst_h, th);
+            rst_h = (int32_t)(((double)rst_h * adm_enhn_gain_limit) > (double)th ?
+                    ((double)rst_h * adm_enhn_gain_limit) : (double)th);
 
         if (angle_flag && (rst_v_f > 0.f))
-            rst_v = min(rst_v, tv);
+            rst_v = (int32_t)(((double)rst_v * adm_enhn_gain_limit) < (double)tv ?
+                    ((double)rst_v * adm_enhn_gain_limit) : (double)tv);
         if (angle_flag && (rst_v_f < 0.f))
-            rst_v = max(rst_v, tv);
+            rst_v = (int32_t)(((double)rst_v * adm_enhn_gain_limit) > (double)tv ?
+                    ((double)rst_v * adm_enhn_gain_limit) : (double)tv);
 
         if (angle_flag && (rst_d_f > 0.f))
-            rst_d = min(rst_d, td);
+            rst_d = (int32_t)(((double)rst_d * adm_enhn_gain_limit) < (double)td ?
+                    ((double)rst_d * adm_enhn_gain_limit) : (double)td);
         if (angle_flag && (rst_d_f < 0.f))
-            rst_d = max(rst_d, td);
+            rst_d = (int32_t)(((double)rst_d * adm_enhn_gain_limit) > (double)td ?
+                    ((double)rst_d * adm_enhn_gain_limit) : (double)td);
 
         r->band_h[i * stride + j] = rst_h;
         r->band_v[i * stride + j] = rst_v;
