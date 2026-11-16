@@ -27,7 +27,7 @@ template <int val_per_thread, int cta_size>
 __device__ __forceinline__ void adm_csf_den_scale_line_kernel(const cuda_adm_dwt_band_t src, int h,
         int top, int bottom, int left,
         int right, int src_stride,
-        uint64_t *accum) {
+        uint32_t shift_accum, uint64_t *accum) {
     const int band = blockIdx.z + 1;
     // this is evaluated to a 4 STL and one LDL therefore we need the switch
     // const int16_t * src_ptr = src.bands[band] + (top + blockIdx.y) * src_stride;
@@ -57,10 +57,7 @@ __device__ __forceinline__ void adm_csf_den_scale_line_kernel(const cuda_adm_dwt
     temp_value = warp_reduce(temp_value);
 
     if ((threadIdx.x % VMAF_CUDA_THREADS_PER_WARP) == 0) {
-        uint32_t shift_accum = (uint32_t)__float2uint_ru(
-                __log2f((bottom - top) * (right - left)) - 20);
-        shift_accum = shift_accum > 0 ? shift_accum : 0;
-        int32_t add_shift_accum = shift_accum > 0 ? (1 << (shift_accum - 1)) : 0;
+        const int32_t add_shift_accum = shift_accum > 0 ? (1 << (shift_accum - 1)) : 0;
         atomicAdd((uint64_cu *)&accum[band - 1],
                 (temp_value + add_shift_accum) >> shift_accum);
     }
@@ -113,10 +110,10 @@ __device__ __forceinline__ void adm_csf_den_s123_line_kernel(
 #define ADM_CSF_SCALE_LINE(val_per_thread, cta_size)                                        \
     __global__ void adm_csf_den_scale_line_kernel_##val_per_thread##_##cta_size (           \
             const cuda_adm_dwt_band_t src, int h, int top, int bottom, int left, int right, \
-            int src_stride, uint64_t *accum)                                                \
+            int src_stride, uint32_t shift_accum, uint64_t *accum)                          \
 {                                                                                           \
     adm_csf_den_scale_line_kernel<val_per_thread, cta_size>(                                \
-            src, h, top, bottom, left, right, src_stride, accum);                           \
+            src, h, top, bottom, left, right, src_stride, shift_accum, accum);              \
 }
 
 #define ADM_CSF_DEN_S123_LINE(val_per_thread, cta_size)                                        \
