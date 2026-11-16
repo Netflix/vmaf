@@ -129,15 +129,15 @@ typedef struct CambiState {
     unsigned enc_bitdepth;
     unsigned src_width;
     unsigned src_height;
-    uint16_t window_size;
-    uint16_t src_window_size;
+    int window_size;
+    int src_window_size;
     double topk;
     double cambi_topk;
     double tvi_threshold;
     double cambi_max_val;
     double cambi_vis_lum_threshold;
     uint16_t vlt_luma;
-    uint16_t max_log_contrast;
+    int max_log_contrast;
     char *heatmaps_path;
     char *eotf;
     char *cambi_eotf;
@@ -412,7 +412,7 @@ int get_vlt_luma(double visibility_luminance_threshold, VmafLumaRange luma_range
     }
 }
 
-static FORCE_INLINE void adjust_window_size(uint16_t *window_size,
+static FORCE_INLINE void adjust_window_size(int *window_size,
                                             unsigned input_width,
                                             unsigned input_height,
                                             bool cambi_high_res_speedup)
