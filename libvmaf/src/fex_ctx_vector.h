@@ -26,6 +26,21 @@ typedef struct {
     unsigned cnt, capacity;
 } RegisteredFeatureExtractors;
 
+/* The plane mask passed to vmaf_cuda_picture_upload_async(): luma is always
+ * needed, chroma only when a registered feature extractor reads it. Uploading
+ * chroma unconditionally costs bandwidth for the common luma-only case. */
+static inline unsigned
+vmaf_feature_extractor_upload_plane_mask(const RegisteredFeatureExtractors *rfe)
+{
+    unsigned mask = 0x1;
+    for (unsigned i = 0; i < rfe->cnt; i++) {
+        const VmafFeatureExtractor *fex = rfe->fex_ctx[i]->fex;
+        if (fex->flags & VMAF_FEATURE_EXTRACTOR_CHROMA)
+            mask |= 0x6;
+    }
+    return mask;
+}
+
 int feature_extractor_vector_init(RegisteredFeatureExtractors *rfe);
 
 int feature_extractor_vector_append(RegisteredFeatureExtractors *rfe,

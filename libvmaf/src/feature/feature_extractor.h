@@ -39,6 +39,9 @@ enum VmafFeatureExtractorFlags {
     VMAF_FEATURE_EXTRACTOR_CUDA = 1 << 1,
     VMAF_FEATURE_FRAME_SYNC = 1 << 2,
     VMAF_FEATURE_EXTRACTOR_PREV_REF = 1 << 3,
+    /* Reads the chroma planes of the picture. Used to decide which planes have
+     * to be uploaded when host pictures are converted to device pictures. */
+    VMAF_FEATURE_EXTRACTOR_CHROMA = 1 << 4,
 };
 
 struct VmafFeatureExtractorContext;
