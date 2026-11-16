@@ -29,6 +29,7 @@ __constant__ int radius = (sizeof(filter_d) / sizeof(filter_d[0])) / 2;
 // Device function that mirrors an idx along its valid [0,sup) range
 __device__ __forceinline__ int mirror(const int idx, const int sup)
 {
+    if (sup == 1) return 0;
     int out = abs(idx);
     return (out < sup) ? out : (sup - (out - sup + 1));
 }

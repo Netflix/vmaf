@@ -23,13 +23,6 @@
 
 #include "feature/integer_motion.h"
 
-static inline int mirror(int idx, int size)
-{
-    if (idx < 0) return -idx;
-    if (idx >= size) return 2 * size - idx - 2;
-    return idx;
-}
-
 // SIMD phase 2: x_conv + abs + SAD for one row of int32 y_row.
 // Processes 16 int32 columns at a time via mullo_epi32 + int64 accumulation.
 static inline uint32_t
@@ -47,7 +40,7 @@ x_conv_row_sad_avx512(const int32_t *y_row, unsigned w)
     for (j = 0; j < 2 && j < w; j++) {
         int64_t accum = 0;
         for (int k = 0; k < 5; k++) {
-            int col = mirror((int)j - 2 + k, (int)w);
+            int col = motion_mirror((int)j - 2 + k, (int)w);
             accum += (int64_t)filter[k] * y_row[col];
         }
         int32_t val = (int32_t)((accum + (1 << 15)) >> 16);
@@ -105,7 +98,7 @@ x_conv_row_sad_avx512(const int32_t *y_row, unsigned w)
     for (; j < w; j++) {
         int64_t accum = 0;
         for (int k = 0; k < 5; k++) {
-            int col = mirror((int)j - 2 + k, (int)w);
+            int col = motion_mirror((int)j - 2 + k, (int)w);
             accum += (int64_t)filter[k] * y_row[col];
         }
         int32_t val = (int32_t)((accum + (1 << 15)) >> 16);
@@ -136,7 +129,7 @@ uint64_t motion_score_pipeline_16_avx512(const uint8_t *prev_u8, ptrdiff_t prev_
     for (unsigned i = 0; i < h; i++) {
         const uint16_t *pp[5], *cp[5];
         for (int k = 0; k < 5; k++) {
-            int r = mirror((int)i - 2 + k, (int)h);
+            int r = motion_mirror((int)i - 2 + k, (int)h);
             pp[k] = prev + r * p_stride;
             cp[k] = cur + r * c_stride;
         }
@@ -224,7 +217,7 @@ uint64_t motion_score_pipeline_8_avx512(const uint8_t *prev, ptrdiff_t prev_stri
     for (unsigned i = 0; i < h; i++) {
         const uint8_t *p[5], *c[5];
         for (int k = 0; k < 5; k++) {
-            int r = mirror((int)i - 2 + k, (int)h);
+            int r = motion_mirror((int)i - 2 + k, (int)h);
             p[k] = prev + r * prev_stride;
             c[k] = cur + r * cur_stride;
         }
