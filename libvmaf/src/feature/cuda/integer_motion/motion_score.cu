@@ -30,7 +30,7 @@ __constant__ int radius = (sizeof(filter_d) / sizeof(filter_d[0])) / 2;
 __device__ __forceinline__ int mirror(const int idx, const int sup)
 {
     int out = abs(idx);
-    return (out < sup) ? out : (sup - (out - sup + 1));
+    return (out < sup) ? out : (sup - (out - sup + 2));
 }
 
 extern "C" {
