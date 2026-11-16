@@ -35,6 +35,7 @@
 typedef struct MotionStateCuda {
     CUevent event, finished;
     CUfunction funcbpc8, funcbpc16;
+    CUmodule module;
     CUstream str, host_stream;
     VmafCudaBuffer* blur[2];
     VmafCudaBuffer* sad;
@@ -144,11 +145,10 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cu_f, cuEventCreate(&s->event, CU_EVENT_DEFAULT));
     CHECK_CUDA(cu_f, cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
 
-    CUmodule module;
-    CHECK_CUDA(cu_f, cuModuleLoadData(&module, motion_score_ptx));
+    CHECK_CUDA(cu_f, cuModuleLoadData(&s->module, motion_score_ptx));
 
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->funcbpc16, module, "calculate_motion_score_kernel_16bpc"));
-    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->funcbpc8, module, "calculate_motion_score_kernel_8bpc"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->funcbpc16, s->module, "calculate_motion_score_kernel_16bpc"));
+    CHECK_CUDA(cu_f, cuModuleGetFunction(&s->funcbpc8, s->module, "calculate_motion_score_kernel_8bpc"));
 
     CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
 
@@ -325,6 +325,12 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
     CHECK_CUDA(cu_f, cuEventDestroy(s->event));
     CHECK_CUDA(cu_f, cuEventDestroy(s->finished));
+    CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
+    CHECK_CUDA(cu_f, cuStreamDestroy(s->host_stream));
+    CHECK_CUDA(cu_f, cuStreamDestroy(s->str));
+    CHECK_CUDA(cu_f, cuModuleUnload(s->module));
+    CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
 
     int ret = 0;
 
