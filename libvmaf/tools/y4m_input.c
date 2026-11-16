@@ -155,83 +155,6 @@ static int y4m_parse_tags(y4m_input *_y4m,char *_tags){
   Coefficients are rounded in such a way as to ensure their sum is still 128,
    which is usually equivalent to normal rounding.*/
 
-/*420jpeg chroma samples are sited like:
-  Y-------Y-------Y-------Y-------
-  |       |       |       |
-  |   BR  |       |   BR  |
-  |       |       |       |
-  Y-------Y-------Y-------Y-------
-  |       |       |       |
-  |       |       |       |
-  |       |       |       |
-  Y-------Y-------Y-------Y-------
-  |       |       |       |
-  |   BR  |       |   BR  |
-  |       |       |       |
-  Y-------Y-------Y-------Y-------
-  |       |       |       |
-  |       |       |       |
-  |       |       |       |
-
-  420mpeg2 chroma samples are sited like:
-  Y-------Y-------Y-------Y-------
-  |       |       |       |
-  BR      |       BR      |
-  |       |       |       |
-  Y-------Y-------Y-------Y-------
-  |       |       |       |
-  |       |       |       |
-  |       |       |       |
-  Y-------Y-------Y-------Y-------
-  |       |       |       |
-  BR      |       BR      |
-  |       |       |       |
-  Y-------Y-------Y-------Y-------
-  |       |       |       |
-  |       |       |       |
-  |       |       |       |
-
-  We use a resampling filter to shift the site locations one quarter pixel (at
-   the chroma plane's resolution) to the right.
-  The 4:2:2 modes look exactly the same, except there are twice as many chroma
-   lines, and they are vertically co-sited with the luma samples in both the
-   mpeg2 and jpeg cases (thus requiring no vertical resampling).*/
-static void y4m_convert_42xmpeg2_42xjpeg(y4m_input *_y4m,unsigned char *_dst,
- unsigned char *_aux){
-  int c_w;
-  int c_h;
-  int pli;
-  int y;
-  int x;
-  /*Skip past the luma data.*/
-  _dst+=_y4m->pic_w*_y4m->pic_h;
-  /*Compute the size of each chroma plane.*/
-  c_w=(_y4m->pic_w+_y4m->dst_c_dec_h-1)/_y4m->dst_c_dec_h;
-  c_h=(_y4m->pic_h+_y4m->dst_c_dec_v-1)/_y4m->dst_c_dec_v;
-  for(pli=1;pli<3;pli++){
-    for(y=0;y<c_h;y++){
-      /*Filter: [4 -17 114 35 -9 1]/128, derived from a 6-tap Lanczos
-         window.*/
-      for(x=0;x<OC_MINI(c_w,2);x++){
-        _dst[x]=(unsigned char)OC_CLAMPI(0,(4*_aux[0]-17*_aux[OC_MAXI(x-1,0)]+
-         114*_aux[x]+35*_aux[OC_MINI(x+1,c_w-1)]-9*_aux[OC_MINI(x+2,c_w-1)]+
-         _aux[OC_MINI(x+3,c_w-1)]+64)>>7,255);
-      }
-      for(;x<c_w-3;x++){
-        _dst[x]=(unsigned char)OC_CLAMPI(0,(4*_aux[x-2]-17*_aux[x-1]+
-         114*_aux[x]+35*_aux[x+1]-9*_aux[x+2]+_aux[x+3]+64)>>7,255);
-      }
-      for(;x<c_w;x++){
-        _dst[x]=(unsigned char)OC_CLAMPI(0,(4*_aux[x-2]-17*_aux[x-1]+
-         114*_aux[x]+35*_aux[OC_MINI(x+1,c_w-1)]-9*_aux[OC_MINI(x+2,c_w-1)]+
-         _aux[c_w-1]+64)>>7,255);
-      }
-      _dst+=c_w;
-      _aux+=c_w;
-    }
-  }
-}
-
 /*This format is only used for interlaced content, but is included for
    completeness.
 
@@ -668,10 +591,11 @@ static int y4m_input_open_impl(y4m_input *_y4m,FILE *_fin){
   else if(strcmp(_y4m->chroma_type,"422")==0){
     _y4m->src_c_dec_h=_y4m->dst_c_dec_h=2;
     _y4m->src_c_dec_v=_y4m->dst_c_dec_v=1;
-    _y4m->dst_buf_read_sz=_y4m->pic_w*_y4m->pic_h;
-    /*Chroma filter required: read into the aux buf first.*/
-    _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=2*((_y4m->pic_w+1)/2)*_y4m->pic_h;
-    _y4m->convert=y4m_convert_42xmpeg2_42xjpeg;
+    _y4m->dst_buf_read_sz=_y4m->pic_w*_y4m->pic_h
+     +2*((_y4m->pic_w+1)/2)*_y4m->pic_h;
+    /*Natively supported: no conversion required.*/
+    _y4m->aux_buf_sz=_y4m->aux_buf_read_sz=0;
+    _y4m->convert=y4m_convert_null;
   }
   else if(strcmp(_y4m->chroma_type,"411")==0){
     _y4m->src_c_dec_h=4;
