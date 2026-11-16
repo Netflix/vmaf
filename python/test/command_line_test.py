@@ -2,10 +2,11 @@ import os
 import tempfile
 import unittest
 import subprocess
+from unittest import mock
 
 from vmaf.config import VmafConfig
 from vmaf.tools.misc import MyTestCase
-from vmaf import ExternalProgram, run_process
+from vmaf import ExternalProgram, ExternalProgramCaller, run_process
 
 __copyright__ = "Copyright 2016-2020, Netflix, Inc."
 __license__ = "BSD+Patent"
@@ -22,6 +23,39 @@ class RunProcessTest(MyTestCase):
             run_process('echoo hello', shell=True)
         self.assertTrue('Process returned 127, cmd: echoo hello' in e.exception.args[0])
         self.assertTrue('not found' in e.exception.args[0])
+
+
+class CallVmafexecTest(MyTestCase):
+
+    def _call_vmafexec(self, models, **kwargs):
+        with mock.patch('vmaf.run_process') as run_process_mock:
+            ExternalProgramCaller.call_vmafexec(
+                reference='ref.yuv', distorted='dis.yuv', width=576, height=324,
+                pixel_format='420', bitdepth=8, float_psnr=False, psnr=False,
+                float_ssim=False, ssim=False, float_ms_ssim=False, ms_ssim=False,
+                float_moment=False, no_prediction=False, models=models, subsample=1,
+                n_threads=1, disable_avx=False, output='out.json', exe='vmaf',
+                logger=None, **kwargs)
+        run_process_mock.assert_called_once()
+        return run_process_mock.call_args[0][0]
+
+    def test_call_vmafexec_motion_force_zero_two_models(self):
+        cmd = self._call_vmafexec(
+            ['version=vmaf_v0.6.1', 'version=vmaf_v0.6.1neg'], motion_force_zero=True)
+        suffix = ':motion.motion_force_zero=true:float_motion.motion_force_zero=true'
+        self.assertIn('--model version=vmaf_v0.6.1' + suffix + ' ', cmd)
+        self.assertIn('--model version=vmaf_v0.6.1neg' + suffix, cmd)
+        self.assertEqual(cmd.count('motion_force_zero=true'), 4)
+
+    def test_call_vmafexec_motion_force_zero_one_model(self):
+        cmd = self._call_vmafexec(['version=vmaf_v0.6.1'], motion_force_zero=True)
+        self.assertTrue(cmd.endswith(
+            '--model version=vmaf_v0.6.1'
+            ':motion.motion_force_zero=true:float_motion.motion_force_zero=true'))
+
+    def test_call_vmafexec_motion_force_zero_off(self):
+        cmd = self._call_vmafexec(['version=vmaf_v0.6.1', 'version=vmaf_v0.6.1neg'])
+        self.assertNotIn('motion_force_zero', cmd)
 
 
 class CommandLineTest(MyTestCase):
