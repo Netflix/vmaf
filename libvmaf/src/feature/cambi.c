@@ -101,6 +101,8 @@ typedef struct CambiBuffers {
     uint16_t *derivative_buffer;
     int *diff_weights;
     int *all_diffs;
+    const float *reciprocal_lut;
+    float *reciprocal_lut_alloc;
     uint16_t v_band_base;
     uint16_t v_band_size;
 } CambiBuffers;
@@ -111,7 +113,8 @@ typedef void (*VmafDecimate)(VmafPicture *image, unsigned width, unsigned height
 typedef void (*VmafCalcCValues)(VmafPicture *pic, const VmafPicture *mask_pic,
                                 float *c_values, uint16_t *histograms, uint16_t window_size,
                                 const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
-                                const int *diff_weights, const int *all_diffs, int width, int height);
+                                const int *diff_weights, const int *all_diffs,
+                                const float *reciprocal_lut, int width, int height);
 typedef void (*VmafComputeDpRow)(uint32_t *dp_curr, const uint32_t *dp_prev,
                                  const uint16_t *deriv, int width, int pad_size, bool deriv_valid);
 typedef void (*VmafComputeMaskRow)(uint16_t *mask_row, const uint32_t *dp_bottom, const uint32_t *dp_top,
@@ -130,6 +133,7 @@ typedef struct CambiState {
     unsigned src_width;
     unsigned src_height;
     uint16_t window_size;
+    uint16_t enc_window_size;
     uint16_t src_window_size;
     double topk;
     double cambi_topk;
@@ -475,6 +479,37 @@ void get_derivative_data_for_row(const uint16_t *image_data, uint16_t *derivativ
     #define PATH_SEPARATOR '/'
 #endif
 
+/* c_value_pixel divides by the sum of two histogram counts from one window,
+ * which is at most window_size^2, so the reciprocal LUT needs that many
+ * entries plus one. The static table covers windows up to 65 (4K at the
+ * default window_size); above that, e.g. at 8K, a larger table is built
+ * with the static one's values as its start. The counts are uint16_t, so
+ * a window's area can't exceed UINT16_MAX either. */
+static int set_reciprocal_lut(CambiBuffers *buffers, unsigned window_size)
+{
+    aligned_free(buffers->reciprocal_lut_alloc);
+    buffers->reciprocal_lut_alloc = NULL;
+    buffers->reciprocal_lut = reciprocal_lut;
+
+    unsigned size = window_size * window_size + 1;
+    if (size - 1 > UINT16_MAX) {
+        vmaf_log(VMAF_LOG_LEVEL_ERROR,
+            "cambi: window_size %u too large\n", window_size);
+        return -EINVAL;
+    }
+    if (size <= CAMBI_RECIPROCAL_LUT_SIZE)
+        return 0;
+
+    float *lut = aligned_malloc(ALIGN_CEIL(size * sizeof(float)), 32);
+    if (!lut) return -ENOMEM;
+    memcpy(lut, reciprocal_lut, sizeof(reciprocal_lut));
+    for (unsigned i = CAMBI_RECIPROCAL_LUT_SIZE; i < size; i++)
+        lut[i] = 1.0f / (float)i;
+    buffers->reciprocal_lut_alloc = lut;
+    buffers->reciprocal_lut = lut;
+    return 0;
+}
+
 static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 unsigned bpc, unsigned w, unsigned h) {
     (void)pix_fmt;
@@ -577,16 +612,15 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     // get the largest luma value below cambi_vis_lum_threshold
     s->vlt_luma = get_vlt_luma(s->cambi_vis_lum_threshold, luma_range, eotf);
 
+    // Scale copies, never the option itself: when init fails, libvmaf calls
+    // it again on the next picture, and scaling in place compounded.
+    s->enc_window_size = s->window_size;
     s->src_window_size = s->window_size;
-    adjust_window_size(&s->window_size, s->enc_width, s->enc_height, (bool) s->cambi_high_res_speedup);
+    adjust_window_size(&s->enc_window_size, s->enc_width, s->enc_height, (bool) s->cambi_high_res_speedup);
     adjust_window_size(&s->src_window_size, s->src_width, s->src_height, (bool) s->cambi_high_res_speedup);
 
-    int max_window = MAX(s->window_size, s->src_window_size);
-    if (max_window * max_window >= CAMBI_RECIPROCAL_LUT_SIZE) {
-        vmaf_log(VMAF_LOG_LEVEL_ERROR,
-            "cambi: window_size %d too large for reciprocal LUT\n", max_window);
-        return -EINVAL;
-    }
+    err = set_reciprocal_lut(&s->buffers, MAX(s->enc_window_size, s->src_window_size));
+    if (err) return err;
 
     s->buffers.c_values = aligned_malloc(ALIGN_CEIL(alloc_w * sizeof(float)) * alloc_h, 32);
     if (!s->buffers.c_values) return -ENOMEM;
@@ -1058,7 +1092,8 @@ static void get_spatial_mask(const VmafPicture *image, VmafPicture *mask,
 static float c_value_pixel(const uint16_t *histograms, uint16_t value, const int *diff_weights,
                            const int *diffs, uint16_t num_diffs, const uint16_t *tvi_thresholds, uint16_t vlt_luma,
                            uint16_t v_band_offset_val, uint16_t v_band_size,
-                           int histogram_col, int histogram_width) {
+                           int histogram_col, int histogram_width,
+                           const float *reciprocal_lut) {
     int compact_v_signed = (int)value - (int)v_band_offset_val;
     if ((unsigned)compact_v_signed >= v_band_size) return 0.0f;
     uint16_t compact_v = (uint16_t)compact_v_signed;
@@ -1108,7 +1143,6 @@ void calculate_c_values_row(float *c_values, const uint16_t *histograms, const u
                                     const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
                                     const int *diff_weights, const int *all_diffs,
                                     const float *reciprocal_lut) {
-    (void)reciprocal_lut;
     int v_lo_signed = (int)vlt_luma - 3 * (int)num_diffs + 1;
     uint16_t v_band_base = v_lo_signed > 0 ? (uint16_t)v_lo_signed : 0;
     uint16_t v_band_size = tvi_for_diff[num_diffs - 1] + 1 - v_band_base;
@@ -1117,7 +1151,7 @@ void calculate_c_values_row(float *c_values, const uint16_t *histograms, const u
         if (mask[row * stride + col]) {
             c_values[row * width + col] = c_value_pixel(
                 histograms, image[row * stride + col] + num_diffs, diff_weights, all_diffs, num_diffs, tvi_for_diff, vlt_luma,
-                v_band_offset_val, v_band_size, col, width
+                v_band_offset_val, v_band_size, col, width, reciprocal_lut
             );
         }
     }
@@ -1126,7 +1160,8 @@ void calculate_c_values_row(float *c_values, const uint16_t *histograms, const u
 void calculate_c_values(VmafPicture *pic, const VmafPicture *mask_pic,
                                float *c_values, uint16_t *histograms, uint16_t window_size,
                                const uint16_t num_diffs, const uint16_t *tvi_for_diff, uint16_t vlt_luma,
-                               const int *diff_weights, const int *all_diffs, int width, int height) {
+                               const int *diff_weights, const int *all_diffs,
+                               const float *reciprocal_lut, int width, int height) {
 
     uint16_t pad_size = window_size >> 1;
 
@@ -1310,7 +1345,8 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
         filter_mode_callback(image, scaled_width, scaled_height, buffers.filter_mode_buffer);
 
         calc_c_values_callback(image, mask, buffers.c_values, buffers.c_values_histograms, window_size,
-                               num_diffs, tvi_for_diff, vlt_luma, buffers.diff_weights, buffers.all_diffs, scaled_width, scaled_height);
+                               num_diffs, tvi_for_diff, vlt_luma, buffers.diff_weights, buffers.all_diffs,
+                               buffers.reciprocal_lut, scaled_width, scaled_height);
 
         if (write_heatmaps) {
             int err = dump_c_values(heatmaps_files, buffers.c_values, scaled_width, scaled_height, scale, window_size,
@@ -1330,7 +1366,7 @@ static int cambi_score(VmafPicture *pics, uint16_t window_size, double topk,
 static int preprocess_and_extract_cambi(CambiState *s, VmafPicture *pic, double *score, bool is_src, int frame) {
     int width = is_src ? s->src_width : s->enc_width;
     int height = is_src ? s->src_height : s->enc_height;
-    int window_size = is_src ? s->src_window_size : s->window_size;
+    int window_size = is_src ? s->src_window_size : s->enc_window_size;
     int num_diffs = 1 << s->max_log_contrast;
 
     int err = cambi_preprocessing(pic, &s->pics[0], width, height, s->enc_bitdepth);
@@ -1411,6 +1447,8 @@ static int close_cambi(VmafFeatureExtractor *fex) {
     aligned_free(s->buffers.diff_weights);
     aligned_free(s->buffers.all_diffs);
     aligned_free(s->buffers.derivative_buffer);
+    aligned_free(s->buffers.reciprocal_lut_alloc);
+    s->buffers.reciprocal_lut_alloc = NULL;
 
     if (s->heatmaps_path) {
         for (int scale = 0; scale < NUM_SCALES; scale++) {
