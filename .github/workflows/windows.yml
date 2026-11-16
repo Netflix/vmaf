@@ -12,8 +12,8 @@ jobs:
       matrix:
         build:
           - type: mingw
-            msystem: MINGW64
-            prefix: mingw-w64-x86_64
+            msystem: UCRT64
+            prefix: mingw-w64-ucrt-x86_64
           - type: msvc
             bundled_winpthreads: true
           - type: msvc
