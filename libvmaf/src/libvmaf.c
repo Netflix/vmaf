@@ -1304,11 +1304,11 @@ int vmaf_score_pooled(VmafContext *vmaf, VmafModel *model,
     if (index_low > index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
 
-    for (unsigned i = index_low; i <= index_high; i++) {
-        if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
-            continue;
+    const uint64_t step = vmaf->cfg.n_subsample > 1 ? vmaf->cfg.n_subsample : 1;
+    const uint64_t first = ((uint64_t)index_low + step - 1) / step * step;
+    for (uint64_t i = first; i <= index_high; i += step) {
         double vmaf_score;
-        int err = vmaf_score_at_index(vmaf, model, &vmaf_score, i);
+        int err = vmaf_score_at_index(vmaf, model, &vmaf_score, (unsigned)i);
         if (err) return err;
     }
 
@@ -1328,12 +1328,13 @@ int vmaf_score_pooled_model_collection(VmafContext *vmaf,
     if (index_low > index_high) return -EINVAL;
     if (!pool_method) return -EINVAL;
 
+    const uint64_t step = vmaf->cfg.n_subsample > 1 ? vmaf->cfg.n_subsample : 1;
+    const uint64_t first = ((uint64_t)index_low + step - 1) / step * step;
     int err = 0;
-    for (unsigned i = index_low; i <= index_high; i++) {
-        if ((vmaf->cfg.n_subsample > 1) && (i % vmaf->cfg.n_subsample))
-            continue;
+    for (uint64_t i = first; i <= index_high; i += step) {
         VmafModelCollectionScore s;
-        err = vmaf_score_at_index_model_collection(vmaf, model_collection, &s, i);
+        err = vmaf_score_at_index_model_collection(vmaf, model_collection, &s,
+                                                   (unsigned)i);
         if (err) return err;
     }
 

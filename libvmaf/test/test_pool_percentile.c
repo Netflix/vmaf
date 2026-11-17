@@ -151,6 +151,71 @@ static char *test_model_pooling_uses_percentile(void)
     return NULL;
 }
 
+static char *check_model_pooling_index_limits(int use_collection)
+{
+    VmafContext *vmaf = NULL;
+    VmafConfiguration cfg = { .n_subsample = 2 };
+    mu_assert("init failed", !vmaf_init(&vmaf, cfg));
+    VmafModel *model = NULL;
+    VmafModelConfig model_cfg = { .name = "boundary_model" };
+    mu_assert("model load failed",
+              !vmaf_model_load(&model, &model_cfg, "vmaf_v0.6.1"));
+    for (unsigned i = 0; i < model->n_features; i++)
+        mu_assert("import failed",
+                  !vmaf_import_feature_score(vmaf, model->feature[i].name, 60., 0));
+
+    VmafModel *models[] = { model };
+    VmafModelCollection collection = {
+        .model = models,
+        .cnt = 1,
+        .type = VMAF_MODEL_BOOTSTRAP_SVM_NUSVR,
+        .name = "boundary_collection",
+    };
+    VmafModelCollectionScore collection_score;
+    double score;
+    if (use_collection) {
+        mu_assert("collection reversed interval accepted",
+                  vmaf_score_pooled_model_collection(vmaf, &collection,
+                      VMAF_POOL_METHOD_MEDIAN, &collection_score, 2, 0) == -EINVAL);
+        mu_assert("collection empty selected interval accepted",
+                  vmaf_score_pooled_model_collection(vmaf, &collection,
+                      VMAF_POOL_METHOD_MEDIAN, &collection_score, UINT_MAX, UINT_MAX));
+    } else {
+        mu_assert("model reversed interval accepted",
+                  vmaf_score_pooled(vmaf, model, VMAF_POOL_METHOD_MEDIAN,
+                                    &score, 2, 0) == -EINVAL);
+        mu_assert("model empty selected interval accepted",
+                  vmaf_score_pooled(vmaf, model, VMAF_POOL_METHOD_MEDIAN,
+                                    &score, UINT_MAX, UINT_MAX));
+    }
+    mu_assert("pooling wrapped and stored a model score at frame 0",
+              vmaf_feature_score_at_index(vmaf, model->name, &score, 0));
+    /* Frame 0 must be predictable, so the check above catches wraparound
+     * rather than a model that cannot produce a score. */
+    if (use_collection)
+        mu_assert("collection frame 0 prediction failed",
+                  !vmaf_score_at_index_model_collection(vmaf, &collection,
+                                                        &collection_score, 0));
+    else
+        mu_assert("model frame 0 prediction failed",
+                  !vmaf_score_at_index(vmaf, model, &score, 0));
+    mu_assert("frame 0 prediction was not stored",
+              !vmaf_feature_score_at_index(vmaf, model->name, &score, 0));
+    vmaf_model_destroy(model);
+    mu_assert("close failed", !vmaf_close(vmaf));
+    return NULL;
+}
+
+static char *test_model_pooling_index_limits(void)
+{
+    return check_model_pooling_index_limits(0);
+}
+
+static char *test_model_collection_pooling_index_limits(void)
+{
+    return check_model_pooling_index_limits(1);
+}
+
 /* The report writers keep listing min, max, mean and harmonic_mean only. */
 static char *test_report_lists_the_four_named_methods(void)
 {
@@ -207,6 +272,8 @@ char *run_tests(void)
     mu_run_test(test_subsampled_interval);
     mu_run_test(test_missing_and_invalid_samples);
     mu_run_test(test_model_pooling_uses_percentile);
+    mu_run_test(test_model_pooling_index_limits);
+    mu_run_test(test_model_collection_pooling_index_limits);
     mu_run_test(test_report_lists_the_four_named_methods);
     return NULL;
 }
