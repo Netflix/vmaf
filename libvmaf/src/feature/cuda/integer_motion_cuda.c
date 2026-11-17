@@ -31,19 +31,33 @@
 #include "picture.h"
 #include "picture_cuda.h"
 #include "cuda_helper.cuh"
+#include "motion_blend_tools.h"
 
 typedef struct MotionStateCuda {
-    CUevent event, finished;
+    CUevent event, finished, sad_zeroed;
     CUfunction funcbpc8, funcbpc16;
     CUstream str, host_stream;
-    VmafCudaBuffer* blur[2];
+    // Ring of raw (unfiltered) luma planes of the three most recent frames;
+    // the SAD filter is applied to the difference of two frames. The default
+    // path compares frame i against frame i-1 (fex->prev_ref on the CPU), the
+    // five frame window (motion_five_frame_window) against frame i-2
+    // (fex->prev_prev_ref), so three slots cover every frame that is still
+    // needed.
+    VmafCudaBuffer* raw[3];
     VmafCudaBuffer* sad;
     uint64_t* sad_host;
-    void* write_score_parameters;
-    unsigned index;
     double score;
     bool debug;
     bool motion_force_zero;
+    double *motion_scores;   // per-frame normalized SAD scores, indexed by picture index
+    unsigned motion_scores_capacity;
+    unsigned motion_scores_count;
+    double motion_max_val;
+    double motion_blend_factor;
+    double motion_blend_offset;
+    double motion_fps_weight;
+    bool motion_five_frame_window;
+    bool motion_moving_average;
     void (*calculate_motion_score)(const VmafPicture* src, VmafCudaBuffer* src_blurred,
             const VmafCudaBuffer* prev_blurred, VmafCudaBuffer* sad,
             unsigned width, unsigned height,
@@ -52,21 +66,92 @@ typedef struct MotionStateCuda {
     VmafDictionary *feature_name_dict;
 } MotionStateCuda;
 
+#define DEFAULT_MOTION_MAX_VAL (10000.0)
+#define DEFAULT_MOTION_BLEND_FACTOR (1.0)
+#define DEFAULT_MOTION_BLEND_OFFSET (40.0)
+#define DEFAULT_MOTION_FPS_WEIGHT (1.0)
+
+/* Option table mirrors the CPU reference (integer_motion.c) name for name,
+ * including the aliases and the FEATURE_PARAM flags, so that the derived
+ * feature names (and therefore model integration) are identical. */
 static const VmafOption options[] = {
     {
-        .name = "debug",
-        .help = "debug mode: enable additional output",
-        .offset = offsetof(MotionStateCuda, debug),
-        .type = VMAF_OPT_TYPE_BOOL,
-        .default_val.b = true,
-    },
-    {
         .name = "motion_force_zero",
+        .alias = "force_0",
         .help = "forcing motion score to zero",
         .offset = offsetof(MotionStateCuda, motion_force_zero),
         .type = VMAF_OPT_TYPE_BOOL,
         .default_val.b = false,
         .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_blend_factor",
+        .alias = "mbf",
+        .help = "blend motion score given an offset",
+        .offset = offsetof(MotionStateCuda, motion_blend_factor),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_MOTION_BLEND_FACTOR,
+        .min = 0.0,
+        .max = 1.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_blend_offset",
+        .alias = "mbo",
+        .help = "blend motion score starting from this offset",
+        .offset = offsetof(MotionStateCuda, motion_blend_offset),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_MOTION_BLEND_OFFSET,
+        .min = 0.0,
+        .max = 1000.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_fps_weight",
+        .alias = "mfw",
+        .help = "fps-aware multiplicative weight/correction",
+        .offset = offsetof(MotionStateCuda, motion_fps_weight),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_MOTION_FPS_WEIGHT,
+        .min = 0.0,
+        .max = 5.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_max_val",
+        .alias = "mmxv",
+        .help = "maximum value allowed; larger values will be clipped to this value",
+        .offset = offsetof(MotionStateCuda, motion_max_val),
+        .type = VMAF_OPT_TYPE_DOUBLE,
+        .default_val.d = DEFAULT_MOTION_MAX_VAL,
+        .min = 0.0,
+        .max = 10000.0,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_five_frame_window",
+        .alias = "mffw",
+        .help = "use five-frame temporal window",
+        .offset = offsetof(MotionStateCuda, motion_five_frame_window),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "motion_moving_average",
+        .alias = "mma",
+        .help = "use moving average for motion scores after first frame",
+        .offset = offsetof(MotionStateCuda, motion_moving_average),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
+        .flags = VMAF_OPT_FLAG_FEATURE_PARAM,
+    },
+    {
+        .name = "debug",
+        .help = "debug mode: enable additional output",
+        .offset = offsetof(MotionStateCuda, debug),
+        .type = VMAF_OPT_TYPE_BOOL,
+        .default_val.b = false,
     },
     { 0 }
 };
@@ -77,6 +162,10 @@ typedef struct write_score_parameters_moco {
     unsigned h, w;
     unsigned index;
 } write_score_parameters_moco;
+
+static int write_motion_scores(MotionStateCuda *s,
+        VmafFeatureCollector *feature_collector, double score, unsigned idx);
+static int motion_scores_store(MotionStateCuda *s, unsigned idx, double score);
 
 static int extract_force_zero(VmafFeatureExtractor *fex,
         VmafPicture *ref_pic, VmafPicture *ref_pic_90,
@@ -92,24 +181,18 @@ static int extract_force_zero(VmafFeatureExtractor *fex,
     (void) dist_pic;
     (void) dist_pic_90;
 
-    int err =
-        vmaf_feature_collector_append_with_dict(feature_collector,
-                s->feature_name_dict, "VMAF_integer_feature_motion2_score", 0.,
-                index);
+    int err = write_motion_scores(s, feature_collector, 0., index);
+    if (err) return err;
 
-    if (!s->debug) return err;
-
-    err = vmaf_feature_collector_append_with_dict(feature_collector,
-            s->feature_name_dict, "VMAF_integer_feature_motion_score", 0.,
-            index);
-
-    return err;
+    // Keep the flush() path enabled: motion2/motion3 are derived from the
+    // (zero) per-frame scores, exactly like the CPU reference.
+    return motion_scores_store(s, index, 0.);
 }
 
-void calculate_motion_score(const VmafPicture* src, VmafCudaBuffer* src_blurred,
-        const VmafCudaBuffer* prev_blurred, VmafCudaBuffer* sad,
+void calculate_motion_score(const VmafPicture* src, VmafCudaBuffer* cur_raw,
+        const VmafCudaBuffer* prev_raw, VmafCudaBuffer* sad,
         unsigned width, unsigned height,
-        ptrdiff_t src_stride, ptrdiff_t blurred_stride, unsigned src_bpc,
+        ptrdiff_t src_stride, ptrdiff_t raw_stride_ignored, unsigned src_bpc,
         CUfunction funcbpc8, CUfunction funcbpc16, CudaFunctions* cu_f, CUstream stream)
 {
     int block_dim_x = 16;
@@ -117,15 +200,20 @@ void calculate_motion_score(const VmafPicture* src, VmafCudaBuffer* src_blurred,
     int grid_dim_x = DIV_ROUND_UP(width, block_dim_x);
     int grid_dim_y = DIV_ROUND_UP(height, block_dim_y);
 
+    // The raw frame buffers hold one uint16_t per sample, so the row stride in
+    // elements is simply the width.
+    ptrdiff_t raw_stride = (ptrdiff_t)width;
+    (void)raw_stride_ignored;
+
     if (src_bpc == 8){
-        void *kernelParams[] = {(void*)src,   (void*) src_blurred, (void*)prev_blurred, (void*)sad,
-            &width, &height,     &src_stride,  &blurred_stride};
+        void *kernelParams[] = {(void*)src,   (void*) cur_raw, (void*)prev_raw, (void*)sad,
+            &width, &height,     &src_stride,  &raw_stride, &src_bpc};
         CHECK_CUDA(cu_f, cuLaunchKernel(funcbpc8, grid_dim_x,
                     grid_dim_y, 1, block_dim_x, block_dim_y, 1, 0,
                     stream, kernelParams, NULL));
     } else {
-        void *kernelParams[] = {(void*)src,   (void*) src_blurred, (void*)prev_blurred, (void*)sad,
-            &width, &height,     &src_stride,  &blurred_stride};
+        void *kernelParams[] = {(void*)src,   (void*) cur_raw, (void*)prev_raw, (void*)sad,
+            &width, &height,     &src_stride,  &raw_stride, &src_bpc};
         CHECK_CUDA(cu_f, cuLaunchKernel(funcbpc16, grid_dim_x,
                     grid_dim_y, 1, block_dim_x, block_dim_y, 1, 0,
                     stream, kernelParams, NULL));
@@ -143,6 +231,7 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
     CHECK_CUDA(cu_f, cuStreamCreateWithPriority(&s->host_stream, CU_STREAM_NON_BLOCKING, 0));
     CHECK_CUDA(cu_f, cuEventCreate(&s->event, CU_EVENT_DEFAULT));
     CHECK_CUDA(cu_f, cuEventCreate(&s->finished, CU_EVENT_DEFAULT));
+    CHECK_CUDA(cu_f, cuEventCreate(&s->sad_zeroed, CU_EVENT_DEFAULT));
 
     CUmodule module;
     CHECK_CUDA(cu_f, cuModuleLoadData(&module, motion_score_ptx));
@@ -154,8 +243,6 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     if (s->motion_force_zero) {
         fex->extract = extract_force_zero;
-        fex->flush = NULL;
-        fex->close = NULL;
         return 0;
     }
 
@@ -165,40 +252,52 @@ static int init_fex_cuda(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt
 
     s->score = 0;
 
-    s->write_score_parameters = malloc(sizeof(write_score_parameters_moco));
-    ((write_score_parameters_moco*)s->write_score_parameters)->s = s;
-
-    ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->blur[0], sizeof(uint16_t) * w * h);
-    if (ret) goto free_ref;
-    ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->blur[1], sizeof(uint16_t) * w * h);
-    if (ret) goto free_ref;
+    for (unsigned i = 0; i < 3; i++) {
+        ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->raw[i],
+                                      sizeof(uint16_t) * w * h);
+        if (ret) goto free_ref;
+    }
     ret |= vmaf_cuda_buffer_alloc(fex->cu_state, &s->sad, sizeof(uint64_t));
     if (ret) goto free_ref;
     ret |= vmaf_cuda_buffer_host_alloc(fex->cu_state, (void**)&s->sad_host, sizeof(uint64_t));
     if (ret) goto free_ref;
+
+    // The first min_idx frames have no predecessor ({index-1} or {index-2}
+    // respectively): zero the raw planes so that the first (unreported) SADs
+    // are deterministic instead of reading stale memory.
+    CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
+    for (unsigned i = 0; i < 3; i++)
+        CHECK_CUDA(cu_f, cuMemsetD8Async(s->raw[i]->data, 0,
+                                         sizeof(uint16_t) * w * h, s->str));
+    CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
+    CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
 
     s->feature_name_dict =
         vmaf_feature_name_dict_from_provided_features(fex->provided_features,
                 fex->options, s);
     if (!s->feature_name_dict) goto free_ref;
 
+    s->motion_scores_capacity = 64;
+    s->motion_scores = malloc(sizeof(*s->motion_scores) * s->motion_scores_capacity);
+    if (!s->motion_scores) goto free_ref;
+    s->motion_scores_count = 0;
+
     return 0;
 
 
 free_ref:
-    if (s->blur[0]) {
-        ret |= vmaf_cuda_buffer_free(fex->cu_state, s->blur[0]);
-        free(s->blur[0]);
-    }
-    if (s->blur[1]) {
-        ret |= vmaf_cuda_buffer_free(fex->cu_state, s->blur[1]);
-        free(s->blur[1]);
+    for (unsigned i = 0; i < 3; i++) {
+        if (s->raw[i]) {
+            ret |= vmaf_cuda_buffer_free(fex->cu_state, s->raw[i]);
+            free(s->raw[i]);
+        }
     }
     if (s->sad) {
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->sad);
         free(s->sad);
     }
     ret |= vmaf_dictionary_free(&s->feature_name_dict);
+    if (s->motion_scores) free(s->motion_scores);
 
     return -ENOMEM;
 }
@@ -212,44 +311,135 @@ static int flush_fex_cuda(VmafFeatureExtractor *fex,
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->host_stream));
 
-    if (s->index > 0) {
-        ret = vmaf_feature_collector_append(feature_collector,
-                "VMAF_integer_feature_motion2_score",
-                s->score, s->index);
+    if (!s->motion_scores || s->motion_scores_count == 0)
+        return 0;
+
+    const unsigned stride = s->motion_five_frame_window ? 2u : 1u;
+    const unsigned min_idx = s->motion_five_frame_window ? 2u : 1u;
+    const unsigned n = s->motion_scores_count;
+
+    /* stamp_value: first valid processed motion2 value */
+    double stamp_value = 0.;
+    if (n > min_idx) {
+        double sad_at_min_idx = s->motion_scores[min_idx];
+        stamp_value = MIN(motion_blend(sad_at_min_idx,
+                                       s->motion_blend_factor,
+                                       s->motion_blend_offset),
+                          s->motion_max_val);
+    }
+
+    double prev_processed = 0.;
+    for (unsigned i = 0; i < n; i++) {
+        double sad_i = s->motion_scores[i];
+
+        double motion2;
+        if (i < min_idx) {
+            motion2 = 0.;
+        } else {
+            const int lo_idx = (int)i - (int)(stride - 1);
+            const int hi_idx = (int)i + 1;
+            double motion2_val;
+            if (hi_idx >= (int)n) {
+                motion2_val = sad_i;
+            } else if (lo_idx >= (int)min_idx) {
+                double lo = s->motion_scores[lo_idx];
+                double hi = s->motion_scores[hi_idx];
+                motion2_val = lo < hi ? lo : hi;
+            } else {
+                motion2_val = s->motion_scores[hi_idx];
+            }
+            motion2 = motion2_val;
+        }
+
+        int err = vmaf_feature_collector_append_with_dict(feature_collector,
+                s->feature_name_dict,
+                "VMAF_integer_feature_motion2_score", motion2, i);
+        if (err) return err;
+
+        double motion3;
+        if (i < min_idx) {
+            motion3 = stamp_value;
+            prev_processed = stamp_value;
+        } else {
+            double processed = MIN(motion_blend(motion2,
+                                                s->motion_blend_factor,
+                                                s->motion_blend_offset),
+                                   s->motion_max_val);
+            motion3 = s->motion_moving_average
+                    ? (processed + prev_processed) / 2.0
+                    : processed;
+            prev_processed = processed;
+        }
+
+        err = vmaf_feature_collector_append_with_dict(feature_collector,
+                s->feature_name_dict,
+                "VMAF_integer_feature_motion3_score", motion3, i);
+        if (err) return err;
     }
 
     return (ret < 0) ? ret : !ret;
 }
 
-static inline double normalize_and_scale_sad(uint64_t sad,
+/* Per-frame SAD score, identical to the CPU reference:
+ *   MIN((double)sad / 256. / (w * h) * motion_fps_weight, motion_max_val) */
+static double motion_sad_score(MotionStateCuda *s, uint64_t sad,
         unsigned w, unsigned h)
 {
-    return (float) (sad / 256.) / (w * h);
+    return MIN((double)sad / 256. / (w * h) * s->motion_fps_weight,
+               s->motion_max_val);
 }
 
+static int motion_scores_store(MotionStateCuda *s, unsigned idx, double score)
+{
+    if (idx >= s->motion_scores_capacity) {
+        unsigned new_cap = s->motion_scores_capacity * 2;
+        double *tmp = realloc(s->motion_scores, sizeof(*tmp) * new_cap);
+        if (!tmp) return -ENOMEM;
+        s->motion_scores = tmp;
+        s->motion_scores_capacity = new_cap;
+    }
+    s->motion_scores[idx] = score;
+    if (idx >= s->motion_scores_count)
+        s->motion_scores_count = idx + 1;
+    return 0;
+}
+
+static int write_motion_scores(MotionStateCuda *s,
+        VmafFeatureCollector *feature_collector, double score, unsigned idx)
+{
+    int err = vmaf_feature_collector_append_with_dict(feature_collector,
+            s->feature_name_dict,
+            "VMAF_integer_feature_motion_sad_score", score, idx);
+    if (err) return err;
+
+    if (s->debug)
+        err = vmaf_feature_collector_append_with_dict(feature_collector,
+                s->feature_name_dict,
+                "VMAF_integer_feature_motion_score", score, idx);
+
+    return err;
+}
 
 static int write_scores(write_score_parameters_moco* params)
 {
     MotionStateCuda *s = params->s;
     VmafFeatureCollector *feature_collector = params->feature_collector;
+    const unsigned idx = params->index;
+    const unsigned min_idx = s->motion_five_frame_window ? 2u : 1u;
 
-    double score_prev = s->score;
+    double score = 0.;
+    if (idx >= min_idx)
+        score = motion_sad_score(s, *s->sad_host, params->w, params->h);
 
-    s->score = normalize_and_scale_sad(*s->sad_host, params->w, params->h);
-    int err = 0;
-    if (s->debug) {
-        err |= vmaf_feature_collector_append(feature_collector,
-                "VMAF_integer_feature_motion_score",
-                s->score, params->index);
+    int err = write_motion_scores(s, feature_collector, score, idx);
+    if (err) {
+        free(params);
+        return err;
     }
-    if (err) return err;
 
-    if (params->index == 1)
-        return 0;
-
-    err = vmaf_feature_collector_append(feature_collector,
-            "VMAF_integer_feature_motion2_score",
-            score_prev < s->score ? score_prev : s->score, params->index - 1);
+    /* Store per-frame normalized score; motion2/motion3 are computed in flush(). */
+    err = motion_scores_store(s, idx, score);
+    free(params);
     return err;
 }
 
@@ -272,34 +462,43 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     (void) ref_pic_90;
     (void) dist_pic_90;
 
-    s->index = index;
-    const unsigned src_blurred_idx = (index + 0) % 2;
-    const unsigned prev_blurred_idx = (index + 1) % 2;
+    const unsigned cur_raw_idx = index % 3;
+    // motion_five_frame_window needs frame index - 2 (the CPU reads
+    // fex->prev_prev_ref), the default path frame index - 1 (fex->prev_ref).
+    // Both are the frame that a 3-slot ring last wrote to that slot:
+    // index-2 == index+1 (mod 3) and index-1 == index+2 (mod 3).
+    const unsigned prev_raw_idx =
+        (index + (s->motion_five_frame_window ? 1u : 2u)) % 3;
 
-    // Reset device SAD
+    // Reset device SAD on s->str: this is serialized with the previous frame's
+    // DtoH copy of the same buffer.
     CHECK_CUDA(cu_f, cuMemsetD8Async(s->sad->data, 0, sizeof(uint64_t), s->str));
+    CHECK_CUDA(cu_f, cuEventRecord(s->sad_zeroed, s->str));
 
-    // Compute motion score
-    CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic), vmaf_cuda_picture_get_ready_event(dist_pic), CU_EVENT_WAIT_DEFAULT));
-    s->calculate_motion_score(ref_pic, s->blur[src_blurred_idx], s->blur[prev_blurred_idx],
-            s->sad, ref_pic->w[0], ref_pic->h[0], ref_pic->stride[0], sizeof(uint16_t) * ref_pic->w[0],
-            ref_pic->bpc, s->funcbpc8, s->funcbpc16, cu_f, vmaf_cuda_picture_get_stream(ref_pic));
-    CHECK_CUDA(cu_f, cuEventRecord(s->event, vmaf_cuda_picture_get_stream(ref_pic)));
+    // Compute motion score on the picture's stream, ordered after the picture
+    // upload, the SAD zeroing, and the previous frame's kernel (which either
+    // wrote the slot read here, or read the slot written here, so the ring is
+    // always consumed before it is reused).
+    CUstream pic_stream = vmaf_cuda_picture_get_stream(ref_pic);
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(pic_stream, vmaf_cuda_picture_get_ready_event(dist_pic), CU_EVENT_WAIT_DEFAULT));
+    CHECK_CUDA(cu_f, cuStreamWaitEvent(pic_stream, s->sad_zeroed, CU_EVENT_WAIT_DEFAULT));
+    if (index > 0)
+        CHECK_CUDA(cu_f, cuStreamWaitEvent(pic_stream, s->event, CU_EVENT_WAIT_DEFAULT));
+    s->calculate_motion_score(ref_pic, s->raw[cur_raw_idx], s->raw[prev_raw_idx],
+            s->sad, ref_pic->w[0], ref_pic->h[0], ref_pic->stride[0], (ptrdiff_t)ref_pic->w[0],
+            ref_pic->bpc, s->funcbpc8, s->funcbpc16, cu_f, pic_stream);
+    CHECK_CUDA(cu_f, cuEventRecord(s->event, pic_stream));
     // This event ensures the input buffer is consumed
     CHECK_CUDA(cu_f, cuStreamWaitEvent(s->str, s->event, CU_EVENT_WAIT_DEFAULT));
     CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
     CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
 
     if (index == 0) {
-        err = vmaf_feature_collector_append(feature_collector,
-                "VMAF_integer_feature_motion2_score",
-                0., index);
-        if (s->debug) {
-            err |= vmaf_feature_collector_append(feature_collector,
-                    "VMAF_integer_feature_motion_score",
-                    0., index);
-        }
-        return err;
+        // Match the CPU reference: the first min_idx frames report a zero
+        // score, there is no predecessor to compare against.
+        err = write_motion_scores(s, feature_collector, 0., index);
+        if (err) return err;
+        return motion_scores_store(s, index, 0.);
     }
 
     // Download sad
@@ -309,12 +508,14 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex, VmafPicture *ref_pic,
     CHECK_CUDA(cu_f, cuEventRecord(s->finished, s->str));
     CHECK_CUDA(cu_f, cuStreamWaitEvent(s->host_stream, s->finished, CU_EVENT_WAIT_DEFAULT));
 
-    write_score_parameters_moco* params = s->write_score_parameters;
+    write_score_parameters_moco* params = malloc(sizeof(*params));
+    if (!params) return -ENOMEM;
+    params->s = s;
     params->feature_collector = feature_collector;
     params->h = ref_pic->h[0];
     params->w = ref_pic->w[0];
     params->index = index;
-    CHECK_CUDA(cu_f, cuLaunchHostFunc(s->host_stream, (CUhostFn*)write_scores, s->write_score_parameters));
+    CHECK_CUDA(cu_f, cuLaunchHostFunc(s->host_stream, (CUhostFn*)write_scores, params));
     return 0;
 }
 
@@ -325,31 +526,30 @@ static int close_fex_cuda(VmafFeatureExtractor *fex)
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
     CHECK_CUDA(cu_f, cuEventDestroy(s->event));
     CHECK_CUDA(cu_f, cuEventDestroy(s->finished));
+    CHECK_CUDA(cu_f, cuEventDestroy(s->sad_zeroed));
 
     int ret = 0;
 
-    if (s->blur[0]) {
-        ret |= vmaf_cuda_buffer_free(fex->cu_state, s->blur[0]);
-        free(s->blur[0]);
-    }
-    if (s->blur[1]) {
-        ret |= vmaf_cuda_buffer_free(fex->cu_state, s->blur[1]);
-        free(s->blur[1]);
+    for (unsigned i = 0; i < 3; i++) {
+        if (s->raw[i]) {
+            ret |= vmaf_cuda_buffer_free(fex->cu_state, s->raw[i]);
+            free(s->raw[i]);
+        }
     }
     if (s->sad) {
         ret |= vmaf_cuda_buffer_free(fex->cu_state, s->sad);
         free(s->sad);
     }
     ret |= vmaf_dictionary_free(&s->feature_name_dict);
-
-    if(s->write_score_parameters) {
-        free(s->write_score_parameters);
-    }
+    if (s->motion_scores) free(s->motion_scores);
     return ret;
 }
 
 static const char *provided_features[] = {
-    "VMAF_integer_feature_motion_score", "VMAF_integer_feature_motion2_score",
+    "VMAF_integer_feature_motion_sad_score",
+    "VMAF_integer_feature_motion_score",
+    "VMAF_integer_feature_motion2_score",
+    "VMAF_integer_feature_motion3_score",
     NULL
 };
 
