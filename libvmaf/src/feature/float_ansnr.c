@@ -99,7 +99,7 @@ static int extract(VmafFeatureExtractor *fex,
     return 0;
 }
 
-static int close(VmafFeatureExtractor *fex)
+static int close_fex(VmafFeatureExtractor *fex)
 {
     AnsnrState *s = fex->priv;
     if (s->ref) aligned_free(s->ref);
@@ -116,7 +116,7 @@ VmafFeatureExtractor vmaf_fex_float_ansnr = {
         .name = "float_ansnr",
         .init = init,
         .extract = extract,
-        .close = close,
+        .close = close_fex,
         .priv_size = sizeof(AnsnrState),
         .provided_features = provided_features,
 };

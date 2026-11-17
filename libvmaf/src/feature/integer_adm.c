@@ -3356,7 +3356,7 @@ static int extract(VmafFeatureExtractor *fex,
     return err;
 }
 
-static int close(VmafFeatureExtractor *fex)
+static int close_fex(VmafFeatureExtractor *fex)
 {
     AdmState *s = fex->priv;
 
@@ -3439,7 +3439,7 @@ VmafFeatureExtractor vmaf_fex_integer_adm = {
     .extract = extract,
     .merge = adm_try_merge_view_dist,
     .options = options,
-    .close = close,
+    .close = close_fex,
     .priv_size = sizeof(AdmState),
     .provided_features = provided_features,
 };

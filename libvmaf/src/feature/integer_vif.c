@@ -849,7 +849,7 @@ static int extract(VmafFeatureExtractor *fex,
     return write_scores(feature_collector, index, vif_score, s);
 }
 
-static int close(VmafFeatureExtractor *fex)
+static int close_fex(VmafFeatureExtractor *fex)
 {
     VifState *s = fex->priv;
     vif_buffer_free(&s->public.buf);
@@ -872,7 +872,7 @@ VmafFeatureExtractor vmaf_fex_integer_vif = {
     .init = init,
     .extract = extract,
     .options = options,
-    .close = close,
+    .close = close_fex,
     .priv_size = sizeof(VifState),
     .provided_features = provided_features,
 };

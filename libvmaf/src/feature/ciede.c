@@ -372,7 +372,7 @@ static int extract(VmafFeatureExtractor *fex,
                                          index);
 }
 
-static int close(VmafFeatureExtractor *fex)
+static int close_fex(VmafFeatureExtractor *fex)
 {
     CiedeState *s = fex->priv;
     if (s->ref.data[0] && s->dist.data[0]) {
@@ -391,7 +391,7 @@ VmafFeatureExtractor vmaf_fex_ciede = {
     .name = "ciede",
     .init = init,
     .extract = extract,
-    .close = close,
+    .close = close_fex,
     .priv_size = sizeof(CiedeState),
     .provided_features = provided_features,
 };
