@@ -75,11 +75,64 @@ static char *test_ciede4()
     return NULL;
 }
 
+static char *test_chroma_422()
+{
+    /* Four distinct rows must be preserved; each chroma column is repeated
+     * horizontally. Padding is initialized so an incorrect column lookup
+     * cannot happen to read the expected value. */
+    static const unsigned expected[4][8] = {
+        { 1, 1, 2, 2, 3, 3, 4, 4 },
+        { 6, 6, 7, 7, 8, 8, 9, 9 },
+        { 11, 11, 12, 12, 13, 13, 14, 14 },
+        { 16, 16, 17, 17, 18, 18, 19, 19 },
+    };
+    const unsigned depths[] = { 8, 10, 12, 16 };
+    for (unsigned k = 0; k < sizeof(depths) / sizeof(depths[0]); k++) {
+        const unsigned bpc = depths[k], scale = 1U << (bpc - 8);
+        VmafPicture in, out;
+        int err = vmaf_picture_alloc(&in, VMAF_PIX_FMT_YUV422P, bpc, 8, 4);
+        mu_assert("could not allocate 4:2:2 picture", !err);
+        err = vmaf_picture_alloc(&out, VMAF_PIX_FMT_YUV444P, bpc, 8, 4);
+        if (err) vmaf_picture_unref(&in);
+        mu_assert("could not allocate 4:4:4 picture", !err);
+        for (unsigned p = 0; p < 3; p++) {
+            memset(in.data[p], 0, in.stride[p] * in.h[p]);
+            for (unsigned y = 0; y < in.h[p]; y++) {
+                uint8_t *row = (uint8_t *)in.data[p] + y * in.stride[p];
+                for (unsigned x = 0; x < in.w[p]; x++) {
+                    const unsigned value = (20 * p + 5 * y + x + 1) * scale;
+                    if (bpc == 8) row[x] = value;
+                    else ((uint16_t *)row)[x] = value;
+                }
+            }
+        }
+        if (bpc == 8) scale_chroma_planes(&in, &out);
+        else scale_chroma_planes_hbd(&in, &out);
+        int matches = 1;
+        for (unsigned p = 0; p < 3; p++) {
+            for (unsigned y = 0; y < out.h[p]; y++) {
+                const uint8_t *row = (uint8_t *)out.data[p] + y * out.stride[p];
+                for (unsigned x = 0; x < out.w[p]; x++) {
+                    const unsigned value = bpc == 8 ? row[x] : ((const uint16_t *)row)[x];
+                    const unsigned want = p ? (20 * p + expected[y][x]) * scale
+                                            : (5 * y + x + 1) * scale;
+                    if (value != want) matches = 0;
+                }
+            }
+        }
+        vmaf_picture_unref(&in);
+        vmaf_picture_unref(&out);
+        mu_assert("4:2:2 must duplicate columns and preserve rows", matches);
+    }
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_ciede);
     mu_run_test(test_ciede2);
     mu_run_test(test_ciede3);
     mu_run_test(test_ciede4);
+    mu_run_test(test_chroma_422);
     return NULL;
 }

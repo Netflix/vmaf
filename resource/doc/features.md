@@ -13,12 +13,19 @@ This is an overview of the available features including their identifier (e.g., 
 | ADM               | `adm`           | Yes           | `adm2`, `adm_scale0`, `adm_scale1`, `adm_scale2`, `adm_scale3` |
 | [CAMBI](cambi.md) | `cambi`         | No            | `cambi`                                                        |
 | CIEDE2000         | `ciede`         | No            | `ciede2000`                                                    |
+| CIEDE2000 (CUDA, approximate) | `ciede_cuda` | No | `ciede2000` |
 | MS-SSIM           | `float_ms_ssim` | No            |                                                                |
 | PSNR              | `psnr`          | No            | `psnr_y`, `psnr_cb`, `psnr_cr`                                 |
+| PSNR (CUDA)       | `psnr_cuda`     | No            | `psnr_y`, `psnr_cb`, `psnr_cr`                                 |
 | PSNR-HVS          | `psnr_hvs`      | No            | `psnr_hvs`, `psnr_hvs_y`, `psnr_hvs_cb`, `psnr_hvs_cr`         |
 | SSIM              | `float_ssim`    | No            |                                                                |
+| SSIM (CUDA)       | `ssim_cuda`     | No            | `float_ssim`, optional `float_ssim_l`, `float_ssim_c`, `float_ssim_s` |
 
 **Note:** Depending on the build of libvmaf, not all features may be available.
+
+CUDA variants require a CUDA-enabled build and initialized CUDA state. Device-picture producers must supply all planes used by the selected extractor.
+
+`ciede_cuda` supports 8/10/12/16-bit input with the same fixed color assumptions as `ciede`. Float color conversion and per-pixel arithmetic make its scores approximate; differences can grow for nearly identical colors. It requires even width for YUV420/YUV422 and even height for YUV420; YUV444 supports odd dimensions. Grayscale input is unsupported.
 
 Read on for a detailed description.
 
