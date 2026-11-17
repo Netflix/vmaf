@@ -233,6 +233,13 @@ static int flush(VmafFeatureExtractor *fex,
     if (s->enable_apsnr) {
         for (unsigned i = 0; i < 3; i++) {
 
+            if (s->apsnr.n_pixels[i] > 0 && s->apsnr.sse[i] == 0) {
+                err |= vmaf_feature_collector_set_aggregate(feature_collector,
+                                                            apsnr_name[i],
+                                                            s->psnr_max[i]);
+                continue;
+            }
+
             double apsnr = 10 * (log10(s->peak * s->peak) +
                                  log10(s->apsnr.n_pixels[i]) -
                                  log10(s->apsnr.sse[i]));

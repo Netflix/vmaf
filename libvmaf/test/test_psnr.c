@@ -93,9 +93,83 @@ static char *test_16b_large_diff()
 }
 
 
+static char *check_apsnr(unsigned bpc, double min_sse, uint64_t y_sse,
+                         uint64_t chroma_sse)
+{
+    const char *names[] = { "apsnr_y", "apsnr_cb", "apsnr_cr" };
+    PsnrState s = {
+        .enable_chroma = true,
+        .enable_apsnr = true,
+        .min_sse = min_sse,
+        .apsnr = {
+            .n_pixels = { 1920 * 1080, 960 * 540, 960 * 540 },
+        },
+    };
+    VmafFeatureExtractor fex = { .priv = &s };
+    VmafFeatureCollector *fc;
+    int err = init(&fex, VMAF_PIX_FMT_YUV420P, bpc, 1920, 1080);
+    mu_assert("init failed", !err);
+    s.apsnr.sse[0] = y_sse;
+    s.apsnr.sse[1] = s.apsnr.sse[2] = chroma_sse;
+    err = vmaf_feature_collector_init(&fc);
+    mu_assert("collector init failed", !err);
+    mu_assert("flush failed", flush(&fex, fc) == 1);
+
+    for (unsigned i = 0; i < 3; i++) {
+        double score;
+        err = vmaf_feature_collector_get_aggregate(fc, names[i], &score);
+        mu_assert("aggregate missing", !err);
+        double expected = s.psnr_max[i];
+        if (s.apsnr.sse[i]) {
+            double apsnr = 10 * (log10(s.peak * s.peak) +
+                                 log10(s.apsnr.n_pixels[i]) -
+                                 log10(s.apsnr.sse[i]));
+            double max_apsnr = ceil(10 * log10(s.peak * s.peak *
+                                               s.apsnr.n_pixels[i] * 2));
+            expected = MIN(apsnr, max_apsnr);
+        }
+        mu_assert("wrong APSNR", almost_equal(score, expected));
+    }
+    if (min_sse)
+        mu_assert("plane caps should differ", s.psnr_max[0] != s.psnr_max[1]);
+    else
+        mu_assert("wrong default cap", almost_equal(s.psnr_max[0], 6 * bpc + 12));
+    vmaf_feature_collector_destroy(fc);
+    return NULL;
+}
+
+static char *test_apsnr_zero_sse()
+{
+    const unsigned depths[] = { 8, 10, 12, 16 };
+    for (unsigned i = 0; i < sizeof(depths) / sizeof(depths[0]); i++) {
+        char *result = check_apsnr(depths[i], 0, 0, 0);
+        if (result) return result;
+    }
+    return NULL;
+}
+
+static char *test_apsnr_zero_sse_min_sse()
+{
+    return check_apsnr(8, 0.5, 0, 0);
+}
+
+static char *test_apsnr_mixed_sse()
+{
+    return check_apsnr(8, 0, 1000000, 0);
+}
+
+static char *test_apsnr_one_sse()
+{
+    return check_apsnr(8, 0, 1, 1);
+}
+
 char *run_tests()
 {
     mu_run_test(test_16b_large_diff);
+    mu_run_test(test_apsnr_zero_sse);
+    mu_run_test(test_apsnr_zero_sse_min_sse);
+    mu_run_test(test_apsnr_mixed_sse);
+    mu_run_test(test_apsnr_one_sse);
 
     return NULL;
 }
