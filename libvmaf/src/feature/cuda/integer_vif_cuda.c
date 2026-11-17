@@ -455,7 +455,10 @@ static int extract_fex_cuda(VmafFeatureExtractor *fex,
     CHECK_CUDA(cu_f, cuStreamSynchronize(s->str));
     CHECK_CUDA(cu_f, cuCtxPushCurrent(fex->cu_state->ctx));
     CHECK_CUDA(cu_f, cuCtxPopCurrent(NULL));
-    CHECK_CUDA(cu_f, cuMemsetD8Async(s->buf.accum_data->data, 0, sizeof(vif_accums) * 4, s->str));
+    /* Reset before scale 0; its event orders the remaining scales on s->str. */
+    CHECK_CUDA(cu_f, cuMemsetD8Async(s->buf.accum_data->data, 0,
+                                  sizeof(vif_accums) * 4,
+                                  vmaf_cuda_picture_get_stream(ref_pic)));
     CHECK_CUDA(cu_f, cuStreamWaitEvent(vmaf_cuda_picture_get_stream(ref_pic), vmaf_cuda_picture_get_ready_event(dist_pic), CU_EVENT_WAIT_DEFAULT));
     for (unsigned scale = 0; scale < 4; ++scale) {
         if (scale > 0) {
