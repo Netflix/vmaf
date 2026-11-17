@@ -231,7 +231,8 @@ static int flush(VmafFeatureExtractor *fex,
 
     int err = 0;
     if (s->enable_apsnr) {
-        for (unsigned i = 0; i < 3; i++) {
+        const unsigned n_planes = s->enable_chroma ? 3 : 1;
+        for (unsigned i = 0; i < n_planes; i++) {
 
             double apsnr = 10 * (log10(s->peak * s->peak) +
                                  log10(s->apsnr.n_pixels[i]) -

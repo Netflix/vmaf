@@ -93,9 +93,92 @@ static char *test_16b_large_diff()
 }
 
 
+static char *test_apsnr_luma_only()
+{
+    VmafFeatureCollector *fc;
+    int err = vmaf_feature_collector_init(&fc);
+    mu_assert("collector init error", !err);
+    PsnrState state = {
+        .enable_chroma = false,
+        .enable_apsnr = true,
+        .peak = 255,
+        .apsnr = { .sse = { 1000000, 0, 0 },
+                   .n_pixels = { 1920 * 1080, 0, 0 } },
+    };
+    VmafFeatureExtractor fex = { .priv = &state };
+    err = flush(&fex, fc);
+    mu_assert("flush error", err >= 0);
+
+    double y, cb, cr;
+    const double expected = MIN(
+        10 * (log10(state.peak * state.peak) +
+              log10(state.apsnr.n_pixels[0]) - log10(state.apsnr.sse[0])),
+        ceil(10 * log10(state.peak * state.peak * state.apsnr.n_pixels[0] * 2)));
+    mu_assert("apsnr_y missing", !vmaf_feature_collector_get_aggregate(fc, "apsnr_y", &y));
+    mu_assert("incorrect apsnr_y", almost_equal(y, expected));
+    mu_assert("apsnr_cb should be absent", vmaf_feature_collector_get_aggregate(fc, "apsnr_cb", &cb) != 0);
+    mu_assert("apsnr_cr should be absent", vmaf_feature_collector_get_aggregate(fc, "apsnr_cr", &cr) != 0);
+    vmaf_feature_collector_destroy(fc);
+    return NULL;
+}
+
+static char *test_apsnr_luma_only_16b()
+{
+    VmafFeatureCollector *fc;
+    int err = vmaf_feature_collector_init(&fc);
+    mu_assert("collector init error", !err);
+    PsnrState state = {
+        .enable_chroma = false,
+        .enable_apsnr = true,
+        .peak = 65535,
+        .apsnr = { .sse = { 1, 0, 0 }, .n_pixels = { 1, 0, 0 } },
+    };
+    VmafFeatureExtractor fex = { .priv = &state };
+    err = flush(&fex, fc);
+    mu_assert("flush error", err >= 0);
+    double y, cb, cr;
+    const double expected = MIN(
+        10 * (log10(state.peak * state.peak) +
+              log10(state.apsnr.n_pixels[0]) - log10(state.apsnr.sse[0])),
+        ceil(10 * log10(state.peak * state.peak * state.apsnr.n_pixels[0] * 2)));
+    mu_assert("apsnr_y missing", !vmaf_feature_collector_get_aggregate(fc, "apsnr_y", &y));
+    mu_assert("incorrect apsnr_y", almost_equal(y, expected));
+    mu_assert("apsnr_cb should be absent", vmaf_feature_collector_get_aggregate(fc, "apsnr_cb", &cb) != 0);
+    mu_assert("apsnr_cr should be absent", vmaf_feature_collector_get_aggregate(fc, "apsnr_cr", &cr) != 0);
+    vmaf_feature_collector_destroy(fc);
+    return NULL;
+}
+
+static char *test_apsnr_chroma_enabled()
+{
+    VmafFeatureCollector *fc;
+    int err = vmaf_feature_collector_init(&fc);
+    mu_assert("collector init error", !err);
+    PsnrState state = {
+        .enable_chroma = true,
+        .enable_apsnr = true,
+        .peak = 255,
+        .apsnr = { .sse = { 100, 50, 25 }, .n_pixels = { 1000, 250, 250 } },
+    };
+    VmafFeatureExtractor fex = { .priv = &state };
+    err = flush(&fex, fc);
+    mu_assert("flush error", err >= 0);
+    const char *names[] = { "apsnr_y", "apsnr_cb", "apsnr_cr" };
+    for (unsigned i = 0; i < 3; i++) {
+        double score;
+        mu_assert("aggregate missing", !vmaf_feature_collector_get_aggregate(fc, names[i], &score));
+        mu_assert("aggregate not finite", isfinite(score));
+    }
+    vmaf_feature_collector_destroy(fc);
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_16b_large_diff);
+    mu_run_test(test_apsnr_luma_only);
+    mu_run_test(test_apsnr_luma_only_16b);
+    mu_run_test(test_apsnr_chroma_enabled);
 
     return NULL;
 }
