@@ -50,9 +50,43 @@ jobs:
 
       - name: Run benchmarks
         run: |
+          ./libvmaf/build/test/checkasm/checkasm --bench --json > /tmp/pr-bench.json
           {
             echo "### checkasm benchmark results (${{ matrix.name }})"
             echo '```'
             ./libvmaf/build/test/checkasm/checkasm --bench
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Everything below compares this PR's benchmarks against its base
+      # branch, built and run on this same runner so the comparison isn't
+      # skewed by different hardware. It's best-effort: the base ref may not
+      # have checkasm at all (e.g. the PR that first introduces it), in
+      # which case these steps skip cleanly rather than failing the job.
+      - name: Fetch base ref
+        if: github.event_name == 'pull_request'
+        run: git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
+
+      - name: Build baseline checkasm (base ref)
+        id: baseline_build
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: |
+          git worktree add /tmp/base-ref ${{ github.event.pull_request.base.sha }}
+          meson setup /tmp/base-ref/libvmaf /tmp/base-build --buildtype release -Denable_checkasm=true
+          ninja -vC /tmp/base-build test/checkasm/checkasm
+
+      - name: Run baseline benchmarks
+        id: baseline_bench
+        if: github.event_name == 'pull_request' && steps.baseline_build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          /tmp/base-build/test/checkasm/checkasm --bench --json > /tmp/base-bench.json
+
+      - name: Compare benchmarks to base ref
+        if: github.event_name == 'pull_request' && steps.baseline_bench.outcome == 'success'
+        run: |
+          {
+            echo "### checkasm benchmark comparison vs base ref (${{ matrix.name }})"
+            python3 libvmaf/test/checkasm/bench_diff.py /tmp/base-bench.json /tmp/pr-bench.json
+          } >> "$GITHUB_STEP_SUMMARY"
