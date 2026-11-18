@@ -69,7 +69,7 @@ int vmaf_dictionary_set(VmafDictionary **dict, const char *key, const char *val,
         return ret;
     }
 
-    if (d->cnt == d->size) {
+    if (!existing_entry && d->cnt == d->size) {
         const size_t sz = d->size * sizeof(*d->entry) * 2;
         VmafDictionaryEntry *entry = realloc(d->entry, sz);
         if (!entry) goto fail;
