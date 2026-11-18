@@ -204,15 +204,18 @@ __device__ __forceinline__ void adm_dwt2_8_vert_hori_kernel(const T * d_picture,
                     break;
                 }
 
-                int32_t accum_lo = 0, accum_hi = 0;
+                /* normalizing is done for range from(0 to N) to (-N/2 to N/2).
+                 * The low-pass offset goes in first: subtracted last, three
+                 * 16-bit samples of 42456 or more take the sum past INT32_MAX
+                 * on the way. */
+                int32_t accum_lo = -(params.dwt2_db2_coeffs_lo_sum * v_add_shift);
+                int32_t accum_hi = 0;
 #pragma unroll
                 for (int i = 0;i< 4;++i) {
                     accum_lo += filter_lo[i] * u_s[i + 2 * item];
                     accum_hi += filter_hi[i] * u_s[i + 2 * item];
                 }
 
-                /* normalizing is done for range from(0 to N) to (-N/2 to N/2) */
-                accum_lo -= params.dwt2_db2_coeffs_lo_sum * v_add_shift;
                 accum_hi -= params.dwt2_db2_coeffs_hi_sum * v_add_shift;
 
                 s_tile[threadIdx.y * v_rows_per_thread + item][threadIdx.x] = make_short2((accum_lo + v_add_shift) >> v_shift, (accum_hi + v_add_shift) >> v_shift);

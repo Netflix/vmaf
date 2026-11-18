@@ -177,6 +177,109 @@ test_speed_filter = executable('test_speed_filter',
 )
 test('test_speed_filter', test_speed_filter)
 
+# The vertical pass of adm_dwt2_16() used to add up filter taps in an int32_t
+# in an order that overflows for samples of 42456 and above. Signed overflow
+# wraps back to the right value on the usual targets, so the output is correct
+# either way and only an instrumented build can tell. Build the three
+# translation units that hold the code under test (integer_adm.c, x86/adm_avx2.c
+# and x86/adm_avx512.c) with signed integer overflow trapping, for this test
+# only: the other objects come from the regular build, minus the regular
+# objects of those three files so no symbol is defined twice. Without compiler
+# support for the check the test still compares against the 64-bit reference.
+adm_dwt2_16_trap_args = ['-fsanitize=signed-integer-overflow',
+                         '-fno-sanitize-recover=signed-integer-overflow']
+adm_dwt2_16_trap = cc.has_multi_arguments(adm_dwt2_16_trap_args) and cc.links(
+    'int main(void) { return 0; }',
+    args : adm_dwt2_16_trap_args,
+    name : 'with signed integer overflow trapping',
+)
+adm_dwt2_16_link_args = []
+adm_dwt2_16_objects = [
+    common_cuda_objects,
+    libvmaf_cpu_static_lib.extract_all_objects(recursive: true),
+    libsvm_static_lib.extract_all_objects(recursive: true),
+]
+
+if adm_dwt2_16_trap
+    adm_dwt2_16_link_args += adm_dwt2_16_trap_args
+    adm_dwt2_16_inc = [libvmaf_include, vmaf_include, include_directories('../src/cuda/')]
+
+    adm_dwt2_16_feature_sources = []
+    foreach src : libvmaf_feature_sources
+        if src != feature_src_dir + 'integer_adm.c'
+            adm_dwt2_16_feature_sources += src
+        endif
+    endforeach
+    adm_dwt2_16_trap_adm = static_library(
+        'adm_dwt2_16_trap_adm',
+        '../src/feature/integer_adm.c',
+        include_directories : adm_dwt2_16_inc,
+        dependencies : [thread_lib, stdatomic_dependency, cuda_dependency, builtin_clz_dependency],
+        c_args : adm_dwt2_16_trap_args,
+    )
+    adm_dwt2_16_objects += [
+        libvmaf_feature_static_lib.extract_objects(adm_dwt2_16_feature_sources),
+        adm_dwt2_16_trap_adm.extract_all_objects(recursive: true),
+    ]
+
+    if is_asm_enabled and host_machine.cpu_family().startswith('x86')
+        adm_dwt2_16_avx2_sources = []
+        foreach src : x86_avx2_sources
+            if src != feature_src_dir + 'x86/adm_avx2.c'
+                adm_dwt2_16_avx2_sources += src
+            endif
+        endforeach
+        adm_dwt2_16_trap_avx2 = static_library(
+            'adm_dwt2_16_trap_avx2',
+            '../src/feature/x86/adm_avx2.c',
+            include_directories : vmaf_base_include,
+            c_args : avx2_cflags + vmaf_cflags_common + adm_dwt2_16_trap_args,
+            dependencies : [builtin_clz_dependency],
+        )
+        adm_dwt2_16_objects += [
+            x86_avx2_static_lib.extract_objects(adm_dwt2_16_avx2_sources),
+            adm_dwt2_16_trap_avx2.extract_all_objects(recursive: true),
+        ]
+
+        if is_avx512_enabled and is_avx512_supported
+            adm_dwt2_16_avx512_sources = []
+            foreach src : x86_avx512_sources
+                if src != feature_src_dir + 'x86/adm_avx512.c'
+                    adm_dwt2_16_avx512_sources += src
+                endif
+            endforeach
+            adm_dwt2_16_trap_avx512 = static_library(
+                'adm_dwt2_16_trap_avx512',
+                '../src/feature/x86/adm_avx512.c',
+                include_directories : vmaf_base_include,
+                c_args : avx512_cflags + vmaf_cflags_common + adm_dwt2_16_trap_args,
+                dependencies : [builtin_clz_dependency],
+            )
+            adm_dwt2_16_objects += [
+                x86_avx512_static_lib.extract_objects(adm_dwt2_16_avx512_sources),
+                adm_dwt2_16_trap_avx512.extract_all_objects(recursive: true),
+            ]
+        endif
+    else
+        adm_dwt2_16_objects += platform_specific_cpu_objects
+    endif
+else
+    adm_dwt2_16_objects += [
+        platform_specific_cpu_objects,
+        libvmaf_feature_static_lib.extract_all_objects(recursive: true),
+    ]
+endif
+
+test_adm_dwt2_16 = executable('test_adm_dwt2_16',
+    ['test.c', 'test_adm_dwt2_16.c', '../src/mem.c', '../src/picture.c', '../src/ref.c',
+     '../src/dict.c', '../src/opt.c', '../src/log.c', '../src/predict.c',
+     '../src/metadata_handler.c'],
+    include_directories : [libvmaf_inc, test_inc, include_directories('../src/')],
+    dependencies : [math_lib, stdatomic_dependency, thread_lib, cuda_dependency],
+    link_args : adm_dwt2_16_link_args,
+    objects : adm_dwt2_16_objects,
+)
+
 if float_enabled
     test_vif_tools = executable('test_vif_tools',
         ['test.c', 'test_vif_tools.c'],
@@ -248,6 +351,7 @@ test('test_luminance_tools', test_luminance_tools)
 test('test_cli_parse', test_cli_parse)
 test('test_psnr', test_psnr)
 test('test_framesync', test_framesync)
+test('test_adm_dwt2_16', test_adm_dwt2_16)
 test('test_propagate_metadata', test_propagate_metadata)
 test('test_adm_csf', test_adm_csf)
 test('test_barten_csf', test_barten_csf)
