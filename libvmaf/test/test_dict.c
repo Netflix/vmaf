@@ -379,9 +379,40 @@ static char *test_isnumeric()
     return NULL;
 }
 
+static char *test_vmaf_dictionary_overwrite_when_full()
+{
+    int err = 0;
+
+    VmafDictionary *dict = NULL;
+    char key[16], val[16];
+    for (unsigned i = 0; i < 8; i++) {
+        snprintf(key, sizeof(key), "key_%u", i);
+        snprintf(val, sizeof(val), "val_%u", i);
+        err |= vmaf_dictionary_set(&dict, key, val, 0);
+    }
+    mu_assert("problem during vmaf_dictionary_set", !err);
+    mu_assert("dictionary should be completely full",
+              dict->size == 8 && dict->cnt == 8);
+
+    err = vmaf_dictionary_set(&dict, "key_3", "new_val", 0);
+    mu_assert("problem during vmaf_dictionary_set", !err);
+    mu_assert("overwrite should not add an entry", dict->cnt == 8);
+    mu_assert("overwrite should not grow the dictionary", dict->size == 8);
+    const VmafDictionaryEntry *e = vmaf_dictionary_get(&dict, "key_3", 0);
+    mu_assert("overwritten key should be present", e);
+    mu_assert("overwritten key should have the new value",
+              !strcmp(e->val, "new_val"));
+
+    err = vmaf_dictionary_free(&dict);
+    mu_assert("problem during vmaf_dictionary_free", !err);
+
+    return NULL;
+}
+
 char *run_tests()
 {
     mu_run_test(test_vmaf_dictionary);
+    mu_run_test(test_vmaf_dictionary_overwrite_when_full);
     mu_run_test(test_vmaf_dictionary_merge);
     mu_run_test(test_vmaf_dictionary_compare);
     mu_run_test(test_vmaf_dictionary_normalize_numerical_val);
