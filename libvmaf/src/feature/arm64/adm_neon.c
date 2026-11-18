@@ -375,7 +375,7 @@ static inline int32x4_t adm_cm_threshold_neon(const adm_dwt_band_t *a,
         int32x4_t x = vabsq_s32(vmovl_s16(vld1_s16(angles[band] + offset)));
         x = vmulq_n_s32(x, ONE_BY_15);
         x = vshrq_n_s32(vaddq_s32(x, vdupq_n_s32(2048)), 12);
-        threshold = vaddw_s16(threshold, vmovn_s32(x));
+        threshold = vaddq_s32(threshold, x);
     }
     return threshold;
 }
@@ -398,9 +398,11 @@ static inline int64x2_t adm_cm_accum_neon(const int16_t *src, int32x4_t threshol
                                         bool diagonal, int shift_cub)
 {
     int32x4_t x = vmulq_n_s32(vmovl_s16(vld1_s16(src)), factor);
+    const uint32x4_t fits = vcleq_s32(threshold,
+        vdupq_n_s32(INT32_MAX >> (diagonal ? 12 : 10)));
     threshold = diagonal ? vshlq_n_s32(threshold, 12) : vshlq_n_s32(threshold, 10);
     x = vmaxq_s32(vsubq_s32(vabsq_s32(x), threshold), vdupq_n_s32(0));
-    x = vreinterpretq_s32_u32(vandq_u32(vreinterpretq_u32_s32(x), mask));
+    x = vreinterpretq_s32_u32(vandq_u32(vreinterpretq_u32_s32(x), vandq_u32(mask, fits)));
     return adm_cm_cube_neon(x, diagonal, shift_cub);
 }
 
