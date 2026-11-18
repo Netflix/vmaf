@@ -738,6 +738,91 @@ static void check_adm_cm(void)
             }
         }
 
+#if ARCH_X86
+        /* Keep the centre taps zero while negative neighbours push the square
+         * past INT32_MAX. Sparse large coefficients keep the sum finite. */
+        for (int k = 0; k < h_half * stride; k++) {
+            buf_c.decouple_r.band_h[k] = 10000;
+            buf_c.decouple_r.band_v[k] = 10000;
+            buf_c.decouple_r.band_d[k] = (k % 128) ? 10000 : 22916;
+            buf_c.csf_a.band_h[k] = buf_c.csf_a.band_v[k] = buf_c.csf_a.band_d[k] = 0;
+            buf_c.csf_f.band_h[k] = buf_c.csf_f.band_v[k] = buf_c.csf_f.band_d[k] = -4000;
+        }
+        copy_band(buf_a.decouple_r.band_h, buf_c.decouple_r.band_h, h_half, stride);
+        copy_band(buf_a.decouple_r.band_v, buf_c.decouple_r.band_v, h_half, stride);
+        copy_band(buf_a.decouple_r.band_d, buf_c.decouple_r.band_d, h_half, stride);
+        copy_band(buf_a.csf_a.band_h, buf_c.csf_a.band_h, h_half, stride);
+        copy_band(buf_a.csf_a.band_v, buf_c.csf_a.band_v, h_half, stride);
+        copy_band(buf_a.csf_a.band_d, buf_c.csf_a.band_d, h_half, stride);
+        copy_band(buf_a.csf_f.band_h, buf_c.csf_f.band_h, h_half, stride);
+        copy_band(buf_a.csf_f.band_v, buf_c.csf_f.band_v, h_half, stride);
+        copy_band(buf_a.csf_f.band_d, buf_c.csf_f.band_d, h_half, stride);
+
+        if (w_half > 16 && checkasm_check_func(get_cm(checkasm_get_cpu_flags()),
+                                "adm_cm_negative_threshold_%dx%d", w, h)) {
+            const float ref = checkasm_call_ref(&buf_c, w_half, h_half, stride, stride,
+                DEFAULT_ADM_NORM_VIEW_DIST, DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                DEFAULT_ADM_CSF_MODE, DEFAULT_ADM_CSF_SCALE,
+                DEFAULT_ADM_CSF_DIAG_SCALE, DEFAULT_ADM_NOISE_WEIGHT, false);
+            const float actual = checkasm_call_new(&buf_a, w_half, h_half, stride, stride,
+                DEFAULT_ADM_NORM_VIEW_DIST, DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                DEFAULT_ADM_CSF_MODE, DEFAULT_ADM_CSF_SCALE,
+                DEFAULT_ADM_CSF_DIAG_SCALE, DEFAULT_ADM_NOISE_WEIGHT, false);
+            if (!isfinite(ref) || !isfinite(actual) ||
+                fabsf(ref - actual) > 1e-4f * (fabsf(ref) + 1.0f)) {
+                if (checkasm_fail())
+                    fprintf(stderr, "expected %f, got %f\n", ref, actual);
+            }
+        }
+
+        if (w_half > 16) {
+            for (int boundary = 0; boundary < 4; boundary++) {
+                for (int k = 0; k < h_half * stride; k++) {
+                    buf_c.decouple_r.band_h[k] = 10000;
+                    buf_c.decouple_r.band_v[k] = 1000;
+                    buf_c.decouple_r.band_d[k] = 1000;
+                    buf_c.csf_f.band_h[k] = 0;
+                    buf_c.csf_f.band_v[k] = 0;
+                    buf_c.csf_f.band_d[k] = 0;
+                }
+                const int center = 3 * stride + 8;
+                if (boundary == 1) {
+                    buf_c.csf_f.band_h[center - 1] = -1;
+                } else if (boundary >= 2) {
+                    /* The rounded squares straddle the int32_t limit. */
+                    const int threshold = boundary == 2 ? -241377 : -246610;
+                    const int offsets[] = { -stride - 1, -stride, -stride + 1,
+                                            -1, 1, stride - 1, stride, stride + 1 };
+                    buf_c.decouple_r.band_h[center] = boundary == 2 ? 22675 : 22528;
+                    for (int n = 0; n < 8; n++)
+                        buf_c.csf_f.band_h[center + offsets[n]] =
+                            threshold / 8 + (n < -(threshold % 8) ? -1 : 0);
+                }
+                copy_band(buf_a.decouple_r.band_h, buf_c.decouple_r.band_h, h_half, stride);
+                copy_band(buf_a.decouple_r.band_v, buf_c.decouple_r.band_v, h_half, stride);
+                copy_band(buf_a.decouple_r.band_d, buf_c.decouple_r.band_d, h_half, stride);
+                copy_band(buf_a.csf_f.band_h, buf_c.csf_f.band_h, h_half, stride);
+                copy_band(buf_a.csf_f.band_v, buf_c.csf_f.band_v, h_half, stride);
+                copy_band(buf_a.csf_f.band_d, buf_c.csf_f.band_d, h_half, stride);
+                if (checkasm_check_func(get_cm(checkasm_get_cpu_flags()),
+                                        "adm_cm_boundary%d_%dx%d", boundary, w, h)) {
+                    const float ref = checkasm_call_ref(&buf_c, w_half, h_half, stride, stride,
+                        DEFAULT_ADM_NORM_VIEW_DIST, DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                        DEFAULT_ADM_CSF_MODE, DEFAULT_ADM_CSF_SCALE,
+                        DEFAULT_ADM_CSF_DIAG_SCALE, DEFAULT_ADM_NOISE_WEIGHT, false);
+                    const float actual = checkasm_call_new(&buf_a, w_half, h_half, stride, stride,
+                        DEFAULT_ADM_NORM_VIEW_DIST, DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                        DEFAULT_ADM_CSF_MODE, DEFAULT_ADM_CSF_SCALE,
+                        DEFAULT_ADM_CSF_DIAG_SCALE, DEFAULT_ADM_NOISE_WEIGHT, false);
+                    if (!isfinite(ref) || !isfinite(actual) ||
+                        fabsf(ref - actual) > 1e-4f * (fabsf(ref) + 1.0f)) {
+                        if (checkasm_fail())
+                            fprintf(stderr, "expected %f, got %f\n", ref, actual);
+                    }
+                }
+            }
+        }
+#endif
         adm_buffer_free(&buf_c);
         adm_buffer_free(&buf_a);
     }
@@ -1254,6 +1339,64 @@ static void check_adm_i4_cm(void)
             }
         }
 
+#if ARCH_X86
+        if (w_half > 32 && h_half > 16) {
+            const int offsets[] = { -stride - 1, -stride, -stride + 1,
+                                    -1, 1, stride - 1, stride, stride + 1 };
+            for (int k = 0; k < h_half * stride; k++) {
+                buf_c.i4_decouple_r.band_h[k] = 0;
+                buf_c.i4_decouple_r.band_v[k] = 0;
+                buf_c.i4_decouple_r.band_d[k] = 0;
+                buf_c.i4_csf_a.band_h[k] = 0;
+                buf_c.i4_csf_a.band_v[k] = 0;
+                buf_c.i4_csf_a.band_d[k] = 0;
+                buf_c.i4_csf_f.band_h[k] = 0;
+                buf_c.i4_csf_f.band_v[k] = 0;
+                buf_c.i4_csf_f.band_d[k] = 0;
+            }
+            /* This synthetic filtered band exercises the arithmetic only. */
+            /* At the first centre x is 1600000000 and its rounded square
+             * is 2384185791. The second centre keeps the sum positive. */
+            for (int n = 0; n < 8; n++) {
+                buf_c.i4_csf_f.band_h[4 * stride + 8 + offsets[n]] = -200000000;
+                buf_c.i4_csf_f.band_h[10 * stride + 8 + offsets[n]] = -175000000;
+            }
+            for (int b = 0; b < 4; b++) {
+                copy_band_i32(a_bands[b]->band_h, c_bands[b]->band_h, h_half, stride);
+                copy_band_i32(a_bands[b]->band_v, c_bands[b]->band_v, h_half, stride);
+                copy_band_i32(a_bands[b]->band_d, c_bands[b]->band_d, h_half, stride);
+            }
+            for (int scale = 1; scale <= 3; scale++) {
+                if (scale == 3) {
+                    /* The first rounded square exceeds INT32_MAX; two smaller
+                     * terms keep the accumulated value positive. */
+                    for (int k = 0; k < h_half * stride; k++)
+                        buf_c.i4_csf_f.band_h[k] = 0;
+                    buf_c.i4_decouple_r.band_h[4 * stride + 8] = 2080000000;
+                    buf_c.i4_decouple_r.band_h[10 * stride + 8] = 2070000000;
+                    buf_c.i4_decouple_r.band_h[14 * stride + 8] = 2070000000;
+                    copy_band_i32(buf_a.i4_csf_f.band_h, buf_c.i4_csf_f.band_h, h_half, stride);
+                    copy_band_i32(buf_a.i4_decouple_r.band_h, buf_c.i4_decouple_r.band_h, h_half, stride);
+                }
+                if (checkasm_check_func(get_i4_cm(checkasm_get_cpu_flags()),
+                                        "i4_adm_cm_boundary_%dx%d_scale%d", w, h, scale)) {
+                    const float ref = checkasm_call_ref(&buf_c, w_half, h_half, stride, stride, scale,
+                        DEFAULT_ADM_NORM_VIEW_DIST, DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                        DEFAULT_ADM_CSF_MODE, DEFAULT_ADM_CSF_SCALE,
+                        DEFAULT_ADM_CSF_DIAG_SCALE, DEFAULT_ADM_NOISE_WEIGHT, false);
+                    const float actual = checkasm_call_new(&buf_a, w_half, h_half, stride, stride, scale,
+                        DEFAULT_ADM_NORM_VIEW_DIST, DEFAULT_ADM_REF_DISPLAY_HEIGHT,
+                        DEFAULT_ADM_CSF_MODE, DEFAULT_ADM_CSF_SCALE,
+                        DEFAULT_ADM_CSF_DIAG_SCALE, DEFAULT_ADM_NOISE_WEIGHT, false);
+                    if (!isfinite(ref) || !isfinite(actual) ||
+                        fabsf(ref - actual) > 1e-4f * (fabsf(ref) + 1.0f)) {
+                        if (checkasm_fail())
+                            fprintf(stderr, "expected %f, got %f\n", ref, actual);
+                    }
+                }
+            }
+        }
+#endif
         adm_buffer_free(&buf_c);
         adm_buffer_free(&buf_a);
     }
