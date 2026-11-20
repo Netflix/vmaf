@@ -86,7 +86,7 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
 
         unsigned cnt = 0;
         for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
+            if (i >= fc->feature_vector[j]->capacity)
                 continue;
             if (fc->feature_vector[j]->score[i].written)
                 cnt++;
@@ -95,7 +95,7 @@ int vmaf_write_output_xml(VmafContext *vmaf, VmafFeatureCollector *fc,
 
         fprintf(outfile, "    <frame frameNum=\"%d\" ", i);
         for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
+            if (i >= fc->feature_vector[j]->capacity)
                 continue;
             if (!fc->feature_vector[j]->score[i].written)
                 continue;
@@ -183,7 +183,7 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
 
         unsigned cnt = 0;
         for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
+            if (i >= fc->feature_vector[j]->capacity)
                 continue;
             if (fc->feature_vector[j]->score[i].written)
                 cnt++;
@@ -197,7 +197,7 @@ int vmaf_write_output_json(VmafContext *vmaf, VmafFeatureCollector *fc,
 
         unsigned cnt2 = 0;
         for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
+            if (i >= fc->feature_vector[j]->capacity)
                 continue;
             if (!fc->feature_vector[j]->score[i].written)
                 continue;
@@ -319,7 +319,7 @@ int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
 
         unsigned cnt = 0;
         for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
+            if (i >= fc->feature_vector[j]->capacity)
                 continue;
             if (fc->feature_vector[j]->score[i].written)
                 cnt++;
@@ -328,7 +328,7 @@ int vmaf_write_output_csv(VmafFeatureCollector *fc, FILE *outfile,
 
         fprintf(outfile, "%d,", i);
         for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
+            if (i >= fc->feature_vector[j]->capacity)
                 continue;
             if (!fc->feature_vector[j]->score[i].written)
                 continue;
@@ -355,7 +355,7 @@ int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
 
         unsigned cnt = 0;
         for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
+            if (i >= fc->feature_vector[j]->capacity)
                 continue;
             if (fc->feature_vector[j]->score[i].written)
                 cnt++;
@@ -364,7 +364,7 @@ int vmaf_write_output_sub(VmafFeatureCollector *fc, FILE *outfile,
 
         fprintf(outfile, "{%d}{%d}frame: %d|", i, i + 1, i);
         for (unsigned j = 0; j < fc->cnt; j++) {
-            if (i > fc->feature_vector[j]->capacity)
+            if (i >= fc->feature_vector[j]->capacity)
                 continue;
             if (!fc->feature_vector[j]->score[i].written)
                 continue;
