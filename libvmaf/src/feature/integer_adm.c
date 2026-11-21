@@ -1088,6 +1088,77 @@ void adm_decouple_s123(AdmBuffer *buf, int w, int h, int stride,
     }
 }
 
+static void adm_csf_rfactors(int scale, double adm_norm_view_dist,
+                             int adm_ref_display_height, int adm_csf_mode,
+                             double adm_csf_scale, double adm_csf_diag_scale,
+                             float rfactor[3])
+{
+    float factor1, factor2;
+    if (adm_csf_mode == ADM_CSF_MODE_BARTEN) {
+        factor1 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height,
+                             DEFAULT_ADM_CSF_LUM, adm_csf_scale);
+        factor2 = barten_csf(scale, adm_norm_view_dist, adm_ref_display_height,
+                             DEFAULT_ADM_CSF_LUM, adm_csf_diag_scale);
+    } else if (adm_csf_mode == ADM_CSF_MODE_BARTEN_WATSON_BLEND) {
+        factor1 = barten_watson_blend_csf(scale, 0, adm_norm_view_dist, adm_ref_display_height);
+        factor2 = barten_watson_blend_csf(scale, 1, adm_norm_view_dist, adm_ref_display_height);
+    } else if (adm_csf_mode == ADM_CSF_MODE_BARTEN_WATSON_BLEND_MAE) {
+        factor1 = barten_watson_blend_csf_mae(scale, 0, adm_norm_view_dist, adm_ref_display_height);
+        factor2 = barten_watson_blend_csf_mae(scale, 1, adm_norm_view_dist, adm_ref_display_height);
+    } else {
+        factor1 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 1,
+                                        adm_norm_view_dist, adm_ref_display_height);
+        factor2 = 1.0f / dwt_quant_step(&dwt_7_9_YCbCr_threshold[0], scale, 2,
+                                        adm_norm_view_dist, adm_ref_display_height);
+    }
+    rfactor[0] = factor1;
+    rfactor[1] = factor1;
+    rfactor[2] = factor2;
+}
+
+/*
+ * The fixed-point CSF stages store the CSF weights as Q21 (h, v) and Q23 (d)
+ * in uint16_t at scale 0 and as Q32 in uint32_t at scales 1 to 3, and the
+ * contrast masking that follows is sized for the Watson97 weights. Barten
+ * weights with the default adm_csf_scale and adm_csf_diag_scale are much
+ * larger (about 1.2 at scale 0 and 5 at scale 1) and do not fit.
+ *
+ * Returns 0 when every weight of the scale fits its type, so those weights
+ * are used unchanged. Otherwise returns the smallest k such that each weight
+ * divided by 2^k is no larger than the Watson97 weight of the same band. The
+ * three bands share k, which keeps their ratios; the contrast masking sum is
+ * cubic in the weights, so it is multiplied back by 2^(3k).
+ */
+static int adm_csf_weight_shift(int scale, double adm_norm_view_dist,
+                                int adm_ref_display_height, int adm_csf_mode,
+                                double adm_csf_scale, double adm_csf_diag_scale)
+{
+    float rfactor[3];
+    adm_csf_rfactors(scale, adm_norm_view_dist, adm_ref_display_height,
+                     adm_csf_mode, adm_csf_scale, adm_csf_diag_scale, rfactor);
+
+    const int q[3] = { scale == 0 ? 21 : 32, scale == 0 ? 21 : 32,
+                       scale == 0 ? 23 : 32 };
+    const double type_max = scale == 0 ? (double)UINT16_MAX : (double)UINT32_MAX;
+    int fits = 1;
+    for (int theta = 0; theta < 3; ++theta) {
+        if (!(ldexp(rfactor[theta], q[theta]) <= type_max))
+            fits = 0;
+    }
+    if (fits)
+        return 0;
+
+    float watson[3];
+    adm_csf_rfactors(scale, adm_norm_view_dist, adm_ref_display_height,
+                     ADM_CSF_MODE_WATSON97, 0.0, 0.0, watson);
+    int k = 0;
+    for (int theta = 0; theta < 3; ++theta) {
+        while (k < q[theta] && ldexp(rfactor[theta], -k) > watson[theta])
+            ++k;
+    }
+    return k;
+}
+
 void adm_csf(AdmBuffer *buf, int w, int h, int stride,
                     double adm_norm_view_dist, int adm_ref_display_height, int adm_csf_mode, double adm_csf_scale,
                     double adm_csf_diag_scale, bool measure_aim)
@@ -1143,8 +1214,12 @@ void adm_csf(AdmBuffer *buf, int w, int h, int stride,
         i_rfactor[2] = 49417;
     }
     else {
-        const double pow2_21 = pow(2, 21);
-        const double pow2_23 = pow(2, 23);
+        // Weights that do not fit in uint16_t are scaled down by 2^k; adm_cm
+        // uses the same k and compensates for it.
+        const int k = adm_csf_weight_shift(0, adm_norm_view_dist, adm_ref_display_height,
+                                           adm_csf_mode, adm_csf_scale, adm_csf_diag_scale);
+        const double pow2_21 = pow(2, 21 - k);
+        const double pow2_23 = pow(2, 23 - k);
         i_rfactor[0] = (uint16_t) (rfactor1[0] * pow2_21);
         i_rfactor[1] = (uint16_t) (rfactor1[1] * pow2_21);
         i_rfactor[2] = (uint16_t) (rfactor1[2] * pow2_23);
@@ -1247,8 +1322,11 @@ void i4_adm_csf(AdmBuffer *buf, int scale, int w, int h, int stride,
 	}
 	const float rfactor1[3] = { factor1, factor1, factor2 };
 
-    //i_rfactor in fixed-point
-    const double pow2_32 = pow(2, 32);
+    //i_rfactor in fixed-point; weights that do not fit in Q32 are scaled down
+    //by 2^k, and i4_adm_cm uses the same k and compensates for it
+    const int k = adm_csf_weight_shift(scale, adm_norm_view_dist, adm_ref_display_height,
+                                       adm_csf_mode, adm_csf_scale, adm_csf_diag_scale);
+    const double pow2_32 = pow(2, 32 - k);
     const uint32_t i_rfactor[3] = { (uint32_t)(rfactor1[0] * pow2_32),
                                     (uint32_t)(rfactor1[1] * pow2_32),
                                     (uint32_t)(rfactor1[2] * pow2_32) };
@@ -1558,6 +1636,7 @@ float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
      * i_rfactor is around { 36453,36453,49417 } for ADM_CSF_MODE_WATSON97
      */
     uint16_t i_rfactor[3];
+    int k = 0; // weights scaled down by 2^k, see adm_csf_weight_shift()
     if (fabs(adm_norm_view_dist * adm_ref_display_height - DEFAULT_ADM_NORM_VIEW_DIST * DEFAULT_ADM_REF_DISPLAY_HEIGHT) < 1.0e-8 &&
         adm_csf_mode == ADM_CSF_MODE_WATSON97) {
         i_rfactor[0] = 36453;
@@ -1565,8 +1644,10 @@ float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
         i_rfactor[2] = 49417;
     }
     else {
-        const double pow2_21 = pow(2, 21);
-        const double pow2_23 = pow(2, 23);
+        k = adm_csf_weight_shift(0, adm_norm_view_dist, adm_ref_display_height,
+                                 adm_csf_mode, adm_csf_scale, adm_csf_diag_scale);
+        const double pow2_21 = pow(2, 21 - k);
+        const double pow2_23 = pow(2, 23 - k);
         i_rfactor[0] = (uint16_t) (rfactor1[0] * pow2_21);
         i_rfactor[1] = (uint16_t) (rfactor1[1] * pow2_21);
         i_rfactor[2] = (uint16_t) (rfactor1[2] * pow2_23);
@@ -1903,10 +1984,13 @@ float adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride,
      * For d total shifts pending from last stage is 6 rfactor[2] has 23 shifts
      * => after cubing (6+23)*3=87 after squaring shifted by 30
      * hence pending is 57-shift's done based on width and height
+     *
+     * When the weights were scaled down by 2^k, the cubed sum is 2^(3k) too
+     * small, so 3k fewer shifts are pending.
      */
-    float f_accum_h = (float)(accum_h / pow(2, (52 - shift_xhcub - shift_inner_accum)));
-    float f_accum_v = (float)(accum_v / pow(2, (52 - shift_xvcub - shift_inner_accum)));
-    float f_accum_d = (float)(accum_d / pow(2, (57 - shift_xdcub - shift_inner_accum)));
+    float f_accum_h = (float)(accum_h / pow(2, (52 - (int)shift_xhcub - (int)shift_inner_accum - 3 * k)));
+    float f_accum_v = (float)(accum_v / pow(2, (52 - (int)shift_xvcub - (int)shift_inner_accum - 3 * k)));
+    float f_accum_d = (float)(accum_d / pow(2, (57 - (int)shift_xdcub - (int)shift_inner_accum - 3 * k)));
 
     // TODO: if we integrate adm_p_norm, adm_p_norm=3.0f here
     // This would mean:
@@ -1965,9 +2049,12 @@ float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride, 
 	}
 	float rfactor1[3] = { factor1, factor1, factor2 };
 
-    const uint32_t rfactor[3] = { (uint32_t)(rfactor1[0] * pow(2, 32)),
-                                  (uint32_t)(rfactor1[1] * pow(2, 32)),
-                                  (uint32_t)(rfactor1[2] * pow(2, 32)) };
+    // Weights scaled down by 2^k, as in i4_adm_csf; see adm_csf_weight_shift()
+    const int k = adm_csf_weight_shift(scale, adm_norm_view_dist, adm_ref_display_height,
+                                       adm_csf_mode, adm_csf_scale, adm_csf_diag_scale);
+    const uint32_t rfactor[3] = { (uint32_t)(rfactor1[0] * pow(2, 32 - k)),
+                                  (uint32_t)(rfactor1[1] * pow(2, 32 - k)),
+                                  (uint32_t)(rfactor1[2] * pow(2, 32 - k)) };
 
     const uint32_t shift_dst[3] = { 28, 28, 28 };
     const uint32_t shift_flt[3] = { 32, 32, 32 };
@@ -1985,9 +2072,11 @@ float i4_adm_cm(AdmBuffer *buf, int w, int h, int src_stride, int csf_a_stride, 
     uint32_t shift_inner_accum = (uint32_t)ceil(log2(h));
     uint32_t add_shift_inner_accum = (uint32_t)pow(2, (shift_inner_accum - 1));
 
-    float final_shift[3] = { pow(2,(45 - shift_cub - shift_inner_accum)),
-                             pow(2,(39 - shift_cub - shift_inner_accum)),
-                             pow(2,(36 - shift_cub - shift_inner_accum)) };
+    // With the weights scaled down by 2^k the cubed sum is 2^(3k) too small,
+    // so 3k fewer shifts are pending.
+    float final_shift[3] = { pow(2,(45 - (int)shift_cub - (int)shift_inner_accum - 3 * k)),
+                             pow(2,(39 - (int)shift_cub - (int)shift_inner_accum - 3 * k)),
+                             pow(2,(36 - (int)shift_cub - (int)shift_inner_accum - 3 * k)) };
 
     const int32_t shift_sq = 30;
     const int32_t add_shift_sq = 536870912; //2^29
@@ -2971,6 +3060,22 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
             float den_scale = 0.0;
             float aim_num_scale = 0.0;
 
+            // The SIMD CSF and contrast masking kernels assume the CSF weights
+            // fit their fixed-point types. When the weights of this scale have
+            // to be scaled down (see adm_csf_weight_shift()), use the C ones.
+            const bool csf_c_only =
+                adm_csf_weight_shift(scale, nvd[v], adm_ref_display_height,
+                                     adm_csf_mode, adm_csf_scale, adm_csf_diag_scale) > 0;
+            void (*csf_fn)(AdmBuffer *, int, int, int, double, int, int, double,
+                           double, bool) = csf_c_only ? adm_csf : s->adm_csf;
+            float (*cm_fn)(AdmBuffer *, int, int, int, int, double, int, int,
+                           double, double, double, bool) = csf_c_only ? adm_cm : s->adm_cm;
+            void (*i4_csf_fn)(AdmBuffer *, int, int, int, int, double, int, int,
+                              double, double, bool) = csf_c_only ? i4_adm_csf : s->i4_adm_csf;
+            float (*i4_cm_fn)(AdmBuffer *, int, int, int, int, int, double, int,
+                              int, double, double, double, bool) =
+                csf_c_only ? i4_adm_cm : s->i4_adm_cm;
+
             if (scale == 0 && adm_skip_scale0) {
                 den_scale = 1e-10;  // avoid divide by zero
             }
@@ -2980,21 +3085,21 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
                                     adm_csf_mode, adm_csf_scale,
                                     adm_csf_diag_scale, adm_noise_weight);
 
-                s->adm_csf(buf, w, h, buf_stride, nvd[v],
+                csf_fn(buf, w, h, buf_stride, nvd[v],
                            adm_ref_display_height, adm_csf_mode, adm_csf_scale,
                            adm_csf_diag_scale, false);
 
-                num_scale = s->adm_cm(buf, w, h, buf_stride, buf_stride,
+                num_scale = cm_fn(buf, w, h, buf_stride, buf_stride,
                                 nvd[v], adm_ref_display_height,
                                 adm_csf_mode, adm_csf_scale,
                                 adm_csf_diag_scale, adm_noise_weight, false);
 
                 if (!adm_skip_aim) {
-                    s->adm_csf(buf, w, h, buf_stride, nvd[v],
+                    csf_fn(buf, w, h, buf_stride, nvd[v],
                                adm_ref_display_height, adm_csf_mode,
                                adm_csf_scale, adm_csf_diag_scale, true);
 
-                    aim_num_scale = s->adm_cm(buf, w, h, buf_stride, buf_stride,
+                    aim_num_scale = cm_fn(buf, w, h, buf_stride, buf_stride,
                                     nvd[v], adm_ref_display_height,
                                     adm_csf_mode, adm_csf_scale,
                                     adm_csf_diag_scale, 0.0, true);
@@ -3007,21 +3112,21 @@ void integer_compute_adm(AdmState *s, VmafPicture *ref_pic, VmafPicture *dis_pic
                         adm_csf_mode, adm_csf_scale, adm_csf_diag_scale,
                         adm_noise_weight);
 
-                s->i4_adm_csf(buf, scale, w, h, buf_stride, nvd[v],
+                i4_csf_fn(buf, scale, w, h, buf_stride, nvd[v],
                               adm_ref_display_height, adm_csf_mode, adm_csf_scale,
                               adm_csf_diag_scale, false);
 
-                num_scale = s->i4_adm_cm(buf, w, h, buf_stride, buf_stride, scale,
+                num_scale = i4_cm_fn(buf, w, h, buf_stride, buf_stride, scale,
                                  nvd[v], adm_ref_display_height,
                                  adm_csf_mode, adm_csf_scale, adm_csf_diag_scale,
                                  adm_noise_weight, false);
 
                 if (!adm_skip_aim) {
-                    s->i4_adm_csf(buf, scale, w, h, buf_stride,
+                    i4_csf_fn(buf, scale, w, h, buf_stride,
                                   nvd[v], adm_ref_display_height, adm_csf_mode,
                                   adm_csf_scale, adm_csf_diag_scale, true);
 
-                    aim_num_scale = s->i4_adm_cm(buf, w, h, buf_stride, buf_stride,
+                    aim_num_scale = i4_cm_fn(buf, w, h, buf_stride, buf_stride,
                                  scale, nvd[v], adm_ref_display_height,
                                  adm_csf_mode, adm_csf_scale, adm_csf_diag_scale,
                                  0.0, true);
