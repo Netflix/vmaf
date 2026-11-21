@@ -1873,6 +1873,30 @@ class FeatureExtractorTest(MyTestCase):
         self.assertAlmostEqual(results[1]['integer_ADM_feature_aim_csf_2_nvd_5_rdh_2160_score'], 0.0, places=4)
         self.assertAlmostEqual(results[1]['integer_ADM_feature_adm3_csf_2_nvd_5_rdh_2160_score'], 1.0, places=4)
 
+    def test_run_integer_adm_fextractor_barten_csf(self):
+        # Barten weights with the default scales do not fit the fixed-point
+        # CSF weight types (#1662); the integer scores must still track float.
+        ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
+        self.fextractor = IntegerAdmFeatureExtractor(
+            [asset, asset_original],
+            None, fifo_mode=False,
+            result_store=None,
+            optional_dict={'adm_csf_mode': 1},
+        )
+        self.fextractor.run(parallelize=True)
+        results = self.fextractor.results
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_csf_1_scores'][0], 0.9654, places=4)  # float 0.965404
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm2_csf_1_score'], 0.939570, places=4)  # float 0.9395831666666666
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_aim_csf_1_scores'][0], 0.006404, places=4)  # float 0.006402
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_aim_csf_1_score'], 0.017911, places=4)  # float 0.017910333333333334
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm3_csf_1_score'], 0.960830, places=4)  # float 0.9608363333333333
+        self.assertAlmostEqual(results[1]['integer_ADM_feature_adm2_csf_1_score'], 1.0, places=4)  # float 1.0
+        self.assertAlmostEqual(results[1]['integer_ADM_feature_adm3_csf_1_score'], 1.0, places=4)  # float 1.0
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale0_csf_1_score'], 0.763542, places=4)  # float 0.7635685833333333
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale1_csf_1_score'], 0.848034, places=4)  # float 0.8480415833333333
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale2_csf_1_score'], 0.916563, places=4)  # float 0.9165746666666666
+        self.assertAlmostEqual(results[0]['integer_ADM_feature_adm_scale3_csf_1_score'], 0.961232, places=4)  # float 0.9612470208333335
+
     def test_run_integer_adm_fextractor_barten_csf_scale_coeffs(self):
         ref_path, dis_path, asset, asset_original = set_default_576_324_videos_for_testing()
         self.fextractor = IntegerAdmFeatureExtractor(
